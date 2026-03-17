@@ -2,9 +2,15 @@
 <%@ taglib prefix="paw" tagdir="/WEB-INF/tags" %>
 
 <html>
-<body>
-<paw:title text="${landingTitle}" />
-<h2>Hello ${greeting}!</h2>
-<paw:button text="Primary" type="primary" />
-</body>
+    <head>
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css">
+    </head>
+    <body>
+        <paw:title text="${landingTitle}" />
+            <h2>Hello ${greeting}!</h2>
+        <paw:button text="Button" type="primary" />
+        <paw:button text="Button" type="secondary" />
+        <paw:button text="Button" type="success" />
+        <paw:button text="Button" type="danger" />
+    </body>
 </html>
