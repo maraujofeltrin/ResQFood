@@ -10,6 +10,7 @@ public class HelloWorldController {
     public ModelAndView helloWorld() {
         final ModelAndView mav = new ModelAndView("index");
         mav.addObject("greeting", "pancho");
+        mav.addObject("landingTitle", "PAW-2026a-03");
         return mav;
     }
 }

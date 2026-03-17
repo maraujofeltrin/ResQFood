@@ -3,6 +3,7 @@
 
 <html>
 <body>
+<paw:title text="${landingTitle}" />
 <h2>Hello ${greeting}!</h2>
 <paw:button text="Primary" type="primary" />
 </body>
