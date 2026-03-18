@@ -12,8 +12,15 @@
         <body>
             <paw:title text="${landingTitle}" />
             <h2>Hello ${greeting}!</h2>
-            <paw:input id="searchField" label="Buscar" placeholder="Escribi una categoria" />
-            <paw:input id="emailField" label="Email" type="email" placeholder="nombre@ejemplo.com" />
+
+            <form method="post" action="${pageContext.request.contextPath}/">
+                <paw:input id="searchField" label="Usuario" placeholder="Escribi tu usuario" value="${searchFieldValue}"
+                    error="${inputErrors['searchField']}" required="true" minlength="3" maxlength="40" />
+                <paw:input id="emailField" label="Email" type="email" placeholder="nombre@ejemplo.com"
+                    value="${emailFieldValue}" error="${inputErrors['emailField']}" required="true" />
+                <paw:button text="Validar" type="primary" htmlType="submit" />
+            </form>
+
             <paw:button text="Button" type="primary" />
             <paw:button text="Button" type="secondary" />
             <paw:button text="Button" type="success" />
