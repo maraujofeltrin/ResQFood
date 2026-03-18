@@ -3,6 +3,7 @@
 
 <html>
     <head>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=star" />
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css">
     </head>
     <body>
@@ -12,5 +13,7 @@
         <paw:button text="Button" type="secondary" />
         <paw:button text="Button" type="success" />
         <paw:button text="Button" type="danger" />
+        <paw:card category="${cardCategory}" heading="${cardHeading}" rating="${cardRating}" imageUrl="${cardImageUrl}" />
+        <paw:card category="${cardCategory2}" heading="${cardHeading2}" rating="${cardRating2}" />
     </body>
 </html>
