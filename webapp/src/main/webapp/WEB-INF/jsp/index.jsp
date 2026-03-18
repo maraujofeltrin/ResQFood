@@ -12,6 +12,8 @@
         <body>
             <paw:title text="${landingTitle}" />
             <h2>Hello ${greeting}!</h2>
+            <paw:input id="searchField" label="Buscar" placeholder="Escribi una categoria" />
+            <paw:input id="emailField" label="Email" type="email" placeholder="nombre@ejemplo.com" />
             <paw:button text="Button" type="primary" />
             <paw:button text="Button" type="secondary" />
             <paw:button text="Button" type="success" />
