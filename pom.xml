@@ -19,6 +19,7 @@
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <org.springframework.version>5.3.33</org.springframework.version>
+    <org.postgresql.version>42.2.5</org.postgresql.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -26,6 +27,21 @@
         <groupId>org.springframework</groupId>
         <artifactId>spring-webmvc</artifactId>
         <version>${org.springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context</artifactId>
+        <version>${org.springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-jdbc</artifactId>
+        <version>${org.springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>${org.postgresql.version}</version>
       </dependency>
       <!-- JUnit -->
       <dependency>
@@ -45,11 +61,6 @@
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-params</artifactId>
         <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-context</artifactId>
-        <version>${org.springframework.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

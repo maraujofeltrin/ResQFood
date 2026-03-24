@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.bind.annotation.PathVariable;
+import java.util.Optional;
 
 import ar.edu.itba.paw.services.UserService;
 import ar.edu.itba.paw.models.User;
@@ -27,6 +29,13 @@ public class HelloWorldController {
         final ModelAndView mav = new ModelAndView("helloworld/index");
         User user = userService.createUser(email, password, name);
         mav.addObject("message", "Usuario creado: " + user.toString());
+        return mav;
+    }
+    @RequestMapping(value = "/profile/{id}", method = RequestMethod.GET)
+    public ModelAndView getUser(@PathVariable(name = "id") final Long id) {
+        final ModelAndView mav = new ModelAndView("helloworld/index");
+        Optional<User> user = userService.findById(id);
+        mav.addObject("message", "Usuario encontrado: " + user.toString());
         return mav;
     }
 
