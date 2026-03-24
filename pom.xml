@@ -12,6 +12,7 @@
     <module>models</module>
     <module>interfaces</module>
     <module>service-contracts</module>
+    <module>persistence-contracts</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

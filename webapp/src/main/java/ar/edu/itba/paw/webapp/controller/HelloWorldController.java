@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import ar.edu.itba.paw.services.UserService;
+import ar.edu.itba.paw.models.User;
 
 @Controller
 public class HelloWorldController {
@@ -22,9 +23,9 @@ public class HelloWorldController {
     }
 
     @RequestMapping(value = "/", method = RequestMethod.POST)
-    public ModelAndView createUser(@RequestParam(name = "email") final String email) {
-        final ModelAndView mav = new ModelAndView("index");
-        Object user = userService.createUser(email);
+    public ModelAndView createUser(@RequestParam(name = "email") final String email, @RequestParam(name = "password") final String password, @RequestParam(name = "name") final String name) {
+        final ModelAndView mav = new ModelAndView("helloworld/index");
+        User user = userService.createUser(email, password, name);
         mav.addObject("message", "Usuario creado: " + user.toString());
         return mav;
     }
@@ -39,7 +40,7 @@ public class HelloWorldController {
     }
 
     private ModelAndView buildBaseModel() {
-        final ModelAndView mav = new ModelAndView("index");
+        final ModelAndView mav = new ModelAndView("helloworld/index");
         mav.addObject("greeting", "pancho");
 
         mav.addObject("landingTitle", "PAW-2026a-03");

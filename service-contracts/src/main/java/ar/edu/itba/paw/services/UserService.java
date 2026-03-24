@@ -1,6 +1,8 @@
 package ar.edu.itba.paw.services;
 
+import ar.edu.itba.paw.models.User;
+
 public interface UserService {
-    Object createUser(final String email);
+    User createUser(final String email, final String password, final String name);
 
 }
