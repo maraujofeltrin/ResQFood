@@ -24,6 +24,7 @@ import java.util.TimeZone;
 public class WebConfig implements WebMvcConfigurer {
 
     static {
+        // pgjdbc uses JVM default TimeZone in the startup packet; must be a name PostgreSQL accepts.
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
     }
 
@@ -37,11 +38,12 @@ public class WebConfig implements WebMvcConfigurer {
     public DataSource dataSource() {
         final SimpleDriverDataSource dataSource = new SimpleDriverDataSource();
         dataSource.setDriverClass(org.postgresql.Driver.class);
-        dataSource.setUrl("jdbc:postgresql://localhost:5432/paw");
+        dataSource.setUrl("jdbc:postgresql://localhost/paw");
         dataSource.setUsername("pawdbuser");
         dataSource.setPassword("pawsecret");
         return dataSource;
     }
+
     @Bean
     public DataSourceInitializer dataSourceInitializer() {
         final DataSourceInitializer dataSourceInitializer = new DataSourceInitializer();
