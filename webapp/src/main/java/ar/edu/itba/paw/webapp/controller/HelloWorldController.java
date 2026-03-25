@@ -1,7 +1,5 @@
 package ar.edu.itba.paw.webapp.controller;
 
-import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,6 +38,15 @@ public class HelloWorldController {
     }
 
     @GetMapping("/")
+    public ModelAndView home() {
+        final ModelAndView mav = new ModelAndView("home/index");
+        mav.addObject("pageTitle", "Inicio");
+        mav.addObject("viewName", "home");
+        return mav;
+    }
+
+    /*
+    @GetMapping("/")
     public ModelAndView helloWorld() {
         final ModelAndView mav = buildBaseModel();
         mav.addObject("searchFieldValue", "");
@@ -66,6 +73,15 @@ public class HelloWorldController {
 
         mav.addObject("modalTitle", "Pack sorpresa");
         mav.addObject("modalContent", "Puede incluir: hamburguesa, papas y bebida. Por $5000");
+        return mav;
+    }
+    */
+
+    @GetMapping("/commerce")
+    public ModelAndView commerceDashboard() {
+        final ModelAndView mav = new ModelAndView("commerce/dashboard");
+        mav.addObject("pageTitle", "Panel de comercio");
+        mav.addObject("viewName", "commerce-dashboard");
         return mav;
     }
 }
