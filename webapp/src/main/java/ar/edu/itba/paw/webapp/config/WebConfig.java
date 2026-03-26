@@ -10,10 +10,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.web.servlet.view.JstlView;
 import javax.sql.DataSource;
-import org.springframework.jdbc.datasource.init.DataSourceInitializer;
-import org.springframework.jdbc.datasource.init.DatabasePopulator;
-import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
-import org.springframework.core.io.ClassPathResource;
+import org.flywaydb.core.Flyway;
 import org.springframework.jdbc.datasource.SimpleDriverDataSource;
 
 import java.util.TimeZone;
@@ -44,18 +41,13 @@ public class WebConfig implements WebMvcConfigurer {
         return dataSource;
     }
 
-    @Bean
-    public DataSourceInitializer dataSourceInitializer() {
-        final DataSourceInitializer dataSourceInitializer = new DataSourceInitializer();
-        dataSourceInitializer.setDataSource(dataSource());
-        dataSourceInitializer.setDatabasePopulator(databasePopulator());
-        return dataSourceInitializer;
-    }
-    
-    public DatabasePopulator databasePopulator() {
-        final ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator();
-        databasePopulator.addScript(new ClassPathResource("schema.sql"));
-        return databasePopulator;
+    @Bean(initMethod = "migrate")
+    public Flyway flyway() {
+        return Flyway.configure()
+                .dataSource(dataSource())
+                .locations("classpath:db/migration")
+                .baselineOnMigrate(true)
+                .load();
     }
 
     @Bean
