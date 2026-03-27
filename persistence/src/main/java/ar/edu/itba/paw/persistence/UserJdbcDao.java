@@ -11,14 +11,20 @@ import java.util.Optional;
 import org.springframework.jdbc.core.RowMapper;
 
 import ar.edu.itba.paw.models.User;
-import ar.edu.itba.paw.persistence.UserDao;
 
 @Repository
 public class UserJdbcDao implements UserDao {
 
     private final JdbcTemplate jdbcTemplate;
     private final SimpleJdbcInsert simpleJdbcInsert;
-    private final static RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) -> new User(rs.getLong("id") ,rs.getString("email"), rs.getString("password"), rs.getString("name"));
+    private final static RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) -> new User(
+        rs.getLong("id"),
+        rs.getString("email"),
+        rs.getString("password"),
+        rs.getString("name"),
+        rs.getString("phone"),
+        rs.getString("role") == null ? null : User.Role.valueOf(rs.getString("role"))
+    );
 
     @Autowired
     public UserJdbcDao(final DataSource dataSource) {
@@ -29,13 +35,15 @@ public class UserJdbcDao implements UserDao {
     }
 
     @Override
-    public User createUser(String email, String password, String name) {
+    public User createUser(String email, String password, String name, String phone, User.Role role) {
         final Map<String, Object> parameters = new HashMap<>();
         parameters.put("email", email);
         parameters.put("password", password);
         parameters.put("name", name);
+        parameters.put("phone", phone);
+        parameters.put("role", role == null ? null : role.name());
         final Number id = simpleJdbcInsert.executeAndReturnKey(parameters);
-        return new User(id.longValue(), email, password, name);
+        return new User(id.longValue(), email, password, name, phone, role);
     }
 
     @Override

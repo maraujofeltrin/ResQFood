@@ -2,8 +2,8 @@ package ar.edu.itba.paw.models;
 
 public class User {
     public enum Role {
-        CLIENTE,
-        COMERCIO
+        CLIENT,
+        COMMERCE
     }
 
     private String email;
