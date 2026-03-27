@@ -2,6 +2,7 @@ package ar.edu.itba.paw.models;
 
 public class Pack {
     private final Long id;
+    private final Long commerceId;
     private String title;
     private String description;
     private Double originalPrice;
@@ -10,8 +11,9 @@ public class Pack {
     private Boolean active;
     
 
-    public Pack(Long id, String title, String description, Double originalPrice, Double finalPrice, Integer stock, Boolean active) {
+    public Pack(Long id, Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, Boolean active) {
         this.id = id;
+        this.commerceId = commerceId;
         this.title = title;
         this.description = description;
         this.originalPrice = originalPrice;
@@ -22,6 +24,10 @@ public class Pack {
 
     public Long getId() {
         return id;
+    }
+
+    public Long getCommerceId() {
+        return commerceId;
     }
 
     public String getTitle() {
@@ -74,6 +80,6 @@ public class Pack {
 
     @Override
     public String toString() {
-        return "Mysterybox [id=" + id + ", title=" + title + ", description=" + description + ", originalPrice=" + originalPrice + ", finalPrice=" + finalPrice + ", stock=" + stock + ", active=" + active + "]";
+        return "Pack [id=" + id + ", commerceId=" + commerceId + ", title=" + title + ", description=" + description + ", originalPrice=" + originalPrice + ", finalPrice=" + finalPrice + ", stock=" + stock + ", active=" + active + "]";
     }
 }

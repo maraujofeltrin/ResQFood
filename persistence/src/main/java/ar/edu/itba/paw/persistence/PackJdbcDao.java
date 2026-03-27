@@ -20,6 +20,7 @@ public class PackJdbcDao implements PackDao {
     private final SimpleJdbcInsert simpleJdbcInsert;
     private final static RowMapper<Pack> PACK_ROW_MAPPER = (rs, rowNum) -> new Pack(
         rs.getLong("id"),
+        rs.getLong("commerce_id"),
         rs.getString("title"),
         rs.getString("description"),
         rs.getDouble("original_price"),
@@ -37,8 +38,9 @@ public class PackJdbcDao implements PackDao {
     }
 
     @Override
-    public Pack createPack(String title, String description, Double originalPrice, Double finalPrice, Integer stock) {
+    public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock) {
         final Map<String, Object> parameters = new HashMap<>();
+        parameters.put("commerce_id", commerceId);
         parameters.put("title", title);
         parameters.put("description", description);
         parameters.put("original_price", originalPrice);
@@ -46,7 +48,7 @@ public class PackJdbcDao implements PackDao {
         parameters.put("stock", stock);
         parameters.put("active", false);
         final Number id = simpleJdbcInsert.executeAndReturnKey(parameters);
-        return new Pack(id.longValue(), title, description, originalPrice, finalPrice, stock, false);
+        return new Pack(id.longValue(), commerceId, title, description, originalPrice, finalPrice, stock, false);
     }
 
     @Override

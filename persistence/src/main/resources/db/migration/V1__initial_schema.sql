@@ -31,12 +31,14 @@ CREATE TABLE commerces (
 
 CREATE TABLE packs (
     id SERIAL PRIMARY KEY,
+    commerce_id BIGINT NOT NULL,
     title VARCHAR(255),
     description TEXT,
     original_price DOUBLE PRECISION,
     final_price DOUBLE PRECISION,
     stock INTEGER,
-    active BOOLEAN
+    active BOOLEAN,
+    FOREIGN KEY (commerce_id) REFERENCES commerces(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE reservations (
