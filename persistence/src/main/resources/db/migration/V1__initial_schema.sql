@@ -48,7 +48,7 @@ CREATE TABLE reservations (
     reservation_date TIMESTAMP,
     final_price DOUBLE PRECISION,
     status VARCHAR(50),
-    pickup_code VARCHAR(255),
+    pickup_code VARCHAR(255) UNIQUE,
     pickup_confirmation_date TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES clients(user_id) ON DELETE CASCADE,
     FOREIGN KEY (pack_id) REFERENCES packs(id) ON DELETE CASCADE
