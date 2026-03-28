@@ -50,6 +50,8 @@ CREATE TABLE reservations (
     status VARCHAR(50),
     pickup_code VARCHAR(255) UNIQUE,
     pickup_confirmation_date TIMESTAMP,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    pickup_window VARCHAR(512),
     FOREIGN KEY (customer_id) REFERENCES clients(user_id) ON DELETE CASCADE,
     FOREIGN KEY (pack_id) REFERENCES packs(id) ON DELETE CASCADE
 );
