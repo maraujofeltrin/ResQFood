@@ -95,11 +95,5 @@ public class HelloWorldController {
     }
     */
 
-    @GetMapping("/commerce")
-    public ModelAndView commerceDashboard() {
-        final ModelAndView mav = new ModelAndView("commerce/dashboard");
-        mav.addObject("pageTitle", "Panel de comercio");
-        mav.addObject("viewName", "commerce-dashboard");
-        return mav;
-    }
+
 }
