@@ -1,7 +1,9 @@
 package ar.edu.itba.paw.services;
 
+import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.models.Reservation;
 import ar.edu.itba.paw.models.ReservationToken;
+import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,14 +21,17 @@ public class ReservationMailServiceImpl implements ReservationMailService {
 
     private final JavaMailSender mailSender;
     private final ReservationTokenDao reservationTokenDao;
+    private final PackDao packDao;
     private final String mailFrom;
 
     @Autowired
     public ReservationMailServiceImpl(final JavaMailSender mailSender,
             final ReservationTokenDao reservationTokenDao,
+            final PackDao packDao,
             @Value("${mail.username}") final String mailFrom) {
         this.mailSender = mailSender;
         this.reservationTokenDao = reservationTokenDao;
+        this.packDao = packDao;
         this.mailFrom = mailFrom;
     }
 
@@ -45,8 +50,11 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         final String acceptUrl = normalizedBase + "/reservations/accept?token=" + acceptToken;
         final String rejectUrl = normalizedBase + "/reservations/reject?token=" + rejectToken;
 
+        final Pack pack = packDao.findById(reservation.getPackId()).orElse(null);
+        final String packTitle = pack != null ? pack.getTitle() : "Pack #" + reservation.getPackId();
+
         final String subject = "Solicitud de reserva #" + reservation.getId();
-        final String html = buildHtml(reservation, acceptUrl, rejectUrl);
+        final String html = buildHtml(reservation, packTitle, acceptUrl, rejectUrl);
 
         try {
             final MimeMessage message = mailSender.createMimeMessage();
@@ -61,31 +69,40 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         }
     }
 
-    private static String buildHtml(final Reservation reservation, final String acceptUrl, final String rejectUrl) {
+    private static String buildHtml(final Reservation reservation, final String packTitle, final String acceptUrl, final String rejectUrl) {
         final String dateStr = reservation.getReservationDate() != null ? reservation.getReservationDate().toString()
                 : "-";
         final String priceStr = reservation.getFinalPrice() != null ? reservation.getFinalPrice().toString() : "-";
-        final String statusStr = reservation.getStatus() != null ? reservation.getStatus().name() : "-";
+        final String pickupDateStr = reservation.getPickupConfirmationDate() != null ? reservation.getPickupConfirmationDate().toString() : "-";
 
-        return "<!DOCTYPE html><html><body style=\"font-family: system-ui, sans-serif; line-height: 1.5; color: #111827;\">"
-                + "<p>Hay una nueva solicitud de reserva para el comercio.</p>"
-                + "<ul>"
-                + "<li><strong>Reserva:</strong> " + reservation.getId() + "</li>"
-                + "<li><strong>Pack:</strong> " + reservation.getPackId() + "</li>"
-                + "<li><strong>Fecha:</strong> " + escapeHtml(dateStr) + "</li>"
-                + "<li><strong>Precio final:</strong> " + escapeHtml(priceStr) + "</li>"
-                + "<li><strong>Estado:</strong> " + escapeHtml(statusStr) + "</li>"
-                + "</ul>"
-                + "<p style=\"margin-top: 1.5rem;\">Usá los botones de abajo (enlaces válidos 48 horas). "
-                + "Si tocás <strong>Rechazar</strong>, en el sitio te pediremos confirmar antes de anular la reserva.</p>"
-                + "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin-top: 1rem;\"><tr>"
-                + "<td style=\"padding: 8px 12px;\"><a href=\"" + acceptUrl + "\" "
-                + "style=\"display: inline-block; padding: 12px 24px; background: #16a34a; color: #ffffff; "
-                + "text-decoration: none; border-radius: 8px; font-weight: 600;\">Aceptar</a></td>"
-                + "<td style=\"padding: 8px 12px;\"><a href=\"" + rejectUrl + "\" "
-                + "style=\"display: inline-block; padding: 12px 24px; background: #dc2626; color: #ffffff; "
-                + "text-decoration: none; border-radius: 8px; font-weight: 600;\">Rechazar</a></td>"
-                + "</tr></table>"
+        return "<!DOCTYPE html><html><body style=\"margin:0; padding:40px; background:#f3f4ff; font-family:Arial, Helvetica, sans-serif; color:#1f2440;\">"
+            + "<div style=\"max-width:600px; margin:0 auto; background:#ffffff; border:1px solid #d7d9ea; border-radius:24px; padding:40px;\">"
+            + "<span style=\"display:inline-block; background:#dde3ff; color:#2f3f86; border-radius:999px; padding:6px 12px; "
+            + "font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:16px;\">NUEVA RESERVA</span>"
+            + "<h1 style=\"margin:0 0 16px; color:#2f3f86; font-size:34px; line-height:1.2; font-weight:800;\">Tenés una nueva reserva</h1>"
+            + "<p style=\"margin:0 0 32px; color:#5b617c; font-size:15px; line-height:1.6;\">"
+            + "Revisá los datos y decidí si aceptás o rechazás la solicitud.</p>"
+            + "<div style=\"background:#f6f7ff; border:1px solid #d7d9ea; border-radius:16px; padding:20px; margin-bottom:32px;\">"
+            + "<p style=\"margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;\"><strong style=\"color:#2f3f86;\">Pack:</strong> "
+            + escapeHtml(packTitle) + "</p>"
+            + "<p style=\"margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;\"><strong style=\"color:#2f3f86;\">Fecha de reserva:</strong> "
+            + escapeHtml(dateStr) + "</p>"
+            + "<p style=\"margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;\"><strong style=\"color:#2f3f86;\">Precio final:</strong> "
+            + escapeHtml(priceStr) + "</p>"
+            + "<p style=\"margin:0; color:#1f2440; font-size:14px; line-height:1.6;\"><strong style=\"color:#2f3f86;\">Fecha de retiro:</strong> "
+            + escapeHtml(pickupDateStr) + "</p>"
+            + "</div>"
+            + "<div>"
+            + "<a href=\"" + acceptUrl + "\" style=\"display:inline-block; text-decoration:none; margin-right:12px; "
+            + "border-radius:999px; padding:12px 24px; font-weight:700; font-size:14px; line-height:1; color:#ffffff; background:#2f3f86;\">"
+            + "Aceptar reserva</a>"
+            + "<a href=\"" + rejectUrl + "\" style=\"display:inline-block; text-decoration:none; "
+            + "border-radius:999px; padding:12px 24px; font-weight:700; font-size:14px; line-height:1; color:#ffffff; background:#9f1239;\">"
+            + "Rechazar reserva</a>"
+            + "</div>"
+            + "<p style=\"margin:32px 0 0; padding-top:24px; border-top:1px solid #d7d9ea; color:#5b617c; font-size:12px; line-height:1.6;\">"
+            + "Este mail fue enviado automáticamente. Los enlaces son de uso único y expiran en 48 horas.</p>"
+            + "</div>"
                 + "</body></html>";
     }
 
