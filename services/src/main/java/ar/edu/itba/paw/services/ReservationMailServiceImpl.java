@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 @Service
@@ -70,10 +71,10 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     }
 
     private static String buildHtml(final Reservation reservation, final String packTitle, final String acceptUrl, final String rejectUrl) {
-        final String dateStr = reservation.getReservationDate() != null ? reservation.getReservationDate().toString()
-                : "-";
+        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
+        final String dateStr = reservation.getReservationDate() != null ? reservation.getReservationDate().format(formatter) : "-";
         final String priceStr = reservation.getFinalPrice() != null ? reservation.getFinalPrice().toString() : "-";
-        final String pickupDateStr = reservation.getPickupConfirmationDate() != null ? reservation.getPickupConfirmationDate().toString() : "-";
+        final String pickupDateStr = reservation.getPickupConfirmationDate() != null ? reservation.getPickupConfirmationDate().format(formatter) : "-";
 
         return "<!DOCTYPE html><html><body style=\"margin:0; padding:40px; background:#f3f4ff; font-family:Arial, Helvetica, sans-serif; color:#1f2440;\">"
             + "<div style=\"max-width:600px; margin:0 auto; background:#ffffff; border:1px solid #d7d9ea; border-radius:24px; padding:40px;\">"

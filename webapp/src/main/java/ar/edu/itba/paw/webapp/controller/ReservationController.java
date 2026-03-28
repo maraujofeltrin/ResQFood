@@ -13,11 +13,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 @Controller
 @RequestMapping("/reservations")
 public class ReservationController {
+
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
 
     private final ReservationTokenService reservationTokenService;
     private final ReservationService reservationService;
@@ -64,8 +67,18 @@ public class ReservationController {
                 if (reservation.isEmpty()) {
                     return "reservations/token-invalid";
                 }
-                model.addAttribute("reservation", reservation.get());
+                final Reservation res = reservation.get();
+                model.addAttribute("reservation", res);
                 model.addAttribute("token", token);
+                
+                // Add formatted dates for display
+                if (res.getReservationDate() != null) {
+                    model.addAttribute("reservationDateFormatted", res.getReservationDate().format(DATE_FORMATTER));
+                }
+                if (res.getPickupConfirmationDate() != null) {
+                    model.addAttribute("pickupConfirmationDateFormatted", res.getPickupConfirmationDate().format(DATE_FORMATTER));
+                }
+                
                 if (action == ReservationToken.Action.ACCEPT) {
                     model.addAttribute("confirmEndpoint", "accept");
                 }

@@ -56,8 +56,8 @@ tagdir="/WEB-INF/tags" %>
           <p>
             <span class="font-semibold text-rose-700">Fecha de reserva:</span>
             <c:choose>
-              <c:when test="${not empty reservation.reservationDate}">
-                <c:out value="${reservation.reservationDate}" />
+              <c:when test="${not empty reservationDateFormatted}">
+                <c:out value="${reservationDateFormatted}" />
               </c:when>
               <c:otherwise>—</c:otherwise>
             </c:choose>
@@ -85,8 +85,8 @@ tagdir="/WEB-INF/tags" %>
               >Confirmación de retiro:</span
             >
             <c:choose>
-              <c:when test="${not empty reservation.pickupConfirmationDate}">
-                <c:out value="${reservation.pickupConfirmationDate}" />
+              <c:when test="${not empty pickupConfirmationDateFormatted}">
+                <c:out value="${pickupConfirmationDateFormatted}" />
               </c:when>
               <c:otherwise>—</c:otherwise>
             </c:choose>

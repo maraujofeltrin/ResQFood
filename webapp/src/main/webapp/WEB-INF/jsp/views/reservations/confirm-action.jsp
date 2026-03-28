@@ -45,8 +45,8 @@ tagdir="/WEB-INF/tags" %>
         <p>
           <span class="font-semibold text-appPrimary">Fecha:</span>
           <c:choose>
-            <c:when test="${not empty reservation.reservationDate}">
-              <c:out value="${reservation.reservationDate}" />
+            <c:when test="${not empty reservationDateFormatted}">
+              <c:out value="${reservationDateFormatted}" />
             </c:when>
             <c:otherwise>—</c:otherwise>
           </c:choose>
