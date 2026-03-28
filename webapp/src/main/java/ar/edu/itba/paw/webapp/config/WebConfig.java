@@ -1,23 +1,33 @@
 package ar.edu.itba.paw.webapp.config;
 
+import org.flywaydb.core.Flyway;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jdbc.datasource.SimpleDriverDataSource;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.web.servlet.view.JstlView;
-import javax.sql.DataSource;
-import org.flywaydb.core.Flyway;
-import org.springframework.jdbc.datasource.SimpleDriverDataSource;
 
+import javax.sql.DataSource;
+import java.util.Properties;
 import java.util.TimeZone;
 
 @EnableWebMvc
+@EnableTransactionManagement
 @ComponentScan({ "ar.edu.itba.paw.webapp.controller", "ar.edu.itba.paw.services", "ar.edu.itba.paw.persistence" })
 @Configuration
+@PropertySource("classpath:mail.properties")
 public class WebConfig implements WebMvcConfigurer {
 
     static {
@@ -39,6 +49,27 @@ public class WebConfig implements WebMvcConfigurer {
         dataSource.setUsername("pawdbuser");
         dataSource.setPassword("pawsecret");
         return dataSource;
+    }
+
+    @Bean
+    public PlatformTransactionManager transactionManager(final DataSource dataSource) {
+        return new DataSourceTransactionManager(dataSource);
+    }
+
+    @Bean
+    public JavaMailSender javaMailSender(@Value("${mail.username}") final String username,
+            @Value("${mail.password}") final String password) {
+        final JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        mailSender.setHost("smtp.gmail.com");
+        mailSender.setPort(587);
+        mailSender.setUsername(username);
+        mailSender.setPassword(password);
+        final Properties props = mailSender.getJavaMailProperties();
+        props.put("mail.transport.protocol", "smtp");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.debug", "false");
+        return mailSender;
     }
 
     @Bean(initMethod = "migrate")
