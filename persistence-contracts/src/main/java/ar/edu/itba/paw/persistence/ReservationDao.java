@@ -8,7 +8,7 @@ import java.util.Optional;
 public interface ReservationDao {
     Reservation createReservation(final Long customerId, final Long packId, final LocalDateTime reservationDate,
             final Double finalPrice, final Reservation.Status status, final String pickupCode,
-            final LocalDateTime pickupConfirmationDate);
+            final LocalDateTime pickupConfirmationDate, final Integer quantity, final String pickupWindow);
 
     Optional<Reservation> findById(final Long id);
 
@@ -20,4 +20,3 @@ public interface ReservationDao {
 
     Optional<Reservation> findByPickupCode(final String pickupCode);
 }
-

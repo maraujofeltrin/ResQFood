@@ -8,6 +8,8 @@ import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -21,17 +23,42 @@ public class ReservationJdbcDao implements ReservationDao {
     private final JdbcTemplate jdbcTemplate;
     private final SimpleJdbcInsert simpleJdbcInsert;
 
+    private static Integer readQuantity(final ResultSet rs) throws SQLException {
+        final int v = rs.getInt("quantity");
+        return rs.wasNull() ? 1 : v;
+    }
+
+    private static String readString(final ResultSet rs, final String col) throws SQLException {
+        final String v = rs.getString(col);
+        return rs.wasNull() ? null : v;
+    }
+
+    private static Long readNullableLong(final ResultSet rs, final String col) throws SQLException {
+        final long v = rs.getLong(col);
+        return rs.wasNull() ? null : v;
+    }
+
+    private static LocalDateTime readNullableDateTime(final ResultSet rs, final String col) throws SQLException {
+        final Timestamp t = rs.getTimestamp(col);
+        return t == null ? null : t.toLocalDateTime();
+    }
+
+    private static Double readNullableDouble(final ResultSet rs, final String col) throws SQLException {
+        final double v = rs.getDouble(col);
+        return rs.wasNull() ? null : v;
+    }
+
     private static final RowMapper<Reservation> RESERVATION_ROW_MAPPER = (rs, rowNum) -> new Reservation(
             rs.getLong("id"),
-            rs.getLong("customer_id"),
-            rs.getLong("pack_id"),
-            rs.getTimestamp("reservation_date").toLocalDateTime(),
-            rs.getDouble("final_price"),
+            readNullableLong(rs, "customer_id"),
+            readNullableLong(rs, "pack_id"),
+            readNullableDateTime(rs, "reservation_date"),
+            readNullableDouble(rs, "final_price"),
             rs.getString("status") == null ? null : Reservation.Status.valueOf(rs.getString("status")),
-            rs.getString("pickup_code"),
-            rs.getTimestamp("pickup_confirmation_date") == null ? null
-                    : rs.getTimestamp("pickup_confirmation_date").toLocalDateTime()
-    );
+            readString(rs, "pickup_code"),
+            readNullableDateTime(rs, "pickup_confirmation_date"),
+            readQuantity(rs),
+            readString(rs, "pickup_window"));
 
     @Autowired
     public ReservationJdbcDao(final DataSource dataSource) {
@@ -44,7 +71,7 @@ public class ReservationJdbcDao implements ReservationDao {
     @Override
     public Reservation createReservation(final Long customerId, final Long packId, final LocalDateTime reservationDate,
             final Double finalPrice, final Reservation.Status status, final String pickupCode,
-            final LocalDateTime pickupConfirmationDate) {
+            final LocalDateTime pickupConfirmationDate, final Integer quantity, final String pickupWindow) {
         final Map<String, Object> parameters = new HashMap<>();
         parameters.put("customer_id", customerId);
         parameters.put("pack_id", packId);
@@ -54,16 +81,17 @@ public class ReservationJdbcDao implements ReservationDao {
         parameters.put("pickup_code", pickupCode);
         parameters.put("pickup_confirmation_date",
                 pickupConfirmationDate == null ? null : Timestamp.valueOf(pickupConfirmationDate));
+        parameters.put("quantity", quantity == null ? 1 : quantity);
+        parameters.put("pickup_window", pickupWindow);
 
         final Number id = simpleJdbcInsert.executeAndReturnKey(parameters);
         return new Reservation(id.longValue(), customerId, packId, reservationDate, finalPrice, status, pickupCode,
-                pickupConfirmationDate);
+                pickupConfirmationDate, quantity == null ? 1 : quantity, pickupWindow);
     }
 
     @Override
     public Optional<Reservation> findById(final Long id) {
-        return jdbcTemplate.query("SELECT * FROM reservations WHERE id = ?", RESERVATION_ROW_MAPPER, id)
-                .stream()
+        return jdbcTemplate.query("SELECT * FROM reservations WHERE id = ?", RESERVATION_ROW_MAPPER, id).stream()
                 .findAny();
     }
 
@@ -87,11 +115,7 @@ public class ReservationJdbcDao implements ReservationDao {
 
     @Override
     public Optional<Reservation> findByPickupCode(final String pickupCode) {
-        return jdbcTemplate.query(
-                "SELECT * FROM reservations WHERE pickup_code = ?",
-                RESERVATION_ROW_MAPPER, pickupCode
-                ).stream().findAny();
+        return jdbcTemplate.query("SELECT * FROM reservations WHERE pickup_code = ?", RESERVATION_ROW_MAPPER,
+                pickupCode).stream().findAny();
     }
-
 }
-

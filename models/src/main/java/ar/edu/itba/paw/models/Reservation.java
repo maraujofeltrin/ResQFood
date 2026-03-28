@@ -15,12 +15,15 @@ public class Reservation {
     private final Long packId;
     private final LocalDateTime reservationDate;
     private final Double finalPrice;
-    private Status status;
+    private final Status status;
     private final String pickupCode;
     private final LocalDateTime pickupConfirmationDate;
+    private final Integer quantity;
+    private final String pickupWindow;
 
     public Reservation(Long id, Long customerId, Long packId, LocalDateTime reservationDate, Double finalPrice,
-            Status status, String pickupCode, LocalDateTime pickupConfirmationDate) {
+            Status status, String pickupCode, LocalDateTime pickupConfirmationDate, Integer quantity,
+            String pickupWindow) {
         this.id = id;
         this.customerId = customerId;
         this.packId = packId;
@@ -29,6 +32,8 @@ public class Reservation {
         this.status = status;
         this.pickupCode = pickupCode;
         this.pickupConfirmationDate = pickupConfirmationDate;
+        this.quantity = quantity;
+        this.pickupWindow = pickupWindow;
     }
 
     public Long getId() {
@@ -63,10 +68,19 @@ public class Reservation {
         return pickupConfirmationDate;
     }
 
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public String getPickupWindow() {
+        return pickupWindow;
+    }
+
     @Override
     public String toString() {
-        return "Reservation [id=" + id + ", customerId=" + customerId + ", packId=" + packId
-                + ", reservationDate=" + reservationDate + ", finalPrice=" + finalPrice + ", status=" + status
-                + ", pickupCode=" + pickupCode + ", pickupConfirmationDate=" + pickupConfirmationDate + "]";
+        return "Reservation [id=" + id + ", customerId=" + customerId + ", packId=" + packId + ", reservationDate="
+                + reservationDate + ", finalPrice=" + finalPrice + ", status=" + status + ", pickupCode=" + pickupCode
+                + ", pickupConfirmationDate=" + pickupConfirmationDate + ", quantity=" + quantity + ", pickupWindow="
+                + pickupWindow + "]";
     }
 }
