@@ -746,6 +746,7 @@
   width: 100%;
   box-sizing: border-box;
   appearance: none;
+  background-image: none;
   background-color: #ffffff;
   border: 1px solid #c5c5d1;
   border-radius: 0.75rem;

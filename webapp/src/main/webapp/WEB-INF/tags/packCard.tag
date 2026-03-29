@@ -1,4 +1,5 @@
 <%@ tag language="java" pageEncoding="UTF-8" %>
+<%@ attribute name="packId" required="true" %>
 <%@ attribute name="title" required="true" %>
 <%@ attribute name="subtitle" required="true" %>
 <%@ attribute name="imageUrl" required="true" %>
@@ -13,7 +14,7 @@
 <c:set var="resolvedAlt" value="${not empty imageAlt ? imageAlt : title}"/>
 <c:set var="resolvedRescueLabel" value="${not empty rescueLabel ? rescueLabel : 'Rescue For'}"/>
 
-<div class="bg-surface-container-lowest rounded-xl overflow-hidden group shadow-sm hover:shadow-md transition-shadow flex flex-col h-full min-w-[280px]">
+<a href="${pageContext.request.contextPath}/packs/${packId}" class="bg-surface-container-lowest rounded-xl overflow-hidden group shadow-sm hover:shadow-md transition-shadow flex flex-col h-full min-w-[280px] cursor-pointer hover:bg-surface-container-low transition-colors block text-inherit no-underline">
   <div class="relative h-48 sm:h-56 flex-shrink-0 overflow-hidden">
     <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="<c:out value="${resolvedAlt}"/>" src="<c:out value="${imageUrl}"/>" alt="<c:out value="${resolvedAlt}"/>"/>
     <c:if test="${not empty badgeText}">
@@ -37,7 +38,7 @@
           </c:if>
         </div>
       </div>
-      <button class="bg-primary text-on-primary px-4 py-2 rounded-full text-sm font-bold hover:scale-105 transition-transform">Rescue Now</button>
+      <span class="bg-primary text-on-primary px-4 py-2 rounded-full text-sm font-bold group-hover:scale-105 transition-transform">Rescue Now</span>
     </div>
   </div>
-</div>
+</a>

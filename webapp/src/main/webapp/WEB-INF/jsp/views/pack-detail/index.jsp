@@ -164,7 +164,7 @@
                         <div class="pack-form-field">
                             <label class="pack-form-label" for="pickupWindow"><c:out value="${pickupWindowLabel}"/></label>
                             <div class="pack-select-wrap">
-                                <select id="pickupWindow" name="pickupWindow" required class="pack-form-select"
+                                <select id="pickupWindow" name="pickupWindow" required class="pack-form-select bg-none"
                                         aria-describedby="pickupWindowHint">
                                     <c:forEach var="window" items="${pickupWindows}">
                                         <option value="<c:out value="${window}"/>"><c:out value="${window}"/></option>

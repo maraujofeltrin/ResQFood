@@ -94,7 +94,7 @@
             </div>
             <div class="flex items-center gap-4">
                 <div class="relative w-full md:w-64">
-                    <select class="w-full appearance-none bg-surface-container-low px-4 py-3 rounded-xl border-none text-sm font-medium focus:ring-2 focus:ring-primary/20 cursor-pointer">
+                    <select class="w-full appearance-none bg-none bg-surface-container-low px-4 py-3 rounded-xl border-none text-sm font-medium focus:ring-2 focus:ring-primary/20 cursor-pointer">
                         <option>Sort by: Nearest</option>
                         <option>Lowest Price</option>
                     </select>
@@ -114,36 +114,15 @@
                 <button class="text-primary font-bold text-sm hover:underline">View All</button>
             </div>
             <div class="flex gap-6 overflow-x-auto hide-scrollbar pb-4 -mx-2 px-2">
-                <c:forEach var="i" begin="1" end="3">
-                    <c:choose>
-                        <c:when test="${i == 1}">
-                            <paw:card
-                                title="Golden Crust Bakery"
-                                subtitle="Artisan Bread Pack"
-                                imageUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuArnLe6Rzm5wR1Gn1ndEBQkFtdvsycGk6yXpcIerUIaznflMIXuYgcDvinIwcVOlxh20R-9wdIjwM2Tep3kv-CAABzrA7KOVDVB3WO-Z-0UvCQMv7h7dYaWglZz0nePL9rNoZeY1GYGJAg_SmRLvjKPPyeZgQwzpzMX6rLPlanyDrhifniERD5W2pgvDDSDZWxSA__nLF3MQjVnRVqQqjqSD973WhKf7GmF0_YWEbJ2Hh9-T5zpdCNa1_519qydhlgCRSE-s0dbVVgs"
-                                price="$4.50"
-                                oldPrice="$14.00"
-                            />
-                        </c:when>
-                        <c:when test="${i == 2}">
-                            <paw:card
-                                title="Verde Greens"
-                                subtitle="Fresh Salad Surprise"
-                                imageUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuBT6KXuLhq_4OBUo0_8SN3m0nhlCv6lFP0L-IVcZ1Itgm42Tw_fuN8IMj5Mkpd_ADB6Zt0qgdWmQ8iHzqVvuF6E-Gj30LeP15aJU1UcDsqSkzSEnlueSn1QBM6T-xgBfcBBmOYL24nGUTJOU7BNNkmdyEnDQI5ddcupqYrhgsLwtkoLysdlmIUmjlIvn34cUGIfWlL-WNMxqbHBRt506W3mdPQzhx_-MAsjCBCk4TEW8q9ncJW5qZSQmlrjZbsDqAnKDfMm6qpoGH0H"
-                                price="$6.20"
-                                oldPrice="$18.50"
-                            />
-                        </c:when>
-                        <c:otherwise>
-                            <paw:card
-                                title="Sakura Sushi"
-                                subtitle="Daily Roll Selection"
-                                imageUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuBG77YsSeKZai98yDd3yv7Ao7xszQicTSoKyX9GrCPKndny5f93oQkBSyWNm5roKqNCw2c4dgLdU94-xOHg9kzlgGoiuogOJUIHXtB9RIzlNni0iKMQhWt6nYmpG4PvkHsdDHLgmyolSetcx95y7MUaLaaCF0F0OZRV_vbRbntZNQsy_SuT9tG0zPkK02AHqWCc2NuSxc10M-KneBw_kKix4kGgz-lq3qqajby2hsE-k8S-FgZiQlcWfKaXkevLyPvPNbOnjvYjkFjs"
-                                price="$9.99"
-                                oldPrice="$32.00"
-                            />
-                        </c:otherwise>
-                    </c:choose>
+                <c:forEach var="pack" items="${packs}">
+                    <paw:packCard
+                        packId="${pack.id}"
+                        title="${pack.title}"
+                        subtitle="${pack.description}"
+                        imageUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuArnLe6Rzm5wR1Gn1ndEBQkFtdvsycGk6yXpcIerUIaznflMIXuYgcDvinIwcVOlxh20R-9wdIjwM2Tep3kv-CAABzrA7KOVDVB3WO-Z-0UvCQMv7h7dYaWglZz0nePL9rNoZeY1GYGJAg_SmRLvjKPPyeZgQwzpzMX6rLPlanyDrhifniERD5W2pgvDDSDZWxSA__nLF3MQjVnRVqQqjqSD973WhKf7GmF0_YWEbJ2Hh9-T5zpdCNa1_519qydhlgCRSE-s0dbVVgs"
+                        price="$${pack.finalPrice}"
+                        oldPrice="$${pack.originalPrice}"
+                    />
                 </c:forEach>
             </div>
         </section>
@@ -156,37 +135,15 @@
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                <c:forEach var="i" begin="1" end="3">
-                    <c:choose>
-                        <c:when test="${i == 1}">
-                            <paw:card
-                                title="The Hearth Bistro"
-                                subtitle="Gourmet Dinner Selection (2-3 Meals)"
-                                imageUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuDb9hqJJAJNKmO3vDzg7EtSwBaD2qDwByCk6_I-bar41vMvOr6ClV2eSjSKxqDojQWHI3eO8zB1BKkl1ntlGvi8EPZkbXBgzSMu9RiO7poHlFUWWEtzs2P9dfXj4foOTOoEKcnfHrLmCVCpUzdxvrhdZY2EOe0lyz4EURrPh7ee3TGa91znbF11iBDn0K7YO13wkdfJVec0vZk1h0jWNtouqj8Agx98aCT_Kuja_RcUDd3H-EaFaamyPYAagjr_yRloaXoZRO7aLVtd"
-                                badgeText="Vegetarian Option"
-                                price="$12.50"
-                                oldPrice="$45.00"
-                            />
-                        </c:when>
-                        <c:when test="${i == 2}">
-                            <paw:card
-                                title="Roots & Shoots"
-                                subtitle="Organic Deli & Salad Box"
-                                imageUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuDUeyAIX30cze9DhNPk7Bw1PU1uUphb6kSyaH9kYXkEMkfHDxLDg1zpN9hqUs7hXrq3Up32VIsx8cEcQ7nYXi5YzJGCRZwavdvTTJAJT-6my76vvJ6ckCbG3yYqUMaPd1Y9NC8rX8lRnM82BG_GXW6UQXqMkfmKkQ_1wy3LCseIPXFh1G2LD4TEGzlAO9HHN0vMR_0iKZ-YD0-R2jyZSSy0yixYlXYP9rSyzAbDFWnOYAAHuOBfwDE8rRNHFeAATEZgUCV979k0Whxw"
-                                price="$8.00"
-                                oldPrice="$22.00"
-                            />
-                        </c:when>
-                        <c:otherwise>
-                            <paw:card
-                                title="Pastry Palace"
-                                subtitle="Sweet Treat Mixed Bag"
-                                imageUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuBjy7AtkOqj9QRccRuixNri1-NBZP8rNW4jWCiNSRq_dkgTO2bh9f_mu9QtFB_IOhJ-wDUemdd93aK7KYtkMnO1YY-cozaxhvcNFJJAhD5-TXHk2QQKpCW6pk2XM62v2_BL4jw-EUnX5nW46SQwL7vtOeT8X7KBWKfXGcYUU0QCRGW3nHqkycQz1Ulm8SY8m7tlKgTcdT30TdNk7RupPjfU-p07J0lnIWtBpwnbG2VlUb0nsAFICTX4qhEba8tra-MsKjMi-3Ukt0jc"
-                                price="$5.50"
-                                oldPrice="$18.00"
-                            />
-                        </c:otherwise>
-                    </c:choose>
+                <c:forEach var="pack" items="${packs}">
+                    <paw:packCard
+                        packId="${pack.id}"
+                        title="${pack.title}"
+                        subtitle="${pack.description}"
+                        imageUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuDb9hqJJAJNKmO3vDzg7EtSwBaD2qDwByCk6_I-bar41vMvOr6ClV2eSjSKxqDojQWHI3eO8zB1BKkl1ntlGvi8EPZkbXBgzSMu9RiO7poHlFUWWEtzs2P9dfXj4foOTOoEKcnfHrLmCVCpUzdxvrhdZY2EOe0lyz4EURrPh7ee3TGa91znbF11iBDn0K7YO13wkdfJVec0vZk1h0jWNtouqj8Agx98aCT_Kuja_RcUDd3H-EaFaamyPYAagjr_yRloaXoZRO7aLVtd"
+                        price="$${pack.finalPrice}"
+                        oldPrice="$${pack.originalPrice}"
+                    />
                 </c:forEach>
             </div>
 
