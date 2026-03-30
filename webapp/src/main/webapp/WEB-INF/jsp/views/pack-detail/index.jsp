@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="paw" tagdir="/WEB-INF/tags" %>
 <!DOCTYPE html>
-<html class="light" lang="en">
+<html class="light" lang="es">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -11,7 +11,7 @@
             <title><c:out value="${pageTitle}"/></title>
         </c:when>
         <c:otherwise>
-            <title>The Living Pantry</title>
+            <title>La Despensa Viva</title>
         </c:otherwise>
     </c:choose>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css">
@@ -91,23 +91,65 @@
             <div class="pack-detail-media-col">
                 <div class="pack-detail-hero">
                     <img class="pack-detail-hero-img"
-                         data-alt="<c:out value="${heroImageAlt}"/>"
                          src="<c:out value="${heroImageUrl}"/>"
-                         alt="<c:out value="${heroImageAlt}"/>"/>
+                         alt="Imagen del pack"/>
                 </div>
 
                 <div class="pack-detail-intro">
                     <div class="pack-detail-meta">
                         <span class="pack-detail-badge"><c:out value="${badgeLabel}"/></span>
-                        <span class="pack-detail-rating">
-                            <span class="material-symbols-outlined pack-detail-rating-star material-symbols-filled">star</span>
-                            <c:out value="${reviewSummary}"/>
-                        </span>
-                        <span class="pack-detail-meta-sep">•</span>
-                        <span class="pack-detail-merchant"><c:out value="${merchantName}"/></span>
+                        <span class="pack-detail-merchant"><c:out value="${commerceCommercialName}"/></span>
                     </div>
                     <h1 class="pack-detail-title font-headline"><c:out value="${packTitle}"/></h1>
                     <p class="pack-detail-description"><c:out value="${packDescription}"/></p>
+                    <section class="pack-detail-commerce" aria-label="Informacion del comercio">
+                        <div class="commerce-info-card">
+                            <div class="commerce-info-card__header">
+                                <span class="material-symbols-outlined commerce-info-card__icon commerce-info-card__icon--hero" aria-hidden="true">storefront</span>
+                                <h2 class="commerce-info-card__title font-headline">Informacion del comercio</h2>
+                            </div>
+                            <div class="commerce-info-card__grid">
+                                <div class="commerce-info-card__column">
+                                    <h3 class="commerce-info-card__section-title font-headline">
+                                        <span class="material-symbols-outlined commerce-info-card__icon" aria-hidden="true">location_on</span>
+                                        Ubicacion
+                                    </h3>
+                                    <div class="commerce-info-card__address">
+                                        <p class="commerce-info-card__store-name"><c:out value="${commerceCommercialName}"/></p>
+                                        <p><c:out value="${commerceStreetLine}"/></p>
+                                        <p><c:out value="${commerceLocationLine}"/></p>
+                                    </div>
+                                </div>
+                                <div class="commerce-info-card__column">
+                                    <h3 class="commerce-info-card__section-title font-headline">
+                                        <span class="material-symbols-outlined commerce-info-card__icon" aria-hidden="true">schedule</span>
+                                        Horarios de atencion
+                                    </h3>
+                                    <div class="commerce-info-card__hours">
+                                        <div class="commerce-info-card__hours-row">
+                                            <span class="commerce-info-card__hours-label">Horario de apertura:</span>
+                                            <span class="commerce-info-card__hours-value"><c:out value="${commerceOpeningTime}"/></span>
+                                        </div>
+                                        <div class="commerce-info-card__hours-row">
+                                            <span class="commerce-info-card__hours-label">Horario de cierre:</span>
+                                            <span class="commerce-info-card__hours-value"><c:out value="${commerceClosingTime}"/></span>
+                                        </div>
+                                        <c:if test="${commerceOpenNow}">
+                                            <div class="commerce-info-card__status">
+                                                <span class="commerce-info-card__status-badge">ABIERTO AHORA</span>
+                                            </div>
+                                        </c:if>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="commerce-info-card__note">
+                                <span class="material-symbols-outlined commerce-info-card__icon" aria-hidden="true">info</span>
+                                <p class="commerce-info-card__note-text">
+                                    Por favor, llega durante la franja horaria de retiro seleccionada. Ten listo en tu telefono el codigo de reserva para un retiro rapido.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </div>
 
@@ -124,7 +166,6 @@
 
                     <c:url var="reservationAction" value="/packs/${packId}/reserve"/>
                     <form class="pack-reservation-form" method="post" action="${reservationAction}">
-                        <input type="hidden" name="unitPrice" value="<c:out value="${unitPriceAmount}"/>"/>
 
                         <div class="pack-price-block">
                             <p class="pack-price-block-label"><c:out value="${unitPriceLabel}"/></p>
@@ -164,15 +205,13 @@
                         <div class="pack-form-field">
                             <label class="pack-form-label" for="pickupWindow"><c:out value="${pickupWindowLabel}"/></label>
                             <div class="pack-select-wrap">
-                                <select id="pickupWindow" name="pickupWindow" required class="pack-form-select bg-none"
-                                        aria-describedby="pickupWindowHint">
+                                <select id="pickupWindow" name="pickupWindow" required class="pack-form-select bg-none">
                                     <c:forEach var="window" items="${pickupWindows}">
                                         <option value="<c:out value="${window}"/>"><c:out value="${window}"/></option>
                                     </c:forEach>
                                 </select>
                                 <span class="material-symbols-outlined pack-select-chevron">expand_more</span>
                             </div>
-                            <p id="pickupWindowHint" class="pack-form-total-hint"><c:out value="${pickupWindowHint}"/></p>
                         </div>
 
                         <button type="submit" class="pack-submit-btn font-headline">
@@ -180,13 +219,6 @@
                             <span class="material-symbols-outlined">arrow_forward</span>
                         </button>
                     </form>
-
-                    <div class="pack-impact">
-                        <div class="pack-impact-row">
-                            <span class="pack-impact-label"><c:out value="${impactMealsLabel}"/></span>
-                            <span class="pack-impact-value"><c:out value="${mealsRescued}"/></span>
-                        </div>
-                    </div>
                 </div>
             </aside>
         </div>

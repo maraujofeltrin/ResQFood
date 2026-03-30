@@ -567,20 +567,6 @@
   letter-spacing: -0.025em;
 }
 
-.pack-detail-rating {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #575d78;
-}
-
-.pack-detail-rating-star {
-  font-size: 0.875rem;
-  color: #575d78;
-}
-
 .pack-detail-meta-sep {
   color: #c5c5d1;
 }
@@ -606,6 +592,170 @@
   line-height: 1.625;
   color: #575d78;
   max-width: 42rem;
+}
+
+/* Store / commerce info card (pack detail) — tokens aligned with tailwind theme in JSP */
+.pack-detail-commerce {
+  margin-top: 0.5rem;
+  max-width: 42rem;
+}
+
+.commerce-info-card {
+  background-color: #f5f3f9;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.commerce-info-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.commerce-info-card__icon {
+  font-family: 'Material Symbols Outlined';
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  line-height: 1;
+}
+
+.commerce-info-card__icon--hero {
+  font-size: 1.875rem;
+  color: #152965;
+}
+
+.commerce-info-card__title {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #1b1b20;
+  letter-spacing: -0.025em;
+}
+
+.commerce-info-card__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .commerce-info-card__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.commerce-info-card__column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.commerce-info-card__section-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #152965;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.commerce-info-card__section-title .commerce-info-card__icon {
+  font-size: 1rem;
+  color: #152965;
+}
+
+.commerce-info-card__address {
+  font-size: 0.9375rem;
+  line-height: 1.625;
+  color: #454650;
+}
+
+.commerce-info-card__address p {
+  margin: 0;
+}
+
+.commerce-info-card__address p + p {
+  margin-top: 0.25rem;
+}
+
+.commerce-info-card__store-name {
+  font-weight: 700;
+  color: #1b1b20;
+}
+
+.commerce-info-card__hours {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.commerce-info-card__hours-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #454650;
+}
+
+.commerce-info-card__hours-label {
+  font-weight: 500;
+}
+
+.commerce-info-card__hours-value {
+  font-weight: 700;
+  color: #1b1b20;
+  text-align: right;
+}
+
+.commerce-info-card__status {
+  padding-top: 0.5rem;
+}
+
+.commerce-info-card__status-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background-color: #dce1ff;
+  color: #314380;
+}
+
+.commerce-info-card__note {
+  margin: 0;
+  padding: 1rem;
+  background-color: #ffffff;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(197, 197, 209, 0.3);
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.commerce-info-card__note .commerce-info-card__icon {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+  font-size: 1.25rem;
+  color: #152965;
+}
+
+.commerce-info-card__note-text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.625;
+  color: #454650;
 }
 
 .pack-detail-aside {
