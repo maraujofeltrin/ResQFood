@@ -151,7 +151,7 @@
 
                         <div class="pack-form-field">
                             <label class="pack-form-label" for="quantity"><c:out value="${quantityLabel}"/></label>
-                            <input id="quantity" name="quantity" type="number" required min="1" max="999" step="1"
+                            <input id="quantity" name="quantity" type="number" required min="1" max="<c:out value="${quantityMax}"/>" step="1"
                                    value="<c:out value="${defaultQuantity}"/>"
                                    class="pack-form-control pack-form-control--tabular"/>
                         </div>
