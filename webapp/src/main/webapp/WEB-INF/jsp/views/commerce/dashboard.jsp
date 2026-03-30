@@ -112,7 +112,8 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                         <c:forEach var="pack" items="${packs}">
-                            <paw:card
+                            <paw:packCard
+                                packId="${pack.id}"
                                 title="${pack.title}"
                                 subtitle="${pack.description}"
                                 imageUrl="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop"
