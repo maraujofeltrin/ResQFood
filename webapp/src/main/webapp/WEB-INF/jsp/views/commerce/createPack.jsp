@@ -1,0 +1,246 @@
+<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="paw" tagdir="/WEB-INF/tags" %>
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Crear Pack Sorpresa | The Living Pantry</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <!-- Material Symbols -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "surface-container-lowest": "#ffffff",
+                "primary-fixed": "#dce1ff",
+                "surface-variant": "#e3e1e7",
+                "on-tertiary-container": "#e3a464",
+                "secondary-fixed": "#dce1ff",
+                "on-secondary-fixed": "#141a31",
+                "surface-bright": "#fbf8fe",
+                "outline-variant": "#c5c5d1",
+                "surface-dim": "#dbd9df",
+                "on-tertiary-fixed": "#2c1600",
+                "on-primary": "#ffffff",
+                "background": "#fbf8fe",
+                "primary-container": "#2e407d",
+                "tertiary": "#462600",
+                "error-container": "#ffdad6",
+                "surface-container-low": "#f5f3f9",
+                "inverse-on-surface": "#f2f0f6",
+                "primary": "#152965",
+                "primary-fixed-dim": "#b6c4ff",
+                "surface-tint": "#4a5b9a",
+                "tertiary-fixed": "#ffdcbe",
+                "surface-container-high": "#e9e7ed",
+                "on-tertiary-fixed-variant": "#693c02",
+                "tertiary-fixed-dim": "#fcb977",
+                "on-primary-fixed": "#001550",
+                "secondary": "#575d78",
+                "on-primary-fixed-variant": "#314380",
+                "surface-container-highest": "#e3e1e7",
+                "on-background": "#1b1b20",
+                "on-primary-container": "#9daef3",
+                "on-tertiary": "#ffffff",
+                "on-error-container": "#93000a",
+                "secondary-fixed-dim": "#bfc5e4",
+                "on-secondary-container": "#5b617c",
+                "on-secondary": "#ffffff",
+                "surface-container": "#efedf3",
+                "outline": "#757681",
+                "secondary-container": "#d9defe",
+                "on-error": "#ffffff",
+                "inverse-surface": "#303035",
+                "inverse-primary": "#b6c4ff",
+                "on-surface-variant": "#454650",
+                "error": "#ba1a1a",
+                "on-secondary-fixed-variant": "#40465f",
+                "tertiary-container": "#653900",
+                "surface": "#fbf8fe",
+                "on-surface": "#1b1b20"
+              },
+              fontFamily: {
+                "headline": ["Plus Jakarta Sans"],
+                "body": ["Be Vietnam Pro"],
+                "label": ["Plus Jakarta Sans"]
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased flex flex-col min-h-screen">
+    
+    <!-- Navbar removed temporarily -->
+
+    <main class="pack-detail-main">
+        <div class="flex items-center gap-2 mb-8 text-secondary">
+            <a href="${pageContext.request.contextPath}/commerce" class="hover:underline flex items-center font-bold">
+                <span class="material-symbols-outlined text-xl mr-1">arrow_back</span>
+                Volver al Dashboard
+            </a>
+        </div>
+        
+        <header class="mb-10 text-center md:text-left">
+            <h1 class="pack-detail-title mb-3">Crear Paquete Sorpresa</h1>
+            <p class="text-secondary text-lg">Publica tu excedente para que sea rescatado.</p>
+        </header>
+
+        <c:if test="${not empty errorMessage}">
+            <div class="pack-feedback pack-feedback--error mb-8 flex items-center gap-2">
+                <span class="material-symbols-outlined">error</span>
+                <c:out value="${errorMessage}" />
+            </div>
+        </c:if>
+
+        <form action="${pageContext.request.contextPath}/commerce/create-pack" method="post" class="pack-detail-grid">
+            
+            <!-- Left Column: Form Sections -->
+            <div class="grid col-span-1 md:col-span-8 gap-8">
+                
+                <!-- Identidad del Usuario -->
+                <section class="pack-aside-card">
+                    <h2 class="pack-aside-heading flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">person</span>
+                        Identidad del Usuario
+                    </h2>
+                    <p class="text-sm text-secondary">Si ya estás registrado, reusaremos tu local automáticamente.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-2">
+                        <div class="pack-form-field">
+                            <label class="pack-form-label">Email de Acceso</label>
+                            <input type="email" name="email" class="pack-form-control" placeholder="tu@email.com" required />
+                        </div>
+                        <div class="pack-form-field">
+                            <label class="pack-form-label">Contraseña</label>
+                            <input type="password" name="password" class="pack-form-control" placeholder="••••••••" required />
+                        </div>
+                        <div class="pack-form-field md:col-span-2">
+                            <label class="pack-form-label">Nombre del Titular</label>
+                            <input type="text" name="name" class="pack-form-control" placeholder="Armando C." required />
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Datos del Local -->
+                <section class="pack-aside-card">
+                    <h2 class="pack-aside-heading flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">store</span>
+                        Datos del Local (Solo nuevos usuarios)
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-2">
+                        <div class="pack-form-field md:col-span-2">
+                            <label class="pack-form-label">Nombre Comercial</label>
+                            <input type="text" name="commercialName" class="pack-form-control" placeholder="Ej: La Gran Panadería" />
+                        </div>
+                        <div class="pack-form-field md:col-span-2">
+                            <label class="pack-form-label">Categoría</label>
+                            <div class="pack-select-wrap">
+                                <select name="category" class="pack-form-select">
+                                    <option value="PANADERIA">Panadería</option>
+                                    <option value="RESTAURANTE">Restaurante</option>
+                                    <option value="ETC">Otros</option>
+                                </select>
+                                <span class="material-symbols-outlined pack-select-chevron">expand_more</span>
+                            </div>
+                        </div>
+                        <div class="pack-form-field md:col-span-2">
+                            <label class="pack-form-label">Calle</label>
+                            <input type="text" name="street" class="pack-form-control" placeholder="Av. Siempre Viva" />
+                        </div>
+                        <div class="pack-form-field">
+                            <label class="pack-form-label">Número</label>
+                            <input type="number" name="streetNumber" class="pack-form-control" placeholder="123" />
+                        </div>
+                        <div class="pack-form-field">
+                            <label class="pack-form-label">Código Postal</label>
+                            <input type="text" name="postalCode" class="pack-form-control" placeholder="C1425" />
+                        </div>
+                        <div class="pack-form-field">
+                            <label class="pack-form-label">Ciudad</label>
+                            <input type="text" name="city" class="pack-form-control" placeholder="Buenos Aires" />
+                        </div>
+                        <div class="pack-form-field">
+                            <label class="pack-form-label">Provincia</label>
+                            <input type="text" name="province" class="pack-form-control" placeholder="CABA" />
+                        </div>
+                        <div class="pack-form-field">
+                            <label class="pack-form-label">Horario Apertura</label>
+                            <input type="time" name="openingTime" class="pack-form-control pack-form-control--tabular" />
+                        </div>
+                        <div class="pack-form-field">
+                            <label class="pack-form-label">Horario Cierre</label>
+                            <input type="time" name="closingTime" class="pack-form-control pack-form-control--tabular" />
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- Right Column: Pack Details (Sticky) -->
+            <div class="pack-detail-aside">
+                <section class="pack-aside-card border-none ring-1 ring-primary-fixed-dim bg-surface-bright shadow-lg">
+                    <h2 class="pack-aside-heading mb-2">Detalles del Pack</h2>
+                    
+                    <div class="pack-reservation-form mt-2">
+                        <div class="pack-form-field">
+                            <label class="pack-form-label">Título del Pack</label>
+                            <input type="text" name="title" class="pack-form-control" placeholder="Pack de Facturas Mixtas" required />
+                        </div>
+                        <div class="pack-form-field">
+                            <label class="pack-form-label">Descripción</label>
+                            <textarea name="description" class="pack-form-control" rows="3" placeholder="Puede contener medialunas dulces y saladas..." required></textarea>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="pack-form-field">
+                                <label class="pack-form-label text-secondary">Precio Original</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary font-bold">$</span>
+                                    <input type="number" step="0.01" name="originalPrice" class="pack-form-control pack-form-control--tabular pl-8" placeholder="0.00" required />
+                                </div>
+                            </div>
+                            <div class="pack-form-field">
+                                <label class="pack-form-label text-primary">Precio Venta</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold">$</span>
+                                    <input type="number" step="0.01" name="finalPrice" class="pack-form-control pack-form-control--tabular pl-8 font-bold border-primary-fixed-dim" placeholder="0.00" required />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pack-form-field mt-2">
+                            <label class="pack-form-label flex justify-between">
+                                Cantidad a publicar
+                                <span class="text-xs text-secondary font-normal">Packs idénticos</span>
+                            </label>
+                            <input type="number" name="stock" class="pack-form-control pack-form-control--tabular" placeholder="Ej: 5" required />
+                        </div>
+
+                        <button type="submit" class="pack-submit-btn mt-4">
+                            <span class="material-symbols-outlined">rocket_launch</span>
+                            Publicar Pack Ahora
+                        </button>
+                    </div>
+                </section>
+            </div>
+            
+        </form>
+    </main>
+
+    <!-- Footer removed temporarily -->
+
+</body>
+</html>

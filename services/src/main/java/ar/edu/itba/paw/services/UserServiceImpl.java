@@ -18,12 +18,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User createUser(final String email, final String password, final String name, final String phone,
-            final User.Role role) {
+    public User createUser(final String email, final String password, final String name) {
+        return userDao.createUser(email, password, name, null, null);
+    }
+    
+    @Override
+    public User createUser(final String email, final String password, final String name, final String phone, final User.Role role) {
         return userDao.createUser(email, password, name, phone, role);
     }
-
-    @Override
     public Optional<User> findByEmail(final String email) {
         return userDao.findByEmail(email);
     }

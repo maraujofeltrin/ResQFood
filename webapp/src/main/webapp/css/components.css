@@ -208,13 +208,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #a1a1aa; /* zinc-400 */
+  color: #a1a1aa;
+  /* zinc-400 */
   cursor: pointer;
   transition: color 0.15s ease, transform 0.15s ease;
 }
 
 .deal-card__fav:hover {
-  color: #dc2626; /* error */
+  color: #dc2626;
+  /* error */
 }
 
 .deal-card__fav:active {
@@ -237,7 +239,8 @@
   margin: 0;
   font-size: 18px;
   font-weight: 800;
-  color: #0f172a; /* slate-900 */
+  color: #0f172a;
+  /* slate-900 */
   line-height: 1.2;
 }
 
@@ -253,18 +256,21 @@
 
 .deal-card__ratingStar {
   font-size: 18px;
-  color: #f59e0b; /* amber */
+  color: #f59e0b;
+  /* amber */
   font-variation-settings: "FILL" 1;
 }
 
 .deal-card__subtitle {
   margin: 0 0 24px 0;
   font-size: 14px;
-  color: #64748b; /* slate-500 */
+  color: #64748b;
+  /* slate-500 */
 }
 
 .deal-card__footer {
-  border-top: 1px solid #f4f4f5; /* zinc-100 */
+  border-top: 1px solid #f4f4f5;
+  /* zinc-100 */
   padding-top: 16px;
   display: flex;
   align-items: flex-start;
@@ -286,7 +292,8 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 800;
-  color: #a1a1aa; /* zinc-400 */
+  color: #a1a1aa;
+  /* zinc-400 */
 }
 
 .deal-card__priceRow {
@@ -298,7 +305,8 @@
 .deal-card__price {
   font-size: 24px;
   font-weight: 900;
-  color: #1d4ed8; /* primary-ish */
+  color: #1d4ed8;
+  /* primary-ish */
 }
 
 .deal-card__oldPrice {
@@ -311,7 +319,8 @@
   margin: 0;
   font-size: 14px;
   font-weight: 800;
-  color: #334155; /* slate-700 */
+  color: #334155;
+  /* slate-700 */
 }
 
 .material-symbols-outlined {

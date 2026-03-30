@@ -19,7 +19,12 @@ public class PackServiceImpl implements PackService {
     }
 
     @Override
-    public Optional<Pack> findById(final Long id) {
+    public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock) {
+        return packDao.createPack(commerceId, title, description, originalPrice, finalPrice, stock);
+    }
+
+    @Override
+    public Optional<Pack> findById(Long id) {
         return packDao.findById(id);
     }
 
@@ -34,17 +39,12 @@ public class PackServiceImpl implements PackService {
     }
 
     @Override
-    public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock) {
-        return packDao.createPack(commerceId, title, description, originalPrice, finalPrice, stock);
-    }
-
-    @Override
     public Pack update(Pack pack) {
         return packDao.update(pack);
     }
 
     @Override
-    public void setActive(final Long id, final boolean active) {
+    public void setActive(Long id, boolean active) {
         packDao.setActive(id, active);
     }
 }
