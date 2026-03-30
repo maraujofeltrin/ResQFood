@@ -2,7 +2,6 @@ package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Reservation;
 import ar.edu.itba.paw.models.User;
-import ar.edu.itba.paw.persistence.ClientDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,14 +19,14 @@ public class ReservationServiceImpl implements ReservationService {
     private static final String RESERVATION_USER_PLACEHOLDER_PASSWORD = "__RESERVATION_PENDING_PASSWORD__";
 
     private final UserService userService;
-    private final ClientDao clientDao;
+    private final ClientService clientService;
     private final ReservationDao reservationDao;
 
     @Autowired
-    public ReservationServiceImpl(final UserService userService, final ClientDao clientDao,
+    public ReservationServiceImpl(final UserService userService, final ClientService clientService,
             final ReservationDao reservationDao) {
         this.userService = userService;
-        this.clientDao = clientDao;
+        this.clientService = clientService;
         this.reservationDao = reservationDao;
     }
 
@@ -46,8 +45,8 @@ public class ReservationServiceImpl implements ReservationService {
         final User user = userService.findByEmail(email).orElseGet(() -> userService.createUser(email,
                 RESERVATION_USER_PLACEHOLDER_PASSWORD, displayName, phone, User.Role.CLIENT));
 
-        clientDao.findByUserId(user.getId()).orElseGet(() -> clientDao.createClient(user.getId(), firstName, lastName,
-                null));
+        clientService.findByUserId(user.getId()).orElseGet(() -> clientService.createClient(user.getId(), firstName,
+                lastName, null));
 
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final double lineTotal = unitPrice * quantity;
