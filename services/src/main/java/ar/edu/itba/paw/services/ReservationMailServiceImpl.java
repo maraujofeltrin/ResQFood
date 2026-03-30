@@ -70,6 +70,25 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         }
     }
 
+    @Override
+    public void sendReservationCodeToClient(final Reservation reservation, final String clientEmail) {
+        final String subject = "Código de confirmación para tu reserva #" + reservation.getId();
+        final String code = reservation.getPickupCode() == null ? "" : reservation.getPickupCode();
+        final String text = "Tu código de confirmación para retirar la reserva #" + reservation.getId()
+                + " es: " + code + "\n\nPresentalo en el comercio al retirar tu pedido.";
+        try {
+            final MimeMessage message = mailSender.createMimeMessage();
+            final MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            helper.setFrom(mailFrom);
+            helper.setTo(clientEmail);
+            helper.setSubject(subject);
+            helper.setText(text, false);
+            mailSender.send(message);
+        } catch (final MessagingException e) {
+            throw new IllegalStateException("Could not send client pickup code mail", e);
+        }
+    }
+
     private static String buildHtml(final Reservation reservation, final String packTitle, final String acceptUrl, final String rejectUrl) {
         final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
         final String dateStr = reservation.getReservationDate() != null ? reservation.getReservationDate().format(formatter) : "-";

@@ -43,11 +43,12 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
 
         reservationTokenDao.markAsUsed(token);
 
-        final Reservation.Status newStatus = action == ReservationToken.Action.ACCEPT
-                ? Reservation.Status.PAID
-                : Reservation.Status.CANCELED;
-
-        reservationDao.updateStatus(reservationToken.getReservationId(), newStatus);
+        // For REJECT, update reservation status immediately. For ACCEPT, controller will
+        // verify pickup code and call reservationService.confirmPickup, so here we only
+        // mark token as used for ACCEPT.
+        if (action == ReservationToken.Action.REJECT) {
+            reservationDao.updateStatus(reservationToken.getReservationId(), Reservation.Status.CANCELED);
+        }
 
         return TokenValidationResult.SUCCESS;
     }

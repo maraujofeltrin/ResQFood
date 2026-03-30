@@ -21,4 +21,9 @@ public class ReservationServiceImpl implements ReservationService {
     public Optional<Reservation> findById(final Long id) {
         return reservationDao.findById(id);
     }
+
+    @Override
+    public Reservation confirmPickup(final Long id) {
+        return reservationDao.confirmPickup(id, java.time.LocalDateTime.now());
+    }
 }

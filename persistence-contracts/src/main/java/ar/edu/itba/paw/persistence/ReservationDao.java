@@ -19,5 +19,7 @@ public interface ReservationDao {
     Reservation updateStatus(final Long id, final Reservation.Status status);
 
     Optional<Reservation> findByPickupCode(final String pickupCode);
+
+    Reservation confirmPickup(final Long id, final java.time.LocalDateTime pickupConfirmationDate);
 }
 

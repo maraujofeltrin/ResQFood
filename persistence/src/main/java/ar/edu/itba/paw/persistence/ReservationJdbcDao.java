@@ -85,6 +85,15 @@ public class ReservationJdbcDao implements ReservationDao {
         return findById(id).orElseThrow(() -> new IllegalStateException("Reservation not found: " + id));
     }
 
+        @Override
+        public Reservation confirmPickup(final Long id, final java.time.LocalDateTime pickupConfirmationDate) {
+                jdbcTemplate.update("UPDATE reservations SET status = ?, pickup_confirmation_date = ? WHERE id = ?",
+                                Reservation.Status.PAID.name(),
+                                pickupConfirmationDate == null ? null : java.sql.Timestamp.valueOf(pickupConfirmationDate),
+                                id);
+                return findById(id).orElseThrow(() -> new IllegalStateException("Reservation not found: " + id));
+        }
+
     @Override
     public Optional<Reservation> findByPickupCode(final String pickupCode) {
         return jdbcTemplate.query(

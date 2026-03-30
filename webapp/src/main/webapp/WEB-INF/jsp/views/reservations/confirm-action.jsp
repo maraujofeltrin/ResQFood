@@ -68,6 +68,15 @@ tagdir="/WEB-INF/tags" %>
         class="mt-8"
       >
         <input type="hidden" name="token" value="<c:out value='${token}'/>" />
+        <c:if test="${confirmEndpoint == 'accept'}">
+          <div class="mt-4">
+            <label class="block text-sm font-medium text-appPrimary">Código de retiro (proporcionado por el usuario)</label>
+            <input name="pickupCode" type="text" class="mt-2 w-full rounded-md border p-2" value="" />
+            <c:if test="${not empty pickupError}">
+              <div class="mt-2 text-sm text-red-600"><c:out value="${pickupError}"/></div>
+            </c:if>
+          </div>
+        </c:if>
 
         <div class="flex flex-wrap items-center gap-3">
           <button

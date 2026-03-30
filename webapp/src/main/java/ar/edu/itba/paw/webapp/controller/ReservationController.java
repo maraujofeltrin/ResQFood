@@ -43,13 +43,15 @@ public class ReservationController {
     }
 
     @PostMapping("/accept")
-    public String acceptPost(@RequestParam(required = false) final String token, final Model model) {
-        return handleConsumePost(token, model, ReservationToken.Action.ACCEPT, "ACEPTADA");
+    public String acceptPost(@RequestParam(required = false) final String token,
+                             @RequestParam(required = false) final String pickupCode,
+                             final Model model) {
+        return handleConsumePost(token, pickupCode, model, ReservationToken.Action.ACCEPT, "ACEPTADA");
     }
 
     @PostMapping("/reject")
     public String rejectPost(@RequestParam(required = false) final String token, final Model model) {
-        return handleConsumePost(token, model, ReservationToken.Action.REJECT, "RECHAZADA");
+        return handleConsumePost(token, null, model, ReservationToken.Action.REJECT, "RECHAZADA");
     }
 
     private String handleConfirmGet(final String token, final Model model, final ReservationToken.Action action,
@@ -93,16 +95,72 @@ public class ReservationController {
         }
     }
 
-    private String handleConsumePost(final String token, final Model model, final ReservationToken.Action action,
+    private String handleConsumePost(final String token, final String pickupCode, final Model model, final ReservationToken.Action action,
             final String actionLabel) {
         if (token == null || token.isBlank()) {
             return "reservations/token-invalid";
         }
-        final TokenValidationResult result = reservationTokenService.validateAndConsume(token, action);
-        switch (result) {
+        final TokenValidationResult validate = reservationTokenService.validateOnly(token, action);
+        switch (validate) {
             case SUCCESS:
-                model.addAttribute("action", actionLabel);
-                return "reservations/action-success";
+                // If accepting, require pickup code to confirm pickup
+                if (action == ReservationToken.Action.ACCEPT) {
+                    final Long reservationId = reservationTokenService
+                            .findReservationIdByToken(token)
+                            .orElseThrow(() -> new IllegalStateException("Reservation id missing for token: " + token));
+                    final Optional<Reservation> reservation = reservationService.findById(reservationId);
+                    if (reservation.isEmpty()) {
+                        return "reservations/token-invalid";
+                    }
+                    final Reservation res = reservation.get();
+                    model.addAttribute("reservation", res);
+                    model.addAttribute("token", token);
+
+                    if (pickupCode == null || pickupCode.isBlank()) {
+                        // Show form to enter pickup code
+                        model.addAttribute("confirmEndpoint", "accept");
+                        return "reservations/confirm-action";
+                    }
+
+                    if (!pickupCode.equals(res.getPickupCode())) {
+                        model.addAttribute("pickupError", "Código de retiro inválido.");
+                        model.addAttribute("confirmEndpoint", "accept");
+                        return "reservations/confirm-action";
+                    }
+
+                    // pickup code correct -> consume token and confirm pickup
+                    final TokenValidationResult result = reservationTokenService.validateAndConsume(token, action);
+                    if (result != TokenValidationResult.SUCCESS) {
+                        switch (result) {
+                            case ALREADY_USED:
+                                return "reservations/token-already-used";
+                            case EXPIRED:
+                                return "reservations/token-expired";
+                            case NOT_FOUND:
+                            default:
+                                return "reservations/token-invalid";
+                        }
+                    }
+
+                    reservationService.confirmPickup(reservationId);
+                    model.addAttribute("action", actionLabel);
+                    return "reservations/action-success";
+                } else {
+                    // Non-accept actions (e.g., REJECT): consume token and apply effect
+                    final TokenValidationResult result = reservationTokenService.validateAndConsume(token, action);
+                    switch (result) {
+                        case SUCCESS:
+                            model.addAttribute("action", actionLabel);
+                            return "reservations/action-success";
+                        case ALREADY_USED:
+                            return "reservations/token-already-used";
+                        case EXPIRED:
+                            return "reservations/token-expired";
+                        case NOT_FOUND:
+                        default:
+                            return "reservations/token-invalid";
+                    }
+                }
             case ALREADY_USED:
                 return "reservations/token-already-used";
             case EXPIRED:
