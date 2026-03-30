@@ -2,9 +2,10 @@ package ar.edu.itba.paw.models;
 
 public class Commerce {
 	public enum Category {
-		PANADERIA,
-		RESTAURANTE,
-		ETC
+		BAKERY,
+		RESTAURANT,
+		GREENGROCER,
+		OTHER
 	}
 
 	private final Long userId;
