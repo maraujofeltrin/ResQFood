@@ -1,8 +1,11 @@
 package ar.edu.itba.paw.webapp.controller;
 
 import ar.edu.itba.paw.models.Commerce;
+import ar.edu.itba.paw.models.PackTag;
 import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
+import java.util.List;
+import java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,7 +35,9 @@ public class CommerceController {
 
     @RequestMapping(value = "/create-pack", method = RequestMethod.GET)
     public ModelAndView createPackForm() {
-        return new ModelAndView("commerce/createPack");
+        final ModelAndView mav = new ModelAndView("commerce/createPack");
+        mav.addObject("availableTags", PackTag.values());
+        return mav;
     }
 
     @RequestMapping(value = "/create-pack", method = RequestMethod.POST)
@@ -53,7 +58,8 @@ public class CommerceController {
             @RequestParam("description") final String packDescription,
             @RequestParam("originalPrice") final Double originalPrice,
             @RequestParam("finalPrice") final Double finalPrice,
-            @RequestParam("stock") final Integer stock) {
+            @RequestParam("stock") final Integer stock,
+            @RequestParam(value = "tags", required = false) final List<PackTag> tags) {
 
         try {
             Commerce commerce = commerceService.getOrCreateCommerce(
@@ -62,12 +68,13 @@ public class CommerceController {
             );
 
             packService.createPack(commerce.getUserId(), packTitle, packDescription, 
-                                   originalPrice, finalPrice, stock);
+                                   originalPrice, finalPrice, stock, tags != null ? tags : Collections.emptyList());
                                    
             return new ModelAndView("redirect:/commerce");
 
         } catch (IllegalArgumentException e) {
             final ModelAndView mav = new ModelAndView("commerce/createPack");
+            mav.addObject("availableTags", PackTag.values());
             mav.addObject("errorMessage", e.getMessage());
             return mav;
         }

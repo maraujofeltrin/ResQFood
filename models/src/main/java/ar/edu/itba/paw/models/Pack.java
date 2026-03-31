@@ -1,5 +1,7 @@
 package ar.edu.itba.paw.models;
 
+import java.util.List;
+
 public class Pack {
     private final Long id;
     private final Long commerceId;
@@ -9,9 +11,10 @@ public class Pack {
     private Double finalPrice;
     private Integer stock;
     private Boolean active;
+    private final List<PackTag> tags;
     
 
-    public Pack(Long id, Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, Boolean active) {
+    public Pack(Long id, Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, Boolean active, List<PackTag> tags) {
         this.id = id;
         this.commerceId = commerceId;
         this.title = title;
@@ -20,6 +23,7 @@ public class Pack {
         this.finalPrice = finalPrice;
         this.stock = stock;
         this.active = active;
+        this.tags = tags;
     }
 
     public Long getId() {
@@ -54,6 +58,10 @@ public class Pack {
         return active;
     }
 
+    public List<PackTag> getTags() {
+        return tags;
+    }
+
     public void setTitle(String title) {
         this.title = title;
     }
@@ -80,6 +88,6 @@ public class Pack {
 
     @Override
     public String toString() {
-        return "Pack [id=" + id + ", commerceId=" + commerceId + ", title=" + title + ", description=" + description + ", originalPrice=" + originalPrice + ", finalPrice=" + finalPrice + ", stock=" + stock + ", active=" + active + "]";
+        return "Pack [id=" + id + ", commerceId=" + commerceId + ", title=" + title + ", description=" + description + ", originalPrice=" + originalPrice + ", finalPrice=" + finalPrice + ", stock=" + stock + ", active=" + active + ", tags=" + tags + "]";
     }
 }
