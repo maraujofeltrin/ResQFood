@@ -53,3 +53,10 @@ CREATE TABLE reservations (
     FOREIGN KEY (customer_id) REFERENCES clients(user_id) ON DELETE CASCADE,
     FOREIGN KEY (pack_id) REFERENCES packs(id) ON DELETE CASCADE
 );
+
+CREATE TABLE pack_tags (
+    pack_id BIGINT NOT NULL,
+    tag VARCHAR(50) NOT NULL,
+    PRIMARY KEY (pack_id, tag),
+    FOREIGN KEY (pack_id) REFERENCES packs(id) ON DELETE CASCADE
+);
