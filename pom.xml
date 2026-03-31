@@ -20,6 +20,7 @@
     <org.springframework.version>5.3.33</org.springframework.version>
     <org.postgresql.version>42.2.5</org.postgresql.version>
     <org.flywaydb.version>8.5.13</org.flywaydb.version>
+    <org.hibernate.validator.version>6.2.4.Final</org.hibernate.validator.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -71,6 +72,11 @@
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-params</artifactId>
         <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-validator</artifactId>
+        <version>${org.hibernate.validator.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
