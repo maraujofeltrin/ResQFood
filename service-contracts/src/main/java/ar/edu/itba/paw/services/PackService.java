@@ -10,6 +10,7 @@ public interface PackService {
     Optional<Pack> findById(final Long id);
     List<Pack> findAll();
     List<Pack> findActive();
+    List<Pack> searchPacks(String query);
     Pack update(Pack pack);
     void setActive(final Long id, final boolean active);
 }

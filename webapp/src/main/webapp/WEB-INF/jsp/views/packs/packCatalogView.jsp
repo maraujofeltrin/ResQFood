@@ -92,9 +92,12 @@
                 <h1 class="text-4xl md:text-5xl font-headline font-extrabold text-primary tracking-tight mb-2">Explore Surrounding Harvests</h1>
                 <p class="text-secondary font-body">Rescue surplus delicacies from local merchants and artisans.</p>
             </div>
-            <div class="flex items-center gap-4">
-                <div class="relative w-full md:w-64">
-                    <select class="w-full appearance-none bg-none bg-surface-container-low px-4 py-3 rounded-xl border-none text-sm font-medium focus:ring-2 focus:ring-primary/20 cursor-pointer">
+            <div class="flex flex-col sm:flex-row items-center w-full md:w-auto gap-4">
+                <form action="${pageContext.request.contextPath}/packs" method="GET" class="w-full sm:w-auto">
+                    <paw:searchBar value="${param.q}" placeholder="Search harvests or merchants..." classes="relative w-full sm:w-80" />
+                </form>
+                <div class="relative w-full sm:w-64">
+                    <select class="w-full appearance-none bg-none bg-surface-container-low px-4 py-3 rounded-xl border-none text-sm font-medium focus:ring-2 focus:ring-primary/20 cursor-pointer text-on-surface">
                         <option>Sort by: Nearest</option>
                         <option>Lowest Price</option>
                     </select>
@@ -103,6 +106,7 @@
             </div>
         </header>
 
+        <c:if test="${empty param.q}">
         <!-- Last Chance (Horizontal Scrolling Section) -->
         <section class="mb-16">
             <div class="flex items-center justify-between mb-6">
@@ -122,15 +126,22 @@
                         imageUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuArnLe6Rzm5wR1Gn1ndEBQkFtdvsycGk6yXpcIerUIaznflMIXuYgcDvinIwcVOlxh20R-9wdIjwM2Tep3kv-CAABzrA7KOVDVB3WO-Z-0UvCQMv7h7dYaWglZz0nePL9rNoZeY1GYGJAg_SmRLvjKPPyeZgQwzpzMX6rLPlanyDrhifniERD5W2pgvDDSDZWxSA__nLF3MQjVnRVqQqjqSD973WhKf7GmF0_YWEbJ2Hh9-T5zpdCNa1_519qydhlgCRSE-s0dbVVgs"
                         price="$${pack.finalPrice}"
                         oldPrice="$${pack.originalPrice}"
+                        commerceName="${commerceNames[pack.id]}"
                     />
                 </c:forEach>
             </div>
         </section>
+        </c:if>
 
         <!-- Main Grid: All Available Packs -->
         <section>
             <div class="flex items-center gap-3 mb-8">
-                <h2 class="text-2xl font-headline font-bold text-on-surface">All Available Packs</h2>
+                <h2 class="text-2xl font-headline font-bold text-on-surface">
+                    <c:choose>
+                        <c:when test="${not empty param.q}">Search Results for "<c:out value="${param.q}"/>"</c:when>
+                        <c:otherwise>All Available Packs</c:otherwise>
+                    </c:choose>
+                </h2>
                 <div class="h-[1px] flex-grow bg-zinc-200"></div>
             </div>
             
@@ -143,6 +154,7 @@
                         imageUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuDb9hqJJAJNKmO3vDzg7EtSwBaD2qDwByCk6_I-bar41vMvOr6ClV2eSjSKxqDojQWHI3eO8zB1BKkl1ntlGvi8EPZkbXBgzSMu9RiO7poHlFUWWEtzs2P9dfXj4foOTOoEKcnfHrLmCVCpUzdxvrhdZY2EOe0lyz4EURrPh7ee3TGa91znbF11iBDn0K7YO13wkdfJVec0vZk1h0jWNtouqj8Agx98aCT_Kuja_RcUDd3H-EaFaamyPYAagjr_yRloaXoZRO7aLVtd"
                         price="$${pack.finalPrice}"
                         oldPrice="$${pack.originalPrice}"
+                        commerceName="${commerceNames[pack.id]}"
                     />
                 </c:forEach>
             </div>

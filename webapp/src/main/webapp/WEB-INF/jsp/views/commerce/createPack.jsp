@@ -149,9 +149,10 @@
                             <label class="pack-form-label">Categoría</label>
                             <div class="pack-select-wrap">
                                 <select name="category" class="pack-form-select">
-                                    <option value="PANADERIA">Panadería</option>
-                                    <option value="RESTAURANTE">Restaurante</option>
-                                    <option value="ETC">Otros</option>
+                                    <option value="BAKERY">Panadería</option>
+                                    <option value="RESTAURANT">Restaurante</option>
+                                    <option value="GREENGROCER">Verdulería</option>
+                                    <option value="OTHER">Otros</option>
                                 </select>
                                 <span class="material-symbols-outlined pack-select-chevron">expand_more</span>
                             </div>
