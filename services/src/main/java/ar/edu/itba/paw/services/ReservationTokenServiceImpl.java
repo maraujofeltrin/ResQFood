@@ -64,6 +64,16 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
             return TokenValidationResult.NOT_FOUND;
         }
         final ReservationToken reservationToken = optionalToken.get();
+
+        final Optional<Reservation> reservation = reservationDao.findById(reservationToken.getReservationId());
+        if (reservation.isPresent()) {
+            final Reservation.Status status = reservation.get().getStatus();
+            
+            if (status == Reservation.Status.PAID || status == Reservation.Status.CANCELED) {
+                return TokenValidationResult.ALREADY_USED;
+            }
+        }
+
         if (reservationToken.getAction() != action) {
             return TokenValidationResult.NOT_FOUND;
         }

@@ -86,7 +86,7 @@ public class ReservationController {
                 }
                 return viewName;
             case ALREADY_USED:
-                return "reservations/token-already-used";
+                return buildAlreadyUsedView(token, model);
             case EXPIRED:
                 return "reservations/token-expired";
             case NOT_FOUND:
@@ -153,7 +153,7 @@ public class ReservationController {
                             model.addAttribute("action", actionLabel);
                             return "reservations/action-success";
                         case ALREADY_USED:
-                            return "reservations/token-already-used";
+                            return buildAlreadyUsedView(token, model);
                         case EXPIRED:
                             return "reservations/token-expired";
                         case NOT_FOUND:
@@ -162,12 +162,28 @@ public class ReservationController {
                     }
                 }
             case ALREADY_USED:
-                return "reservations/token-already-used";
+                return buildAlreadyUsedView(token, model);
             case EXPIRED:
                 return "reservations/token-expired";
             case NOT_FOUND:
             default:
                 return "reservations/token-invalid";
         }
+    }
+
+    private String buildAlreadyUsedView(final String token, final Model model) {
+        final Optional<Long> reservationId = reservationTokenService.findReservationIdByToken(token);
+        if (reservationId.isPresent()) {
+            final Optional<Reservation> reservation = reservationService.findById(reservationId.get());
+            if (reservation.isPresent() && reservation.get().getStatus() != null) {
+                final Reservation.Status status = reservation.get().getStatus();
+                if (status == Reservation.Status.PAID) {
+                    model.addAttribute("alreadyUsedDetail", "Este pedido ya fue aceptado.");
+                } else if (status == Reservation.Status.CANCELED) {
+                    model.addAttribute("alreadyUsedDetail", "Este pedido ya fue rechazado.");
+                }
+            }
+        }
+        return "reservations/token-already-used";
     }
 }

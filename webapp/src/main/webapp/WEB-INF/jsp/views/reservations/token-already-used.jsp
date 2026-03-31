@@ -30,7 +30,14 @@ tagdir="/WEB-INF/tags" %>
       <p
         class="mt-5 max-w-2xl text-base leading-relaxed text-appMuted sm:text-lg"
       >
-        El enlace ya no está disponible porque se usó anteriormente.
+        <c:choose>
+          <c:when test="${not empty alreadyUsedDetail}">
+            <c:out value="${alreadyUsedDetail}" />
+          </c:when>
+          <c:otherwise>
+            El enlace ya no está disponible porque se usó anteriormente.
+          </c:otherwise>
+        </c:choose>
       </p>
 
       <div class="mt-8 flex flex-wrap items-center gap-3">

@@ -30,8 +30,8 @@ tagdir="/WEB-INF/tags" %>
       <p
         class="mt-5 max-w-2xl text-base leading-relaxed text-appMuted sm:text-lg"
       >
-        El enlace dejó de ser válido. Pedí un nuevo correo si aún necesitás
-        confirmar la reserva.
+        El enlace ha expirado debido a que se ha superado 
+        la fecha de validez establecida.
       </p>
 
       <div class="mt-8 flex flex-wrap items-center gap-3">

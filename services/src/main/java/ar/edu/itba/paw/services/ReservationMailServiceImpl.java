@@ -20,6 +20,8 @@ import java.util.UUID;
 @Service
 public class ReservationMailServiceImpl implements ReservationMailService {
 
+    private static final DateTimeFormatter MAIL_DATE_FORMATTER = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
+
     private final JavaMailSender mailSender;
     private final ReservationTokenDao reservationTokenDao;
     private final PackDao packDao;
@@ -55,7 +57,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         final String packTitle = pack != null ? pack.getTitle() : "Pack #" + reservation.getPackId();
 
         final String subject = "Solicitud de reserva #" + reservation.getId();
-        final String html = buildHtml(reservation, packTitle, acceptUrl, rejectUrl);
+        final String html = buildCommerceHtml(reservation, packTitle, acceptUrl, rejectUrl);
 
         try {
             final MimeMessage message = mailSender.createMimeMessage();
@@ -72,28 +74,67 @@ public class ReservationMailServiceImpl implements ReservationMailService {
 
     @Override
     public void sendReservationCodeToClient(final Reservation reservation, final String clientEmail) {
-        final String subject = "Código de confirmación para tu reserva #" + reservation.getId();
-        final String code = reservation.getPickupCode() == null ? "" : reservation.getPickupCode();
-        final String text = "Tu código de confirmación para retirar la reserva #" + reservation.getId()
-                + " es: " + code + "\n\nPresentalo en el comercio al retirar tu pedido.";
+        final Pack pack = packDao.findById(reservation.getPackId()).orElse(null);
+        final String localName = pack != null ? pack.getTitle() : ("Pack #" + reservation.getPackId());
+        final String packLabel = pack != null
+            ? (pack.getTitle() + " (#" + pack.getId() + ")")
+            : ("Pack #" + reservation.getPackId());
+
+        final String subject = "¡Tu reserva de " + localName + " te espera!";
+        final String html = buildClientHtml(reservation, packLabel);
         try {
             final MimeMessage message = mailSender.createMimeMessage();
-            final MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            final MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setFrom(mailFrom);
             helper.setTo(clientEmail);
             helper.setSubject(subject);
-            helper.setText(text, false);
+            helper.setText(html, true);
             mailSender.send(message);
         } catch (final MessagingException e) {
             throw new IllegalStateException("Could not send client pickup code mail", e);
         }
     }
 
-    private static String buildHtml(final Reservation reservation, final String packTitle, final String acceptUrl, final String rejectUrl) {
-        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
-        final String dateStr = reservation.getReservationDate() != null ? reservation.getReservationDate().format(formatter) : "-";
+    private static String buildClientHtml(final Reservation reservation, final String packLabel) {
+        final String reservationDateStr = reservation.getReservationDate() != null
+                ? reservation.getReservationDate().format(MAIL_DATE_FORMATTER)
+                : "-";
+        final String pickupDateStr = reservation.getPickupConfirmationDate() != null
+                ? reservation.getPickupConfirmationDate().format(MAIL_DATE_FORMATTER)
+                : "-";
         final String priceStr = reservation.getFinalPrice() != null ? reservation.getFinalPrice().toString() : "-";
-        final String pickupDateStr = reservation.getPickupConfirmationDate() != null ? reservation.getPickupConfirmationDate().format(formatter) : "-";
+        final String code = reservation.getPickupCode() == null ? "" : reservation.getPickupCode();
+
+        return "<!DOCTYPE html><html><body style=\"margin:0; padding:40px; background:#f3f4ff; font-family:Arial, Helvetica, sans-serif; color:#1f2440;\">"
+            + "<div style=\"max-width:600px; margin:0 auto; background:#ffffff; border:1px solid #d7d9ea; border-radius:24px; padding:40px;\">"
+            + "<span style=\"display:inline-block; background:#dde3ff; color:#2f3f86; border-radius:999px; padding:6px 12px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:16px;\">RESERVA CONFIRMADA</span>"
+            + "<h1 style=\"margin:0 0 16px; color:#2f3f86; font-size:32px; line-height:1.2; font-weight:800;\">Tu código de retiro</h1>"
+            + "<p style=\"margin:0 0 24px; color:#5b617c; font-size:15px; line-height:1.6;\">Presentá este código en el comercio para retirar tu pedido.</p>"
+            + "<div style=\"text-align:center; margin:0 0 28px;\">"
+            + "<div style=\"display:inline-block; border:2px dashed #2f3f86; background:#f6f7ff; color:#2f3f86; border-radius:16px; padding:14px 26px; font-size:42px; letter-spacing:0.12em; font-weight:800;\">"
+            + escapeHtml(code) + "</div>"
+            + "</div>"
+            + "<div style=\"background:#f6f7ff; border:1px solid #d7d9ea; border-radius:16px; padding:20px;\">"
+            + "<p style=\"margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;\"><strong style=\"color:#2f3f86;\">Número de reserva:</strong> #"
+            + reservation.getId() + "</p>"
+            + "<p style=\"margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;\"><strong style=\"color:#2f3f86;\">Pack:</strong> "
+            + escapeHtml(packLabel) + "</p>"
+            + "<p style=\"margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;\"><strong style=\"color:#2f3f86;\">Fecha de reserva:</strong> "
+            + escapeHtml(reservationDateStr) + "</p>"
+            + "<p style=\"margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;\"><strong style=\"color:#2f3f86;\">Fecha de retiro:</strong> "
+            + escapeHtml(pickupDateStr) + "</p>"
+            + "<p style=\"margin:0; color:#1f2440; font-size:14px; line-height:1.6;\"><strong style=\"color:#2f3f86;\">Precio de la reserva:</strong> $"
+            + escapeHtml(priceStr) + "</p>"
+            + "</div>"
+            + "<p style=\"margin:28px 0 0; padding-top:20px; border-top:1px solid #d7d9ea; color:#5b617c; font-size:12px; line-height:1.6;\">"
+            + "Este correo fue enviado automáticamente.</p>"
+            + "</div></body></html>";
+    }
+
+    private static String buildCommerceHtml(final Reservation reservation, final String packTitle, final String acceptUrl, final String rejectUrl) {
+        final String dateStr = reservation.getReservationDate() != null ? reservation.getReservationDate().format(MAIL_DATE_FORMATTER) : "-";
+        final String priceStr = reservation.getFinalPrice() != null ? reservation.getFinalPrice().toString() : "-";
+        final String pickupDateStr = reservation.getPickupConfirmationDate() != null ? reservation.getPickupConfirmationDate().format(MAIL_DATE_FORMATTER) : "-";
 
         return "<!DOCTYPE html><html><body style=\"margin:0; padding:40px; background:#f3f4ff; font-family:Arial, Helvetica, sans-serif; color:#1f2440;\">"
             + "<div style=\"max-width:600px; margin:0 auto; background:#ffffff; border:1px solid #d7d9ea; border-radius:24px; padding:40px;\">"
