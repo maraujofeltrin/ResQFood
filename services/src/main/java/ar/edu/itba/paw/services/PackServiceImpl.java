@@ -39,6 +39,11 @@ public class PackServiceImpl implements PackService {
     }
 
     @Override
+    public List<Pack> searchPacks(String query) {
+        return packDao.searchPacks(query);
+    }
+
+    @Override
     public Pack update(Pack pack) {
         return packDao.update(pack);
     }

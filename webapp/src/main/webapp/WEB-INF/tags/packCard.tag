@@ -8,13 +8,14 @@
 <%@ attribute name="rescueLabel" required="false" %>
 <%@ attribute name="price" required="true" %>
 <%@ attribute name="oldPrice" required="false" %>
+<%@ attribute name="commerceName" required="false" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
 <c:set var="resolvedAlt" value="${not empty imageAlt ? imageAlt : title}"/>
 <c:set var="resolvedRescueLabel" value="${not empty rescueLabel ? rescueLabel : 'Rescue For'}"/>
 
-<a href="${pageContext.request.contextPath}/packs/${packId}" class="bg-surface-container-lowest rounded-xl overflow-hidden group shadow-sm hover:shadow-md transition-shadow flex flex-col h-full min-w-[280px] cursor-pointer hover:bg-surface-container-low transition-colors block text-inherit no-underline">
+<a href="${pageContext.request.contextPath}/packs/${packId}" class="bg-surface-container-lowest rounded-xl overflow-hidden group shadow-sm hover:shadow-md transition-shadow flex flex-col h-full min-w-[280px] cursor-pointer hover:bg-surface-container-low transition-colors text-inherit no-underline">
   <div class="relative h-48 sm:h-56 flex-shrink-0 overflow-hidden">
     <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="<c:out value="${resolvedAlt}"/>" src="<c:out value="${imageUrl}"/>" alt="<c:out value="${resolvedAlt}"/>"/>
     <c:if test="${not empty badgeText}">
@@ -25,8 +26,14 @@
   </div>
   <div class="p-5 flex flex-col flex-grow">
     <div class="mb-4">
+      <c:if test="${not empty commerceName}">
+          <div class="flex items-center gap-1 mb-1 text-secondary text-sm font-medium">
+             <span class="material-symbols-outlined text-[1rem]">storefront</span>
+             <c:out value="${commerceName}"/>
+          </div>
+      </c:if>
       <h3 class="font-bold text-lg text-on-surface truncate"><c:out value="${title}"/></h3>
-      <p class="text-secondary text-sm mt-1 line-clamp-2"><c:out value="${subtitle}"/></p>
+      <p class="text-secondary text-sm mt-1 line-clamp-2 h-10"><c:out value="${subtitle}"/></p>
     </div>
     <div class="flex items-center justify-between pt-4 border-t border-zinc-50 mt-auto">
       <div>
@@ -38,7 +45,6 @@
           </c:if>
         </div>
       </div>
-      <span class="bg-primary text-on-primary px-4 py-2 rounded-full text-sm font-bold group-hover:scale-105 transition-transform">Rescue Now</span>
     </div>
   </div>
 </a>

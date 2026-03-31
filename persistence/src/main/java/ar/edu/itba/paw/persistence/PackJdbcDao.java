@@ -67,6 +67,17 @@ public class PackJdbcDao implements PackDao {
     }
 
     @Override
+    public List<Pack> searchPacks(String query) {
+        final String pattern = "%" + query + "%";
+        return jdbcTemplate.query(
+            "SELECT packs.* FROM packs JOIN commerces ON packs.commerce_id = commerces.user_id WHERE packs.active = true AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?)",
+            PACK_ROW_MAPPER,
+            pattern,
+            pattern
+        );
+    }
+
+    @Override
     public Pack update(Pack pack) {
         jdbcTemplate.update(
             "UPDATE packs SET title = ?, description = ?, original_price = ?, final_price = ?, stock = ? WHERE id = ?",
