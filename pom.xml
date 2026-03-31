@@ -10,7 +10,6 @@
     <module>services</module>
     <module>persistence</module>
     <module>models</module>
-    <module>interfaces</module>
     <module>service-contracts</module>
     <module>persistence-contracts</module>
   </modules>
