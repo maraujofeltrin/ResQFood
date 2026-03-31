@@ -22,7 +22,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -159,6 +161,28 @@ public class PackController {
         mav.addObject("commerceOpenNow", Boolean.valueOf(computeOpenNow(commerce)));
     }
 
+    @GetMapping("/packs")
+    public ModelAndView listPacks(@RequestParam(value = "q", required = false) final String query) {
+        final ModelAndView mav = new ModelAndView("packs/packCatalogView");
+        final List<Pack> packs;
+        if (query != null && !query.trim().isEmpty()) {
+            packs = packService.searchPacks(query.trim());
+        } else {
+            packs = packService.findActive();
+        }
+        final Map<Long, String> commerceNames = packs.stream()
+            .collect(java.util.stream.Collectors.toMap(
+                Pack::getId, 
+                pack -> commerceService.findByUserId(pack.getCommerceId())
+                            .map(Commerce::getCommercialName)
+                            .orElse("—")
+            ));
+
+        mav.addObject("packs", packs);
+        mav.addObject("commerceNames", commerceNames);
+        return mav;
+    }
+
     @GetMapping("/packs/{id}")
     public ModelAndView packDetail(@PathVariable("id") final long id) {
         final Pack pack = packService.findById(id)
@@ -171,7 +195,7 @@ public class PackController {
                 ? pack.getTitle()
                 : "Pack";
 
-        final ModelAndView mav = new ModelAndView("pack-detail/index");
+        final ModelAndView mav = new ModelAndView("packs/packDetailView");
         mav.addObject("packId", pack.getId());
         final double unitPriceAmount = pack.getFinalPrice() != null ? pack.getFinalPrice() : 0d;
         mav.addObject("unitPriceAmount", unitPriceAmount);
@@ -218,11 +242,13 @@ public class PackController {
         final Optional<Pack> packOpt = packService.findById(packId)
                 .filter(p -> Boolean.TRUE.equals(p.getActive()));
 
+        final ModelAndView redirectView = new ModelAndView("redirect:/packs/" + packId);
+
         if (packOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
                     "This pack is not available for reservation.");
-            return new ModelAndView("redirect:/packs/" + packId);
+            return redirectView;
         }
 
         final Pack pack = packOpt.get();
@@ -231,7 +257,7 @@ public class PackController {
             redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
                     "Your reservation could not be completed. Please try again.");
-            return new ModelAndView("redirect:/packs/" + packId);
+            return redirectView;
         }
 
         final Integer stock = pack.getStock();
@@ -239,7 +265,7 @@ public class PackController {
             redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
                     "The selected quantity exceeds available stock.");
-            return new ModelAndView("redirect:/packs/" + packId);
+            return redirectView;
         }
 
         try {
@@ -253,6 +279,6 @@ public class PackController {
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
                     "Your reservation could not be completed. Please try again.");
         }
-        return new ModelAndView("redirect:/packs/" + packId);
+        return redirectView;
     }
 }

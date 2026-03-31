@@ -93,7 +93,9 @@
                 <p class="text-secondary font-body">Rescue surplus delicacies from local merchants and artisans.</p>
             </div>
             <div class="flex flex-col sm:flex-row items-center w-full md:w-auto gap-4">
-                <paw:searchBar value="${param.q}" placeholder="Search harvests or merchants..." classes="relative w-full sm:w-80" />
+                <form action="${pageContext.request.contextPath}/packs" method="GET" class="w-full sm:w-auto">
+                    <paw:searchBar value="${param.q}" placeholder="Search harvests or merchants..." classes="relative w-full sm:w-80" />
+                </form>
                 <div class="relative w-full sm:w-64">
                     <select class="w-full appearance-none bg-none bg-surface-container-low px-4 py-3 rounded-xl border-none text-sm font-medium focus:ring-2 focus:ring-primary/20 cursor-pointer text-on-surface">
                         <option>Sort by: Nearest</option>

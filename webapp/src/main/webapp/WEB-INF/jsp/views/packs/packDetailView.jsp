@@ -97,7 +97,7 @@
 
                 <div class="pack-detail-intro">
                     <div class="pack-detail-meta">
-                        <span class="pack-detail-badge"><c:out value="${badgeLabel}"/></span>
+                        <span class="pack-detail-badge">SURPRISE PACK</span>
                         <span class="pack-detail-merchant"><c:out value="${commerceCommercialName}"/></span>
                     </div>
                     <h1 class="pack-detail-title font-headline"><c:out value="${packTitle}"/></h1>
@@ -162,48 +162,48 @@
                         <p class="pack-feedback pack-feedback--error" role="alert"><c:out value="${reservationAlertMessage}"/></p>
                     </c:if>
 
-                    <h2 class="pack-aside-heading font-headline"><c:out value="${reservationFormHeading}"/></h2>
+                    <h2 class="pack-aside-heading font-headline">Reserva este pack</h2>
 
                     <c:url var="reservationAction" value="/packs/${packId}/reserve"/>
                     <form class="pack-reservation-form" method="post" action="${reservationAction}">
 
                         <div class="pack-price-block">
-                            <p class="pack-price-block-label"><c:out value="${unitPriceLabel}"/></p>
+                            <p class="pack-price-block-label">Precio por pack</p>
                             <p class="pack-price-original"><c:out value="${originalPrice}"/></p>
                             <p class="pack-price-final font-headline"><c:out value="${finalPrice}"/></p>
                         </div>
 
                         <div class="pack-form-field">
-                            <label class="pack-form-label" for="firstName"><c:out value="${labelFirstName}"/></label>
+                            <label class="pack-form-label" for="firstName">Nombre</label>
                             <input id="firstName" name="firstName" type="text" required maxlength="255" class="pack-form-control"/>
                         </div>
                         <div class="pack-form-field">
-                            <label class="pack-form-label" for="lastName"><c:out value="${labelLastName}"/></label>
+                            <label class="pack-form-label" for="lastName">Apellido</label>
                             <input id="lastName" name="lastName" type="text" required maxlength="255" class="pack-form-control"/>
                         </div>
                         <div class="pack-form-field">
-                            <label class="pack-form-label" for="email"><c:out value="${labelEmail}"/></label>
+                            <label class="pack-form-label" for="email">Correo electronico</label>
                             <input id="email" name="email" type="email" required maxlength="255" autocomplete="email" class="pack-form-control"/>
                         </div>
                         <div class="pack-form-field">
-                            <label class="pack-form-label" for="phone"><c:out value="${labelPhone}"/></label>
+                            <label class="pack-form-label" for="phone">Telefono</label>
                             <input id="phone" name="phone" type="tel" required maxlength="50" autocomplete="tel" class="pack-form-control"/>
                         </div>
 
                         <div class="pack-form-field">
-                            <label class="pack-form-label" for="quantity"><c:out value="${quantityLabel}"/></label>
+                            <label class="pack-form-label" for="quantity">Cantidad de packs</label>
                             <input id="quantity" name="quantity" type="number" required min="1" max="<c:out value="${quantityMax}"/>" step="1"
-                                   value="<c:out value="${defaultQuantity}"/>"
+                                   value="1"
                                    class="pack-form-control pack-form-control--tabular"/>
                         </div>
 
                         <div class="pack-form-field">
-                            <p class="pack-form-total-label"><c:out value="${totalLabel}"/></p>
-                            <p class="pack-form-total-hint"><c:out value="${totalHint}"/></p>
+                            <p class="pack-form-total-label">Total</p>
+                            <p class="pack-form-total-hint">El monto cobrado sera el precio por pack multiplicado por la cantidad que selecciones.</p>
                         </div>
 
                         <div class="pack-form-field">
-                            <label class="pack-form-label" for="pickupWindow"><c:out value="${pickupWindowLabel}"/></label>
+                            <label class="pack-form-label" for="pickupWindow">Franja horaria de retiro</label>
                             <div class="pack-select-wrap">
                                 <select id="pickupWindow" name="pickupWindow" required class="pack-form-select bg-none">
                                     <c:forEach var="window" items="${pickupWindows}">
@@ -215,7 +215,7 @@
                         </div>
 
                         <button type="submit" class="pack-submit-btn font-headline">
-                            <c:out value="${confirmButtonLabel}"/>
+                            Confirmar reserva
                             <span class="material-symbols-outlined">arrow_forward</span>
                         </button>
                     </form>

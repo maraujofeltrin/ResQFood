@@ -4,7 +4,7 @@
 <%@ attribute name="placeholder" required="false" type="java.lang.String" %>
 <%@ attribute name="classes" required="false" type="java.lang.String" %>
 
-<form action="${pageContext.request.contextPath}/" method="GET" class="${classes != null ? classes : 'relative w-full max-w-md'}">
+<div class="${classes != null ? classes : 'relative w-full max-w-md'}">
     <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none">search</span>
     <input 
         name="q" 
@@ -13,4 +13,4 @@
         placeholder="${placeholder != null ? placeholder : 'Search...'}" 
         type="search"
     />
-</form>
+</div>
