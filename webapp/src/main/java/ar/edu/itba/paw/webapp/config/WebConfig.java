@@ -72,22 +72,13 @@ public class WebConfig implements WebMvcConfigurer {
         return mailSender;
     }
 
-    @Bean
+    @Bean(initMethod = "migrate")
     public Flyway flyway() {
-        final Flyway flyway = Flyway.configure()
+        return Flyway.configure()
                 .dataSource(dataSource())
                 .locations("classpath:db/migration")
                 .baselineOnMigrate(true)
                 .load();
-
-        final String skip = System.getenv("SKIP_FLYWAY");
-        if (skip == null || !skip.equalsIgnoreCase("true")) {
-            flyway.migrate();
-        } else {
-            System.out.println("Skipping Flyway migrations because SKIP_FLYWAY=true");
-        }
-
-        return flyway;
     }
 
     @Bean
