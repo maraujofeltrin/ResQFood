@@ -104,7 +104,7 @@
             </div>
         </c:if>
 
-        <form action="${pageContext.request.contextPath}/commerce/create-pack" method="post" class="pack-detail-grid">
+        <form action="${pageContext.request.contextPath}/commerce/create-pack" method="post" enctype="multipart/form-data" class="pack-detail-grid">
             
             <!-- Left Column: Form Sections -->
             <div class="grid col-span-1 md:col-span-8 gap-8">
@@ -205,6 +205,19 @@
                             <textarea name="description" class="pack-form-control" rows="3" placeholder="Puede contener medialunas dulces y saladas..." required></textarea>
                         </div>
                         
+                        <!-- Tags selection -->
+                        <div class="pack-form-field">
+                            <label class="pack-form-label mb-2 block">Etiquetas / Restricciones (Opcional)</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <c:forEach var="tag" items="${availableTags}">
+                                    <label class="flex items-center gap-2 text-sm text-secondary cursor-pointer hover:bg-surface-container-high p-2 rounded-md transition-colors border border-outline-variant">
+                                        <input type="checkbox" name="tags" value="${tag.name()}" class="rounded text-primary focus:ring-primary h-4 w-4 border-outline-variant" />
+                                        <span>${tag.displayName}</span>
+                                    </label>
+                                </c:forEach>
+                            </div>
+                        </div>
+                        
                         <div class="grid grid-cols-2 gap-4">
                             <div class="pack-form-field">
                                 <label class="pack-form-label text-secondary">Precio Original</label>
@@ -228,6 +241,12 @@
                                 <span class="text-xs text-secondary font-normal">Packs idénticos</span>
                             </label>
                             <input type="number" name="stock" class="pack-form-control pack-form-control--tabular" placeholder="Ej: 5" required />
+                        </div>
+
+                        <div class="pack-form-field mt-2">
+                            <label class="pack-form-label">Imagen del Pack (Opcional)</label>
+                            <input type="file" name="image" accept="image/*" class="pack-form-control file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-fixed file:text-on-primary-fixed hover:file:bg-primary-fixed-dim cursor-pointer" />
+                            <p class="text-xs text-secondary mt-1">Formatos: JPG, PNG, WebP. Max 5 MB.</p>
                         </div>
 
                         <button type="submit" class="pack-submit-btn mt-4">

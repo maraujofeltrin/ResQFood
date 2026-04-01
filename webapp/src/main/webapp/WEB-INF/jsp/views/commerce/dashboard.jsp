@@ -116,7 +116,6 @@
                                 packId="${pack.id}"
                                 title="${pack.title}"
                                 subtitle="${pack.description}"
-                                imageUrl="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop"
                                 price="$${pack.finalPrice}"
                                 oldPrice="$${pack.originalPrice}"
                                 badgeText="Stock: ${pack.stock}"

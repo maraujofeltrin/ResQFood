@@ -9,25 +9,22 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
 import org.springframework.jdbc.core.RowMapper;
 
 import ar.edu.itba.paw.models.Pack;
+import ar.edu.itba.paw.models.PackTag;
 
 @Repository
 public class PackJdbcDao implements PackDao {
 
+    private static final String PACK_COLS_NO_IMAGE =
+            "id, commerce_id, title, description, original_price, final_price, stock, active";
+
     private final JdbcTemplate jdbcTemplate;
     private final SimpleJdbcInsert simpleJdbcInsert;
-    private final static RowMapper<Pack> PACK_ROW_MAPPER = (rs, rowNum) -> new Pack(
-        rs.getLong("id"),
-        rs.getLong("commerce_id"),
-        rs.getString("title"),
-        rs.getString("description"),
-        rs.getDouble("original_price"),
-        rs.getDouble("final_price"),
-        rs.getInt("stock"),
-        rs.getBoolean("active")
-    );
+    private final RowMapper<Pack> packRowMapper;
 
     @Autowired
     public PackJdbcDao(final DataSource dataSource) {
@@ -35,10 +32,30 @@ public class PackJdbcDao implements PackDao {
         this.simpleJdbcInsert = new SimpleJdbcInsert(dataSource)
             .withTableName("packs")
             .usingGeneratedKeyColumns("id");
+
+        this.packRowMapper = (rs, rowNum) -> {
+            Long packId = rs.getLong("id");
+            List<PackTag> tags = jdbcTemplate.query("SELECT tag FROM pack_tags WHERE pack_id = ?",
+                (rs1, rowNum1) -> PackTag.valueOf(rs1.getString("tag")), packId);
+
+            return new Pack(
+                packId,
+                rs.getLong("commerce_id"),
+                rs.getString("title"),
+                rs.getString("description"),
+                rs.getDouble("original_price"),
+                rs.getDouble("final_price"),
+                rs.getInt("stock"),
+                rs.getBoolean("active"),
+                tags
+            );
+        };
     }
 
     @Override
-    public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock) {
+    public Pack createPack(Long commerceId, String title, String description, Double originalPrice,
+                           Double finalPrice, Integer stock, List<PackTag> tags,
+                           byte[] imageData, String imageContentType) {
         final Map<String, Object> parameters = new HashMap<>();
         parameters.put("commerce_id", commerceId);
         parameters.put("title", title);
@@ -46,32 +63,54 @@ public class PackJdbcDao implements PackDao {
         parameters.put("original_price", originalPrice);
         parameters.put("final_price", finalPrice);
         parameters.put("stock", stock);
-        parameters.put("active", false);
+        parameters.put("active", true);
+        parameters.put("image_data", imageData);
+        parameters.put("image_content_type", imageContentType);
         final Number id = simpleJdbcInsert.executeAndReturnKey(parameters);
-        return new Pack(id.longValue(), commerceId, title, description, originalPrice, finalPrice, stock, false);
+
+        if (tags != null && !tags.isEmpty()) {
+            List<Object[]> batchParams = new ArrayList<>();
+            for (PackTag tag : tags) {
+                batchParams.add(new Object[]{id.longValue(), tag.name()});
+            }
+            jdbcTemplate.batchUpdate("INSERT INTO pack_tags (pack_id, tag) VALUES (?, ?)", batchParams);
+        } else {
+            tags = Collections.emptyList();
+        }
+
+        return new Pack(id.longValue(), commerceId, title, description, originalPrice, finalPrice,
+                stock, true, tags, imageData, imageContentType);
     }
 
     @Override
     public Optional<Pack> findById(final Long id) {
-        return jdbcTemplate.query("SELECT * FROM packs WHERE id = ?", PACK_ROW_MAPPER, id).stream().findAny();
+        return jdbcTemplate.query(
+                "SELECT " + PACK_COLS_NO_IMAGE + " FROM packs WHERE id = ?",
+                packRowMapper, id
+        ).stream().findAny();
     }
 
     @Override
     public List<Pack> findAll() {
-        return jdbcTemplate.query("SELECT * FROM packs", PACK_ROW_MAPPER);
+        return jdbcTemplate.query("SELECT " + PACK_COLS_NO_IMAGE + " FROM packs", packRowMapper);
     }
 
     @Override
     public List<Pack> findActive() {
-        return jdbcTemplate.query("SELECT * FROM packs WHERE active = true", PACK_ROW_MAPPER);
+        return jdbcTemplate.query(
+                "SELECT " + PACK_COLS_NO_IMAGE + " FROM packs WHERE active = true",
+                packRowMapper
+        );
     }
 
     @Override
     public List<Pack> searchPacks(String query) {
         final String pattern = "%" + query + "%";
         return jdbcTemplate.query(
-            "SELECT packs.* FROM packs JOIN commerces ON packs.commerce_id = commerces.user_id WHERE packs.active = true AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?)",
-            PACK_ROW_MAPPER,
+            "SELECT packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active " +
+            "FROM packs JOIN commerces ON packs.commerce_id = commerces.user_id " +
+            "WHERE packs.active = true AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?)",
+            packRowMapper,
             pattern,
             pattern
         );
@@ -88,11 +127,46 @@ public class PackJdbcDao implements PackDao {
             pack.getStock(),
             pack.getId()
         );
+
+        jdbcTemplate.update("DELETE FROM pack_tags WHERE pack_id = ?", pack.getId());
+        if (pack.getTags() != null && !pack.getTags().isEmpty()) {
+            List<Object[]> batchParams = new ArrayList<>();
+            for (PackTag tag : pack.getTags()) {
+                batchParams.add(new Object[]{pack.getId(), tag.name()});
+            }
+            jdbcTemplate.batchUpdate("INSERT INTO pack_tags (pack_id, tag) VALUES (?, ?)", batchParams);
+        }
+
         return pack;
     }
 
     @Override
     public void setActive(final Long id, final boolean active) {
         jdbcTemplate.update("UPDATE packs SET active = ? WHERE id = ?", active, id);
+    }
+
+    @Override
+    public Optional<Pack> findImageByPackId(Long id) {
+        return jdbcTemplate.query(
+                "SELECT id, commerce_id, title, description, original_price, final_price, stock, active, image_data, image_content_type FROM packs WHERE id = ?",
+                (rs, rowNum) -> {
+                    byte[] imgData = rs.getBytes("image_data");
+                    String imgType = rs.getString("image_content_type");
+                    return new Pack(
+                            rs.getLong("id"),
+                            rs.getLong("commerce_id"),
+                            rs.getString("title"),
+                            rs.getString("description"),
+                            rs.getDouble("original_price"),
+                            rs.getDouble("final_price"),
+                            rs.getInt("stock"),
+                            rs.getBoolean("active"),
+                            Collections.emptyList(),
+                            imgData,
+                            imgType
+                    );
+                },
+                id
+        ).stream().findAny();
     }
 }

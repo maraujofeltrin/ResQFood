@@ -1,5 +1,7 @@
 package ar.edu.itba.paw.services;
 
+import ar.edu.itba.paw.models.PackTag;
+
 import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.persistence.PackDao;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +21,10 @@ public class PackServiceImpl implements PackService {
     }
 
     @Override
-    public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock) {
-        return packDao.createPack(commerceId, title, description, originalPrice, finalPrice, stock);
+    public Pack createPack(Long commerceId, String title, String description, Double originalPrice,
+                           Double finalPrice, Integer stock, List<PackTag> tags,
+                           byte[] imageData, String imageContentType) {
+        return packDao.createPack(commerceId, title, description, originalPrice, finalPrice, stock, tags, imageData, imageContentType);
     }
 
     @Override
@@ -51,5 +55,10 @@ public class PackServiceImpl implements PackService {
     @Override
     public void setActive(Long id, boolean active) {
         packDao.setActive(id, active);
+    }
+
+    @Override
+    public Optional<Pack> findImageByPackId(Long id) {
+        return packDao.findImageByPackId(id);
     }
 }

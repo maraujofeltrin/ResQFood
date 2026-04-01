@@ -91,7 +91,7 @@
             <div class="pack-detail-media-col">
                 <div class="pack-detail-hero">
                     <img class="pack-detail-hero-img"
-                         src="<c:out value="${heroImageUrl}"/>"
+                         src="${pageContext.request.contextPath}/packs/${packId}/image"
                          alt="Imagen del pack"/>
                 </div>
 
