@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -61,5 +62,15 @@ public class ReservationServiceImpl implements ReservationService {
                 null,
                 quantity,
                 pickupWindow);
+    }
+
+    @Override
+    public Optional<Reservation> findById(final Long id) {
+        return reservationDao.findById(id);
+    }
+
+    @Override
+    public Reservation confirmPickup(final Long id) {
+        return reservationDao.confirmPickup(id, java.time.LocalDateTime.now());
     }
 }

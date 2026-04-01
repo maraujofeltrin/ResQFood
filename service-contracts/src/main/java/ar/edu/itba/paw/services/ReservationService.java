@@ -2,6 +2,8 @@ package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Reservation;
 
+import java.util.Optional;
+
 public interface ReservationService {
 
     /**
@@ -10,4 +12,8 @@ public interface ReservationService {
      */
     Reservation createReservation(long packId, String email, String firstName, String lastName, String phone,
             int quantity, double unitPrice, String pickupWindow);
+
+    Optional<Reservation> findById(final Long id);
+
+    Reservation confirmPickup(final Long id);
 }
