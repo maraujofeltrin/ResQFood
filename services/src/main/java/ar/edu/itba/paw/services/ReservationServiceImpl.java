@@ -2,8 +2,10 @@ package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Reservation;
 import ar.edu.itba.paw.models.User;
+import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -22,13 +24,22 @@ public class ReservationServiceImpl implements ReservationService {
     private final UserService userService;
     private final ClientService clientService;
     private final ReservationDao reservationDao;
+    private final PackDao packDao;
+    private final ReservationMailService reservationMailService;
+    private final String appBaseUrl;
 
     @Autowired
     public ReservationServiceImpl(final UserService userService, final ClientService clientService,
-            final ReservationDao reservationDao) {
+            final ReservationDao reservationDao,
+            final PackDao packDao,
+            final ReservationMailService reservationMailService,
+            @Value("${app.base-url}") final String appBaseUrl) {
         this.userService = userService;
         this.clientService = clientService;
         this.reservationDao = reservationDao;
+        this.packDao = packDao;
+        this.reservationMailService = reservationMailService;
+        this.appBaseUrl = appBaseUrl;
     }
 
     @Override
@@ -52,7 +63,7 @@ public class ReservationServiceImpl implements ReservationService {
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final double lineTotal = unitPrice * quantity;
 
-        return reservationDao.createReservation(
+        final Reservation reservation = reservationDao.createReservation(
                 user.getId(),
                 packId,
                 now,
@@ -62,6 +73,18 @@ public class ReservationServiceImpl implements ReservationService {
                 null,
                 quantity,
                 pickupWindow);
+
+        final Long commerceId = packDao.findById(packId)
+            .orElseThrow(() -> new IllegalStateException("Pack not found: " + packId))
+            .getCommerceId();
+        final String commerceEmail = userService.findById(commerceId)
+            .map(User::getEmail)
+            .orElseThrow(() -> new IllegalStateException("Commerce user not found for id: " + commerceId));
+
+        reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail, appBaseUrl);
+        reservationMailService.sendReservationCodeToClient(reservation, user.getEmail());
+
+        return reservation;
     }
 
     @Override
