@@ -12,9 +12,14 @@ public class Pack {
     private Integer stock;
     private Boolean active;
     private final List<PackTag> tags;
-    
+    private byte[] imageData;
+    private String imageContentType;
 
     public Pack(Long id, Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, Boolean active, List<PackTag> tags) {
+        this(id, commerceId, title, description, originalPrice, finalPrice, stock, active, tags, null, null);
+    }
+
+    public Pack(Long id, Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, Boolean active, List<PackTag> tags, byte[] imageData, String imageContentType) {
         this.id = id;
         this.commerceId = commerceId;
         this.title = title;
@@ -24,6 +29,8 @@ public class Pack {
         this.stock = stock;
         this.active = active;
         this.tags = tags;
+        this.imageData = imageData;
+        this.imageContentType = imageContentType;
     }
 
     public Long getId() {
@@ -86,8 +93,24 @@ public class Pack {
         this.active = active;
     }
 
+    public byte[] getImageData() {
+        return imageData;
+    }
+
+    public void setImageData(byte[] imageData) {
+        this.imageData = imageData;
+    }
+
+    public String getImageContentType() {
+        return imageContentType;
+    }
+
+    public void setImageContentType(String imageContentType) {
+        this.imageContentType = imageContentType;
+    }
+
     @Override
     public String toString() {
-        return "Pack [id=" + id + ", commerceId=" + commerceId + ", title=" + title + ", description=" + description + ", originalPrice=" + originalPrice + ", finalPrice=" + finalPrice + ", stock=" + stock + ", active=" + active + ", tags=" + tags + "]";
+        return "Pack [id=" + id + ", commerceId=" + commerceId + ", title=" + title + ", description=" + description + ", originalPrice=" + originalPrice + ", finalPrice=" + finalPrice + ", stock=" + stock + ", active=" + active + ", tags=" + tags + ", hasImage=" + (imageData != null) + "]";
     }
 }

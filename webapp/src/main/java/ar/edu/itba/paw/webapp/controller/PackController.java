@@ -7,15 +7,21 @@ import ar.edu.itba.paw.services.PackService;
 import ar.edu.itba.paw.services.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import javax.servlet.ServletContext;
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.NumberFormat;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -34,22 +40,41 @@ public class PackController {
     private final ReservationService reservationService;
     private final PackService packService;
     private final CommerceService commerceService;
+    private final ServletContext servletContext;
+
+    private byte[] placeholderBytes;
+    private String placeholderContentType;
 
     @Autowired
     public PackController(final ReservationService reservationService, final PackService packService,
-            final CommerceService commerceService) {
+            final CommerceService commerceService, final ServletContext servletContext) {
         this.reservationService = reservationService;
         this.packService = packService;
         this.commerceService = commerceService;
+        this.servletContext = servletContext;
+    }
+
+    private synchronized byte[] getPlaceholderBytes() {
+        if (placeholderBytes == null) {
+            try (InputStream is = servletContext.getResourceAsStream("/images/pack-placeholder.svg")) {
+                if (is != null) {
+                    placeholderBytes = is.readAllBytes();
+                    placeholderContentType = "image/svg+xml";
+                }
+            } catch (IOException ignored) {
+            }
+            if (placeholderBytes == null) {
+                placeholderBytes = new byte[0];
+                placeholderContentType = "application/octet-stream";
+            }
+        }
+        return placeholderBytes;
     }
 
     private static final List<String> DEFAULT_PICKUP_WINDOWS = Arrays.asList(
             "Hoy, 17:30 - 18:00",
             "Hoy, 18:00 - 18:30"
     );
-
-    private static final String GENERIC_HERO =
-            "https://lh3.googleusercontent.com/aida-public/AB6AXuDb9hqJJAJNKmO3vDzg7EtSwBaD2qDwByCk6_I-bar41vMvOr6ClV2eSjSKxqDojQWHI3eO8zB1BKkl1ntlGvi8EPZkbXBgzSMu9RiO7poHlFUWWEtzs2P9dfXj4foOTOoEKcnfHrLmCVCpUzdxvrhdZY2EOe0lyz4EURrPh7ee3TGa91znbF11iBDn0K7YO13wkdfJVec0vZk1h0jWNtouqj8Agx98aCT_Kuja_RcUDd3H-EaFaamyPYAagjr_yRloaXoZRO7aLVtd";
 
     private static String formatUsd(final Double amount) {
         if (amount == null) {
@@ -204,7 +229,6 @@ public class PackController {
         mav.addObject("packDescription", pack.getDescription() != null ? pack.getDescription() : "");
         addCommerceDetailAttributes(mav, commerceOpt);
         mav.addObject("badgeLabel", "SURPRISE PACK");
-        mav.addObject("heroImageUrl", GENERIC_HERO);
         mav.addObject("originalPrice", formatUsd(pack.getOriginalPrice()));
         mav.addObject("finalPrice", formatUsd(pack.getFinalPrice()));
         mav.addObject("reservationFormHeading", "Reserva este pack");
@@ -227,6 +251,26 @@ public class PackController {
         mav.addObject("quantityMax", quantityMax);
 
         return mav;
+    }
+
+    @GetMapping("/packs/{id}/image")
+    @ResponseBody
+    public ResponseEntity<byte[]> packImage(@PathVariable("id") final long id) {
+        final Optional<Pack> packOpt = packService.findImageByPackId(id);
+        if (packOpt.isPresent()) {
+            final Pack pack = packOpt.get();
+            if (pack.getImageData() != null && pack.getImageData().length > 0) {
+                String contentType = pack.getImageContentType() != null
+                        ? pack.getImageContentType() : "application/octet-stream";
+                return ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(contentType))
+                        .body(pack.getImageData());
+            }
+        }
+        final byte[] placeholder = getPlaceholderBytes();
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(placeholderContentType))
+                .body(placeholder);
     }
 
     @PostMapping("/packs/{packId}/reserve")

@@ -2,7 +2,6 @@
 <%@ attribute name="packId" required="true" %>
 <%@ attribute name="title" required="true" %>
 <%@ attribute name="subtitle" required="true" %>
-<%@ attribute name="imageUrl" required="true" %>
 <%@ attribute name="imageAlt" required="false" %>
 <%@ attribute name="badgeText" required="false" %>
 <%@ attribute name="rescueLabel" required="false" %>
@@ -17,7 +16,7 @@
 
 <a href="${pageContext.request.contextPath}/packs/${packId}" class="bg-surface-container-lowest rounded-xl overflow-hidden group shadow-sm hover:shadow-md transition-shadow flex flex-col h-full min-w-[280px] cursor-pointer hover:bg-surface-container-low transition-colors text-inherit no-underline">
   <div class="relative h-48 sm:h-56 flex-shrink-0 overflow-hidden">
-    <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="<c:out value="${resolvedAlt}"/>" src="<c:out value="${imageUrl}"/>" alt="<c:out value="${resolvedAlt}"/>"/>
+    <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="<c:out value="${resolvedAlt}"/>" src="${pageContext.request.contextPath}/packs/${packId}/image" alt="<c:out value="${resolvedAlt}"/>"/>
     <c:if test="${not empty badgeText}">
       <div class="absolute bottom-3 left-3 flex gap-2">
         <span class="bg-white/90 backdrop-blur text-primary px-3 py-1 rounded-full text-xs font-bold shadow-sm"><c:out value="${badgeText}"/></span>

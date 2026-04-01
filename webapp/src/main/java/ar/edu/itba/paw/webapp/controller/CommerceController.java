@@ -4,6 +4,7 @@ import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.models.PackTag;
 import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
+import java.io.IOException;
 import java.util.List;
 import java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 @Controller
@@ -59,7 +61,8 @@ public class CommerceController {
             @RequestParam("originalPrice") final Double originalPrice,
             @RequestParam("finalPrice") final Double finalPrice,
             @RequestParam("stock") final Integer stock,
-            @RequestParam(value = "tags", required = false) final List<PackTag> tags) {
+            @RequestParam(value = "tags", required = false) final List<PackTag> tags,
+            @RequestParam(value = "image", required = false) final MultipartFile image) {
 
         try {
             Commerce commerce = commerceService.getOrCreateCommerce(
@@ -67,8 +70,17 @@ public class CommerceController {
                     city, province, postalCode, openingTime, closingTime
             );
 
+            byte[] imageData = null;
+            String imageContentType = null;
+            if (image != null && !image.isEmpty()) {
+                imageData = image.getBytes();
+                imageContentType = image.getContentType();
+            }
+
             packService.createPack(commerce.getUserId(), packTitle, packDescription, 
-                                   originalPrice, finalPrice, stock, tags != null ? tags : Collections.emptyList());
+                                   originalPrice, finalPrice, stock,
+                                   tags != null ? tags : Collections.emptyList(),
+                                   imageData, imageContentType);
                                    
             return new ModelAndView("redirect:/commerce");
 
@@ -76,6 +88,11 @@ public class CommerceController {
             final ModelAndView mav = new ModelAndView("commerce/createPack");
             mav.addObject("availableTags", PackTag.values());
             mav.addObject("errorMessage", e.getMessage());
+            return mav;
+        } catch (IOException e) {
+            final ModelAndView mav = new ModelAndView("commerce/createPack");
+            mav.addObject("availableTags", PackTag.values());
+            mav.addObject("errorMessage", "Error al procesar la imagen. Intente nuevamente.");
             return mav;
         }
     }

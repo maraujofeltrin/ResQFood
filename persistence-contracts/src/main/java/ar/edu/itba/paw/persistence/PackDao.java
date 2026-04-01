@@ -7,11 +7,12 @@ import java.util.List;
 import ar.edu.itba.paw.models.PackTag;
 
 public interface PackDao {
-    public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<PackTag> tags);
-    public Optional<Pack> findById(final Long id);
-    public List<Pack> findAll();
-    public List<Pack> findActive();
-    public List<Pack> searchPacks(String query);
-    public Pack update(Pack pack);
-    public void setActive(final Long id, final boolean active);
+    Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<PackTag> tags, byte[] imageData, String imageContentType);
+    Optional<Pack> findById(Long id);
+    List<Pack> findAll();
+    List<Pack> findActive();
+    List<Pack> searchPacks(String query);
+    Pack update(Pack pack);
+    void setActive(Long id, boolean active);
+    Optional<Pack> findImageByPackId(Long id);
 }

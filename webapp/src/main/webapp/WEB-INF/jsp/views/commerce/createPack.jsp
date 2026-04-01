@@ -104,7 +104,7 @@
             </div>
         </c:if>
 
-        <form action="${pageContext.request.contextPath}/commerce/create-pack" method="post" class="pack-detail-grid">
+        <form action="${pageContext.request.contextPath}/commerce/create-pack" method="post" enctype="multipart/form-data" class="pack-detail-grid">
             
             <!-- Left Column: Form Sections -->
             <div class="grid col-span-1 md:col-span-8 gap-8">
@@ -241,6 +241,12 @@
                                 <span class="text-xs text-secondary font-normal">Packs idénticos</span>
                             </label>
                             <input type="number" name="stock" class="pack-form-control pack-form-control--tabular" placeholder="Ej: 5" required />
+                        </div>
+
+                        <div class="pack-form-field mt-2">
+                            <label class="pack-form-label">Imagen del Pack (Opcional)</label>
+                            <input type="file" name="image" accept="image/*" class="pack-form-control file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-fixed file:text-on-primary-fixed hover:file:bg-primary-fixed-dim cursor-pointer" />
+                            <p class="text-xs text-secondary mt-1">Formatos: JPG, PNG, WebP. Max 5 MB.</p>
                         </div>
 
                         <button type="submit" class="pack-submit-btn mt-4">
