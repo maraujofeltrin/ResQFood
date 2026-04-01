@@ -1,0 +1,11 @@
+# Copy this file and rename it to mail.properties, then fill in your credentials
+# NEVER commit mail.properties, only this file
+
+# Gmail account used to send emails
+mail.username=username@gmail.com
+
+# App Password de Gmail (NO es tu contraseña normal)
+mail.password=abcdefghijklmnop
+
+# URL base de la aplicación, se usa para construir los links en los mails
+app.base-url=http://localhost:8080
