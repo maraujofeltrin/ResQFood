@@ -1,25 +1,5 @@
 package ar.edu.itba.paw.webapp.controller;
 
-import ar.edu.itba.paw.models.Commerce;
-import ar.edu.itba.paw.models.Pack;
-import ar.edu.itba.paw.services.CommerceService;
-import ar.edu.itba.paw.services.PackService;
-import ar.edu.itba.paw.services.ReservationService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import javax.servlet.ServletContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.NumberFormat;
@@ -28,11 +8,38 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+
+import javax.servlet.ServletContext;
+import javax.validation.Valid;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import ar.edu.itba.paw.models.Commerce;
+import ar.edu.itba.paw.models.Pack;
+import ar.edu.itba.paw.services.CommerceService;
+import ar.edu.itba.paw.services.PackService;
+import ar.edu.itba.paw.services.ReservationService;
+import ar.edu.itba.paw.webapp.form.ReservationForm;
 
 @Controller
 public class PackController {
@@ -41,17 +48,20 @@ public class PackController {
     private final PackService packService;
     private final CommerceService commerceService;
     private final ServletContext servletContext;
+    private final MessageSource messageSource;
 
     private byte[] placeholderBytes;
     private String placeholderContentType;
 
     @Autowired
     public PackController(final ReservationService reservationService, final PackService packService,
-            final CommerceService commerceService, final ServletContext servletContext) {
+            final CommerceService commerceService, final ServletContext servletContext,
+            final MessageSource messageSource) {
         this.reservationService = reservationService;
         this.packService = packService;
         this.commerceService = commerceService;
         this.servletContext = servletContext;
+        this.messageSource = messageSource;
     }
 
     private synchronized byte[] getPlaceholderBytes() {
@@ -186,6 +196,47 @@ public class PackController {
         mav.addObject("commerceOpenNow", Boolean.valueOf(computeOpenNow(commerce)));
     }
 
+    private ReservationForm createDefaultReservationForm() {
+        final ReservationForm form = new ReservationForm();
+        form.setQuantity(Integer.valueOf(1));
+        if (!DEFAULT_PICKUP_WINDOWS.isEmpty()) {
+            form.setPickupWindow(DEFAULT_PICKUP_WINDOWS.get(0));
+        }
+        return form;
+    }
+
+    private ModelAndView buildPackDetailModel(final Pack pack, final ReservationForm reservationForm) {
+        final Optional<Commerce> commerceOpt = commerceService.findByUserId(pack.getCommerceId());
+        final Locale locale = LocaleContextHolder.getLocale();
+
+        final String title = pack.getTitle() != null && !pack.getTitle().isBlank()
+                ? pack.getTitle()
+                : messageSource.getMessage("pack.detail.defaultTitle", null, locale);
+
+        final String brand = messageSource.getMessage("app.brand", null, locale);
+        final String pageTitle = messageSource.getMessage("pack.detail.pageTitle",
+                new Object[] { title, brand }, locale);
+
+        final ModelAndView mav = new ModelAndView("packs/packDetailView");
+        mav.addObject("packId", pack.getId());
+        final double unitPriceAmount = pack.getFinalPrice() != null ? pack.getFinalPrice() : 0d;
+        mav.addObject("unitPriceAmount", unitPriceAmount);
+        mav.addObject("pageTitle", pageTitle);
+        mav.addObject("packTitle", title);
+        mav.addObject("packDescription", pack.getDescription() != null ? pack.getDescription() : "");
+        addCommerceDetailAttributes(mav, commerceOpt);
+        mav.addObject("originalPrice", formatUsd(pack.getOriginalPrice()));
+        mav.addObject("finalPrice", formatUsd(pack.getFinalPrice()));
+        mav.addObject("pickupWindows", DEFAULT_PICKUP_WINDOWS);
+
+        final Integer stock = pack.getStock();
+        final int quantityMax = stock != null && stock >= 1 ? Math.min(stock, 999) : 999;
+        mav.addObject("quantityMax", quantityMax);
+
+        mav.addObject("reservationForm", reservationForm);
+        return mav;
+    }
+
     @GetMapping("/packs")
     public ModelAndView listPacks(@RequestParam(value = "q", required = false) final String query) {
         final ModelAndView mav = new ModelAndView("packs/packCatalogView");
@@ -214,43 +265,7 @@ public class PackController {
                 .filter(p -> Boolean.TRUE.equals(p.getActive()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        final Optional<Commerce> commerceOpt = commerceService.findByUserId(pack.getCommerceId());
-
-        final String title = pack.getTitle() != null && !pack.getTitle().isBlank()
-                ? pack.getTitle()
-                : "Pack";
-
-        final ModelAndView mav = new ModelAndView("packs/packDetailView");
-        mav.addObject("packId", pack.getId());
-        final double unitPriceAmount = pack.getFinalPrice() != null ? pack.getFinalPrice() : 0d;
-        mav.addObject("unitPriceAmount", unitPriceAmount);
-        mav.addObject("pageTitle", title + " | The Living Pantry");
-        mav.addObject("packTitle", title);
-        mav.addObject("packDescription", pack.getDescription() != null ? pack.getDescription() : "");
-        addCommerceDetailAttributes(mav, commerceOpt);
-        mav.addObject("badgeLabel", "SURPRISE PACK");
-        mav.addObject("originalPrice", formatUsd(pack.getOriginalPrice()));
-        mav.addObject("finalPrice", formatUsd(pack.getFinalPrice()));
-        mav.addObject("reservationFormHeading", "Reserva este pack");
-        mav.addObject("quantityLabel", "Cantidad de packs");
-        mav.addObject("defaultQuantity", "1");
-        mav.addObject("pickupWindowLabel", "Franja horaria de retiro");
-        mav.addObject("unitPriceLabel", "Precio por pack");
-        mav.addObject("totalLabel", "Total");
-        mav.addObject("totalHint",
-                "El monto cobrado sera el precio por pack multiplicado por la cantidad que selecciones.");
-        mav.addObject("labelFirstName", "Nombre");
-        mav.addObject("labelLastName", "Apellido");
-        mav.addObject("labelEmail", "Correo electronico");
-        mav.addObject("labelPhone", "Telefono");
-        mav.addObject("confirmButtonLabel", "Confirmar reserva");
-        mav.addObject("pickupWindows", DEFAULT_PICKUP_WINDOWS);
-
-        final Integer stock = pack.getStock();
-        final int quantityMax = stock != null && stock >= 1 ? Math.min(stock, 999) : 999;
-        mav.addObject("quantityMax", quantityMax);
-
-        return mav;
+        return buildPackDetailModel(pack, createDefaultReservationForm());
     }
 
     @GetMapping("/packs/{id}/image")
@@ -276,12 +291,8 @@ public class PackController {
     @PostMapping("/packs/{packId}/reserve")
     public ModelAndView submitReservation(
             @PathVariable("packId") final long packId,
-            @RequestParam("firstName") final String firstName,
-            @RequestParam("lastName") final String lastName,
-            @RequestParam("email") final String email,
-            @RequestParam("phone") final String phone,
-            @RequestParam("quantity") final int quantity,
-            @RequestParam("pickupWindow") final String pickupWindow,
+            @Valid @ModelAttribute("reservationForm") final ReservationForm reservationForm,
+            final BindingResult bindingResult,
             final RedirectAttributes redirectAttributes) {
         final Optional<Pack> packOpt = packService.findById(packId)
                 .filter(p -> Boolean.TRUE.equals(p.getActive()));
@@ -291,37 +302,53 @@ public class PackController {
         if (packOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
-                    "This pack is not available for reservation.");
+                    messageSource.getMessage("reservation.alert.packUnavailable", null,
+                            LocaleContextHolder.getLocale()));
             return redirectView;
         }
 
         final Pack pack = packOpt.get();
+        final Integer stock = pack.getStock();
+        if (reservationForm.getQuantity() != null && stock != null
+                && reservationForm.getQuantity().intValue() > stock.intValue()) {
+            bindingResult.rejectValue("quantity", "reservation.quantity.exceedsStock");
+        }
+
+        if (bindingResult.hasErrors()) {
+            final ModelAndView mav = buildPackDetailModel(pack, reservationForm);
+            return mav;
+        }
+
         final Double finalPrice = pack.getFinalPrice();
         if (finalPrice == null) {
             redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
-                    "Your reservation could not be completed. Please try again.");
+                    messageSource.getMessage("reservation.alert.genericError", null,
+                            LocaleContextHolder.getLocale()));
             return redirectView;
         }
 
-        final Integer stock = pack.getStock();
-        if (stock != null && quantity > stock) {
-            redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
-            redirectAttributes.addFlashAttribute("reservationAlertMessage",
-                    "The selected quantity exceeds available stock.");
-            return redirectView;
-        }
+        final int quantity = reservationForm.getQuantity().intValue();
 
         try {
             reservationService.createReservation(
-                    packId, email, firstName, lastName, phone, quantity, finalPrice, pickupWindow);
+                    packId,
+                    reservationForm.getEmail(),
+                    reservationForm.getFirstName(),
+                    reservationForm.getLastName(),
+                    reservationForm.getPhone(),
+                    quantity,
+                    finalPrice,
+                    reservationForm.getPickupWindow());
             redirectAttributes.addFlashAttribute("reservationAlertKind", "success");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
-                    "Your reservation was confirmed. We've sent your reservation code to your email address.");
+                    messageSource.getMessage("reservation.alert.success", null,
+                            LocaleContextHolder.getLocale()));
         } catch (final Exception ex) {
             redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
-                    "Your reservation could not be completed. Please try again.");
+                    messageSource.getMessage("reservation.alert.genericError", null,
+                            LocaleContextHolder.getLocale()));
         }
         return redirectView;
     }
