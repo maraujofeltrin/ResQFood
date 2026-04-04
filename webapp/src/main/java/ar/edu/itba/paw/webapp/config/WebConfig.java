@@ -43,7 +43,7 @@ import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 @EnableTransactionManagement
 @ComponentScan({ "ar.edu.itba.paw.webapp.controller", "ar.edu.itba.paw.services", "ar.edu.itba.paw.persistence" })
 @Configuration
-@PropertySource("classpath:mail.properties")
+@PropertySource("classpath:/env.properties")
 public class WebConfig implements WebMvcConfigurer {
 
     static {
@@ -93,12 +93,15 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     @Bean
-    public DataSource dataSource() {
+    public DataSource dataSource(
+            @Value("${db.url}") final String url,
+            @Value("${db.username}") final String username,
+            @Value("${db.password}") final String password) {
         final SimpleDriverDataSource dataSource = new SimpleDriverDataSource();
         dataSource.setDriverClass(org.postgresql.Driver.class);
-        dataSource.setUrl("jdbc:postgresql://localhost/paw");
-        dataSource.setUsername("pawdbuser");
-        dataSource.setPassword("pawsecret");
+        dataSource.setUrl(url);
+        dataSource.setUsername(username);
+        dataSource.setPassword(password);
         return dataSource;
     }
 

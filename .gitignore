@@ -50,5 +50,5 @@ Thumbs.db
 
 .vscode
 
-# Mail credentials - use mail.properties.example as reference
-**/mail.properties
+# Environment credentials - use env.properties.example as reference
+**/env.properties
