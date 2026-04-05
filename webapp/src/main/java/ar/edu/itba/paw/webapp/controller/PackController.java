@@ -231,8 +231,25 @@ public class PackController {
         mav.addObject("pickupWindows", DEFAULT_PICKUP_WINDOWS);
 
         final Integer stock = pack.getStock();
-        final int quantityMax = stock != null && stock >= 1 ? Math.min(stock, 999) : 999;
+        final int quantityMax;
+        if (stock != null && stock >= 1) {
+            quantityMax = Math.min(stock, 999);
+        } else if (stock != null) {
+            quantityMax = 0;
+        } else {
+            quantityMax = 999;
+        }
         mav.addObject("quantityMax", quantityMax);
+
+        if (stock != null) {
+            mav.addObject("packStockBadgeText",
+                    messageSource.getMessage("pack.detail.stockBadge", new Object[] { stock }, locale));
+        }
+
+        if (stock != null && stock >= 1 && reservationForm.getQuantity() != null
+                && reservationForm.getQuantity().intValue() > stock.intValue()) {
+            reservationForm.setQuantity(stock);
+        }
 
         mav.addObject("reservationForm", reservationForm);
         return mav;

@@ -15,4 +15,11 @@ public interface PackDao {
     Pack update(Pack pack);
     void setActive(Long id, boolean active);
     Optional<Pack> findImageByPackId(Long id);
+
+    /**
+     * Resta {@code quantity} al stock del pack si hay unidades suficientes.
+     *
+     * @return {@code true} si se actualizó exactamente una fila
+     */
+    boolean decrementStock(long packId, int quantity);
 }

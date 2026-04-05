@@ -109,6 +109,9 @@
                 <div class="pack-detail-intro">
                     <div class="pack-detail-meta">
                         <span class="pack-detail-badge"><c:out value="${packDetailBadge}"/></span>
+                        <c:if test="${not empty packStockBadgeText}">
+                            <span class="pack-detail-badge pack-detail-badge--stock"><c:out value="${packStockBadgeText}"/></span>
+                        </c:if>
                         <span class="pack-detail-merchant"><c:out value="${commerceCommercialName}"/></span>
                     </div>
                     <h1 class="pack-detail-title font-headline"><c:out value="${packTitle}"/></h1>
@@ -238,17 +241,30 @@
 
                         <spring:message code="pack.detail.form.quantity" var="labelQuantity"/>
                         <spring:message code="pack.detail.form.quantity.placeholder" var="phQuantity"/>
-                        <spring:bind path="quantity">
-                            <paw:input id="reservation-quantity" label="${labelQuantity}" type="number"
-                                       name="${status.expression}" value="${status.value}"
-                                       error="${status.errorMessages[0]}"
-                                       placeholder="${phQuantity}"
-                                       min="1" max="${quantityMax}" step="1"
-                                       wrapperClass="pack-form-field" labelClass="pack-form-label"
-                                       inputClass="pack-form-control pack-form-control--tabular"
-                                       errorClass="pack-feedback pack-feedback--error pack-form-errors"
-                                       errorTag="p"/>
-                        </spring:bind>
+                        <c:choose>
+                            <c:when test="${quantityMax ge 1}">
+                                <spring:bind path="quantity">
+                                    <paw:input id="reservation-quantity" label="${labelQuantity}" type="number"
+                                               name="${status.expression}" value="${status.value}"
+                                               error="${status.errorMessages[0]}"
+                                               placeholder="${phQuantity}"
+                                               min="1" max="${quantityMax}" step="1"
+                                               wrapperClass="pack-form-field" labelClass="pack-form-label"
+                                               inputClass="pack-form-control pack-form-control--tabular"
+                                               errorClass="pack-feedback pack-feedback--error pack-form-errors"
+                                               errorTag="p"/>
+                                </spring:bind>
+                            </c:when>
+                            <c:otherwise>
+                                <div class="pack-form-field">
+                                    <label class="pack-form-label" for="reservation-quantity-hidden"><c:out value="${labelQuantity}"/></label>
+                                    <p class="pack-feedback pack-feedback--error" role="alert" id="reservation-quantity-unavailable">
+                                        <spring:message code="pack.detail.form.quantity.unavailable"/>
+                                    </p>
+                                    <form:hidden path="quantity" id="reservation-quantity-hidden"/>
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
 
                         <div class="pack-form-field" id="reservation-total-block"
                              data-unit-price="${unitPriceNumber}">
@@ -266,7 +282,8 @@
                             <form:errors path="pickupWindow" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p"/>
                         </div>
 
-                        <button type="submit" class="pack-submit-btn font-headline">
+                        <button type="submit" class="pack-submit-btn font-headline"
+                                <c:if test="${quantityMax lt 1}">disabled="disabled" aria-disabled="true"</c:if>>
                             <spring:message code="pack.detail.form.submit"/>
                             <span class="material-symbols-outlined">arrow_forward</span>
                         </button>
@@ -290,11 +307,14 @@
                 unit = 0;
             }
             var maxQ = parseInt(qtyInput.getAttribute('max'), 10);
-            if (isNaN(maxQ) || maxQ < 1) {
+            if (isNaN(maxQ)) {
                 maxQ = 999;
             }
             var fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
             function parseQuantity() {
+                if (maxQ === 0) {
+                    return 0;
+                }
                 var q = parseInt(qtyInput.value, 10);
                 if (isNaN(q) || q < 1) {
                     q = 1;

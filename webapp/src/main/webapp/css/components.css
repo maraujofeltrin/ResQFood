@@ -574,6 +574,11 @@
   letter-spacing: -0.025em;
 }
 
+.pack-detail-badge--stock {
+  background-color: #e3e1e7;
+  color: #454650;
+}
+
 .pack-detail-meta-sep {
   color: #c5c5d1;
 }
@@ -985,6 +990,13 @@
 
 .pack-submit-btn:active {
   transform: scale(0.98);
+}
+
+.pack-submit-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
 }
 
 .pack-impact {

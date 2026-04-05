@@ -7,6 +7,7 @@ import ar.edu.itba.paw.persistence.ReservationDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -50,6 +51,7 @@ public class ReservationServiceImpl implements ReservationService {
         this.appBaseUrl = appBaseUrl;
     }
 
+    @Transactional
     @Override
     public Reservation createReservation(final long packId, final String email, final String firstName,
             final String lastName, final String phone, final int quantity, final double unitPrice,
@@ -68,6 +70,10 @@ public class ReservationServiceImpl implements ReservationService {
         clientService.findByUserId(user.getId()).orElseGet(() -> clientService.createClient(user.getId(), firstName,
                 lastName, null));
 
+        if (!packDao.decrementStock(packId, quantity)) {
+            throw new IllegalStateException("Could not decrement stock for pack: " + packId);
+        }
+
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final double lineTotal = unitPrice * quantity;
 
@@ -83,7 +89,7 @@ public class ReservationServiceImpl implements ReservationService {
                 pickupWindow);
 
         final Long commerceId = packDao.findById(packId)
-            .orElseThrow(() -> new IllegalStateException("Pack not found: " + packId))
+            .orElseThrow(() -> new IllegalStateException("Pack not found after stock update: " + packId))
             .getCommerceId();
         final String commerceEmail = userService.findById(commerceId)
             .map(User::getEmail)
