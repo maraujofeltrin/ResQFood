@@ -117,6 +117,46 @@ public class PackJdbcDao implements PackDao {
     }
 
     @Override
+    public List<Pack> findActiveByTags(final List<PackTag> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return findActive();
+        }
+        final String inClause = String.join(", ", Collections.nCopies(tags.size(), "?"));
+        final Object[] params = tags.stream().map(PackTag::name).toArray();
+        return jdbcTemplate.query(
+            "SELECT DISTINCT p.id, p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active " +
+            "FROM packs p JOIN pack_tags pt ON p.id = pt.pack_id " +
+            "WHERE p.active = true AND pt.tag IN (" + inClause + ")",
+            packRowMapper,
+            params
+        );
+    }
+
+    @Override
+    public List<Pack> searchPacksWithTags(final String query, final List<PackTag> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return searchPacks(query);
+        }
+        final String pattern = "%" + query + "%";
+        final String inClause = String.join(", ", Collections.nCopies(tags.size(), "?"));
+        final List<Object> params = new ArrayList<>();
+        params.add(pattern);
+        params.add(pattern);
+        for (final PackTag tag : tags) {
+            params.add(tag.name());
+        }
+        return jdbcTemplate.query(
+            "SELECT DISTINCT packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active " +
+            "FROM packs " +
+            "JOIN commerces ON packs.commerce_id = commerces.user_id " +
+            "JOIN pack_tags pt ON packs.id = pt.pack_id " +
+            "WHERE packs.active = true AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?) AND pt.tag IN (" + inClause + ")",
+            packRowMapper,
+            params.toArray()
+        );
+    }
+
+    @Override
     public Pack update(Pack pack) {
         jdbcTemplate.update(
             "UPDATE packs SET title = ?, description = ?, original_price = ?, final_price = ?, stock = ? WHERE id = ?",

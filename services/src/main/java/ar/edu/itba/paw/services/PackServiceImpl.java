@@ -48,6 +48,16 @@ public class PackServiceImpl implements PackService {
     }
 
     @Override
+    public List<Pack> findActiveByTags(final List<PackTag> tags) {
+        return packDao.findActiveByTags(tags);
+    }
+
+    @Override
+    public List<Pack> searchPacksWithTags(final String query, final List<PackTag> tags) {
+        return packDao.searchPacksWithTags(query, tags);
+    }
+
+    @Override
     public Pack update(Pack pack) {
         return packDao.update(pack);
     }

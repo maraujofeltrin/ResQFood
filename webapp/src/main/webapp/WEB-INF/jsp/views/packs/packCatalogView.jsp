@@ -92,19 +92,21 @@
                 <h1 class="text-4xl md:text-5xl font-headline font-extrabold text-primary tracking-tight mb-2">Explore Surrounding Harvests</h1>
                 <p class="text-secondary font-body">Rescue surplus delicacies from local merchants and artisans.</p>
             </div>
-            <div class="flex flex-col sm:flex-row items-center w-full md:w-auto gap-4">
+            <div class="w-full md:w-auto">
                 <form action="${pageContext.request.contextPath}/packs" method="GET" class="w-full sm:w-auto">
                     <paw:searchBar value="${param.q}" placeholder="Search harvests or merchants..." classes="relative w-full sm:w-80" />
                 </form>
-                <div class="relative w-full sm:w-64">
-                    <select class="w-full appearance-none bg-none bg-surface-container-low px-4 py-3 rounded-xl border-none text-sm font-medium focus:ring-2 focus:ring-primary/20 cursor-pointer text-on-surface">
-                        <option>Sort by: Nearest</option>
-                        <option>Lowest Price</option>
-                    </select>
-                    <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary">expand_more</span>
-                </div>
             </div>
         </header>
+
+        <div class="mb-10">
+            <paw:tagFilter
+                availableTags="${availableTags}"
+                selectedTags="${selectedTags}"
+                baseUrl="${pageContext.request.contextPath}/packs"
+                searchQuery="${param.q}"
+            />
+        </div>
 
         <c:if test="${empty param.q}">
         <!-- Last Chance (Horizontal Scrolling Section) -->
