@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Optional;
 
 @Controller
@@ -128,7 +129,10 @@ public class ReservationController {
                         return "reservations/confirm-action";
                     }
 
-                    if (!pickupCode.equals(res.getPickupCode())) {
+                    final String inputCode = pickupCode == null ? "" : pickupCode.trim().toUpperCase(Locale.ROOT);
+                    final String storedCode = res.getPickupCode() == null ? ""
+                            : res.getPickupCode().trim().toUpperCase(Locale.ROOT);
+                    if (!inputCode.equals(storedCode)) {
                         model.addAttribute("pickupError", "Código de retiro inválido.");
                         model.addAttribute("confirmEndpoint", "accept");
                         return "reservations/confirm-action";

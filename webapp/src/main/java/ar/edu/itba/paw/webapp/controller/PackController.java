@@ -221,6 +221,7 @@ public class PackController {
         mav.addObject("packId", pack.getId());
         final double unitPriceAmount = pack.getFinalPrice() != null ? pack.getFinalPrice() : 0d;
         mav.addObject("unitPriceAmount", unitPriceAmount);
+        mav.addObject("unitPriceNumber", String.format(Locale.US, "%.2f", unitPriceAmount));
         mav.addObject("pageTitle", pageTitle);
         mav.addObject("packTitle", title);
         mav.addObject("packDescription", pack.getDescription() != null ? pack.getDescription() : "");

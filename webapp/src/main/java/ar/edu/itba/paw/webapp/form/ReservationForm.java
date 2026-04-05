@@ -16,7 +16,7 @@ public class ReservationForm {
 
     @NotBlank
     @Size(max = 255)
-    @Pattern(regexp = "^(?:[a-zA-Z]+|\\s*)$", message = "{reservation.lastName.invalid}")
+    @Pattern(regexp = "^[\\p{L}]+(?:\\s+[\\p{L}]+)*$", message = "{reservation.lastName.invalid}")
     private String lastName;
 
     @NotBlank

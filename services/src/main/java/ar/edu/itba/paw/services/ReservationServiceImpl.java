@@ -8,15 +8,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class ReservationServiceImpl implements ReservationService {
 
     private static final int PICKUP_WINDOW_MAX_LEN = 512;
+
+    private static final int PICKUP_CODE_LEN = 5;
+
+    private static final String PICKUP_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    private static final int PICKUP_CODE_MAX_ATTEMPTS = 64;
+
+    private static final SecureRandom PICKUP_CODE_RANDOM = new SecureRandom();
 
     /** Contraseña temporal hasta contar con registro/login propio ({@code users.password} NOT NULL). */
     private static final String RESERVATION_USER_PLACEHOLDER_PASSWORD = "__RESERVATION_PENDING_PASSWORD__";
@@ -69,7 +77,7 @@ public class ReservationServiceImpl implements ReservationService {
                 now,
                 lineTotal,
                 Reservation.Status.RESERVED,
-                UUID.randomUUID().toString(),
+                pickUniquePickupCode(),
                 null,
                 quantity,
                 pickupWindow);
@@ -85,6 +93,25 @@ public class ReservationServiceImpl implements ReservationService {
         reservationMailService.sendReservationCodeToClient(reservation, user.getEmail());
 
         return reservation;
+    }
+
+    private String pickUniquePickupCode() {
+        for (int attempt = 0; attempt < PICKUP_CODE_MAX_ATTEMPTS; attempt++) {
+            final String code = generatePickupCode();
+            if (reservationDao.findByPickupCode(code).isEmpty()) {
+                return code;
+            }
+        }
+        throw new IllegalStateException("Could not allocate unique pickup code after " + PICKUP_CODE_MAX_ATTEMPTS
+                + " attempts");
+    }
+
+    private static String generatePickupCode() {
+        final StringBuilder sb = new StringBuilder(PICKUP_CODE_LEN);
+        for (int i = 0; i < PICKUP_CODE_LEN; i++) {
+            sb.append(PICKUP_CODE_ALPHABET.charAt(PICKUP_CODE_RANDOM.nextInt(PICKUP_CODE_ALPHABET.length())));
+        }
+        return sb.toString();
     }
 
     @Override

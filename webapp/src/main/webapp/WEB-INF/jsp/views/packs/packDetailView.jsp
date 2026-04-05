@@ -243,16 +243,17 @@
                                        name="${status.expression}" value="${status.value}"
                                        error="${status.errorMessages[0]}"
                                        placeholder="${phQuantity}"
-                                       max="${quantityMax}" step="1"
+                                       min="1" max="${quantityMax}" step="1"
                                        wrapperClass="pack-form-field" labelClass="pack-form-label"
                                        inputClass="pack-form-control pack-form-control--tabular"
                                        errorClass="pack-feedback pack-feedback--error pack-form-errors"
                                        errorTag="p"/>
                         </spring:bind>
 
-                        <div class="pack-form-field">
+                        <div class="pack-form-field" id="reservation-total-block"
+                             data-unit-price="${unitPriceNumber}">
                             <p class="pack-form-total-label"><spring:message code="pack.detail.form.total"/></p>
-                            <p class="pack-form-total-hint"><spring:message code="pack.detail.form.totalHint"/></p>
+                            <p class="pack-form-total-amount font-headline" id="reservation-total-display" aria-live="polite">—</p>
                         </div>
 
                         <div class="pack-form-field">
@@ -276,5 +277,42 @@
     </main>
 
     <paw:footer />
+    <script>
+        (function () {
+            var block = document.getElementById('reservation-total-block');
+            var qtyInput = document.getElementById('reservation-quantity');
+            var totalEl = document.getElementById('reservation-total-display');
+            if (!block || !qtyInput || !totalEl) {
+                return;
+            }
+            var unit = parseFloat(block.getAttribute('data-unit-price'));
+            if (isNaN(unit)) {
+                unit = 0;
+            }
+            var maxQ = parseInt(qtyInput.getAttribute('max'), 10);
+            if (isNaN(maxQ) || maxQ < 1) {
+                maxQ = 999;
+            }
+            var fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+            function parseQuantity() {
+                var q = parseInt(qtyInput.value, 10);
+                if (isNaN(q) || q < 1) {
+                    q = 1;
+                }
+                if (q > maxQ) {
+                    q = maxQ;
+                }
+                return q;
+            }
+            function updateTotal() {
+                var q = parseQuantity();
+                var total = unit * q;
+                totalEl.textContent = fmt.format(total);
+            }
+            qtyInput.addEventListener('input', updateTotal);
+            qtyInput.addEventListener('change', updateTotal);
+            updateTotal();
+        })();
+    </script>
 </body>
 </html>
