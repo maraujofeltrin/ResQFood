@@ -92,6 +92,12 @@
     <spring:message code="pack.detail.badge" var="packDetailBadge"/>
     <spring:message code="pack.detail.commerce.section" var="packDetailCommerceSectionAria"/>
     <main class="pack-detail-main">
+        <div class="flex items-center gap-2 mb-8 text-secondary">
+            <a href="#" onclick="history.back(); return false;" class="hover:underline flex items-center font-bold">
+                <span class="material-symbols-outlined text-xl mr-1">arrow_back</span>
+                <spring:message code="pack.detail.back"/>
+            </a>
+        </div>
         <div class="pack-detail-grid">
             <div class="pack-detail-media-col">
                 <div class="pack-detail-hero">
