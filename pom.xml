@@ -21,6 +21,7 @@
     <org.postgresql.version>42.2.5</org.postgresql.version>
     <org.flywaydb.version>8.5.13</org.flywaydb.version>
     <org.hibernate.validator.version>6.2.4.Final</org.hibernate.validator.version>
+    <org.mockito.version>5.5.0</org.mockito.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -87,6 +88,17 @@
         <groupId>org.hibernate</groupId>
         <artifactId>hibernate-validator</artifactId>
         <version>${org.hibernate.validator.version}</version>
+      </dependency>
+      <!-- Mockito -->
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>${org.mockito.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-junit-jupiter</artifactId>
+        <version>${org.mockito.version}</version>
       </dependency>
       <dependency>
         <groupId>commons-fileupload</groupId>
