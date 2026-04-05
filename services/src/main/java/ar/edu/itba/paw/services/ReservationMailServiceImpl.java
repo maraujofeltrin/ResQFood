@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Async;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -38,6 +39,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         this.mailFrom = mailFrom;
     }
 
+    @Async("mailTaskExecutor")
     @Override
     public void sendReservationRequestToCommerce(final Reservation reservation, final String commerceEmail,
             final String baseUrl) {
@@ -72,6 +74,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         }
     }
 
+    @Async("mailTaskExecutor")
     @Override
     public void sendReservationCodeToClient(final Reservation reservation, final String clientEmail) {
         final Pack pack = packDao.findById(reservation.getPackId()).orElse(null);
