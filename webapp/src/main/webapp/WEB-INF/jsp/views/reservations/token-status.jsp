@@ -11,7 +11,7 @@
   <c:when test="${tokenStatus == 'expired'}">
     <c:set var="pageTitle" value="Enlace expirado"/>
     <c:set var="blurTopLeft" value="bg-appPrimary/20"/>
-    <c:set var="blurBottomRight" value="bg-sky-300/25"/>
+    <c:set var="blurBottomRight" value="bg-primary-container/40"/>
     <c:set var="badgeClass" value="border-appPrimary/20 bg-appPrimarySoft text-appPrimary"/>
     <c:set var="badgeText" value="Estado de enlace"/>
     <c:set var="title" value="Este enlace expiró"/>
@@ -19,13 +19,13 @@
   <c:otherwise>
     <c:set var="pageTitle" value="Enlace ya utilizado"/>
     <c:set var="blurTopLeft" value="bg-appPrimary/20"/>
-    <c:set var="blurBottomRight" value="bg-indigo-200/30"/>
+    <c:set var="blurBottomRight" value="bg-primary-container/30"/>
     <c:set var="badgeClass" value="border-appPrimary/20 bg-appPrimarySoft text-appPrimary"/>
     <c:set var="badgeText" value="Enlace procesado"/>
     <c:set var="title" value="Este enlace ya fue utilizado"/>
   </c:otherwise>
 </c:choose>
-<paw:layout title="${pageTitle}">
+<paw:reservationLayout title="${pageTitle}">
   <div class="pointer-events-none absolute -top-28 -left-20 h-80 w-80 rounded-full ${blurTopLeft} blur-3xl"></div>
   <div class="pointer-events-none absolute -bottom-24 -right-16 h-72 w-72 rounded-full ${blurBottomRight} blur-3xl"></div>
   <main class="relative mx-auto flex min-h-screen w-full max-w-3xl items-center px-5 py-10 sm:px-8">
@@ -53,4 +53,4 @@
       </div>
     </section>
   </main>
-</paw:layout>
+</paw:reservationLayout>
