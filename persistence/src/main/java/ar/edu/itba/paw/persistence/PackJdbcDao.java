@@ -122,13 +122,19 @@ public class PackJdbcDao implements PackDao {
             return findActive();
         }
         final String inClause = String.join(", ", Collections.nCopies(tags.size(), "?"));
-        final Object[] params = tags.stream().map(PackTag::name).toArray();
+        final List<Object> params = new ArrayList<>();
+        for (final PackTag tag : tags) {
+            params.add(tag.name());
+        }
+        params.add(tags.size());
         return jdbcTemplate.query(
-            "SELECT DISTINCT p.id, p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active " +
+            "SELECT p.id, p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active " +
             "FROM packs p JOIN pack_tags pt ON p.id = pt.pack_id " +
-            "WHERE p.active = true AND pt.tag IN (" + inClause + ")",
+            "WHERE p.active = true AND pt.tag IN (" + inClause + ") " +
+            "GROUP BY p.id, p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active " +
+            "HAVING COUNT(DISTINCT pt.tag) = ?",
             packRowMapper,
-            params
+            params.toArray()
         );
     }
 
@@ -145,12 +151,15 @@ public class PackJdbcDao implements PackDao {
         for (final PackTag tag : tags) {
             params.add(tag.name());
         }
+        params.add(tags.size());
         return jdbcTemplate.query(
-            "SELECT DISTINCT packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active " +
+            "SELECT packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active " +
             "FROM packs " +
             "JOIN commerces ON packs.commerce_id = commerces.user_id " +
             "JOIN pack_tags pt ON packs.id = pt.pack_id " +
-            "WHERE packs.active = true AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?) AND pt.tag IN (" + inClause + ")",
+            "WHERE packs.active = true AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?) AND pt.tag IN (" + inClause + ") " +
+            "GROUP BY packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active " +
+            "HAVING COUNT(DISTINCT pt.tag) = ?",
             packRowMapper,
             params.toArray()
         );
