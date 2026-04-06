@@ -87,11 +87,13 @@ public class PackController {
             "Hoy, 18:00 - 18:30"
     );
 
-    private static String formatUsd(final Double amount) {
+    private static final Locale LOCALE_AR = new Locale("es", "AR");
+
+    private static String formatPrice(final Double amount) {
         if (amount == null) {
             return "—";
         }
-        return NumberFormat.getCurrencyInstance(Locale.US).format(amount);
+        return NumberFormat.getCurrencyInstance(LOCALE_AR).format(amount);
     }
 
     private static String dashIfBlank(final String value) {
@@ -227,8 +229,8 @@ public class PackController {
         mav.addObject("packTitle", title);
         mav.addObject("packDescription", pack.getDescription() != null ? pack.getDescription() : "");
         addCommerceDetailAttributes(mav, commerceOpt);
-        mav.addObject("originalPrice", formatUsd(pack.getOriginalPrice()));
-        mav.addObject("finalPrice", formatUsd(pack.getFinalPrice()));
+        mav.addObject("originalPrice", formatPrice(pack.getOriginalPrice()));
+        mav.addObject("finalPrice", formatPrice(pack.getFinalPrice()));
         mav.addObject("pickupWindows", DEFAULT_PICKUP_WINDOWS);
 
         final Integer stock = pack.getStock();

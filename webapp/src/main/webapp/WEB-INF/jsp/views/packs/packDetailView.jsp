@@ -261,7 +261,7 @@
             if (isNaN(maxQ)) {
                 maxQ = 999;
             }
-            var fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+            var fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
             function parseQuantity() {
                 if (maxQ === 0) {
                     return 0;

@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="paw" tagdir="/WEB-INF/tags" %>
 <!DOCTYPE html>
@@ -63,12 +64,14 @@
             </div>
             <div class="flex gap-6 overflow-x-auto hide-scrollbar pb-4 -mx-2 px-2">
                 <c:forEach var="pack" items="${packs}">
+                    <fmt:formatNumber value="${pack.finalPrice}" type="currency" currencyCode="ARS" var="formattedPrice"/>
+                    <fmt:formatNumber value="${pack.originalPrice}" type="currency" currencyCode="ARS" var="formattedOldPrice"/>
                     <paw:packCard
                         packId="${pack.id}"
                         title="${pack.title}"
                         subtitle="${pack.description}"
-                        price="$${pack.finalPrice}"
-                        oldPrice="$${pack.originalPrice}"
+                        price="${formattedPrice}"
+                        oldPrice="${formattedOldPrice}"
                         commerceName="${commerceNames[pack.id]}"
                     />
                 </c:forEach>
@@ -90,12 +93,14 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                 <c:forEach var="pack" items="${packs}">
+                    <fmt:formatNumber value="${pack.finalPrice}" type="currency" currencyCode="ARS" var="formattedPrice"/>
+                    <fmt:formatNumber value="${pack.originalPrice}" type="currency" currencyCode="ARS" var="formattedOldPrice"/>
                     <paw:packCard
                         packId="${pack.id}"
                         title="${pack.title}"
                         subtitle="${pack.description}"
-                        price="$${pack.finalPrice}"
-                        oldPrice="$${pack.originalPrice}"
+                        price="${formattedPrice}"
+                        oldPrice="${formattedOldPrice}"
                         commerceName="${commerceNames[pack.id]}"
                     />
                 </c:forEach>
