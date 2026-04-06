@@ -242,6 +242,9 @@ public class PackController {
         mav.addObject("quantityMax", quantityMax);
 
         if (stock != null) {
+            mav.addObject("packStock", stock);
+            mav.addObject("packStockBadgeCssClass",
+                    stock.intValue() > 0 ? "pack-detail-badge--stock-available" : "pack-detail-badge--stock-unavailable");
             mav.addObject("packStockBadgeText",
                     messageSource.getMessage("pack.detail.stockBadge", new Object[] { stock }, locale));
         }
@@ -329,7 +332,8 @@ public class PackController {
         final Integer stock = pack.getStock();
         if (reservationForm.getQuantity() != null && stock != null
                 && reservationForm.getQuantity().intValue() > stock.intValue()) {
-            bindingResult.rejectValue("quantity", "reservation.quantity.exceedsStock");
+            bindingResult.rejectValue("quantity", "reservation.quantity.exceedsStock",
+                    new Object[] { stock }, null);
         }
 
         if (bindingResult.hasErrors()) {

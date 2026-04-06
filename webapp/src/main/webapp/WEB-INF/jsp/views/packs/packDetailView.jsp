@@ -89,11 +89,11 @@
     <paw:navbar />
 
     <spring:message code="pack.detail.image.alt" var="packDetailImageAlt"/>
-    <spring:message code="pack.detail.badge" var="packDetailBadge"/>
     <spring:message code="pack.detail.commerce.section" var="packDetailCommerceSectionAria"/>
+    <c:url var="packCatalogUrl" value="/packs"/>
     <main class="pack-detail-main">
         <div class="flex items-center gap-2 mb-8 text-secondary">
-            <a href="#" onclick="history.back(); return false;" class="hover:underline flex items-center font-bold">
+            <a href="${packCatalogUrl}" class="hover:underline flex items-center font-bold">
                 <span class="material-symbols-outlined text-xl mr-1">arrow_back</span>
                 <spring:message code="pack.detail.back"/>
             </a>
@@ -108,11 +108,9 @@
 
                 <div class="pack-detail-intro">
                     <div class="pack-detail-meta">
-                        <span class="pack-detail-badge"><c:out value="${packDetailBadge}"/></span>
                         <c:if test="${not empty packStockBadgeText}">
-                            <span class="pack-detail-badge pack-detail-badge--stock"><c:out value="${packStockBadgeText}"/></span>
+                            <span class="pack-detail-badge pack-detail-badge--stock ${packStockBadgeCssClass}"><c:out value="${packStockBadgeText}"/></span>
                         </c:if>
-                        <span class="pack-detail-merchant"><c:out value="${commerceCommercialName}"/></span>
                     </div>
                     <h1 class="pack-detail-title font-headline"><c:out value="${packTitle}"/></h1>
                     <p class="pack-detail-description"><c:out value="${packDescription}"/></p>

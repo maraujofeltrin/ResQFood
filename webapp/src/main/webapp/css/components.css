@@ -574,9 +574,15 @@
   letter-spacing: -0.025em;
 }
 
-.pack-detail-badge--stock {
-  background-color: #e3e1e7;
-  color: #454650;
+/* Stock badge: modifiers must win over .pack-detail-badge (see specificity) */
+.pack-detail-badge.pack-detail-badge--stock.pack-detail-badge--stock-available {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.pack-detail-badge.pack-detail-badge--stock.pack-detail-badge--stock-unavailable {
+  background-color: #ffdad6;
+  color: #93000a;
 }
 
 .pack-detail-meta-sep {
