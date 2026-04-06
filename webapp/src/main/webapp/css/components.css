@@ -755,6 +755,11 @@
   color: #022C22;
 }
 
+.commerce-info-card__status-badge.commerce-info-card__status-badge--closed {
+  background-color: #ffdad6;
+  color: #93000a;
+}
+
 .commerce-info-card__note {
   margin: 0;
   padding: 1rem;
@@ -770,6 +775,18 @@
   margin-top: 0.125rem;
   font-size: 1.25rem;
   color: #059669;
+}
+
+.commerce-info-card__note--warning {
+  background-color: #ffdad6;
+}
+
+.commerce-info-card__note--warning .commerce-info-card__icon {
+  color: #93000a;
+}
+
+.commerce-info-card__note--warning .commerce-info-card__note-text {
+  color: #93000a;
 }
 
 .commerce-info-card__note-text {

@@ -83,11 +83,16 @@
                                             <span class="commerce-info-card__hours-label"><spring:message code="pack.detail.commerce.closing"/></span>
                                             <span class="commerce-info-card__hours-value"><c:out value="${commerceClosingTime}"/></span>
                                         </div>
-                                        <c:if test="${commerceOpenNow}">
-                                            <div class="commerce-info-card__status">
-                                                <span class="commerce-info-card__status-badge"><spring:message code="pack.detail.commerce.openNow"/></span>
-                                            </div>
-                                        </c:if>
+                                        <div class="commerce-info-card__status">
+                                            <c:choose>
+                                                <c:when test="${commerceOpenNow}">
+                                                    <span class="commerce-info-card__status-badge"><spring:message code="pack.detail.commerce.openNow"/></span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="commerce-info-card__status-badge commerce-info-card__status-badge--closed"><spring:message code="pack.detail.commerce.closedNow"/></span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -97,6 +102,14 @@
                                     <spring:message code="pack.detail.commerce.pickupNote"/>
                                 </p>
                             </div>
+                            <c:if test="${not commerceOpenNow}">
+                                <div class="commerce-info-card__note commerce-info-card__note--warning">
+                                    <span class="material-symbols-outlined commerce-info-card__icon" aria-hidden="true">schedule</span>
+                                    <p class="commerce-info-card__note-text">
+                                        <spring:message code="pack.detail.commerce.closedNote"/>
+                                    </p>
+                                </div>
+                            </c:if>
                         </div>
                     </section>
                 </div>
