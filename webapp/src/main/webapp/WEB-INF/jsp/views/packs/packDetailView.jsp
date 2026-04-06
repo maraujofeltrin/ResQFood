@@ -280,10 +280,13 @@
                             <form:errors path="pickupWindow" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p"/>
                         </div>
 
+                        <spring:message code="pack.detail.form.submitting" var="submittingText"/>
                         <button type="submit" class="pack-submit-btn font-headline"
+                                id="reservation-submit-btn"
+                                data-submitting-text="${submittingText}"
                                 <c:if test="${quantityMax lt 1}">disabled="disabled" aria-disabled="true"</c:if>>
-                            <spring:message code="pack.detail.form.submit"/>
-                            <span class="material-symbols-outlined">arrow_forward</span>
+                            <span class="pack-submit-btn__label"><spring:message code="pack.detail.form.submit"/></span>
+                            <span class="material-symbols-outlined pack-submit-btn__icon">arrow_forward</span>
                         </button>
                     </form:form>
                 </div>
@@ -330,6 +333,29 @@
             qtyInput.addEventListener('input', updateTotal);
             qtyInput.addEventListener('change', updateTotal);
             updateTotal();
+        })();
+
+        (function () {
+            var form = document.querySelector('.pack-reservation-form');
+            var btn = document.getElementById('reservation-submit-btn');
+            if (!form || !btn) {
+                return;
+            }
+            var submitted = false;
+            form.addEventListener('submit', function (e) {
+                if (submitted) {
+                    e.preventDefault();
+                    return;
+                }
+                submitted = true;
+                btn.disabled = true;
+                btn.setAttribute('aria-disabled', 'true');
+                btn.classList.add('pack-submit-btn--submitting');
+                var label = btn.querySelector('.pack-submit-btn__label');
+                if (label && btn.getAttribute('data-submitting-text')) {
+                    label.textContent = btn.getAttribute('data-submitting-text');
+                }
+            });
         })();
     </script>
 </body>

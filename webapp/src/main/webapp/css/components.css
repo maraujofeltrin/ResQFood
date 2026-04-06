@@ -1005,6 +1005,10 @@
   box-shadow: none;
 }
 
+.pack-submit-btn--submitting .pack-submit-btn__icon {
+  display: none;
+}
+
 .pack-impact {
   padding-top: 1rem;
   border-top: 1px solid #f5f3f9;
