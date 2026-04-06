@@ -36,6 +36,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.models.Pack;
+import ar.edu.itba.paw.models.PackTag;
 import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
 import ar.edu.itba.paw.services.ReservationService;
@@ -238,17 +239,39 @@ public class PackController {
     }
 
     @GetMapping("/packs")
-    public ModelAndView listPacks(@RequestParam(value = "q", required = false) final String query) {
+    public ModelAndView listPacks(
+            @RequestParam(value = "q", required = false) final String query,
+            @RequestParam(value = "tags", required = false) final List<String> tagNames) {
+
         final ModelAndView mav = new ModelAndView("packs/packCatalogView");
+
+        final List<PackTag> selectedTags = new ArrayList<>();
+        if (tagNames != null) {
+            for (final String name : tagNames) {
+                try {
+                    selectedTags.add(PackTag.valueOf(name));
+                } catch (final IllegalArgumentException ignored) {
+                }
+            }
+        }
+
+        final boolean hasQuery = query != null && !query.trim().isEmpty();
+        final boolean hasTags = !selectedTags.isEmpty();
+
         final List<Pack> packs;
-        if (query != null && !query.trim().isEmpty()) {
+        if (hasQuery && hasTags) {
+            packs = packService.searchPacksWithTags(query.trim(), selectedTags);
+        } else if (hasTags) {
+            packs = packService.findActiveByTags(selectedTags);
+        } else if (hasQuery) {
             packs = packService.searchPacks(query.trim());
         } else {
             packs = packService.findActive();
         }
+
         final Map<Long, String> commerceNames = packs.stream()
             .collect(java.util.stream.Collectors.toMap(
-                Pack::getId, 
+                Pack::getId,
                 pack -> commerceService.findByUserId(pack.getCommerceId())
                             .map(Commerce::getCommercialName)
                             .orElse("—")
@@ -256,6 +279,8 @@ public class PackController {
 
         mav.addObject("packs", packs);
         mav.addObject("commerceNames", commerceNames);
+        mav.addObject("availableTags", PackTag.values());
+        mav.addObject("selectedTags", selectedTags);
         return mav;
     }
 

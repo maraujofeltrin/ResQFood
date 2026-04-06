@@ -115,6 +115,15 @@
             </div>
         </header>
 
+        <div class="mb-10">
+            <paw:tagFilter
+                availableTags="${availableTags}"
+                selectedTags="${selectedTags}"
+                baseUrl="${pageContext.request.contextPath}/packs"
+                searchQuery="${param.q}"
+            />
+        </div>
+
         <c:if test="${empty param.q}">
         <!-- Last Chance (Horizontal Scrolling Section) -->
         <section class="mb-16">
