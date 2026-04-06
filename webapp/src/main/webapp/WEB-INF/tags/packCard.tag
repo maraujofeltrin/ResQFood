@@ -34,13 +34,13 @@
       <h3 class="font-bold text-lg text-on-surface truncate"><c:out value="${title}"/></h3>
       <p class="text-secondary text-sm mt-1 line-clamp-2 h-10"><c:out value="${subtitle}"/></p>
     </div>
-    <div class="flex items-center justify-between pt-4 border-t border-zinc-50 mt-auto">
+    <div class="flex items-center justify-between pt-4 border-t border-surface-container-low mt-auto">
       <div>
-        <p class="text-zinc-400 text-xs font-bold uppercase tracking-widest mb-1"><c:out value="${resolvedRescueLabel}"/></p>
+        <p class="text-outline text-xs font-bold uppercase tracking-widest mb-1"><c:out value="${resolvedRescueLabel}"/></p>
         <div class="flex items-baseline gap-2">
           <span class="text-2xl font-extrabold text-primary"><c:out value="${price}"/></span>
           <c:if test="${not empty oldPrice}">
-             <span class="text-sm text-zinc-400 line-through"><c:out value="${oldPrice}"/></span>
+             <span class="text-sm text-outline line-through"><c:out value="${oldPrice}"/></span>
           </c:if>
         </div>
       </div>

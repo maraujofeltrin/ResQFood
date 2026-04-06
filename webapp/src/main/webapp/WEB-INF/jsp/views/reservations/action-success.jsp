@@ -1,11 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" %> <%@ taglib prefix="c"
 uri="http://java.sun.com/jsp/jstl/core" %> <%@ taglib prefix="paw"
 tagdir="/WEB-INF/tags" %>
-<paw:layout title="Reserva ${action}">
+<paw:reservationLayout title="Reserva ${action}">
   <c:set var="successTitle" value="Reserva ${action}" />
 
   <div
-    class="pointer-events-none absolute -top-20 left-1/3 h-72 w-72 -translate-x-1/2 rounded-full bg-emerald-200/40 blur-3xl"
+    class="pointer-events-none absolute -top-20 left-1/3 h-72 w-72 -translate-x-1/2 rounded-full bg-primary-container/40 blur-3xl"
   ></div>
   <div
     class="pointer-events-none absolute -bottom-24 -right-10 h-72 w-72 rounded-full bg-appPrimary/20 blur-3xl"
@@ -45,4 +45,4 @@ tagdir="/WEB-INF/tags" %>
       </div>
     </section>
   </main>
-</paw:layout>
+</paw:reservationLayout>

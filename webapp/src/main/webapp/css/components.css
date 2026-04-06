@@ -1,9 +1,29 @@
+/*
+ * components.css — "The Living Pantry" design system
+ *
+ * Colour tokens aligned with tailwind-config.js and DESIGN.md.
+ *
+ *   primary            #059669   (vibrant emerald)
+ *   primary-container   #D1FAE5
+ *   secondary          #527A61   (sage)
+ *   on-surface         #191C1A
+ *   on-surface-variant  #404943
+ *   surface            #F8FAF8
+ *   surface-container-low #F3F5F3
+ *   outline-variant    #C2C9C2
+ *   error              #BA1A1A
+ */
+
+/* ── Form validation errors ──────────────────────────────── */
+
 .errors {
-  color: #dc2626;
+  color: #BA1A1A;
   font-size: 0.8rem;
   font-weight: 500;
   line-height: 1.2;
 }
+
+/* ── Buttons ─────────────────────────────────────────────── */
 
 .btn {
   display: inline-block;
@@ -19,7 +39,7 @@
   cursor: pointer;
   border: 1px solid transparent;
   border-radius: 0.65rem;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 12px 32px rgba(25, 28, 26, 0.06);
   transition:
     color 0.2s ease,
     background-color 0.2s ease,
@@ -32,17 +52,17 @@
 .btn:hover {
   text-decoration: none;
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 8px 18px rgba(25, 28, 26, 0.16);
 }
 
 .btn:active {
   transform: translateY(1px) scale(0.99);
-  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 3px 8px rgba(25, 28, 26, 0.16);
 }
 
 .btn:focus {
   outline: 0;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  box-shadow: 0 0 0 0.2rem rgba(5, 150, 105, 0.25);
 }
 
 .btn:disabled {
@@ -50,7 +70,6 @@
   cursor: not-allowed;
 }
 
-/* Button Sizes */
 .btn-sm {
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
@@ -69,58 +88,57 @@
   border-radius: 0.3rem;
 }
 
-/* Button Types/Variants */
 .btn-primary {
   color: #fff;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  border-color: #1d4ed8;
+  background: linear-gradient(135deg, #059669, #D1FAE5);
+  border-color: transparent;
 }
 
 .btn-primary:hover {
   color: #fff;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  border-color: #1e40af;
+  background: linear-gradient(135deg, #059669, #A7F3D0);
+  border-color: transparent;
 }
 
 .btn-primary:focus {
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(5, 150, 105, 0.5);
 }
 
 .btn-primary:disabled {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  border-color: #1d4ed8;
+  background: linear-gradient(135deg, #059669, #D1FAE5);
+  border-color: transparent;
 }
 
 .btn-secondary {
   color: #fff;
-  background: linear-gradient(135deg, #6b7280, #4b5563);
-  border-color: #374151;
+  background: linear-gradient(135deg, #707973, #576159);
+  border-color: #404943;
 }
 
 .btn-secondary:hover {
   color: #fff;
-  background: linear-gradient(135deg, #4b5563, #374151);
-  border-color: #1f2937;
+  background: linear-gradient(135deg, #576159, #404943);
+  border-color: #2E312E;
 }
 
 .btn-secondary:focus {
-  box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(82, 122, 97, 0.5);
 }
 
 .btn-success {
   color: #fff;
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  border-color: #15803d;
+  background: linear-gradient(135deg, #059669, #D1FAE5);
+  border-color: transparent;
 }
 
 .btn-success:hover {
   color: #fff;
-  background: linear-gradient(135deg, #16a34a, #15803d);
-  border-color: #166534;
+  background: linear-gradient(135deg, #059669, #A7F3D0);
+  border-color: transparent;
 }
 
 .btn-success:focus {
-  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(5, 150, 105, 0.5);
 }
 
 .btn-danger {
@@ -139,30 +157,30 @@
   box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.5);
 }
 
-/* Card */
+/* ── Deal card ───────────────────────────────────────────── */
+
 .deal-card {
   width: 280px;
   max-width: 100%;
   display: inline-block;
-  background: #ffffff;
+  background: #FFFFFF;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 6px 18px rgba(25, 28, 26, 0.06);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .deal-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.14);
+  box-shadow: 0 12px 26px rgba(25, 28, 26, 0.10);
 }
 
 .deal-card__media {
   position: relative;
   height: 280px;
-  background: #eef2ff;
+  background: #F3F5F3;
 }
 
-/* Contenedor  */
 .deal-card-grid {
   display: flex;
   flex-wrap: wrap;
@@ -193,10 +211,10 @@
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
-  color: #1d4ed8;
+  color: #059669;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(8px);
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.10);
+  box-shadow: 0 2px 10px rgba(25, 28, 26, 0.08);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -215,15 +233,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #a1a1aa;
-  /* zinc-400 */
+  color: #707973;
   cursor: pointer;
   transition: color 0.15s ease, transform 0.15s ease;
 }
 
 .deal-card__fav:hover {
-  color: #dc2626;
-  /* error */
+  color: #BA1A1A;
 }
 
 .deal-card__fav:active {
@@ -246,8 +262,7 @@
   margin: 0;
   font-size: 18px;
   font-weight: 800;
-  color: #0f172a;
-  /* slate-900 */
+  color: #191C1A;
   line-height: 1.2;
 }
 
@@ -256,7 +271,7 @@
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
-  color: #0f172a;
+  color: #191C1A;
   font-weight: 800;
   font-size: 14px;
 }
@@ -264,21 +279,20 @@
 .deal-card__ratingStar {
   font-size: 18px;
   color: #f59e0b;
-  /* amber */
   font-variation-settings: "FILL" 1;
 }
 
 .deal-card__subtitle {
   margin: 0 0 24px 0;
   font-size: 14px;
-  color: #64748b;
-  /* slate-500 */
+  color: #527A61;
 }
 
 .deal-card__footer {
-  border-top: 1px solid #f4f4f5;
-  /* zinc-100 */
-  padding-top: 16px;
+  padding: 16px;
+  margin: 0 -24px -24px;
+  background-color: #F3F5F3;
+  border-radius: 0 0 12px 12px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -299,8 +313,7 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 800;
-  color: #a1a1aa;
-  /* zinc-400 */
+  color: #707973;
 }
 
 .deal-card__priceRow {
@@ -312,13 +325,12 @@
 .deal-card__price {
   font-size: 24px;
   font-weight: 900;
-  color: #1d4ed8;
-  /* primary-ish */
+  color: #059669;
 }
 
 .deal-card__oldPrice {
   font-size: 14px;
-  color: #a1a1aa;
+  color: #707973;
   text-decoration: line-through;
 }
 
@@ -326,8 +338,7 @@
   margin: 0;
   font-size: 14px;
   font-weight: 800;
-  color: #334155;
-  /* slate-700 */
+  color: #404943;
 }
 
 .material-symbols-outlined {
@@ -344,8 +355,8 @@
   font-size: 20px;
 }
 
+/* ── Modal ───────────────────────────────────────────────── */
 
-/* Fondo oscuro con blur */
 .modal {
   display: none;
   position: fixed;
@@ -356,9 +367,8 @@
   animation: fadeIn 0.25s ease;
 }
 
-/* Contenedor */
 .modal-content {
-  background: #ffffff;
+  background: #FFFFFF;
   margin: 8% auto;
   padding: 2rem;
   width: 90%;
@@ -370,7 +380,6 @@
   animation: slideUp 0.3s ease;
 }
 
-/* Botón cerrar */
 .close {
   position: absolute;
   top: 12px;
@@ -386,21 +395,20 @@
   transform: scale(1.2);
 }
 
-/* Título */
 .modal-content h2 {
   margin-bottom: 1rem;
   font-size: 1.5rem;
   font-weight: 700;
 }
 
-/* Texto */
 .modal-content p {
   color: #555;
   font-size: 1rem;
   margin-bottom: 1.5rem;
 }
 
-/* Input */
+/* ── Inputs (global) ─────────────────────────────────────── */
+
 .input-field {
   display: flex;
   flex-direction: column;
@@ -410,7 +418,7 @@
 }
 
 .input-label {
-  color: #334155;
+  color: #404943;
   font-size: 0.9rem;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -419,64 +427,61 @@
 .input-control {
   width: 100%;
   padding: 0.625rem 0.75rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.65rem;
+  border: 2px solid transparent;
+  border-radius: 0.75rem;
   font-size: 0.95rem;
-  color: #0f172a;
-  background-color: #fff;
+  color: #191C1A;
+  background-color: #F3F5F3;
   transition:
     border-color 0.2s ease,
-    box-shadow 0.2s ease,
     background-color 0.2s ease;
 }
 
 .input-control::placeholder {
-  color: #94a3b8;
+  color: #707973;
 }
 
 .input-control:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.2);
+  background-color: #FFFFFF;
+  border-color: #059669;
 }
 
 .input-control:disabled {
-  background-color: #f1f5f9;
-  color: #94a3b8;
+  background-color: #F3F5F3;
+  color: #707973;
   cursor: not-allowed;
 }
 
 .input-control.is-invalid {
-  border-color: #dc2626;
-  box-shadow: 0 0 0 0.15rem rgba(220, 38, 38, 0.16);
+  border-color: #BA1A1A;
+  background-color: #FFFFFF;
 }
 
 .input-control.is-invalid:focus {
-  border-color: #b91c1c;
-  box-shadow: 0 0 0 0.2rem rgba(220, 38, 38, 0.2);
+  border-color: #93000A;
 }
 
 .input-error {
-  color: #b91c1c;
+  color: #93000A;
   font-size: 0.8rem;
   font-weight: 500;
   line-height: 1.2;
 }
 
 .input-help {
-  color: #64748b;
+  color: #527A61;
   font-size: 0.78rem;
   line-height: 1.2;
 }
+
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* -------------------------------------------------------------------------- */
-/* Material / utility (pack detail & shared)                                   */
-/* -------------------------------------------------------------------------- */
+/* ── Material / utility (shared) ─────────────────────────── */
 
 .tonal-shift-bg {
-  background-color: rgba(245, 243, 249, 0.8);
+  background-color: rgba(243, 245, 243, 0.8);
 }
 
 .glass-effect {
@@ -491,9 +496,7 @@
     'opsz' 24;
 }
 
-/* -------------------------------------------------------------------------- */
-/* Pack detail page                                                            */
-/* -------------------------------------------------------------------------- */
+/* ── Pack detail page ────────────────────────────────────── */
 
 .pack-detail-main {
   padding-top: 6rem;
@@ -565,8 +568,8 @@
 }
 
 .pack-detail-badge {
-  background-color: #dce1ff;
-  color: #314380;
+  background-color: #A7F3D0;
+  color: #022C22;
   padding: 0.25rem 0.75rem;
   border-radius: 0.125rem;
   font-size: 0.75rem;
@@ -575,13 +578,13 @@
 }
 
 .pack-detail-meta-sep {
-  color: #c5c5d1;
+  color: #C2C9C2;
 }
 
 .pack-detail-merchant {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #575d78;
+  color: #527A61;
 }
 
 .pack-detail-title {
@@ -589,7 +592,7 @@
   font-size: 3rem;
   line-height: 1.1;
   font-weight: 800;
-  color: #152965;
+  color: #059669;
   letter-spacing: -0.05em;
 }
 
@@ -597,18 +600,19 @@
   margin: 0;
   font-size: 1.125rem;
   line-height: 1.625;
-  color: #575d78;
+  color: #527A61;
   max-width: 42rem;
 }
 
-/* Store / commerce info card (pack detail) — tokens aligned with tailwind theme in JSP */
+/* ── Commerce info card (pack detail) ────────────────────── */
+
 .pack-detail-commerce {
   margin-top: 0.5rem;
   max-width: 42rem;
 }
 
 .commerce-info-card {
-  background-color: #f5f3f9;
+  background-color: #F3F5F3;
   padding: 2rem;
   border-radius: 0.5rem;
   display: flex;
@@ -634,7 +638,7 @@
 
 .commerce-info-card__icon--hero {
   font-size: 1.875rem;
-  color: #152965;
+  color: #059669;
 }
 
 .commerce-info-card__title {
@@ -642,7 +646,7 @@
   font-size: 1.5rem;
   line-height: 1.2;
   font-weight: 800;
-  color: #1b1b20;
+  color: #191C1A;
   letter-spacing: -0.025em;
 }
 
@@ -671,20 +675,20 @@
   gap: 0.5rem;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #152965;
+  color: #059669;
   text-transform: uppercase;
   letter-spacing: 0.14em;
 }
 
 .commerce-info-card__section-title .commerce-info-card__icon {
   font-size: 1rem;
-  color: #152965;
+  color: #059669;
 }
 
 .commerce-info-card__address {
   font-size: 0.9375rem;
   line-height: 1.625;
-  color: #454650;
+  color: #404943;
 }
 
 .commerce-info-card__address p {
@@ -697,7 +701,7 @@
 
 .commerce-info-card__store-name {
   font-weight: 700;
-  color: #1b1b20;
+  color: #191C1A;
 }
 
 .commerce-info-card__hours {
@@ -712,7 +716,7 @@
   align-items: center;
   gap: 1rem;
   font-size: 0.875rem;
-  color: #454650;
+  color: #404943;
 }
 
 .commerce-info-card__hours-label {
@@ -721,7 +725,7 @@
 
 .commerce-info-card__hours-value {
   font-weight: 700;
-  color: #1b1b20;
+  color: #191C1A;
   text-align: right;
 }
 
@@ -736,16 +740,15 @@
   font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  background-color: #dce1ff;
-  color: #314380;
+  background-color: #A7F3D0;
+  color: #022C22;
 }
 
 .commerce-info-card__note {
   margin: 0;
   padding: 1rem;
-  background-color: #ffffff;
+  background-color: #FFFFFF;
   border-radius: 0.5rem;
-  border: 1px solid rgba(197, 197, 209, 0.3);
   display: flex;
   gap: 1rem;
   align-items: flex-start;
@@ -755,15 +758,17 @@
   flex-shrink: 0;
   margin-top: 0.125rem;
   font-size: 1.25rem;
-  color: #152965;
+  color: #059669;
 }
 
 .commerce-info-card__note-text {
   margin: 0;
   font-size: 0.875rem;
   line-height: 1.625;
-  color: #454650;
+  color: #404943;
 }
+
+/* ── Pack detail aside ───────────────────────────────────── */
 
 .pack-detail-aside {
   grid-column: 1 / -1;
@@ -779,11 +784,10 @@
 }
 
 .pack-aside-card {
-  background-color: #ffffff;
+  background-color: #FFFFFF;
   padding: 2rem;
   border-radius: 2rem;
-  box-shadow: 0 1px 2px rgba(27, 27, 32, 0.06);
-  border: 1px solid #f5f3f9;
+  box-shadow: 0 12px 32px rgba(25, 28, 26, 0.06);
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -799,15 +803,13 @@
 }
 
 .pack-feedback--success {
-  color: #0d3d1f;
-  background-color: #e8f5e9;
-  border: 1px solid #81c784;
+  color: #002114;
+  background-color: #D1FAE5;
 }
 
 .pack-feedback--error {
-  color: #5f0f12;
-  background-color: #ffebee;
-  border: 1px solid #e57373;
+  color: #93000A;
+  background-color: #FFDAD6;
 }
 
 .pack-form-errors {
@@ -818,7 +820,7 @@
   margin: 0;
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1b1b20;
+  color: #191C1A;
 }
 
 .pack-reservation-form {
@@ -828,8 +830,9 @@
 }
 
 .pack-price-block {
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #f5f3f9;
+  padding: 1rem 1.25rem;
+  background-color: #F3F5F3;
+  border-radius: 0.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -841,14 +844,14 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #575d78;
+  color: #527A61;
 }
 
 .pack-price-original {
   margin: 0;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #575d78;
+  color: #527A61;
   text-decoration: line-through;
 }
 
@@ -857,7 +860,7 @@
   font-size: 1.875rem;
   line-height: 1.2;
   font-weight: 800;
-  color: #152965;
+  color: #059669;
 }
 
 .pack-form-field {
@@ -869,36 +872,35 @@
 .pack-form-label {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #1b1b20;
+  color: #191C1A;
 }
 
 .pack-form-control {
   width: 100%;
   box-sizing: border-box;
-  background-color: #ffffff;
-  border: 1px solid #c5c5d1;
+  background-color: #F3F5F3;
+  border: 2px solid transparent;
   border-radius: 0.75rem;
   padding: 0.75rem 1rem;
   font-size: 1rem;
-  color: #1b1b20;
+  color: #191C1A;
   font-weight: 500;
-  transition: border-color 0.15s ease, box-shadow 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .pack-form-control:focus {
   outline: none;
-  border-color: #152965;
-  box-shadow: 0 0 0 2px rgba(21, 41, 101, 0.18);
+  background-color: #FFFFFF;
+  border-color: #059669;
 }
 
 .pack-form-control.is-invalid {
-  border-color: #ba1a1a;
-  box-shadow: 0 0 0 2px rgba(186, 26, 26, 0.18);
+  border-color: #BA1A1A;
+  background-color: #FFFFFF;
 }
 
 .pack-form-control.is-invalid:focus {
-  border-color: #93000a;
-  box-shadow: 0 0 0 2px rgba(147, 0, 10, 0.22);
+  border-color: #93000A;
 }
 
 .pack-form-control--tabular {
@@ -908,14 +910,14 @@
 .pack-form-total-label {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #1b1b20;
+  color: #191C1A;
 }
 
 .pack-form-total-hint {
   margin: 0;
   font-size: 0.8125rem;
   line-height: 1.4;
-  color: #575d78;
+  color: #527A61;
 }
 
 .pack-select-wrap {
@@ -927,20 +929,20 @@
   box-sizing: border-box;
   appearance: none;
   background-image: none;
-  background-color: #ffffff;
-  border: 1px solid #c5c5d1;
+  background-color: #F3F5F3;
+  border: 2px solid transparent;
   border-radius: 0.75rem;
   padding: 1rem 1.25rem;
   font-size: 1rem;
   font-weight: 500;
-  color: #1b1b20;
-  transition: border-color 0.15s ease, box-shadow 0.2s ease;
+  color: #191C1A;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .pack-form-select:focus {
   outline: none;
-  border-color: #152965;
-  box-shadow: 0 0 0 2px rgba(21, 41, 101, 0.18);
+  background-color: #FFFFFF;
+  border-color: #059669;
 }
 
 .pack-select-chevron {
@@ -949,7 +951,7 @@
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
-  color: #575d78;
+  color: #527A61;
 }
 
 .pack-submit-btn {
@@ -965,9 +967,9 @@
   border-radius: 9999px;
   font-size: 1rem;
   font-weight: 700;
-  color: #ffffff;
-  background: linear-gradient(to bottom right, #152965, #2e407d);
-  box-shadow: 0 10px 25px rgba(21, 41, 101, 0.2);
+  color: #FFFFFF;
+  background: #059669;
+  box-shadow: 0 12px 32px rgba(25, 28, 26, 0.06);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -980,8 +982,9 @@
 }
 
 .pack-impact {
-  padding-top: 1rem;
-  border-top: 1px solid #f5f3f9;
+  padding: 1rem 1.25rem;
+  background-color: #F3F5F3;
+  border-radius: 0.75rem;
 }
 
 .pack-impact-row {
@@ -993,14 +996,14 @@
 .pack-impact-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #575d78;
+  color: #527A61;
 }
 
 .pack-impact-value {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #314380;
-  background-color: #dce1ff;
+  color: #022C22;
+  background-color: #A7F3D0;
   padding: 0.125rem 0.5rem;
   border-radius: 0.25rem;
 }

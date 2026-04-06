@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %> <%@ taglib prefix="c"
 uri="http://java.sun.com/jsp/jstl/core" %> <%@ taglib prefix="paw"
 tagdir="/WEB-INF/tags" %>
-<paw:layout title="Rechazar reserva">
+<paw:reservationLayout title="Rechazar reserva">
   <div
     class="pointer-events-none absolute -top-28 -left-20 h-80 w-80 rounded-full bg-rose-300/35 blur-3xl"
   ></div>
@@ -118,4 +118,4 @@ tagdir="/WEB-INF/tags" %>
       </form>
     </section>
   </main>
-</paw:layout>
+</paw:reservationLayout>

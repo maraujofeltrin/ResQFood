@@ -1,12 +1,12 @@
 <%@ page contentType="text/html;charset=UTF-8" %> <%@ taglib prefix="c"
 uri="http://java.sun.com/jsp/jstl/core" %> <%@ taglib prefix="paw"
 tagdir="/WEB-INF/tags" %>
-<paw:layout title="Confirmar aceptación de reserva">
+<paw:reservationLayout title="Confirmar aceptación de reserva">
   <div
     class="pointer-events-none absolute -top-28 -left-20 h-80 w-80 rounded-full bg-appPrimary/20 blur-3xl"
   ></div>
   <div
-    class="pointer-events-none absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-sky-300/25 blur-3xl"
+    class="pointer-events-none absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-primary-container/40 blur-3xl"
   ></div>
 
   <main
@@ -71,9 +71,9 @@ tagdir="/WEB-INF/tags" %>
         <c:if test="${confirmEndpoint == 'accept'}">
           <div class="mt-4">
             <label class="block text-sm font-medium text-appPrimary">Código de retiro (proporcionado por el usuario)</label>
-            <input name="pickupCode" type="text" class="mt-2 w-full rounded-md border p-2" value="" />
+            <input name="pickupCode" type="text" class="pack-form-control mt-2" value="" />
             <c:if test="${not empty pickupError}">
-              <div class="mt-2 text-sm text-red-600"><c:out value="${pickupError}"/></div>
+              <div class="mt-2 text-sm text-error"><c:out value="${pickupError}"/></div>
             </c:if>
           </div>
         </c:if>
@@ -95,4 +95,4 @@ tagdir="/WEB-INF/tags" %>
       </form>
     </section>
   </main>
-</paw:layout>
+</paw:reservationLayout>

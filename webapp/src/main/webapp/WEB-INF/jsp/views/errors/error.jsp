@@ -38,7 +38,7 @@
     </c:otherwise>
 </c:choose>
 
-<paw:layout title="${errorTitle} - Error ${statusCode}">
+<paw:reservationLayout title="${errorTitle} - Error ${statusCode}">
   <div class="pointer-events-none absolute -top-28 -left-20 h-80 w-80 rounded-full ${blobClasses} blur-3xl"></div>
   <div class="pointer-events-none absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-appPrimary/20 blur-3xl"></div>
   <main class="relative mx-auto flex min-h-screen w-full max-w-3xl items-center px-5 py-10 sm:px-8">
@@ -59,4 +59,4 @@
       </div>
     </section>
   </main>
-</paw:layout>
+</paw:reservationLayout>

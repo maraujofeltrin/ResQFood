@@ -8,84 +8,14 @@
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title><spring:message code="app.brand"/> | <spring:message code="landing.pageTitle.suffix"/></title>
-    <!-- CSS -->
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css">
-    <!-- Fonts -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css"/>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-    <!-- Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script id="tailwind-config">
-          tailwind.config = {
-            darkMode: "class",
-            theme: {
-              extend: {
-                colors: {
-                  "surface-container-low": "#f5f3f9",
-                  "surface-bright": "#fbf8fe",
-                  "primary": "#152965",
-                  "on-primary-fixed-variant": "#314380",
-                  "error": "#ba1a1a",
-                  "primary-fixed-dim": "#b6c4ff",
-                  "on-tertiary-fixed-variant": "#693c02",
-                  "tertiary-fixed": "#ffdcbe",
-                  "surface-container": "#efedf3",
-                  "on-secondary-fixed-variant": "#40465f",
-                  "outline-variant": "#c5c5d1",
-                  "surface-container-highest": "#e3e1e7",
-                  "secondary-container": "#d9defe",
-                  "primary-fixed": "#dce1ff",
-                  "surface-container-lowest": "#ffffff",
-                  "on-tertiary-container": "#e3a464",
-                  "on-tertiary": "#ffffff",
-                  "on-secondary": "#ffffff",
-                  "tertiary-fixed-dim": "#fcb977",
-                  "on-tertiary-fixed": "#2c1600",
-                  "on-primary-fixed": "#001550",
-                  "on-background": "#1b1b20",
-                  "surface-dim": "#dbd9df",
-                  "on-secondary-container": "#5b617c",
-                  "primary-container": "#2e407d",
-                  "on-primary": "#ffffff",
-                  "outline": "#757681",
-                  "inverse-primary": "#b6c4ff",
-                  "surface-tint": "#4a5b9a",
-                  "secondary-fixed": "#dce1ff",
-                  "on-error-container": "#93000a",
-                  "error-container": "#ffdad6",
-                  "surface": "#fbf8fe",
-                  "surface-variant": "#e3e1e7",
-                  "secondary-fixed-dim": "#bfc5e4",
-                  "on-surface-variant": "#454650",
-                  "on-primary-container": "#9daef3",
-                  "tertiary-container": "#653900",
-                  "on-secondary-fixed": "#141a31",
-                  "on-error": "#ffffff",
-                  "background": "#fbf8fe",
-                  "inverse-on-surface": "#f2f0f6",
-                  "inverse-surface": "#303035",
-                  "tertiary": "#462600",
-                  "surface-container-high": "#e9e7ed",
-                  "secondary": "#575d78",
-                  "on-surface": "#1b1b20"
-                },
-                fontFamily: {
-                  "headline": ["Plus Jakarta Sans"],
-                  "body": ["Be Vietnam Pro"],
-                  "label": ["Plus Jakarta Sans"]
-                },
-              },
-            },
-          }
-    </script>
+    <script src="${pageContext.request.contextPath}/css/tailwind-config.js"></script>
     <style>
-      body { font-family: 'Be Vietnam Pro', sans-serif; }
-      h1, h2, h3 { font-family: 'Plus Jakarta Sans', sans-serif; }
-      .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
       .asymmetric-clip { clip-path: polygon(0 0, 100% 0, 100% 85%, 0% 100%); }
     </style>
 </head>

@@ -16,74 +16,11 @@
             <title><spring:message code="app.brand"/></title>
         </c:otherwise>
     </c:choose>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css"/>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script id="tailwind-config">
-        tailwind.config = {
-          darkMode: "class",
-          theme: {
-            extend: {
-              colors: {
-                "tertiary-container": "#653900",
-                "on-secondary-container": "#5b617c",
-                "error-container": "#ffdad6",
-                "surface-container-high": "#e9e7ed",
-                "surface-container-low": "#f5f3f9",
-                "outline": "#757681",
-                "on-surface-variant": "#454650",
-                "on-primary-fixed": "#001550",
-                "primary-fixed-dim": "#b6c4ff",
-                "on-surface": "#1b1b20",
-                "on-secondary": "#ffffff",
-                "surface-tint": "#4a5b9a",
-                "error": "#ba1a1a",
-                "background": "#fbf8fe",
-                "inverse-on-surface": "#f2f0f6",
-                "surface-dim": "#dbd9df",
-                "on-background": "#1b1b20",
-                "primary": "#152965",
-                "surface-bright": "#fbf8fe",
-                "inverse-surface": "#303035",
-                "surface": "#fbf8fe",
-                "on-primary-container": "#9daef3",
-                "on-error": "#ffffff",
-                "surface-variant": "#e3e1e7",
-                "on-tertiary-container": "#e3a464",
-                "on-secondary-fixed": "#141a31",
-                "inverse-primary": "#b6c4ff",
-                "surface-container-highest": "#e3e1e7",
-                "primary-fixed": "#dce1ff",
-                "tertiary": "#462600",
-                "on-primary-fixed-variant": "#314380",
-                "primary-container": "#2e407d",
-                "on-tertiary-fixed": "#2c1600",
-                "secondary-container": "#d9defe",
-                "secondary": "#575d78",
-                "on-error-container": "#93000a",
-                "secondary-fixed-dim": "#bfc5e4",
-                "outline-variant": "#c5c5d1",
-                "on-primary": "#ffffff",
-                "on-tertiary-fixed-variant": "#693c02",
-                "tertiary-fixed-dim": "#fcb977",
-                "secondary-fixed": "#dce1ff",
-                "on-secondary-fixed-variant": "#40465f",
-                "on-tertiary": "#ffffff",
-                "tertiary-fixed": "#ffdcbe",
-                "surface-container-lowest": "#ffffff",
-                "surface-container": "#efedf3"
-              },
-              fontFamily: {
-                "headline": ["Plus Jakarta Sans"],
-                "body": ["Be Vietnam Pro"],
-                "label": ["Plus Jakarta Sans"]
-              },
-              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
-            },
-          },
-        }
-    </script>
+    <script src="${pageContext.request.contextPath}/css/tailwind-config.js"></script>
 </head>
 <body class="bg-background font-body text-on-surface flex flex-col min-h-screen antialiased">
     <paw:navbar />
