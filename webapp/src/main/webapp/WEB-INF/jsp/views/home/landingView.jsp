@@ -1,12 +1,13 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="paw" tagdir="/WEB-INF/tags" %>
 <!DOCTYPE html>
-<html class="light" lang="en">
+<html class="light" lang="${pageContext.response.locale.language}">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>The Living Pantry | Honor Surplus, Nourish Communities</title>
+    <title><spring:message code="app.brand"/> | <spring:message code="landing.pageTitle.suffix"/></title>
     <!-- CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css">
     <!-- Fonts -->
@@ -99,43 +100,55 @@
         <!-- Dual Path Section -->
         <section class="max-w-7xl mx-auto px-6 py-12">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <spring:message code="landing.path.clients.tag" var="landingPathClientsTag"/>
+                <spring:message code="landing.path.clients.title" var="landingPathClientsTitle"/>
+                <spring:message code="landing.path.clients.description" var="landingPathClientsDesc"/>
+                <spring:message code="landing.path.clients.btn" var="landingPathClientsBtn"/>
+                <spring:message code="landing.path.clients.bullet1" var="landingPathClientsBullet1"/>
+                <spring:message code="landing.path.clients.bullet2" var="landingPathClientsBullet2"/>
                 <!-- Path 1: Rescuers -->
                 <paw:landingPathCard
                     isCommerce="false"
-                    tagLabel="For Clients"
-                    title="Become a Rescuer"
-                    description="Rescue surplus delicacies from local merchants at a fraction of the cost. High-quality food meets high-impact living."
-                    btnText="Explore Surplus"
+                    tagLabel="${landingPathClientsTag}"
+                    title="${landingPathClientsTitle}"
+                    description="${landingPathClientsDesc}"
+                    btnText="${landingPathClientsBtn}"
                     btnIcon="arrow_forward"
                     btnHref="/packs"
                     bgIcon="local_mall">
                     <li class="flex items-center gap-3 text-secondary">
                         <span class="material-symbols-outlined text-primary" data-icon="savings">savings</span>
-                        Save up to 70% on premium goods
+                        <c:out value="${landingPathClientsBullet1}"/>
                     </li>
                     <li class="flex items-center gap-3 text-secondary">
                         <span class="material-symbols-outlined text-primary" data-icon="location_on">location_on</span>
-                        Discover hidden culinary gems nearby
+                        <c:out value="${landingPathClientsBullet2}"/>
                     </li>
                 </paw:landingPathCard>
 
+                <spring:message code="landing.path.commerce.tag" var="landingPathCommerceTag"/>
+                <spring:message code="landing.path.commerce.title" var="landingPathCommerceTitle"/>
+                <spring:message code="landing.path.commerce.description" var="landingPathCommerceDesc"/>
+                <spring:message code="landing.path.commerce.btn" var="landingPathCommerceBtn"/>
+                <spring:message code="landing.path.commerce.bullet1" var="landingPathCommerceBullet1"/>
+                <spring:message code="landing.path.commerce.bullet2" var="landingPathCommerceBullet2"/>
                 <!-- Path 2: Partners -->
                 <paw:landingPathCard
                     isCommerce="true"
-                    tagLabel="For Commerces"
-                    title="Partner with Purpose"
-                    description="Turn your surplus into celebration. Minimize waste, maximize impact, and connect with a community that values your craft."
-                    btnText="Partner Dashboard"
+                    tagLabel="${landingPathCommerceTag}"
+                    title="${landingPathCommerceTitle}"
+                    description="${landingPathCommerceDesc}"
+                    btnText="${landingPathCommerceBtn}"
                     btnIcon="dashboard"
                     btnHref="/commerce"
                     bgIcon="storefront">
                     <li class="flex items-center gap-3 text-primary-fixed">
                         <span class="material-symbols-outlined text-on-primary-container" data-icon="trending_up">trending_up</span>
-                        Recover costs on unsold inventory
+                        <c:out value="${landingPathCommerceBullet1}"/>
                     </li>
                     <li class="flex items-center gap-3 text-primary-fixed">
                         <span class="material-symbols-outlined text-on-primary-container" data-icon="auto_awesome">auto_awesome</span>
-                        Enhance your sustainability profile
+                        <c:out value="${landingPathCommerceBullet2}"/>
                     </li>
                 </paw:landingPathCard>
             </div>
@@ -144,22 +157,28 @@
         <!-- Values/Bento Style Section -->
         <section class="max-w-7xl mx-auto px-6 py-24">
             <div class="text-center mb-16">
-                <h2 class="text-3xl md:text-5xl font-bold text-primary mb-4 tracking-tight">The Living Pantry Way</h2>
-                <p class="text-secondary max-w-2xl mx-auto text-lg">We believe food is sacred. Our platform is designed to respect the hands that grow it and the hands that prepare it.</p>
+                <h2 class="text-3xl md:text-5xl font-bold text-primary mb-4 tracking-tight"><spring:message code="landing.values.sectionTitle"/></h2>
+                <p class="text-secondary max-w-2xl mx-auto text-lg"><spring:message code="landing.values.sectionSubtitle"/></p>
             </div>
             
+            <spring:message code="landing.values.organicGrowth.title" var="landingValueOrganicTitle"/>
+            <spring:message code="landing.values.organicGrowth.description" var="landingValueOrganicDesc"/>
+            <spring:message code="landing.values.curatedSurplus.title" var="landingValueCuratedTitle"/>
+            <spring:message code="landing.values.curatedSurplus.description" var="landingValueCuratedDesc"/>
+            <spring:message code="landing.values.transparency.title" var="landingValueTransparencyTitle"/>
+            <spring:message code="landing.values.transparency.description" var="landingValueTransparencyDesc"/>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <paw:landingValueCard 
-                    title="Organic Growth" 
-                    description="Building resilient local food networks that adapt to community needs in real-time." 
+                    title="${landingValueOrganicTitle}" 
+                    description="${landingValueOrganicDesc}" 
                     icon="fluid_med" />
                 <paw:landingValueCard 
-                    title="Curated Surplus" 
-                    description="Only the highest quality items make it to our pantry. Rescue with confidence." 
+                    title="${landingValueCuratedTitle}" 
+                    description="${landingValueCuratedDesc}" 
                     icon="temp_preferences_custom" />
                 <paw:landingValueCard 
-                    title="Radical Transparency" 
-                    description="Track your specific impact on food waste and carbon reduction with every purchase." 
+                    title="${landingValueTransparencyTitle}" 
+                    description="${landingValueTransparencyDesc}" 
                     icon="award_star" />
             </div>
         </section>

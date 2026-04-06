@@ -1,12 +1,20 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="paw" tagdir="/WEB-INF/tags" %>
 <!DOCTYPE html>
-<html class="light" lang="en">
+<html class="light" lang="${pageContext.response.locale.language}">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>${pageTitle != null ? pageTitle : 'The Living Pantry | Explore & Rescue'}</title>
+    <c:choose>
+        <c:when test="${not empty pageTitle}">
+            <title><c:out value="${pageTitle}"/></title>
+        </c:when>
+        <c:otherwise>
+            <title><spring:message code="app.brand"/> | <spring:message code="pack.catalog.pageTitle.suffix"/></title>
+        </c:otherwise>
+    </c:choose>
     <!-- CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css">
     <!-- Google Fonts -->
@@ -89,17 +97,18 @@
         <!-- Header Section -->
         <header class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
-                <h1 class="text-4xl md:text-5xl font-headline font-extrabold text-primary tracking-tight mb-2">Explore Surrounding Harvests</h1>
-                <p class="text-secondary font-body">Rescue surplus delicacies from local merchants and artisans.</p>
+                <h1 class="text-4xl md:text-5xl font-headline font-extrabold text-primary tracking-tight mb-2"><spring:message code="pack.catalog.headline"/></h1>
+                <p class="text-secondary font-body"><spring:message code="pack.catalog.subtitle"/></p>
             </div>
             <div class="flex flex-col sm:flex-row items-center w-full md:w-auto gap-4">
+                <spring:message code="pack.catalog.search.placeholder" var="packCatalogSearchPlaceholder"/>
                 <form action="${pageContext.request.contextPath}/packs" method="GET" class="w-full sm:w-auto">
-                    <paw:searchBar value="${param.q}" placeholder="Search harvests or merchants..." classes="relative w-full sm:w-80" />
+                    <paw:searchBar value="${param.q}" placeholder="${packCatalogSearchPlaceholder}" classes="relative w-full sm:w-80" />
                 </form>
                 <div class="relative w-full sm:w-64">
                     <select class="w-full appearance-none bg-none bg-surface-container-low px-4 py-3 rounded-xl border-none text-sm font-medium focus:ring-2 focus:ring-primary/20 cursor-pointer text-on-surface">
-                        <option>Sort by: Nearest</option>
-                        <option>Lowest Price</option>
+                        <option><spring:message code="pack.catalog.sort.nearest"/></option>
+                        <option><spring:message code="pack.catalog.sort.lowestPrice"/></option>
                     </select>
                     <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary">expand_more</span>
                 </div>
@@ -112,10 +121,10 @@
             <div class="flex items-center justify-between mb-6">
                 <div class="flex items-center gap-3">
                     <span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">bolt</span>
-                    <h2 class="text-2xl font-headline font-bold text-on-surface">Last Chance</h2>
-                    <span class="bg-error-container text-on-error-container px-2 py-0.5 rounded text-xs font-bold uppercase tracking-tighter">Expiring Soon</span>
+                    <h2 class="text-2xl font-headline font-bold text-on-surface"><spring:message code="pack.catalog.lastChance.title"/></h2>
+                    <span class="bg-error-container text-on-error-container px-2 py-0.5 rounded text-xs font-bold uppercase tracking-tighter"><spring:message code="pack.catalog.lastChance.badge"/></span>
                 </div>
-                <button class="text-primary font-bold text-sm hover:underline">View All</button>
+                <button type="button" class="text-primary font-bold text-sm hover:underline"><spring:message code="pack.catalog.lastChance.viewAll"/></button>
             </div>
             <div class="flex gap-6 overflow-x-auto hide-scrollbar pb-4 -mx-2 px-2">
                 <c:forEach var="pack" items="${packs}">
@@ -137,8 +146,8 @@
             <div class="flex items-center gap-3 mb-8">
                 <h2 class="text-2xl font-headline font-bold text-on-surface">
                     <c:choose>
-                        <c:when test="${not empty param.q}">Search Results for "<c:out value="${param.q}"/>"</c:when>
-                        <c:otherwise>All Available Packs</c:otherwise>
+                        <c:when test="${not empty param.q}"><spring:message code="pack.catalog.searchResults" arguments="${param.q}"/></c:when>
+                        <c:otherwise><spring:message code="pack.catalog.allPacks"/></c:otherwise>
                     </c:choose>
                 </h2>
                 <div class="h-[1px] flex-grow bg-zinc-200"></div>
