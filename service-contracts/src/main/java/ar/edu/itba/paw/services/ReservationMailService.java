@@ -7,4 +7,6 @@ public interface ReservationMailService {
     void sendReservationRequestToCommerce(Reservation reservation, String commerceEmail, String baseUrl);
 
     void sendReservationCodeToClient(Reservation reservation, String clientEmail);
+
+    void sendReservationRejectedToClient(Reservation reservation, String clientEmail);
 }

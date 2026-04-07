@@ -2,6 +2,7 @@ package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Reservation;
 import ar.edu.itba.paw.models.ReservationToken;
+import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,12 +17,18 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
 
     private final ReservationTokenDao reservationTokenDao;
     private final ReservationDao reservationDao;
+    private final UserService userService;
+    private final ReservationMailService reservationMailService;
 
     @Autowired
     public ReservationTokenServiceImpl(final ReservationTokenDao reservationTokenDao,
-            final ReservationDao reservationDao) {
+            final ReservationDao reservationDao,
+            final UserService userService,
+            final ReservationMailService reservationMailService) {
         this.reservationTokenDao = reservationTokenDao;
         this.reservationDao = reservationDao;
+        this.userService = userService;
+        this.reservationMailService = reservationMailService;
     }
 
     @Override
@@ -47,7 +54,11 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
         // verify pickup code and call reservationService.confirmPickup, so here we only
         // mark token as used for ACCEPT.
         if (action == ReservationToken.Action.REJECT) {
-            reservationDao.updateStatus(reservationToken.getReservationId(), Reservation.Status.CANCELED);
+            final Reservation reservation = reservationDao.updateStatus(reservationToken.getReservationId(), Reservation.Status.CANCELED);
+            final String clientEmail = userService.findById(reservation.getCustomerId())
+                    .map(User::getEmail)
+                    .orElseThrow(() -> new IllegalStateException("Customer user not found for reservation id: " + reservation.getId()));
+            reservationMailService.sendReservationRejectedToClient(reservation, clientEmail);
         }
 
         return TokenValidationResult.SUCCESS;

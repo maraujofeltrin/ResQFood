@@ -115,6 +115,30 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         }
     }
 
+    @Async("mailTaskExecutor")
+    @Override
+    public void sendReservationRejectedToClient(final Reservation reservation, final String clientEmail) {
+        final Pack pack = packDao.findById(reservation.getPackId()).orElse(null);
+        final String localName = pack != null ? pack.getTitle() : ("Pack #" + reservation.getPackId());
+        final String packLabel = pack != null
+            ? (pack.getTitle() + " (#" + pack.getId() + ")")
+            : ("Pack #" + reservation.getPackId());
+
+        final String subject = "Tu reserva de " + localName + " fue rechazada";
+        final String html = buildClientRejectedHtml(reservation, packLabel);
+        try {
+            final MimeMessage message = mailSender.createMimeMessage();
+            final MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(mailFrom);
+            helper.setTo(clientEmail);
+            helper.setSubject(subject);
+            helper.setText(html, true);
+            mailSender.send(message);
+        } catch (final MessagingException e) {
+            throw new IllegalStateException("Could not send rejection mail", e);
+        }
+    }
+
     private static String buildClientHtml(final Reservation reservation, final String packLabel) {
         final String reservationDateStr = reservation.getReservationDate() != null
                 ? reservation.getReservationDate().format(MAIL_DATE_FORMATTER)
@@ -134,6 +158,19 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         context.setVariable("priceStr", priceStr);
 
         return templateEngine.process("client-pickup-code", context);
+    }
+
+    private static String buildClientRejectedHtml(final Reservation reservation, final String packLabel) {
+        final String reservationDateStr = reservation.getReservationDate() != null
+                ? reservation.getReservationDate().format(MAIL_DATE_FORMATTER)
+                : "-";
+
+        final Context context = new Context();
+        context.setVariable("reservationId", reservation.getId());
+        context.setVariable("packLabel", packLabel);
+        context.setVariable("reservationDateStr", reservationDateStr);
+
+        return templateEngine.process("client-reservation-rejected", context);
     }
 
     private static String buildCommerceHtml(final Reservation reservation, final String packTitle, final String acceptUrl, final String rejectUrl) {
