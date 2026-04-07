@@ -25,7 +25,7 @@
 
     <main class="pt-24 flex-grow">
         
-        <paw:landingHero />
+        <%-- <paw:landingHero /> --%>
 
         <!-- Dual Path Section -->
         <section class="max-w-7xl mx-auto px-6 py-12">

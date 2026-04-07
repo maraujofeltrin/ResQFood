@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.webapp.controller;
 
 import ar.edu.itba.paw.models.Commerce;
+import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.models.PackTag;
 import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
@@ -28,10 +29,22 @@ public class CommerceController {
         this.packService = packService;
     }
 
+    private static final int PAGE_SIZE = 6;
+
     @RequestMapping(method = RequestMethod.GET)
-    public ModelAndView dashboard() {
+    public ModelAndView dashboard(@RequestParam(value = "page", defaultValue = "1") final int page) {
         final ModelAndView mav = new ModelAndView("commerce/dashboard");
-        mav.addObject("packs", packService.findAll());
+
+        final List<Pack> allPacks = packService.findAll();
+        final int totalPages = Math.max(1, (int) Math.ceil((double) allPacks.size() / PAGE_SIZE));
+        final int safePage = Math.max(1, Math.min(page, totalPages));
+        final int fromIdx = (safePage - 1) * PAGE_SIZE;
+        final int toIdx = Math.min(fromIdx + PAGE_SIZE, allPacks.size());
+
+        mav.addObject("packs", allPacks.subList(fromIdx, toIdx));
+        mav.addObject("currentPage", safePage);
+        mav.addObject("totalPages", totalPages);
+        mav.addObject("paginationBaseUrl", "/commerce");
         return mav;
     }
 
