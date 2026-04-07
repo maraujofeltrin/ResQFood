@@ -33,7 +33,7 @@ The project is strictly separated into multiple Maven modules to ensure decouple
 - **Views**: Written in standard JSP (`.jsp` files).
 - **Components**: Reusable UI elements are implemented as custom JSP tags (`WEB-INF/tags/`, e.g., `packCard.tag`, `navbar.tag`).
 - **Styling**: Standard CSS with a strong focus on modern aesthetics, dynamic design, gradients, hover effects, and responsive implementations (e.g., `components.css`).
-- **Design System**: The central reference for all visual and UI decisions is **[`DESIGN.md`](DESIGN.md)**. This document defines the project's color palette, typography, surface hierarchy, elevation strategy, component patterns, and do's/don'ts. All frontend changes MUST align with the guidelines described there ("The Living Pantry" philosophy).
+- **Design System**: The central reference for all visual and UI decisions is **[`DESIGN.md`](DESIGN.md)**. This document defines the project's color palette, typography, surface hierarchy, elevation strategy, component patterns, and do's/don'ts. All frontend changes MUST align with the guidelines described there ("ResQFood" philosophy).
 - **Design Rule**: Changes on the frontend should feel premium, maintain visual consistency across components, and NOT rely on generic frameworks like Bootstrap or Tailwind unless explicitly approved or configured.
 
 ## Directives for AI Agents

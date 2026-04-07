@@ -1,7 +1,7 @@
 # Design System Document
 
-## 1. Overview & Creative North Star: "The Living Pantry"
-The "Living Pantry" is a design philosophy that rejects the clinical, sterile nature of traditional logistics platforms in favor of a warm, editorial, and organic experience. This design system bridges the gap between high-end culinary magazines and sustainable technology.
+## 1. Overview & Creative North Star: "ResQFood"
+The "ResQFood" design philosophy rejects the clinical, sterile nature of traditional logistics platforms in favor of a warm, editorial, and organic experience. This design system bridges the gap between high-end culinary magazines and sustainable technology.
 
 **The Creative North Star:** We are not just moving surplus food; we are honoring it. The UI must feel like a curated gallery—breathable, intentional, and deeply tactile. We move away from the "app-in-a-box" look by utilizing **intentional asymmetry**, where imagery breaks container boundaries, and **tonal layering**, which replaces rigid borders with soft, atmospheric transitions. The goal is to create a sense of "abundance without waste."
 
@@ -73,6 +73,6 @@ Traditional drop shadows are often too "heavy" for a minimalist sustainability p
 
 ### Don't:
 * **Don't** use 1px solid black or grey borders. Use background color shifts.
-* **Don't** use "default" system shadows. They feel "cheap" and break the "Living Pantry" aesthetic.
+* **Don't** use "default" system shadows. They feel "cheap" and break the "ResQFood" aesthetic.
 * **Don't** use more than three levels of surface nesting. If a fourth level is needed, reconsider the information architecture.
 * **Don't** center-align long passages of body text. Keep it left-aligned to maintain the editorial, readable grid.

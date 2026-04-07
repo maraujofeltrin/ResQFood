@@ -1,5 +1,5 @@
 /*
- * Centralized Tailwind CSS configuration — "The Living Pantry" design system.
+ * Centralized Tailwind CSS configuration — "ResQFood" design system.
  *
  * Palette derived from DESIGN.md using Material Design 3 token naming.
  * Loaded AFTER the Tailwind CDN script in every page/layout.
