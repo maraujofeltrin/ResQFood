@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Optional;
 
 @Controller
@@ -57,7 +58,8 @@ public class ReservationController {
     private String handleConfirmGet(final String token, final Model model, final ReservationToken.Action action,
             final String viewName) {
         if (token == null || token.isBlank()) {
-            return "reservations/token-invalid";
+            model.addAttribute("tokenStatus", "invalid");
+            return "reservations/token-status";
         }
         final TokenValidationResult result = reservationTokenService.validateOnly(token, action);
         switch (result) {
@@ -67,7 +69,8 @@ public class ReservationController {
                         .orElseThrow(() -> new IllegalStateException("Reservation id missing for token: " + token));
                 final Optional<Reservation> reservation = reservationService.findById(reservationId);
                 if (reservation.isEmpty()) {
-                    return "reservations/token-invalid";
+                    model.addAttribute("tokenStatus", "invalid");
+                    return "reservations/token-status";
                 }
                 final Reservation res = reservation.get();
                 model.addAttribute("reservation", res);
@@ -88,17 +91,20 @@ public class ReservationController {
             case ALREADY_USED:
                 return buildAlreadyUsedView(token, model);
             case EXPIRED:
-                return "reservations/token-expired";
+                model.addAttribute("tokenStatus", "expired");
+                return "reservations/token-status";
             case NOT_FOUND:
             default:
-                return "reservations/token-invalid";
+                model.addAttribute("tokenStatus", "invalid");
+                return "reservations/token-status";
         }
     }
 
     private String handleConsumePost(final String token, final String pickupCode, final Model model, final ReservationToken.Action action,
             final String actionLabel) {
         if (token == null || token.isBlank()) {
-            return "reservations/token-invalid";
+            model.addAttribute("tokenStatus", "invalid");
+            return "reservations/token-status";
         }
         final TokenValidationResult validate = reservationTokenService.validateOnly(token, action);
         switch (validate) {
@@ -110,7 +116,8 @@ public class ReservationController {
                             .orElseThrow(() -> new IllegalStateException("Reservation id missing for token: " + token));
                     final Optional<Reservation> reservation = reservationService.findById(reservationId);
                     if (reservation.isEmpty()) {
-                        return "reservations/token-invalid";
+                        model.addAttribute("tokenStatus", "invalid");
+                        return "reservations/token-status";
                     }
                     final Reservation res = reservation.get();
                     model.addAttribute("reservation", res);
@@ -122,7 +129,10 @@ public class ReservationController {
                         return "reservations/confirm-action";
                     }
 
-                    if (!pickupCode.equals(res.getPickupCode())) {
+                    final String inputCode = pickupCode == null ? "" : pickupCode.trim().toUpperCase(Locale.ROOT);
+                    final String storedCode = res.getPickupCode() == null ? ""
+                            : res.getPickupCode().trim().toUpperCase(Locale.ROOT);
+                    if (!inputCode.equals(storedCode)) {
                         model.addAttribute("pickupError", "Código de retiro inválido.");
                         model.addAttribute("confirmEndpoint", "accept");
                         return "reservations/confirm-action";
@@ -133,12 +143,15 @@ public class ReservationController {
                     if (result != TokenValidationResult.SUCCESS) {
                         switch (result) {
                             case ALREADY_USED:
-                                return "reservations/token-already-used";
+                                model.addAttribute("tokenStatus", "already-used");
+                                return "reservations/token-status";
                             case EXPIRED:
-                                return "reservations/token-expired";
+                                model.addAttribute("tokenStatus", "expired");
+                                return "reservations/token-status";
                             case NOT_FOUND:
                             default:
-                                return "reservations/token-invalid";
+                                model.addAttribute("tokenStatus", "invalid");
+                                return "reservations/token-status";
                         }
                     }
 
@@ -155,19 +168,23 @@ public class ReservationController {
                         case ALREADY_USED:
                             return buildAlreadyUsedView(token, model);
                         case EXPIRED:
-                            return "reservations/token-expired";
+                            model.addAttribute("tokenStatus", "expired");
+                            return "reservations/token-status";
                         case NOT_FOUND:
                         default:
-                            return "reservations/token-invalid";
+                            model.addAttribute("tokenStatus", "invalid");
+                            return "reservations/token-status";
                     }
                 }
             case ALREADY_USED:
                 return buildAlreadyUsedView(token, model);
             case EXPIRED:
-                return "reservations/token-expired";
+                model.addAttribute("tokenStatus", "expired");
+                return "reservations/token-status";
             case NOT_FOUND:
             default:
-                return "reservations/token-invalid";
+                model.addAttribute("tokenStatus", "invalid");
+                return "reservations/token-status";
         }
     }
 
@@ -184,6 +201,7 @@ public class ReservationController {
                 }
             }
         }
-        return "reservations/token-already-used";
+        model.addAttribute("tokenStatus", "already-used");
+        return "reservations/token-status";
     }
 }

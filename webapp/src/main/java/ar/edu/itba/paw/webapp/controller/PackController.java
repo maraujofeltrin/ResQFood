@@ -7,7 +7,6 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -36,6 +35,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.models.Pack;
+import ar.edu.itba.paw.models.PackTag;
 import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
 import ar.edu.itba.paw.services.ReservationService;
@@ -81,16 +81,13 @@ public class PackController {
         return placeholderBytes;
     }
 
-    private static final List<String> DEFAULT_PICKUP_WINDOWS = Arrays.asList(
-            "Hoy, 17:30 - 18:00",
-            "Hoy, 18:00 - 18:30"
-    );
+    private static final Locale LOCALE_AR = new Locale("es", "AR");
 
-    private static String formatUsd(final Double amount) {
+    private static String formatPrice(final Double amount) {
         if (amount == null) {
             return "—";
         }
-        return NumberFormat.getCurrencyInstance(Locale.US).format(amount);
+        return NumberFormat.getCurrencyInstance(LOCALE_AR).format(amount);
     }
 
     private static String dashIfBlank(final String value) {
@@ -199,9 +196,6 @@ public class PackController {
     private ReservationForm createDefaultReservationForm() {
         final ReservationForm form = new ReservationForm();
         form.setQuantity(Integer.valueOf(1));
-        if (!DEFAULT_PICKUP_WINDOWS.isEmpty()) {
-            form.setPickupWindow(DEFAULT_PICKUP_WINDOWS.get(0));
-        }
         return form;
     }
 
@@ -221,41 +215,109 @@ public class PackController {
         mav.addObject("packId", pack.getId());
         final double unitPriceAmount = pack.getFinalPrice() != null ? pack.getFinalPrice() : 0d;
         mav.addObject("unitPriceAmount", unitPriceAmount);
+        mav.addObject("unitPriceNumber", String.format(Locale.US, "%.2f", unitPriceAmount));
         mav.addObject("pageTitle", pageTitle);
         mav.addObject("packTitle", title);
         mav.addObject("packDescription", pack.getDescription() != null ? pack.getDescription() : "");
         addCommerceDetailAttributes(mav, commerceOpt);
-        mav.addObject("originalPrice", formatUsd(pack.getOriginalPrice()));
-        mav.addObject("finalPrice", formatUsd(pack.getFinalPrice()));
-        mav.addObject("pickupWindows", DEFAULT_PICKUP_WINDOWS);
-
+        mav.addObject("originalPrice", formatPrice(pack.getOriginalPrice()));
+        mav.addObject("finalPrice", formatPrice(pack.getFinalPrice()));
         final Integer stock = pack.getStock();
-        final int quantityMax = stock != null && stock >= 1 ? Math.min(stock, 999) : 999;
+        final int quantityMax;
+        if (stock != null && stock >= 1) {
+            quantityMax = Math.min(stock, 999);
+        } else if (stock != null) {
+            quantityMax = 0;
+        } else {
+            quantityMax = 999;
+        }
         mav.addObject("quantityMax", quantityMax);
+
+        if (stock != null) {
+            mav.addObject("packStock", stock);
+            mav.addObject("packStockBadgeCssClass",
+                    stock.intValue() > 0 ? "pack-detail-badge--stock-available" : "pack-detail-badge--stock-unavailable");
+            mav.addObject("packStockBadgeText",
+                    messageSource.getMessage("pack.detail.stockBadge", new Object[] { stock }, locale));
+        }
+
+        if (stock != null && stock >= 1 && reservationForm.getQuantity() != null
+                && reservationForm.getQuantity().intValue() > stock.intValue()) {
+            reservationForm.setQuantity(stock);
+        }
 
         mav.addObject("reservationForm", reservationForm);
         return mav;
     }
 
+    private static final int PAGE_SIZE = 6;
+
     @GetMapping("/packs")
-    public ModelAndView listPacks(@RequestParam(value = "q", required = false) final String query) {
+    public ModelAndView listPacks(
+            @RequestParam(value = "q", required = false) final String query,
+            @RequestParam(value = "tags", required = false) final List<String> tagNames,
+            @RequestParam(value = "page", defaultValue = "1") final int page) {
+
         final ModelAndView mav = new ModelAndView("packs/packCatalogView");
-        final List<Pack> packs;
-        if (query != null && !query.trim().isEmpty()) {
-            packs = packService.searchPacks(query.trim());
-        } else {
-            packs = packService.findActive();
+
+        final List<PackTag> selectedTags = new ArrayList<>();
+        if (tagNames != null) {
+            for (final String name : tagNames) {
+                try {
+                    selectedTags.add(PackTag.valueOf(name));
+                } catch (final IllegalArgumentException ignored) {
+                }
+            }
         }
+
+        final boolean hasQuery = query != null && !query.trim().isEmpty();
+        final boolean hasTags = !selectedTags.isEmpty();
+
+        final List<Pack> allPacks;
+        if (hasQuery && hasTags) {
+            allPacks = packService.searchPacksWithTags(query.trim(), selectedTags);
+        } else if (hasTags) {
+            allPacks = packService.findActiveByTags(selectedTags);
+        } else if (hasQuery) {
+            allPacks = packService.searchPacks(query.trim());
+        } else {
+            allPacks = packService.findActive();
+        }
+
+        final int totalPages = Math.max(1, (int) Math.ceil((double) allPacks.size() / PAGE_SIZE));
+        final int safePage = Math.max(1, Math.min(page, totalPages));
+        final int fromIdx = (safePage - 1) * PAGE_SIZE;
+        final int toIdx = Math.min(fromIdx + PAGE_SIZE, allPacks.size());
+        final List<Pack> packs = allPacks.subList(fromIdx, toIdx);
+
         final Map<Long, String> commerceNames = packs.stream()
             .collect(java.util.stream.Collectors.toMap(
-                Pack::getId, 
-                pack -> commerceService.findByUserId(pack.getCommerceId())
+                Pack::getId,
+                p -> commerceService.findByUserId(p.getCommerceId())
                             .map(Commerce::getCommercialName)
                             .orElse("—")
             ));
 
+        final StringBuilder baseUrlBuilder = new StringBuilder("/packs");
+        boolean firstParam = true;
+        if (hasQuery) {
+            baseUrlBuilder.append(firstParam ? "?" : "&").append("q=").append(query.trim());
+            firstParam = false;
+        }
+        if (hasTags) {
+            for (final PackTag tag : selectedTags) {
+                baseUrlBuilder.append(firstParam ? "?" : "&").append("tags=").append(tag.name());
+                firstParam = false;
+            }
+        }
+
         mav.addObject("packs", packs);
         mav.addObject("commerceNames", commerceNames);
+        mav.addObject("availableTags", PackTag.values());
+        mav.addObject("selectedTags", selectedTags);
+        mav.addObject("currentPage", safePage);
+        mav.addObject("totalPages", totalPages);
+        mav.addObject("paginationBaseUrl", baseUrlBuilder.toString());
         return mav;
     }
 
@@ -311,7 +373,8 @@ public class PackController {
         final Integer stock = pack.getStock();
         if (reservationForm.getQuantity() != null && stock != null
                 && reservationForm.getQuantity().intValue() > stock.intValue()) {
-            bindingResult.rejectValue("quantity", "reservation.quantity.exceedsStock");
+            bindingResult.rejectValue("quantity", "reservation.quantity.exceedsStock",
+                    new Object[] { stock }, null);
         }
 
         if (bindingResult.hasErrors()) {
@@ -339,7 +402,7 @@ public class PackController {
                     reservationForm.getPhone(),
                     quantity,
                     finalPrice,
-                    reservationForm.getPickupWindow());
+                    null);
             redirectAttributes.addFlashAttribute("reservationAlertKind", "success");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
                     messageSource.getMessage("reservation.alert.success", null,

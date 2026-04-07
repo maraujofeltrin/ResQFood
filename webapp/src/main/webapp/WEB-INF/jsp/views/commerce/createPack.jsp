@@ -6,79 +6,12 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Crear Pack Sorpresa | The Living Pantry</title>
-    <!-- CSS -->
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css">
-    <!-- Google Fonts -->
+    <title>Crear Pack Sorpresa | ResQFood</title>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css"/>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-    <!-- Material Symbols -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script id="tailwind-config">
-        tailwind.config = {
-          darkMode: "class",
-          theme: {
-            extend: {
-              colors: {
-                "surface-container-lowest": "#ffffff",
-                "primary-fixed": "#dce1ff",
-                "surface-variant": "#e3e1e7",
-                "on-tertiary-container": "#e3a464",
-                "secondary-fixed": "#dce1ff",
-                "on-secondary-fixed": "#141a31",
-                "surface-bright": "#fbf8fe",
-                "outline-variant": "#c5c5d1",
-                "surface-dim": "#dbd9df",
-                "on-tertiary-fixed": "#2c1600",
-                "on-primary": "#ffffff",
-                "background": "#fbf8fe",
-                "primary-container": "#2e407d",
-                "tertiary": "#462600",
-                "error-container": "#ffdad6",
-                "surface-container-low": "#f5f3f9",
-                "inverse-on-surface": "#f2f0f6",
-                "primary": "#152965",
-                "primary-fixed-dim": "#b6c4ff",
-                "surface-tint": "#4a5b9a",
-                "tertiary-fixed": "#ffdcbe",
-                "surface-container-high": "#e9e7ed",
-                "on-tertiary-fixed-variant": "#693c02",
-                "tertiary-fixed-dim": "#fcb977",
-                "on-primary-fixed": "#001550",
-                "secondary": "#575d78",
-                "on-primary-fixed-variant": "#314380",
-                "surface-container-highest": "#e3e1e7",
-                "on-background": "#1b1b20",
-                "on-primary-container": "#9daef3",
-                "on-tertiary": "#ffffff",
-                "on-error-container": "#93000a",
-                "secondary-fixed-dim": "#bfc5e4",
-                "on-secondary-container": "#5b617c",
-                "on-secondary": "#ffffff",
-                "surface-container": "#efedf3",
-                "outline": "#757681",
-                "secondary-container": "#d9defe",
-                "on-error": "#ffffff",
-                "inverse-surface": "#303035",
-                "inverse-primary": "#b6c4ff",
-                "on-surface-variant": "#454650",
-                "error": "#ba1a1a",
-                "on-secondary-fixed-variant": "#40465f",
-                "tertiary-container": "#653900",
-                "surface": "#fbf8fe",
-                "on-surface": "#1b1b20"
-              },
-              fontFamily: {
-                "headline": ["Plus Jakarta Sans"],
-                "body": ["Be Vietnam Pro"],
-                "label": ["Plus Jakarta Sans"]
-              },
-              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
-            },
-          },
-        }
-    </script>
+    <script src="${pageContext.request.contextPath}/css/tailwind-config.js"></script>
 </head>
 <body class="bg-surface font-body text-on-surface antialiased flex flex-col min-h-screen">
     
@@ -192,7 +125,7 @@
 
             <!-- Right Column: Pack Details (Sticky) -->
             <div class="pack-detail-aside">
-                <section class="pack-aside-card border-none ring-1 ring-primary-fixed-dim bg-surface-bright shadow-lg">
+                <section class="pack-aside-card bg-surface-container-lowest shadow-soft">
                     <h2 class="pack-aside-heading mb-2">Detalles del Pack</h2>
                     
                     <div class="pack-reservation-form mt-2">
@@ -210,8 +143,8 @@
                             <label class="pack-form-label mb-2 block">Etiquetas / Restricciones (Opcional)</label>
                             <div class="grid grid-cols-2 gap-2">
                                 <c:forEach var="tag" items="${availableTags}">
-                                    <label class="flex items-center gap-2 text-sm text-secondary cursor-pointer hover:bg-surface-container-high p-2 rounded-md transition-colors border border-outline-variant">
-                                        <input type="checkbox" name="tags" value="${tag.name()}" class="rounded text-primary focus:ring-primary h-4 w-4 border-outline-variant" />
+                                    <label class="flex items-center gap-2 text-sm text-secondary cursor-pointer hover:bg-surface-container-high bg-surface-container-low p-2 rounded-md transition-colors">
+                                        <input type="checkbox" name="tags" value="${tag.name()}" class="rounded text-primary focus:ring-primary h-4 w-4" />
                                         <span>${tag.displayName}</span>
                                     </label>
                                 </c:forEach>
@@ -230,7 +163,7 @@
                                 <label class="pack-form-label text-primary">Precio Venta</label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold">$</span>
-                                    <input type="number" step="0.01" name="finalPrice" class="pack-form-control pack-form-control--tabular pl-8 font-bold border-primary-fixed-dim" placeholder="0.00" required />
+                                    <input type="number" step="0.01" name="finalPrice" class="pack-form-control pack-form-control--tabular pl-8 font-bold" placeholder="0.00" required />
                                 </div>
                             </div>
                         </div>

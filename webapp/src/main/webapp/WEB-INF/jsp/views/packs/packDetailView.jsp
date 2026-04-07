@@ -16,82 +16,25 @@
             <title><spring:message code="app.brand"/></title>
         </c:otherwise>
     </c:choose>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css"/>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script id="tailwind-config">
-        tailwind.config = {
-          darkMode: "class",
-          theme: {
-            extend: {
-              colors: {
-                "tertiary-container": "#653900",
-                "on-secondary-container": "#5b617c",
-                "error-container": "#ffdad6",
-                "surface-container-high": "#e9e7ed",
-                "surface-container-low": "#f5f3f9",
-                "outline": "#757681",
-                "on-surface-variant": "#454650",
-                "on-primary-fixed": "#001550",
-                "primary-fixed-dim": "#b6c4ff",
-                "on-surface": "#1b1b20",
-                "on-secondary": "#ffffff",
-                "surface-tint": "#4a5b9a",
-                "error": "#ba1a1a",
-                "background": "#fbf8fe",
-                "inverse-on-surface": "#f2f0f6",
-                "surface-dim": "#dbd9df",
-                "on-background": "#1b1b20",
-                "primary": "#152965",
-                "surface-bright": "#fbf8fe",
-                "inverse-surface": "#303035",
-                "surface": "#fbf8fe",
-                "on-primary-container": "#9daef3",
-                "on-error": "#ffffff",
-                "surface-variant": "#e3e1e7",
-                "on-tertiary-container": "#e3a464",
-                "on-secondary-fixed": "#141a31",
-                "inverse-primary": "#b6c4ff",
-                "surface-container-highest": "#e3e1e7",
-                "primary-fixed": "#dce1ff",
-                "tertiary": "#462600",
-                "on-primary-fixed-variant": "#314380",
-                "primary-container": "#2e407d",
-                "on-tertiary-fixed": "#2c1600",
-                "secondary-container": "#d9defe",
-                "secondary": "#575d78",
-                "on-error-container": "#93000a",
-                "secondary-fixed-dim": "#bfc5e4",
-                "outline-variant": "#c5c5d1",
-                "on-primary": "#ffffff",
-                "on-tertiary-fixed-variant": "#693c02",
-                "tertiary-fixed-dim": "#fcb977",
-                "secondary-fixed": "#dce1ff",
-                "on-secondary-fixed-variant": "#40465f",
-                "on-tertiary": "#ffffff",
-                "tertiary-fixed": "#ffdcbe",
-                "surface-container-lowest": "#ffffff",
-                "surface-container": "#efedf3"
-              },
-              fontFamily: {
-                "headline": ["Plus Jakarta Sans"],
-                "body": ["Be Vietnam Pro"],
-                "label": ["Plus Jakarta Sans"]
-              },
-              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
-            },
-          },
-        }
-    </script>
+    <script src="${pageContext.request.contextPath}/css/tailwind-config.js"></script>
 </head>
 <body class="bg-background font-body text-on-surface flex flex-col min-h-screen antialiased">
     <paw:navbar />
 
     <spring:message code="pack.detail.image.alt" var="packDetailImageAlt"/>
-    <spring:message code="pack.detail.badge" var="packDetailBadge"/>
     <spring:message code="pack.detail.commerce.section" var="packDetailCommerceSectionAria"/>
+    <c:url var="packCatalogUrl" value="/packs"/>
     <main class="pack-detail-main">
+        <div class="flex items-center gap-2 mb-8 text-secondary">
+            <a href="${packCatalogUrl}" class="hover:underline flex items-center font-bold">
+                <span class="material-symbols-outlined text-xl mr-1">arrow_back</span>
+                <spring:message code="pack.detail.back"/>
+            </a>
+        </div>
         <div class="pack-detail-grid">
             <div class="pack-detail-media-col">
                 <div class="pack-detail-hero">
@@ -102,8 +45,9 @@
 
                 <div class="pack-detail-intro">
                     <div class="pack-detail-meta">
-                        <span class="pack-detail-badge"><c:out value="${packDetailBadge}"/></span>
-                        <span class="pack-detail-merchant"><c:out value="${commerceCommercialName}"/></span>
+                        <c:if test="${not empty packStockBadgeText}">
+                            <span class="pack-detail-badge pack-detail-badge--stock ${packStockBadgeCssClass}"><c:out value="${packStockBadgeText}"/></span>
+                        </c:if>
                     </div>
                     <h1 class="pack-detail-title font-headline"><c:out value="${packTitle}"/></h1>
                     <p class="pack-detail-description"><c:out value="${packDescription}"/></p>
@@ -139,11 +83,16 @@
                                             <span class="commerce-info-card__hours-label"><spring:message code="pack.detail.commerce.closing"/></span>
                                             <span class="commerce-info-card__hours-value"><c:out value="${commerceClosingTime}"/></span>
                                         </div>
-                                        <c:if test="${commerceOpenNow}">
-                                            <div class="commerce-info-card__status">
-                                                <span class="commerce-info-card__status-badge"><spring:message code="pack.detail.commerce.openNow"/></span>
-                                            </div>
-                                        </c:if>
+                                        <div class="commerce-info-card__status">
+                                            <c:choose>
+                                                <c:when test="${commerceOpenNow}">
+                                                    <span class="commerce-info-card__status-badge"><spring:message code="pack.detail.commerce.openNow"/></span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="commerce-info-card__status-badge commerce-info-card__status-badge--closed"><spring:message code="pack.detail.commerce.closedNow"/></span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -153,6 +102,14 @@
                                     <spring:message code="pack.detail.commerce.pickupNote"/>
                                 </p>
                             </div>
+                            <c:if test="${not commerceOpenNow}">
+                                <div class="commerce-info-card__note commerce-info-card__note--warning">
+                                    <span class="material-symbols-outlined commerce-info-card__icon" aria-hidden="true">schedule</span>
+                                    <p class="commerce-info-card__note-text">
+                                        <spring:message code="pack.detail.commerce.closedNote"/>
+                                    </p>
+                                </div>
+                            </c:if>
                         </div>
                     </section>
                 </div>
@@ -232,36 +189,44 @@
 
                         <spring:message code="pack.detail.form.quantity" var="labelQuantity"/>
                         <spring:message code="pack.detail.form.quantity.placeholder" var="phQuantity"/>
-                        <spring:bind path="quantity">
-                            <paw:input id="reservation-quantity" label="${labelQuantity}" type="number"
-                                       name="${status.expression}" value="${status.value}"
-                                       error="${status.errorMessages[0]}"
-                                       placeholder="${phQuantity}"
-                                       max="${quantityMax}" step="1"
-                                       wrapperClass="pack-form-field" labelClass="pack-form-label"
-                                       inputClass="pack-form-control pack-form-control--tabular"
-                                       errorClass="pack-feedback pack-feedback--error pack-form-errors"
-                                       errorTag="p"/>
-                        </spring:bind>
+                        <c:choose>
+                            <c:when test="${quantityMax ge 1}">
+                                <spring:bind path="quantity">
+                                    <paw:input id="reservation-quantity" label="${labelQuantity}" type="number"
+                                               name="${status.expression}" value="${status.value}"
+                                               error="${status.errorMessages[0]}"
+                                               placeholder="${phQuantity}"
+                                               min="1" max="${quantityMax}" step="1"
+                                               wrapperClass="pack-form-field" labelClass="pack-form-label"
+                                               inputClass="pack-form-control pack-form-control--tabular"
+                                               errorClass="pack-feedback pack-feedback--error pack-form-errors"
+                                               errorTag="p"/>
+                                </spring:bind>
+                            </c:when>
+                            <c:otherwise>
+                                <div class="pack-form-field">
+                                    <label class="pack-form-label" for="reservation-quantity-hidden"><c:out value="${labelQuantity}"/></label>
+                                    <p class="pack-feedback pack-feedback--error" role="alert" id="reservation-quantity-unavailable">
+                                        <spring:message code="pack.detail.form.quantity.unavailable"/>
+                                    </p>
+                                    <form:hidden path="quantity" id="reservation-quantity-hidden"/>
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
 
-                        <div class="pack-form-field">
+                        <div class="pack-form-field" id="reservation-total-block"
+                             data-unit-price="${unitPriceNumber}">
                             <p class="pack-form-total-label"><spring:message code="pack.detail.form.total"/></p>
-                            <p class="pack-form-total-hint"><spring:message code="pack.detail.form.totalHint"/></p>
+                            <p class="pack-form-total-amount font-headline" id="reservation-total-display" aria-live="polite">—</p>
                         </div>
 
-                        <div class="pack-form-field">
-                            <spring:message code="pack.detail.form.pickupWindow" var="labelPickupWindow"/>
-                            <form:label path="pickupWindow" cssClass="pack-form-label">${labelPickupWindow}</form:label>
-                            <div class="pack-select-wrap">
-                                <form:select path="pickupWindow" items="${pickupWindows}" cssClass="pack-form-select bg-none"/>
-                                <span class="material-symbols-outlined pack-select-chevron">expand_more</span>
-                            </div>
-                            <form:errors path="pickupWindow" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p"/>
-                        </div>
-
-                        <button type="submit" class="pack-submit-btn font-headline">
-                            <spring:message code="pack.detail.form.submit"/>
-                            <span class="material-symbols-outlined">arrow_forward</span>
+                        <spring:message code="pack.detail.form.submitting" var="submittingText"/>
+                        <button type="submit" class="pack-submit-btn font-headline"
+                                id="reservation-submit-btn"
+                                data-submitting-text="${submittingText}"
+                                <c:if test="${quantityMax lt 1}">disabled="disabled" aria-disabled="true"</c:if>>
+                            <span class="pack-submit-btn__label"><spring:message code="pack.detail.form.submit"/></span>
+                            <span class="material-symbols-outlined pack-submit-btn__icon">arrow_forward</span>
                         </button>
                     </form:form>
                 </div>
@@ -270,5 +235,68 @@
     </main>
 
     <paw:footer />
+    <script>
+        (function () {
+            var block = document.getElementById('reservation-total-block');
+            var qtyInput = document.getElementById('reservation-quantity');
+            var totalEl = document.getElementById('reservation-total-display');
+            if (!block || !qtyInput || !totalEl) {
+                return;
+            }
+            var unit = parseFloat(block.getAttribute('data-unit-price'));
+            if (isNaN(unit)) {
+                unit = 0;
+            }
+            var maxQ = parseInt(qtyInput.getAttribute('max'), 10);
+            if (isNaN(maxQ)) {
+                maxQ = 999;
+            }
+            var fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
+            function parseQuantity() {
+                if (maxQ === 0) {
+                    return 0;
+                }
+                var q = parseInt(qtyInput.value, 10);
+                if (isNaN(q) || q < 1) {
+                    q = 1;
+                }
+                if (q > maxQ) {
+                    q = maxQ;
+                }
+                return q;
+            }
+            function updateTotal() {
+                var q = parseQuantity();
+                var total = unit * q;
+                totalEl.textContent = fmt.format(total);
+            }
+            qtyInput.addEventListener('input', updateTotal);
+            qtyInput.addEventListener('change', updateTotal);
+            updateTotal();
+        })();
+
+        (function () {
+            var form = document.querySelector('.pack-reservation-form');
+            var btn = document.getElementById('reservation-submit-btn');
+            if (!form || !btn) {
+                return;
+            }
+            var submitted = false;
+            form.addEventListener('submit', function (e) {
+                if (submitted) {
+                    e.preventDefault();
+                    return;
+                }
+                submitted = true;
+                btn.disabled = true;
+                btn.setAttribute('aria-disabled', 'true');
+                btn.classList.add('pack-submit-btn--submitting');
+                var label = btn.querySelector('.pack-submit-btn__label');
+                if (label && btn.getAttribute('data-submitting-text')) {
+                    label.textContent = btn.getAttribute('data-submitting-text');
+                }
+            });
+        })();
+    </script>
 </body>
 </html>

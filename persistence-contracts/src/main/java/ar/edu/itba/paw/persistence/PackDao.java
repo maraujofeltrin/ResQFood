@@ -12,7 +12,16 @@ public interface PackDao {
     List<Pack> findAll();
     List<Pack> findActive();
     List<Pack> searchPacks(String query);
+    List<Pack> findActiveByTags(List<PackTag> tags);
+    List<Pack> searchPacksWithTags(String query, List<PackTag> tags);
     Pack update(Pack pack);
     void setActive(Long id, boolean active);
     Optional<Pack> findImageByPackId(Long id);
+
+    /**
+     * Resta {@code quantity} al stock del pack si hay unidades suficientes.
+     *
+     * @return {@code true} si se actualizó exactamente una fila
+     */
+    boolean decrementStock(long packId, int quantity);
 }

@@ -16,7 +16,7 @@ public class ReservationForm {
 
     @NotBlank
     @Size(max = 255)
-    @Pattern(regexp = "^(?:[a-zA-Z]+|\\s*)$", message = "{reservation.lastName.invalid}")
+    @Pattern(regexp = "^[\\p{L}]+(?:\\s+[\\p{L}]+)*$", message = "{reservation.lastName.invalid}")
     private String lastName;
 
     @NotBlank
@@ -32,9 +32,6 @@ public class ReservationForm {
     @NotNull
     @Min(1)
     private Integer quantity;
-
-    @NotBlank
-    private String pickupWindow;
 
     public String getFirstName() {
         return firstName;
@@ -76,11 +73,4 @@ public class ReservationForm {
         this.quantity = quantity;
     }
 
-    public String getPickupWindow() {
-        return pickupWindow;
-    }
-
-    public void setPickupWindow(final String pickupWindow) {
-        this.pickupWindow = pickupWindow;
-    }
 }

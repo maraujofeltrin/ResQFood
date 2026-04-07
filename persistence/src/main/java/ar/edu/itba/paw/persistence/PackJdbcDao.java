@@ -117,6 +117,55 @@ public class PackJdbcDao implements PackDao {
     }
 
     @Override
+    public List<Pack> findActiveByTags(final List<PackTag> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return findActive();
+        }
+        final String inClause = String.join(", ", Collections.nCopies(tags.size(), "?"));
+        final List<Object> params = new ArrayList<>();
+        for (final PackTag tag : tags) {
+            params.add(tag.name());
+        }
+        params.add(tags.size());
+        return jdbcTemplate.query(
+            "SELECT p.id, p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active " +
+            "FROM packs p JOIN pack_tags pt ON p.id = pt.pack_id " +
+            "WHERE p.active = true AND pt.tag IN (" + inClause + ") " +
+            "GROUP BY p.id, p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active " +
+            "HAVING COUNT(DISTINCT pt.tag) = ?",
+            packRowMapper,
+            params.toArray()
+        );
+    }
+
+    @Override
+    public List<Pack> searchPacksWithTags(final String query, final List<PackTag> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return searchPacks(query);
+        }
+        final String pattern = "%" + query + "%";
+        final String inClause = String.join(", ", Collections.nCopies(tags.size(), "?"));
+        final List<Object> params = new ArrayList<>();
+        params.add(pattern);
+        params.add(pattern);
+        for (final PackTag tag : tags) {
+            params.add(tag.name());
+        }
+        params.add(tags.size());
+        return jdbcTemplate.query(
+            "SELECT packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active " +
+            "FROM packs " +
+            "JOIN commerces ON packs.commerce_id = commerces.user_id " +
+            "JOIN pack_tags pt ON packs.id = pt.pack_id " +
+            "WHERE packs.active = true AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?) AND pt.tag IN (" + inClause + ") " +
+            "GROUP BY packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active " +
+            "HAVING COUNT(DISTINCT pt.tag) = ?",
+            packRowMapper,
+            params.toArray()
+        );
+    }
+
+    @Override
     public Pack update(Pack pack) {
         jdbcTemplate.update(
             "UPDATE packs SET title = ?, description = ?, original_price = ?, final_price = ?, stock = ? WHERE id = ?",
@@ -143,6 +192,17 @@ public class PackJdbcDao implements PackDao {
     @Override
     public void setActive(final Long id, final boolean active) {
         jdbcTemplate.update("UPDATE packs SET active = ? WHERE id = ?", active, id);
+    }
+
+    @Override
+    public boolean decrementStock(final long packId, final int quantity) {
+        if (quantity < 1) {
+            return false;
+        }
+        final int updated = jdbcTemplate.update(
+                "UPDATE packs SET stock = stock - ? WHERE id = ? AND stock >= ?",
+                quantity, packId, quantity);
+        return updated == 1;
     }
 
     @Override
