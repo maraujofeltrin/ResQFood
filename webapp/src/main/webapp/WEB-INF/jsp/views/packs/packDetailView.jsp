@@ -220,16 +220,6 @@
                             <p class="pack-form-total-amount font-headline" id="reservation-total-display" aria-live="polite">—</p>
                         </div>
 
-                        <div class="pack-form-field">
-                            <spring:message code="pack.detail.form.pickupWindow" var="labelPickupWindow"/>
-                            <form:label path="pickupWindow" cssClass="pack-form-label">${labelPickupWindow}</form:label>
-                            <div class="pack-select-wrap">
-                                <form:select path="pickupWindow" items="${pickupWindows}" cssClass="pack-form-select bg-none"/>
-                                <span class="material-symbols-outlined pack-select-chevron">expand_more</span>
-                            </div>
-                            <form:errors path="pickupWindow" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p"/>
-                        </div>
-
                         <spring:message code="pack.detail.form.submitting" var="submittingText"/>
                         <button type="submit" class="pack-submit-btn font-headline"
                                 id="reservation-submit-btn"

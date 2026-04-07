@@ -7,7 +7,6 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -81,11 +80,6 @@ public class PackController {
         }
         return placeholderBytes;
     }
-
-    private static final List<String> DEFAULT_PICKUP_WINDOWS = Arrays.asList(
-            "Hoy, 17:30 - 18:00",
-            "Hoy, 18:00 - 18:30"
-    );
 
     private static final Locale LOCALE_AR = new Locale("es", "AR");
 
@@ -202,9 +196,6 @@ public class PackController {
     private ReservationForm createDefaultReservationForm() {
         final ReservationForm form = new ReservationForm();
         form.setQuantity(Integer.valueOf(1));
-        if (!DEFAULT_PICKUP_WINDOWS.isEmpty()) {
-            form.setPickupWindow(DEFAULT_PICKUP_WINDOWS.get(0));
-        }
         return form;
     }
 
@@ -231,8 +222,6 @@ public class PackController {
         addCommerceDetailAttributes(mav, commerceOpt);
         mav.addObject("originalPrice", formatPrice(pack.getOriginalPrice()));
         mav.addObject("finalPrice", formatPrice(pack.getFinalPrice()));
-        mav.addObject("pickupWindows", DEFAULT_PICKUP_WINDOWS);
-
         final Integer stock = pack.getStock();
         final int quantityMax;
         if (stock != null && stock >= 1) {
@@ -413,7 +402,7 @@ public class PackController {
                     reservationForm.getPhone(),
                     quantity,
                     finalPrice,
-                    reservationForm.getPickupWindow());
+                    null);
             redirectAttributes.addFlashAttribute("reservationAlertKind", "success");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
                     messageSource.getMessage("reservation.alert.success", null,
