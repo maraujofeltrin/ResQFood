@@ -238,10 +238,13 @@ public class PackController {
         return mav;
     }
 
+    private static final int PAGE_SIZE = 6;
+
     @GetMapping("/packs")
     public ModelAndView listPacks(
             @RequestParam(value = "q", required = false) final String query,
-            @RequestParam(value = "tags", required = false) final List<String> tagNames) {
+            @RequestParam(value = "tags", required = false) final List<String> tagNames,
+            @RequestParam(value = "page", defaultValue = "1") final int page) {
 
         final ModelAndView mav = new ModelAndView("packs/packCatalogView");
 
@@ -258,29 +261,51 @@ public class PackController {
         final boolean hasQuery = query != null && !query.trim().isEmpty();
         final boolean hasTags = !selectedTags.isEmpty();
 
-        final List<Pack> packs;
+        final List<Pack> allPacks;
         if (hasQuery && hasTags) {
-            packs = packService.searchPacksWithTags(query.trim(), selectedTags);
+            allPacks = packService.searchPacksWithTags(query.trim(), selectedTags);
         } else if (hasTags) {
-            packs = packService.findActiveByTags(selectedTags);
+            allPacks = packService.findActiveByTags(selectedTags);
         } else if (hasQuery) {
-            packs = packService.searchPacks(query.trim());
+            allPacks = packService.searchPacks(query.trim());
         } else {
-            packs = packService.findActive();
+            allPacks = packService.findActive();
         }
+
+        final int totalPages = Math.max(1, (int) Math.ceil((double) allPacks.size() / PAGE_SIZE));
+        final int safePage = Math.max(1, Math.min(page, totalPages));
+        final int fromIdx = (safePage - 1) * PAGE_SIZE;
+        final int toIdx = Math.min(fromIdx + PAGE_SIZE, allPacks.size());
+        final List<Pack> packs = allPacks.subList(fromIdx, toIdx);
 
         final Map<Long, String> commerceNames = packs.stream()
             .collect(java.util.stream.Collectors.toMap(
                 Pack::getId,
-                pack -> commerceService.findByUserId(pack.getCommerceId())
+                p -> commerceService.findByUserId(p.getCommerceId())
                             .map(Commerce::getCommercialName)
                             .orElse("—")
             ));
+
+        final StringBuilder baseUrlBuilder = new StringBuilder("/packs");
+        boolean firstParam = true;
+        if (hasQuery) {
+            baseUrlBuilder.append(firstParam ? "?" : "&").append("q=").append(query.trim());
+            firstParam = false;
+        }
+        if (hasTags) {
+            for (final PackTag tag : selectedTags) {
+                baseUrlBuilder.append(firstParam ? "?" : "&").append("tags=").append(tag.name());
+                firstParam = false;
+            }
+        }
 
         mav.addObject("packs", packs);
         mav.addObject("commerceNames", commerceNames);
         mav.addObject("availableTags", PackTag.values());
         mav.addObject("selectedTags", selectedTags);
+        mav.addObject("currentPage", safePage);
+        mav.addObject("totalPages", totalPages);
+        mav.addObject("paginationBaseUrl", baseUrlBuilder.toString());
         return mav;
     }
 

@@ -50,32 +50,6 @@
             />
         </div>
 
-        <c:if test="${empty param.q}">
-        <!-- Last Chance (Horizontal Scrolling Section) -->
-        <section class="mb-16">
-            <div class="flex items-center justify-between mb-6">
-                <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">bolt</span>
-                    <h2 class="text-2xl font-headline font-bold text-on-surface"><spring:message code="pack.catalog.lastChance.title"/></h2>
-                    <span class="bg-error-container text-on-error-container px-2 py-0.5 rounded text-xs font-bold uppercase tracking-tighter"><spring:message code="pack.catalog.lastChance.badge"/></span>
-                </div>
-                <button type="button" class="text-primary font-bold text-sm hover:underline"><spring:message code="pack.catalog.lastChance.viewAll"/></button>
-            </div>
-            <div class="flex gap-6 overflow-x-auto hide-scrollbar pb-4 -mx-2 px-2">
-                <c:forEach var="pack" items="${packs}">
-                    <paw:packCard
-                        packId="${pack.id}"
-                        title="${pack.title}"
-                        subtitle="${pack.description}"
-                        price="$${pack.finalPrice}"
-                        oldPrice="$${pack.originalPrice}"
-                        commerceName="${commerceNames[pack.id]}"
-                    />
-                </c:forEach>
-            </div>
-        </section>
-        </c:if>
-
         <!-- Main Grid: All Available Packs -->
         <section>
             <div class="flex items-center gap-3 mb-8">
@@ -87,22 +61,39 @@
                 </h2>
                 <div class="h-[1px] flex-grow bg-outline-variant"></div>
             </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                <c:forEach var="pack" items="${packs}">
-                    <paw:packCard
-                        packId="${pack.id}"
-                        title="${pack.title}"
-                        subtitle="${pack.description}"
-                        price="$${pack.finalPrice}"
-                        oldPrice="$${pack.originalPrice}"
-                        commerceName="${commerceNames[pack.id]}"
-                    />
-                </c:forEach>
-            </div>
 
-            <!-- Pagination component replacing hardcoded buttons -->
-            <paw:pagination currentPage="1" totalPages="3" baseUrl="#" />
+            <c:choose>
+                <c:when test="${empty packs}">
+                    <c:choose>
+                        <c:when test="${not empty param.q or not empty selectedTags}">
+                            <spring:message var="emptyTitle" code="pack.catalog.empty.search.title"/>
+                            <spring:message var="emptyDesc"  code="pack.catalog.empty.search.description"/>
+                            <paw:packEmptyState icon="search_off" title="${emptyTitle}" description="${emptyDesc}" />
+                        </c:when>
+                        <c:otherwise>
+                            <spring:message var="emptyTitle" code="pack.catalog.empty.title"/>
+                            <spring:message var="emptyDesc"  code="pack.catalog.empty.description"/>
+                            <paw:packEmptyState icon="storefront" title="${emptyTitle}" description="${emptyDesc}" />
+                        </c:otherwise>
+                    </c:choose>
+                </c:when>
+                <c:otherwise>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                        <c:forEach var="pack" items="${packs}">
+                            <paw:packCard
+                                packId="${pack.id}"
+                                title="${pack.title}"
+                                subtitle="${pack.description}"
+                                price="$${pack.finalPrice}"
+                                oldPrice="$${pack.originalPrice}"
+                                commerceName="${commerceNames[pack.id]}"
+                            />
+                        </c:forEach>
+                    </div>
+                    <paw:pagination currentPage="${currentPage}" totalPages="${totalPages}"
+                                    baseUrl="${pageContext.request.contextPath}${paginationBaseUrl}" />
+                </c:otherwise>
+            </c:choose>
         </section>
     </main>
 
