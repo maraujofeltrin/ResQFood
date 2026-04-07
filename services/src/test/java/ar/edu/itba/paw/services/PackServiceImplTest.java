@@ -63,6 +63,21 @@ public class PackServiceImplTest {
             final Pack p = store.get(id);
             return Optional.ofNullable(p != null && p.getImageData() != null ? p : null);
         }
+
+        @Override
+        public boolean decrementStock(long packId, int quantity) {
+            return true;
+        }
+
+        @Override
+        public List<Pack> findActiveByTags(List<PackTag> tags) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public List<Pack> searchPacksWithTags(String query, List<PackTag> tags) {
+            return Collections.emptyList();
+        }
     }
 
     @Test

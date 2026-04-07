@@ -16,6 +16,7 @@ import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +65,9 @@ public class ReservationMailServiceImplTest {
         @Override public Pack update(Pack pack) { throw new UnsupportedOperationException(); }
         @Override public void setActive(Long id, boolean active) { }
         @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
+        @Override public boolean decrementStock(long packId, int quantity) { return true; }
+        @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
+        @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
     }
 
     static class FakeMailSender implements JavaMailSender {

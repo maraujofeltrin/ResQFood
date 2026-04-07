@@ -91,15 +91,35 @@ public class ReservationTokenServiceImplTest {
         }
     }
 
+    static class TestUserService implements UserService {
+        private final ar.edu.itba.paw.models.User user;
+        TestUserService(ar.edu.itba.paw.models.User user) { this.user = user; }
+        @Override public ar.edu.itba.paw.models.User createUser(String email, String password, String name) { return user; }
+        @Override public ar.edu.itba.paw.models.User createUser(String email, String password, String name, String phone, ar.edu.itba.paw.models.User.Role role) { return user; }
+        @Override public Optional<ar.edu.itba.paw.models.User> findByEmail(String email) { return Optional.of(user); }
+        @Override public Optional<ar.edu.itba.paw.models.User> findById(Long id) { return Optional.of(user); }
+    }
+
+    static class InMemoryMailService implements ReservationMailService {
+        int sentRejected = 0;
+        @Override public void sendReservationRequestToCommerce(Reservation reservation, String commerceEmail, String baseUrl) { }
+        @Override public void sendReservationCodeToClient(Reservation reservation, String clientEmail) { }
+        @Override public void sendReservationRejectedToClient(Reservation reservation, String clientEmail) { sentRejected++; }
+    }
+
     private InMemoryReservationTokenDao tokenDao;
     private InMemoryReservationDao reservationDao;
+    private TestUserService userService;
+    private InMemoryMailService mailService;
     private ReservationTokenServiceImpl svc;
 
     @BeforeEach
     public void setUp() {
         tokenDao = new InMemoryReservationTokenDao();
         reservationDao = new InMemoryReservationDao();
-        svc = new ReservationTokenServiceImpl(tokenDao, reservationDao);
+        userService = new TestUserService(new ar.edu.itba.paw.models.User(1L, "user@test.com", "pwd", "Test User"));
+        mailService = new InMemoryMailService();
+        svc = new ReservationTokenServiceImpl(tokenDao, reservationDao, userService, mailService);
     }
 
     // Helper to create a reservation and token

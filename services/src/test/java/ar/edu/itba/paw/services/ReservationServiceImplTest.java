@@ -89,6 +89,9 @@ public class ReservationServiceImplTest {
         @Override public Pack update(Pack pack) { throw new UnsupportedOperationException(); }
         @Override public void setActive(Long id, boolean active) { }
         @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
+        @Override public boolean decrementStock(long packId, int quantity) { return true; }
+        @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
+        @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
     }
 
     static class TestUserService implements UserService {
@@ -111,8 +114,10 @@ public class ReservationServiceImplTest {
     static class InMemoryMailService implements ReservationMailService {
         int sentToCommerce = 0;
         int sentToClient = 0;
+        int sentRejected = 0;
         @Override public void sendReservationRequestToCommerce(Reservation reservation, String commerceEmail, String baseUrl) { sentToCommerce++; }
         @Override public void sendReservationCodeToClient(Reservation reservation, String clientEmail) { sentToClient++; }
+        @Override public void sendReservationRejectedToClient(Reservation reservation, String clientEmail) { sentRejected++; }
     }
 
     private InMemoryReservationDao reservationDao;
