@@ -157,7 +157,7 @@ public class ReservationMailServiceImplTest {
         final Pack pack = new Pack(3L, 2L, "Delicious", "desc", 10.0, 5.0, 1, true, List.of());
 
         final PackDao packDao = new InMemoryPackDao(pack);
-        svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, "noreply@example.org");
+        svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, "noreply@example.org", "ResQFood");
 
         svc.sendReservationRequestToCommerce(reservation, "commerce@example.org", "http://app/" );
 
@@ -169,7 +169,7 @@ public class ReservationMailServiceImplTest {
         final MimeMessage msg = mailSender.sent.get(0);
         // verify recipients and from
         assertEquals("commerce@example.org", msg.getAllRecipients()[0].toString());
-        assertEquals("noreply@example.org", msg.getFrom()[0].toString());
+        assertEquals("ResQFood <noreply@example.org>", msg.getFrom()[0].toString());
         assertEquals("Solicitud de reserva #" + reservation.getId(), msg.getSubject());
         final String body = extractTextFromMime(msg);
         assertTrue(body.contains("reservations/accept?token="));
@@ -195,14 +195,14 @@ public class ReservationMailServiceImplTest {
         final Reservation reservation = new Reservation(7L, 2L, 11L, LocalDateTime.now(), 9.99, Reservation.Status.RESERVED, "PICKUPCODE", null, 1, "pw");
         final Pack pack = new Pack(11L, 2L, "Morning Bread", "desc", 10.0, 5.0, 1, true, List.of());
         final PackDao packDao = new InMemoryPackDao(pack);
-        svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, "noreply@example.org");
+        svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, "noreply@example.org", "ResQFood");
 
         svc.sendReservationCodeToClient(reservation, "client@example.org");
 
         assertEquals(1, mailSender.sent.size());
         final MimeMessage msg = mailSender.sent.get(0);
         assertEquals("client@example.org", msg.getAllRecipients()[0].toString());
-        assertEquals("noreply@example.org", msg.getFrom()[0].toString());
+        assertEquals("ResQFood <noreply@example.org>", msg.getFrom()[0].toString());
         final String subject = msg.getSubject();
         assertTrue(subject.contains("Tu reserva"));
         final String body = extractTextFromMime(msg);

@@ -14,6 +14,7 @@ import org.springframework.scheduling.annotation.Async;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
@@ -44,16 +45,19 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     private final ReservationTokenDao reservationTokenDao;
     private final PackDao packDao;
     private final String mailFrom;
+    private final String mailFromName;
 
     @Autowired
     public ReservationMailServiceImpl(final JavaMailSender mailSender,
             final ReservationTokenDao reservationTokenDao,
             final PackDao packDao,
-            @Value("${mail.username}") final String mailFrom) {
+            @Value("${mail.username}") final String mailFrom,
+            @Value("${mail.from-name:ResQFood}") final String mailFromName) {
         this.mailSender = mailSender;
         this.reservationTokenDao = reservationTokenDao;
         this.packDao = packDao;
         this.mailFrom = mailFrom;
+        this.mailFromName = mailFromName;
     }
 
     @Async("mailTaskExecutor")
@@ -81,12 +85,12 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         try {
             final MimeMessage message = mailSender.createMimeMessage();
             final MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(mailFrom);
+            helper.setFrom(mailFrom, mailFromName);
             helper.setTo(commerceEmail);
             helper.setSubject(subject);
             helper.setText(html, true);
             mailSender.send(message);
-        } catch (final MessagingException e) {
+        } catch (final MessagingException | UnsupportedEncodingException e) {
             throw new IllegalStateException("Could not send reservation mail", e);
         }
     }
@@ -105,12 +109,12 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         try {
             final MimeMessage message = mailSender.createMimeMessage();
             final MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(mailFrom);
+            helper.setFrom(mailFrom, mailFromName);
             helper.setTo(clientEmail);
             helper.setSubject(subject);
             helper.setText(html, true);
             mailSender.send(message);
-        } catch (final MessagingException e) {
+        } catch (final MessagingException | UnsupportedEncodingException e) {
             throw new IllegalStateException("Could not send client pickup code mail", e);
         }
     }
@@ -129,12 +133,12 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         try {
             final MimeMessage message = mailSender.createMimeMessage();
             final MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(mailFrom);
+            helper.setFrom(mailFrom, mailFromName);
             helper.setTo(clientEmail);
             helper.setSubject(subject);
             helper.setText(html, true);
             mailSender.send(message);
-        } catch (final MessagingException e) {
+        } catch (final MessagingException | UnsupportedEncodingException e) {
             throw new IllegalStateException("Could not send rejection mail", e);
         }
     }
