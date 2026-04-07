@@ -58,7 +58,6 @@ public class CommerceController {
     @RequestMapping(value = "/create-pack", method = RequestMethod.POST)
     public ModelAndView createPack(
             @RequestParam("email") final String email,
-            @RequestParam("password") final String password,
             @RequestParam("name") final String name,
             @RequestParam(value = "commercialName", required = false) final String commercialName,
             @RequestParam(value = "category", required = false) final Commerce.Category category,
@@ -79,7 +78,7 @@ public class CommerceController {
 
         try {
             Commerce commerce = commerceService.getOrCreateCommerce(
-                    email, password, name, commercialName, category, street, streetNumber, 
+                    email, "mvp", name, commercialName, category, street, streetNumber, 
                     city, province, postalCode, openingTime, closingTime
             );
 
