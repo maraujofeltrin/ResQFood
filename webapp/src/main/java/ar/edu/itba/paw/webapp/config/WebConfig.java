@@ -38,9 +38,13 @@ import java.util.Locale;
 import java.util.TimeZone;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import java.util.concurrent.Executor;
 
 @EnableWebMvc
 @EnableTransactionManagement
+@EnableAsync
 @ComponentScan({ "ar.edu.itba.paw.webapp.controller", "ar.edu.itba.paw.services", "ar.edu.itba.paw.persistence" })
 @Configuration
 @PropertySource("classpath:/env.properties")
@@ -153,6 +157,17 @@ public class WebConfig implements WebMvcConfigurer {
         messageSource.setCacheSeconds(5);
         messageSource.setFallbackToSystemLocale(false);
         return messageSource;
+    }
+
+    @Bean(name = "mailTaskExecutor")
+    public Executor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(5);
+        executor.setQueueCapacity(50);
+        executor.setThreadNamePrefix("MailSenderThread-");
+        executor.initialize();
+        return executor;
     }
 
 }
