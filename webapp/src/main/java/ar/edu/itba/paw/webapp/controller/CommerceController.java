@@ -8,13 +8,19 @@ import ar.edu.itba.paw.services.PackService;
 import java.io.IOException;
 import java.util.List;
 import java.util.Collections;
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
+
+import ar.edu.itba.paw.webapp.form.CreatePackForm;
 
 @Controller
 @RequestMapping("/commerce")
@@ -49,7 +55,7 @@ public class CommerceController {
     }
 
     @RequestMapping(value = "/create-pack", method = RequestMethod.GET)
-    public ModelAndView createPackForm() {
+    public ModelAndView createPackForm(@ModelAttribute("createPackForm") final CreatePackForm form) {
         final ModelAndView mav = new ModelAndView("commerce/createPack");
         mav.addObject("availableTags", PackTag.values());
         return mav;
@@ -57,41 +63,36 @@ public class CommerceController {
 
     @RequestMapping(value = "/create-pack", method = RequestMethod.POST)
     public ModelAndView createPack(
-            @RequestParam("email") final String email,
-            @RequestParam("name") final String name,
-            @RequestParam(value = "commercialName", required = false) final String commercialName,
-            @RequestParam(value = "category", required = false) final Commerce.Category category,
-            @RequestParam(value = "street", required = false) final String street,
-            @RequestParam(value = "streetNumber", required = false) final Integer streetNumber,
-            @RequestParam(value = "city", required = false) final String city,
-            @RequestParam(value = "province", required = false) final String province,
-            @RequestParam(value = "postalCode", required = false) final String postalCode,
-            @RequestParam(value = "openingTime", required = false) final String openingTime,
-            @RequestParam(value = "closingTime", required = false) final String closingTime,
-            @RequestParam("title") final String packTitle,
-            @RequestParam("description") final String packDescription,
-            @RequestParam("originalPrice") final Double originalPrice,
-            @RequestParam("finalPrice") final Double finalPrice,
-            @RequestParam("stock") final Integer stock,
-            @RequestParam(value = "tags", required = false) final List<PackTag> tags,
-            @RequestParam(value = "image", required = false) final MultipartFile image) {
+            @Valid @ModelAttribute("createPackForm") final CreatePackForm form,
+            final BindingResult bindingResult) {
+
+        if (form.getOriginalPrice() != null && form.getFinalPrice() != null && form.getFinalPrice() > form.getOriginalPrice()) {
+            bindingResult.rejectValue("finalPrice", "error.finalPrice", "El precio de venta no puede ser mayor al precio original");
+        }
+
+        if (bindingResult.hasErrors()) {
+            final ModelAndView mav = new ModelAndView("commerce/createPack");
+            mav.addObject("availableTags", PackTag.values());
+            return mav;
+        }
 
         try {
             Commerce commerce = commerceService.getOrCreateCommerce(
-                    email, "mvp", name, commercialName, category, street, streetNumber, 
-                    city, province, postalCode, openingTime, closingTime
+                    form.getEmail(), "mvp", form.getName(), form.getCommercialName(), form.getCategory(), form.getStreet(), form.getStreetNumber(), 
+                    form.getCity(), form.getProvince(), form.getPostalCode(), form.getOpeningTime(), form.getClosingTime()
             );
 
             byte[] imageData = null;
             String imageContentType = null;
+            MultipartFile image = form.getImage();
             if (image != null && !image.isEmpty()) {
                 imageData = image.getBytes();
                 imageContentType = image.getContentType();
             }
 
-            packService.createPack(commerce.getUserId(), packTitle, packDescription, 
-                                   originalPrice, finalPrice, stock,
-                                   tags != null ? tags : Collections.emptyList(),
+            packService.createPack(commerce.getUserId(), form.getTitle(), form.getDescription(), 
+                                   form.getOriginalPrice(), form.getFinalPrice(), form.getStock(),
+                                   form.getTags() != null ? form.getTags() : Collections.emptyList(),
                                    imageData, imageContentType);
                                    
             return new ModelAndView("redirect:/commerce");
