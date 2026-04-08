@@ -71,26 +71,6 @@ tagdir="/WEB-INF/tags" %>
               <c:otherwise>—</c:otherwise>
             </c:choose>
           </p>
-          <p>
-            <span class="font-semibold text-rose-700">Código de retiro:</span>
-            <c:choose>
-              <c:when test="${not empty reservation.pickupCode}">
-                <c:out value="${reservation.pickupCode}" />
-              </c:when>
-              <c:otherwise>—</c:otherwise>
-            </c:choose>
-          </p>
-          <p>
-            <span class="font-semibold text-rose-700"
-              >Confirmación de retiro:</span
-            >
-            <c:choose>
-              <c:when test="${not empty pickupConfirmationDateFormatted}">
-                <c:out value="${pickupConfirmationDateFormatted}" />
-              </c:when>
-              <c:otherwise>—</c:otherwise>
-            </c:choose>
-          </p>
         </div>
       </div>
 
