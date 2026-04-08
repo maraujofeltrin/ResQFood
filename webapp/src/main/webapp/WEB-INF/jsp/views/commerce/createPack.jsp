@@ -2,13 +2,14 @@
     <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
         <%@ taglib prefix="paw" tagdir="/WEB-INF/tags" %>
         <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+        <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
             <!DOCTYPE html>
-            <html class="light" lang="en">
+            <html class="light" lang="${pageContext.response.locale.language}">
 
             <head>
                 <meta charset="utf-8" />
                 <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-                <title>Crear Pack Sorpresa | ResQFood</title>
+                <title><spring:message code="commerce.createPack.pageTitle"/> | <spring:message code="app.brand"/></title>
                 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css" />
                 <link
                     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap"
@@ -29,13 +30,13 @@
                         <a href="${pageContext.request.contextPath}/commerce"
                             class="hover:underline flex items-center font-bold">
                             <span class="material-symbols-outlined text-xl mr-1">arrow_back</span>
-                            Volver al Dashboard
+                            <spring:message code="commerce.createPack.backToDashboard"/>
                         </a>
                     </div>
 
                     <header class="mb-10 text-center md:text-left">
-                        <h1 class="pack-detail-title mb-3">Crear Paquete Sorpresa</h1>
-                        <p class="text-secondary text-lg">Publica tu excedente para que sea rescatado.</p>
+                        <h1 class="pack-detail-title mb-3"><spring:message code="commerce.createPack.title"/></h1>
+                        <p class="text-secondary text-lg"><spring:message code="commerce.createPack.subtitle"/></p>
                     </header>
 
                     <c:if test="${not empty errorMessage}">
@@ -55,22 +56,23 @@
                             <section class="pack-aside-card">
                                 <h2 class="pack-aside-heading flex items-center gap-2">
                                     <span class="material-symbols-outlined text-primary">person</span>
-                                    Identidad del Usuario
+                                    <spring:message code="commerce.createPack.userIdentify.title"/>
                                 </h2>
-                                <p class="text-sm text-secondary">Si ya estás registrado, reusaremos tu local
-                                    automáticamente.</p>
+                                <p class="text-sm text-secondary"><spring:message code="commerce.createPack.userIdentify.subtitle"/></p>
 
                                 <div class="grid gap-5 mt-2">
                                     <div class="pack-form-field">
-                                        <label class="pack-form-label">Email de Acceso</label>
+                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.email.label"/></label>
+                                        <spring:message code="commerce.createPack.form.email.placeholder" var="emailPlaceholder"/>
                                         <form:input type="email" path="email" class="pack-form-control" cssErrorClass="pack-form-control is-invalid"
-                                            placeholder="tu@email.com" required="required" />
+                                            placeholder="${emailPlaceholder}" required="required" />
                                         <form:errors path="email" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                     </div>
                                     <div class="pack-form-field">
-                                        <label class="pack-form-label">Nombre del Titular</label>
+                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.name.label"/></label>
+                                        <spring:message code="commerce.createPack.form.name.placeholder" var="namePlaceholder"/>
                                         <form:input type="text" path="name" class="pack-form-control" cssErrorClass="pack-form-control is-invalid"
-                                            placeholder="Armando C." required="required" />
+                                            placeholder="${namePlaceholder}" required="required" />
                                         <form:errors path="name" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                     </div>
                                 </div>
@@ -80,24 +82,29 @@
                             <section class="pack-aside-card">
                                 <h2 class="pack-aside-heading flex items-center gap-2">
                                     <span class="material-symbols-outlined text-primary">store</span>
-                                    Datos del Local (Solo nuevos usuarios)
+                                    <spring:message code="commerce.createPack.commerceData.title"/>
                                 </h2>
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-2">
                                     <div class="pack-form-field md:col-span-2">
-                                        <label class="pack-form-label">Nombre Comercial</label>
+                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.commercialName.label"/></label>
+                                        <spring:message code="commerce.createPack.form.commercialName.placeholder" var="commercialNamePlch"/>
                                         <form:input type="text" path="commercialName" class="pack-form-control" cssErrorClass="pack-form-control is-invalid"
-                                            placeholder="Ej: La Gran Panadería" />
+                                            placeholder="${commercialNamePlch}" />
                                         <form:errors path="commercialName" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                     </div>
                                     <div class="pack-form-field md:col-span-2">
-                                        <label class="pack-form-label">Categoría</label>
+                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.category.label"/></label>
                                         <div class="pack-select-wrap">
+                                            <spring:message var="catBakery" code="commerce.category.BAKERY"/>
+                                            <spring:message var="catRestaurant" code="commerce.category.RESTAURANT"/>
+                                            <spring:message var="catGreengrocer" code="commerce.category.GREENGROCER"/>
+                                            <spring:message var="catOther" code="commerce.category.OTHER"/>
                                             <form:select path="category" class="pack-form-select" cssErrorClass="pack-form-select is-invalid">
-                                                <form:option value="BAKERY" label="Panadería"/>
-                                                <form:option value="RESTAURANT" label="Restaurante"/>
-                                                <form:option value="GREENGROCER" label="Verdulería"/>
-                                                <form:option value="OTHER" label="Otros"/>
+                                                <form:option value="BAKERY" label="${catBakery}"/>
+                                                <form:option value="RESTAURANT" label="${catRestaurant}"/>
+                                                <form:option value="GREENGROCER" label="${catGreengrocer}"/>
+                                                <form:option value="OTHER" label="${catOther}"/>
                                             </form:select>
                                             <span
                                                 class="material-symbols-outlined pack-select-chevron">expand_more</span>
@@ -105,43 +112,48 @@
                                         <form:errors path="category" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                     </div>
                                     <div class="pack-form-field md:col-span-2">
-                                        <label class="pack-form-label">Calle</label>
+                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.street.label"/></label>
+                                        <spring:message code="commerce.createPack.form.street.placeholder" var="streetPlch"/>
                                         <form:input type="text" path="street" class="pack-form-control" cssErrorClass="pack-form-control is-invalid"
-                                            placeholder="Av. Siempre Viva" />
+                                            placeholder="${streetPlch}" />
                                         <form:errors path="street" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                     </div>
                                     <div class="pack-form-field">
-                                        <label class="pack-form-label">Número</label>
+                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.streetNumber.label"/></label>
+                                        <spring:message code="commerce.createPack.form.streetNumber.placeholder" var="streetNumPlch"/>
                                         <form:input type="number" path="streetNumber" class="pack-form-control" cssErrorClass="pack-form-control is-invalid"
-                                            placeholder="123" maxlength="5" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
+                                            placeholder="${streetNumPlch}" maxlength="5" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
                                         <form:errors path="streetNumber" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                     </div>
                                     <div class="pack-form-field">
-                                        <label class="pack-form-label">Código Postal</label>
+                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.postalCode.label"/></label>
+                                        <spring:message code="commerce.createPack.form.postalCode.placeholder" var="postalCodePlch"/>
                                         <form:input type="text" path="postalCode" class="pack-form-control" cssErrorClass="pack-form-control is-invalid"
-                                            placeholder="C1425" />
+                                            placeholder="${postalCodePlch}" />
                                         <form:errors path="postalCode" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                     </div>
                                     <div class="pack-form-field">
-                                        <label class="pack-form-label">Ciudad</label>
+                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.city.label"/></label>
+                                        <spring:message code="commerce.createPack.form.city.placeholder" var="cityPlch"/>
                                         <form:input type="text" path="city" class="pack-form-control" cssErrorClass="pack-form-control is-invalid"
-                                            placeholder="Buenos Aires" />
+                                            placeholder="${cityPlch}" />
                                         <form:errors path="city" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                     </div>
                                     <div class="pack-form-field">
-                                        <label class="pack-form-label">Provincia</label>
+                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.province.label"/></label>
+                                        <spring:message code="commerce.createPack.form.province.placeholder" var="provPlch"/>
                                         <form:input type="text" path="province" class="pack-form-control" cssErrorClass="pack-form-control is-invalid"
-                                            placeholder="CABA" />
+                                            placeholder="${provPlch}" />
                                         <form:errors path="province" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                     </div>
                                     <div class="pack-form-field">
-                                        <label class="pack-form-label">Horario Apertura</label>
+                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.openingTime.label"/></label>
                                         <form:input type="time" path="openingTime"
                                             class="pack-form-control pack-form-control--tabular" cssErrorClass="pack-form-control pack-form-control--tabular is-invalid" />
                                         <form:errors path="openingTime" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                     </div>
                                     <div class="pack-form-field">
-                                        <label class="pack-form-label">Horario Cierre</label>
+                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.closingTime.label"/></label>
                                         <form:input type="time" path="closingTime"
                                             class="pack-form-control pack-form-control--tabular" cssErrorClass="pack-form-control pack-form-control--tabular is-invalid" />
                                         <form:errors path="closingTime" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
@@ -154,34 +166,35 @@
                         <!-- Right Column: Pack Details (Sticky) -->
                         <div class="pack-detail-aside">
                             <section class="pack-aside-card bg-surface-container-lowest shadow-soft">
-                                <h2 class="pack-aside-heading mb-2">Detalles del Pack</h2>
+                                <h2 class="pack-aside-heading mb-2"><spring:message code="commerce.createPack.packDetails.title"/></h2>
 
                                 <div class="pack-reservation-form mt-2">
                                     <div class="pack-form-field">
-                                        <label class="pack-form-label">Título del Pack</label>
+                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.packTitle.label"/></label>
+                                        <spring:message code="commerce.createPack.form.packTitle.placeholder" var="packTitlePlch"/>
                                         <form:input type="text" path="title" class="pack-form-control" cssErrorClass="pack-form-control is-invalid"
-                                            placeholder="Pack de Facturas Mixtas" required="required" />
+                                            placeholder="${packTitlePlch}" required="required" />
                                         <form:errors path="title" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                     </div>
                                     <div class="pack-form-field">
-                                        <label class="pack-form-label">Descripción</label>
+                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.description.label"/></label>
+                                        <spring:message code="commerce.createPack.form.description.placeholder" var="descPlch"/>
                                         <form:textarea path="description" class="pack-form-control" cssErrorClass="pack-form-control is-invalid" rows="3"
-                                            placeholder="Puede contener medialunas dulces y saladas..."
+                                            placeholder="${descPlch}"
                                             required="required"></form:textarea>
                                         <form:errors path="description" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                     </div>
 
                                     <!-- Tags selection -->
                                     <div class="pack-form-field">
-                                        <label class="pack-form-label mb-2 block">Etiquetas / Restricciones
-                                            (Opcional)</label>
+                                        <label class="pack-form-label mb-2 block"><spring:message code="commerce.createPack.form.tags.label"/></label>
                                         <div class="grid grid-cols-2 gap-2">
                                             <c:forEach var="tag" items="${availableTags}">
                                                 <label
                                                     class="flex items-center gap-2 text-sm text-secondary cursor-pointer hover:bg-surface-container-high bg-surface-container-low p-2 rounded-md transition-colors">
                                                     <form:checkbox path="tags" value="${tag.name()}"
                                                         class="rounded text-primary focus:ring-primary h-4 w-4" />
-                                                    <span>${tag.displayName}</span>
+                                                    <span><spring:message code="pack.tag.${tag.name()}"/></span>
                                                 </label>
                                             </c:forEach>
                                         </div>
@@ -189,7 +202,7 @@
 
                                     <div class="grid grid-cols-2 gap-4">
                                         <div class="pack-form-field">
-                                            <label class="pack-form-label text-secondary">Precio Original</label>
+                                            <label class="pack-form-label text-secondary"><spring:message code="commerce.createPack.form.originalPrice.label"/></label>
                                             <div class="relative">
                                                 <span
                                                     class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary font-bold">$</span>
@@ -200,7 +213,7 @@
                                             <form:errors path="originalPrice" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                         </div>
                                         <div class="pack-form-field">
-                                            <label class="pack-form-label text-primary">Precio Venta</label>
+                                            <label class="pack-form-label text-primary"><spring:message code="commerce.createPack.form.finalPrice.label"/></label>
                                             <div class="relative">
                                                 <span
                                                     class="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold">$</span>
@@ -214,25 +227,26 @@
 
                                     <div class="pack-form-field mt-2">
                                         <label class="pack-form-label flex justify-between">
-                                            Cantidad a publicar
-                                            <span class="text-xs text-secondary font-normal">Packs idénticos</span>
+                                            <spring:message code="commerce.createPack.form.quantity.label"/>
+                                            <span class="text-xs text-secondary font-normal"><spring:message code="commerce.createPack.form.quantity.hint"/></span>
                                         </label>
+                                        <spring:message code="commerce.createPack.form.quantity.placeholder" var="qtyPlch"/>
                                         <form:input type="number" path="stock"
-                                            class="pack-form-control pack-form-control--tabular" cssErrorClass="pack-form-control pack-form-control--tabular is-invalid" placeholder="Ej: 5"
+                                            class="pack-form-control pack-form-control--tabular" cssErrorClass="pack-form-control pack-form-control--tabular is-invalid" placeholder="${qtyPlch}"
                                             required="required" maxlength="3" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
                                         <form:errors path="stock" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                     </div>
 
                                     <div class="pack-form-field mt-2">
-                                        <label class="pack-form-label">Imagen del Pack (Opcional)</label>
+                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.image.label"/></label>
                                         <input type="file" name="image" accept="image/*"
                                             class="pack-form-control file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-fixed file:text-on-primary-fixed hover:file:bg-primary-fixed-dim cursor-pointer" />
-                                        <p class="text-xs text-secondary mt-1">Formatos: JPG, PNG, WebP. Max 5 MB.</p>
+                                        <p class="text-xs text-secondary mt-1"><spring:message code="commerce.createPack.form.image.hint"/></p>
                                     </div>
 
                                     <button type="submit" class="pack-submit-btn mt-4">
                                         <span class="material-symbols-outlined">rocket_launch</span>
-                                        Publicar Pack Ahora
+                                        <spring:message code="commerce.createPack.form.submit"/>
                                     </button>
                                 </div>
                             </section>

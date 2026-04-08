@@ -19,66 +19,66 @@ import ar.edu.itba.paw.models.PackTag;
 public class CreatePackForm {
 
     // Identidad del Usuario
-    @NotEmpty(message = "El email no puede estar vacío")
-    @Email(message = "El email debe ser válido")
+    @NotEmpty(message = "{commerce.createPack.validation.email.notEmpty}")
+    @Email(message = "{commerce.createPack.validation.email.valid}")
     private String email;
 
-    @NotEmpty(message = "El nombre del titular no puede estar vacío")
-    @Pattern(regexp = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ].*", message = "El nombre debe comenzar con una letra")
+    @NotEmpty(message = "{commerce.createPack.validation.name.notEmpty}")
+    @Pattern(regexp = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ].*", message = "{commerce.createPack.validation.name.pattern}")
     private String name;
 
     // Datos del Local
-    @NotEmpty(message = "El nombre comercial no puede estar vacío")
+    @NotEmpty(message = "{commerce.createPack.validation.commercialName.notEmpty}")
     private String commercialName;
 
     private Category category;
 
-    @NotEmpty(message = "La calle no puede estar vacía")
+    @NotEmpty(message = "{commerce.createPack.validation.street.notEmpty}")
     private String street;
 
-    @NotNull(message = "El número no puede estar vacío")
-    @Min(value = 1, message = "El número debe ser mayor a 0")
-    @Max(value = 99999, message = "El número no puede tener más de 5 cifras")
+    @NotNull(message = "{commerce.createPack.validation.streetNumber.notNull}")
+    @Min(value = 1, message = "{commerce.createPack.validation.streetNumber.min}")
+    @Max(value = 99999, message = "{commerce.createPack.validation.streetNumber.max}")
     private Integer streetNumber;
 
-    @NotEmpty(message = "El código postal no puede estar vacío")
-    @Pattern(regexp = "^(?i)([cC]?[0-9]{1,5})$", message = "El código postal debe tener hasta 5 números o comenzar con C")
+    @NotEmpty(message = "{commerce.createPack.validation.postalCode.notEmpty}")
+    @Pattern(regexp = "^(?i)([cC]?[0-9]{1,5})$", message = "{commerce.createPack.validation.postalCode.pattern}")
     private String postalCode;
 
-    @NotEmpty(message = "La ciudad no puede estar vacía")
+    @NotEmpty(message = "{commerce.createPack.validation.city.notEmpty}")
     private String city;
 
-    @NotEmpty(message = "La provincia no puede estar vacía")
+    @NotEmpty(message = "{commerce.createPack.validation.province.notEmpty}")
     private String province;
 
-    @NotEmpty(message = "El horario de apertura no puede estar vacío")
+    @NotEmpty(message = "{commerce.createPack.validation.openingTime.notEmpty}")
     private String openingTime;
 
-    @NotEmpty(message = "El horario de cierre no puede estar vacío")
+    @NotEmpty(message = "{commerce.createPack.validation.closingTime.notEmpty}")
     private String closingTime;
 
     // Detalles del Pack
-    @NotEmpty(message = "El título no puede estar vacío")
+    @NotEmpty(message = "{commerce.createPack.validation.title.notEmpty}")
     private String title;
 
-    @NotEmpty(message = "La descripción no puede estar vacía")
+    @NotEmpty(message = "{commerce.createPack.validation.description.notEmpty}")
     private String description;
 
     private List<PackTag> tags;
 
-    @NotNull(message = "El precio original no puede estar vacío")
-    @Positive(message = "El precio debe ser mayor a 0")
-    @Digits(integer = 7, fraction = 2, message = "El precio máximo debe tener 7 cifras como máximo")
+    @NotNull(message = "{commerce.createPack.validation.originalPrice.notNull}")
+    @Positive(message = "{commerce.createPack.validation.originalPrice.positive}")
+    @Digits(integer = 7, fraction = 2, message = "{commerce.createPack.validation.originalPrice.digits}")
     private Double originalPrice;
 
-    @NotNull(message = "El precio de venta no puede estar vacío")
-    @Positive(message = "El precio debe ser mayor a 0")
-    @Digits(integer = 7, fraction = 2, message = "El precio máximo debe tener 7 cifras como máximo")
+    @NotNull(message = "{commerce.createPack.validation.finalPrice.notNull}")
+    @Positive(message = "{commerce.createPack.validation.finalPrice.positive}")
+    @Digits(integer = 7, fraction = 2, message = "{commerce.createPack.validation.finalPrice.digits}")
     private Double finalPrice;
 
-    @NotNull(message = "La cantidad no puede estar vacía")
-    @Positive(message = "La cantidad debe ser mayor a 0")
-    @Max(value = 999, message = "La cantidad a publicar debe tener 3 cifras como máximo")
+    @NotNull(message = "{commerce.createPack.validation.stock.notNull}")
+    @Positive(message = "{commerce.createPack.validation.stock.positive}")
+    @Max(value = 999, message = "{commerce.createPack.validation.stock.max}")
     private Integer stock;
 
     private MultipartFile image;
