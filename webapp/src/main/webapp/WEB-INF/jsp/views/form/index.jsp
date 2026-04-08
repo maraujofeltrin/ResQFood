@@ -1,11 +1,9 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jstl/core_rt"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
+<%@ taglib prefix="paw" tagdir="/WEB-INF/tags" %>
 <html>
-<head>
-    <link rel="icon" href="${pageContext.request.contextPath}/images/favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css">
-</head>
+<paw:head title="Register" />
 <body>
 <h2>Register</h2>
 <c:if test="${not empty successMessage}">

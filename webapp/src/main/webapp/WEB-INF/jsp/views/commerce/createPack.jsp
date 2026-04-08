@@ -6,21 +6,7 @@
             <!DOCTYPE html>
             <html class="light" lang="${pageContext.response.locale.language}">
 
-            <head>
-                <link rel="icon" href="${pageContext.request.contextPath}/images/favicon.ico" type="image/x-icon">
-                <meta charset="utf-8" />
-                <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-                <title><spring:message code="commerce.createPack.pageTitle"/> | <spring:message code="app.brand"/></title>
-                <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css" />
-                <link
-                    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap"
-                    rel="stylesheet" />
-                <link
-                    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-                    rel="stylesheet" />
-                <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-                <script src="${pageContext.request.contextPath}/css/tailwind-config.js"></script>
-            </head>
+            <paw:head titleSuffixCode="commerce.createPack.pageTitle" />
 
             <body class="bg-surface font-body text-on-surface antialiased flex flex-col min-h-screen">
 
