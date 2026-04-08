@@ -5,6 +5,7 @@
 <!DOCTYPE html>
 <html class="light" lang="${pageContext.response.locale.language}">
 <head>
+    <link rel="icon" href="${pageContext.request.contextPath}/images/favicon.ico" type="image/x-icon">
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title><spring:message code="app.brand"/> | <spring:message code="landing.pageTitle.suffix"/></title>
