@@ -31,7 +31,12 @@
     </button>
 
     <c:if test="${hasSelection}">
-        <a href="${baseUrl}${not empty searchQuery ? '?q='.concat(searchQuery) : ''}"
+        <c:url var="clearFilterUrl" value="${baseUrl}">
+            <c:if test="${not empty searchQuery}">
+                <c:param name="q" value="${searchQuery}"/>
+            </c:if>
+        </c:url>
+        <a href="${clearFilterUrl}"
            class="flex-shrink-0 w-8 h-8 rounded-full bg-error/10 text-error hover:bg-error/20 inline-flex items-center justify-center transition-colors duration-200"
            title="<spring:message code="pack.catalog.filter.clear"/>">
             <span class="material-symbols-outlined text-base">close</span>

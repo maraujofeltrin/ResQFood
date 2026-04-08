@@ -3,6 +3,7 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="paw" tagdir="/WEB-INF/tags" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <!DOCTYPE html>
 <html class="light" lang="${pageContext.response.locale.language}">
 <head>
@@ -57,7 +58,7 @@
             <div class="flex items-center gap-3 mb-8">
                 <h2 class="text-2xl font-headline font-bold text-on-surface">
                     <c:choose>
-                        <c:when test="${not empty param.q}"><spring:message code="pack.catalog.searchResults" arguments="${param.q}"/></c:when>
+                        <c:when test="${not empty param.q}"><spring:message code="pack.catalog.searchResults" arguments="${fn:escapeXml(param.q)}"/></c:when>
                         <c:otherwise><spring:message code="pack.catalog.allPacks"/></c:otherwise>
                     </c:choose>
                 </h2>

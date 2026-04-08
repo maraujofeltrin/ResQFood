@@ -302,7 +302,7 @@ public class PackController {
         final StringBuilder baseUrlBuilder = new StringBuilder("/packs");
         boolean firstParam = true;
         if (hasQuery) {
-            baseUrlBuilder.append(firstParam ? "?" : "&").append("q=").append(query.trim());
+            baseUrlBuilder.append(firstParam ? "?" : "&").append("q=").append(java.net.URLEncoder.encode(query.trim(), java.nio.charset.StandardCharsets.UTF_8));
             firstParam = false;
         }
         if (hasTags) {
