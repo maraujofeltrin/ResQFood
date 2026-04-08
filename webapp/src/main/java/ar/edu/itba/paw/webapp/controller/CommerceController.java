@@ -6,11 +6,16 @@ import ar.edu.itba.paw.models.PackTag;
 import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Collections;
+import java.util.Set;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -26,16 +31,22 @@ import ar.edu.itba.paw.webapp.form.CreatePackForm;
 @RequestMapping("/commerce")
 public class CommerceController {
 
+    private static final int PAGE_SIZE = 6;
+    private static final Set<String> ALLOWED_IMAGE_TYPES = new HashSet<>(Arrays.asList(
+            "image/jpeg", "image/png", "image/webp", "image/gif"
+    ));
+
     private final CommerceService commerceService;
     private final PackService packService;
+    private final MessageSource messageSource;
 
     @Autowired
-    public CommerceController(final CommerceService commerceService, final PackService packService) {
+    public CommerceController(final CommerceService commerceService, final PackService packService,
+                              final MessageSource messageSource) {
         this.commerceService = commerceService;
         this.packService = packService;
+        this.messageSource = messageSource;
     }
-
-    private static final int PAGE_SIZE = 6;
 
     @RequestMapping(method = RequestMethod.GET)
     public ModelAndView dashboard(@RequestParam(value = "page", defaultValue = "1") final int page) {
@@ -55,9 +66,15 @@ public class CommerceController {
     }
 
     @RequestMapping(value = "/create-pack", method = RequestMethod.GET)
-    public ModelAndView createPackForm(@ModelAttribute("createPackForm") final CreatePackForm form) {
+    public ModelAndView createPackForm(@ModelAttribute("createPackForm") final CreatePackForm form,
+                                      @RequestParam(value = "error", required = false) final String error) {
         final ModelAndView mav = new ModelAndView("commerce/createPack");
         mav.addObject("availableTags", PackTag.values());
+        if ("maxUploadSize".equals(error)) {
+            mav.addObject("errorMessage",
+                    messageSource.getMessage("commerce.createPack.validation.image.maxSize",
+                            null, LocaleContextHolder.getLocale()));
+        }
         return mav;
     }
 
@@ -68,6 +85,17 @@ public class CommerceController {
 
         if (form.getOriginalPrice() != null && form.getFinalPrice() != null && form.getFinalPrice() > form.getOriginalPrice()) {
             bindingResult.rejectValue("finalPrice", "error.finalPrice", "El precio de venta no puede ser mayor al precio original");
+        }
+
+        // Server-side image type validation
+        final MultipartFile image = form.getImage();
+        if (image != null && !image.isEmpty()) {
+            final String contentType = image.getContentType();
+            if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
+                bindingResult.rejectValue("image", "error.image.invalidType",
+                        messageSource.getMessage("commerce.createPack.validation.image.invalidType",
+                                null, LocaleContextHolder.getLocale()));
+            }
         }
 
         if (bindingResult.hasErrors()) {
@@ -84,7 +112,6 @@ public class CommerceController {
 
             byte[] imageData = null;
             String imageContentType = null;
-            MultipartFile image = form.getImage();
             if (image != null && !image.isEmpty()) {
                 imageData = image.getBytes();
                 imageContentType = image.getContentType();
@@ -105,7 +132,9 @@ public class CommerceController {
         } catch (IOException e) {
             final ModelAndView mav = new ModelAndView("commerce/createPack");
             mav.addObject("availableTags", PackTag.values());
-            mav.addObject("errorMessage", "Error al procesar la imagen. Intente nuevamente.");
+            mav.addObject("errorMessage",
+                    messageSource.getMessage("commerce.createPack.validation.image.processError",
+                            null, LocaleContextHolder.getLocale()));
             return mav;
         }
     }

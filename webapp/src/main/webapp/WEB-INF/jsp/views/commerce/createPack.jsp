@@ -240,8 +240,9 @@
 
                                     <div class="pack-form-field mt-2">
                                         <label class="pack-form-label"><spring:message code="commerce.createPack.form.image.label"/></label>
-                                        <input type="file" name="image" accept="image/*"
+                                        <input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif"
                                             class="pack-form-control file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-fixed file:text-on-primary-fixed hover:file:bg-primary-fixed-dim cursor-pointer" />
+                                        <form:errors path="image" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                         <p class="text-xs text-secondary mt-1"><spring:message code="commerce.createPack.form.image.hint"/></p>
                                     </div>
 
