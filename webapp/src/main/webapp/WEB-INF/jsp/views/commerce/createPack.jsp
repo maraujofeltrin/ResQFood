@@ -48,7 +48,7 @@
                     </c:if>
 
                     <form:form modelAttribute="createPackForm" action="${pageContext.request.contextPath}/commerce/create-pack" method="post"
-                        enctype="multipart/form-data" class="pack-detail-grid" novalidate="novalidate">
+                        enctype="multipart/form-data" cssClass="pack-detail-grid commerce-create-pack-form" novalidate="novalidate">
 
                         <!-- Left Column: Form Sections -->
                         <div class="grid col-span-1 md:col-span-8 gap-8">
@@ -246,9 +246,12 @@
                                         <p class="text-xs text-secondary mt-1"><spring:message code="commerce.createPack.form.image.hint"/></p>
                                     </div>
 
-                                    <button type="submit" class="pack-submit-btn mt-4">
-                                        <span class="material-symbols-outlined">rocket_launch</span>
-                                        <spring:message code="commerce.createPack.form.submit"/>
+                                    <spring:message code="commerce.createPack.form.submitting" var="createPackSubmittingText"/>
+                                    <button type="submit" class="pack-submit-btn font-headline mt-4"
+                                            id="create-pack-submit-btn"
+                                            data-submitting-text="${createPackSubmittingText}">
+                                        <span class="pack-submit-btn__label"><spring:message code="commerce.createPack.form.submit"/></span>
+                                        <span class="material-symbols-outlined pack-submit-btn__icon">rocket_launch</span>
                                     </button>
                                 </div>
                             </section>
@@ -258,6 +261,31 @@
                 </main>
 
                 <!-- Footer removed temporarily -->
+
+                <script>
+                    (function () {
+                        var form = document.querySelector('.commerce-create-pack-form');
+                        var btn = document.getElementById('create-pack-submit-btn');
+                        if (!form || !btn) {
+                            return;
+                        }
+                        var submitted = false;
+                        form.addEventListener('submit', function (e) {
+                            if (submitted) {
+                                e.preventDefault();
+                                return;
+                            }
+                            submitted = true;
+                            btn.disabled = true;
+                            btn.setAttribute('aria-disabled', 'true');
+                            btn.classList.add('pack-submit-btn--submitting');
+                            var label = btn.querySelector('.pack-submit-btn__label');
+                            if (label && btn.getAttribute('data-submitting-text')) {
+                                label.textContent = btn.getAttribute('data-submitting-text');
+                            }
+                        });
+                    })();
+                </script>
 
             </body>
 
