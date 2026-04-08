@@ -18,12 +18,18 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
+
+import ar.edu.itba.paw.models.User;
+import ar.edu.itba.paw.services.UserService;
 
 import ar.edu.itba.paw.webapp.form.CreatePackForm;
 
@@ -39,13 +45,15 @@ public class CommerceController {
     private final CommerceService commerceService;
     private final PackService packService;
     private final MessageSource messageSource;
+    private final UserService userService;
 
     @Autowired
     public CommerceController(final CommerceService commerceService, final PackService packService,
-                              final MessageSource messageSource) {
+                              final MessageSource messageSource, final UserService userService) {
         this.commerceService = commerceService;
         this.packService = packService;
         this.messageSource = messageSource;
+        this.userService = userService;
     }
 
     @RequestMapping(method = RequestMethod.GET)
@@ -98,9 +106,37 @@ public class CommerceController {
             }
         }
 
-        if (bindingResult.hasErrors()) {
+        // Check if existing commerce
+        boolean isExistingCommerce = false;
+        if (form.getEmail() != null) {
+            java.util.Optional<User> userOpt = userService.findByEmail(form.getEmail());
+            if (userOpt.isPresent() && userOpt.get().getRole() == User.Role.COMMERCE) {
+                if (commerceService.findByUserId(userOpt.get().getId()).isPresent()) {
+                    isExistingCommerce = true;
+                }
+            }
+        }
+
+        BindingResult finalBindingResult = bindingResult;
+
+        if (isExistingCommerce && bindingResult.hasErrors()) {
+            BindingResult filteredResult = new BeanPropertyBindingResult(form, "createPackForm");
+            Set<String> commerceFields = new HashSet<>(Arrays.asList("name", "commercialName", "category", "street", "streetNumber", "postalCode", "city", "province", "openingTime", "closingTime"));
+            for (FieldError error : bindingResult.getFieldErrors()) {
+                if (!commerceFields.contains(error.getField())) {
+                    filteredResult.addError(error);
+                }
+            }
+            for (ObjectError error : bindingResult.getGlobalErrors()) {
+                filteredResult.addError(error);
+            }
+            finalBindingResult = filteredResult;
+        }
+
+        if (finalBindingResult.hasErrors()) {
             final ModelAndView mav = new ModelAndView("commerce/createPack");
             mav.addObject("availableTags", PackTag.values());
+            mav.addObject(BindingResult.MODEL_KEY_PREFIX + "createPackForm", finalBindingResult);
             return mav;
         }
 

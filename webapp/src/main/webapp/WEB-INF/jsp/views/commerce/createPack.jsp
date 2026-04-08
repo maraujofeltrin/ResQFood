@@ -285,6 +285,42 @@
                             }
                         });
                     })();
+
+                    document.addEventListener("DOMContentLoaded", function () {
+                        const imageInput = document.querySelector('input[name="image"]');
+                        const maxFileSize = 5 * 1024 * 1024; // 5MB
+                        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+                        imageInput.addEventListener('change', function (event) {
+                            const file = event.target.files[0];
+                            const errorContainer = event.target.parentNode;
+
+                            // Remove existing client-side errors
+                            const existingErrors = errorContainer.querySelectorAll('.image-js-error');
+                            existingErrors.forEach(e => e.remove());
+
+                            if (file) {
+                                let errorMsg = '';
+
+                                if (file.size > maxFileSize) {
+                                    errorMsg = "<spring:message code='commerce.createPack.validation.image.maxSize' javaScriptEscape='true'/>";
+                                } else if (!allowedTypes.includes(file.type)) {
+                                    errorMsg = "<spring:message code='commerce.createPack.validation.image.invalidType' javaScriptEscape='true'/>";
+                                }
+
+                                if (errorMsg !== '') {
+                                    event.target.value = ''; // clear input
+
+                                    const errorElement = document.createElement('p');
+                                    errorElement.className = 'pack-feedback pack-feedback--error pack-form-errors image-js-error mt-2';
+                                    errorElement.textContent = errorMsg;
+
+                                    // Insert after the input
+                                    event.target.parentNode.insertBefore(errorElement, event.target.nextSibling);
+                                }
+                            }
+                        });
+                    });
                 </script>
 
             </body>
