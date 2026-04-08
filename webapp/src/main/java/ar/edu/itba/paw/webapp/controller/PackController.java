@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.NumberFormat;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ import javax.servlet.ServletContext;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
@@ -50,6 +52,7 @@ public class PackController {
     private final CommerceService commerceService;
     private final ServletContext servletContext;
     private final MessageSource messageSource;
+    private final ZoneId businessZone;
 
     private byte[] placeholderBytes;
     private String placeholderContentType;
@@ -57,12 +60,16 @@ public class PackController {
     @Autowired
     public PackController(final ReservationService reservationService, final PackService packService,
             final CommerceService commerceService, final ServletContext servletContext,
-            final MessageSource messageSource) {
+            final MessageSource messageSource,
+            @Value("${app.display-zone:}") final String displayZone) {
         this.reservationService = reservationService;
         this.packService = packService;
         this.commerceService = commerceService;
         this.servletContext = servletContext;
         this.messageSource = messageSource;
+        this.businessZone = (displayZone == null || displayZone.trim().isEmpty())
+                ? ZoneId.of("America/Argentina/Buenos_Aires")
+                : ZoneId.of(displayZone.trim());
     }
 
     private synchronized byte[] getPlaceholderBytes() {
@@ -158,7 +165,7 @@ public class PackController {
         return Optional.empty();
     }
 
-    private static boolean computeOpenNow(final Commerce commerce) {
+    private static boolean computeOpenNow(final Commerce commerce, final ZoneId zone) {
         if (commerce == null) {
             return false;
         }
@@ -172,14 +179,14 @@ public class PackController {
         if (o.equals(c)) {
             return false;
         }
-        final LocalTime now = LocalTime.now();
+        final LocalTime now = LocalTime.now(zone);
         if (!c.isBefore(o)) {
             return !now.isBefore(o) && !now.isAfter(c);
         }
         return !now.isBefore(o) || !now.isAfter(c);
     }
 
-    private static void addCommerceDetailAttributes(final ModelAndView mav, final Optional<Commerce> commerceOpt) {
+    private void addCommerceDetailAttributes(final ModelAndView mav, final Optional<Commerce> commerceOpt) {
         final Commerce commerce = commerceOpt.orElse(null);
 
         final String commercialName = commerce != null && commerce.getCommercialName() != null
@@ -191,7 +198,7 @@ public class PackController {
         mav.addObject("commerceLocationLine", formatCityProvincePostal(commerce));
         mav.addObject("commerceOpeningTime", commerce != null ? dashIfBlank(commerce.getOpeningTime()) : "—");
         mav.addObject("commerceClosingTime", commerce != null ? dashIfBlank(commerce.getClosingTime()) : "—");
-        mav.addObject("commerceOpenNow", Boolean.valueOf(computeOpenNow(commerce)));
+        mav.addObject("commerceOpenNow", Boolean.valueOf(computeOpenNow(commerce, businessZone)));
     }
 
     private ReservationForm createDefaultReservationForm() {

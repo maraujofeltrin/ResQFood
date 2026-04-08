@@ -6,6 +6,7 @@ import ar.edu.itba.paw.services.ReservationService;
 import ar.edu.itba.paw.services.ReservationTokenService;
 import ar.edu.itba.paw.services.ReservationTokenService.TokenValidationResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +14,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Optional;
@@ -25,12 +30,24 @@ public class ReservationController {
 
     private final ReservationTokenService reservationTokenService;
     private final ReservationService reservationService;
+    private final ZoneId displayZone;
 
     @Autowired
     public ReservationController(final ReservationTokenService reservationTokenService,
-            final ReservationService reservationService) {
+            final ReservationService reservationService,
+            @Value("${app.display-zone:}") final String displayZoneStr) {
         this.reservationTokenService = reservationTokenService;
         this.reservationService = reservationService;
+        this.displayZone = (displayZoneStr == null || displayZoneStr.trim().isEmpty())
+                ? ZoneId.of("America/Argentina/Buenos_Aires")
+                : ZoneId.of(displayZoneStr.trim());
+    }
+
+    private String formatUtcDateTimeForDisplay(final LocalDateTime utc) {
+        if (utc == null) {
+            return null;
+        }
+        return ZonedDateTime.of(utc, ZoneOffset.UTC).withZoneSameInstant(displayZone).format(DATE_FORMATTER);
     }
 
     @GetMapping("/accept")
@@ -78,10 +95,11 @@ public class ReservationController {
                 
                 // Add formatted dates for display
                 if (res.getReservationDate() != null) {
-                    model.addAttribute("reservationDateFormatted", res.getReservationDate().format(DATE_FORMATTER));
+                    model.addAttribute("reservationDateFormatted", formatUtcDateTimeForDisplay(res.getReservationDate()));
                 }
                 if (res.getPickupConfirmationDate() != null) {
-                    model.addAttribute("pickupConfirmationDateFormatted", res.getPickupConfirmationDate().format(DATE_FORMATTER));
+                    model.addAttribute("pickupConfirmationDateFormatted",
+                            formatUtcDateTimeForDisplay(res.getPickupConfirmationDate()));
                 }
                 
                 if (action == ReservationToken.Action.ACCEPT) {
