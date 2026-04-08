@@ -7,6 +7,7 @@
 <%@ attribute name="searchQuery" required="false" type="java.lang.String" %>
 
 <c:set var="hasSelection" value="${not empty selectedTags}"/>
+<c:set var="isPanelOpen" value="${hasSelection or param.filterOpen == 'true'}"/>
 
 <div class="flex items-center gap-3 min-w-0">
 
@@ -17,9 +18,9 @@
                      this.classList.toggle('px-5');
                      this.classList.toggle('px-3')"
             class="flex-shrink-0 inline-flex items-center gap-2 rounded-full py-2.5 text-sm font-semibold transition-colors duration-200
-                   ${hasSelection ? 'bg-primary text-on-primary px-3' : 'bg-surface-container-low text-on-surface hover:bg-surface-container-high px-5'}">
+                   ${hasSelection ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-on-surface hover:bg-surface-container-high'} ${isPanelOpen ? 'px-3' : 'px-5'}">
         <span class="material-symbols-outlined text-lg">filter_list</span>
-        <span id="tagFilterLabelText" class="${hasSelection ? 'hidden' : ''}">
+        <span id="tagFilterLabelText" class="${isPanelOpen ? 'hidden' : ''}">
             <spring:message code="pack.catalog.filter.label"/>
         </span>
         <c:if test="${hasSelection}">
@@ -40,7 +41,9 @@
     <%-- Chips panel: hidden by default unless tags are already selected --%>
     <form id="tagFilterPanel"
           action="${baseUrl}" method="GET"
-          class="flex items-center gap-2 min-w-0 overflow-x-auto hide-scrollbar ${hasSelection ? '' : 'hidden'}">
+          class="flex items-center gap-2 min-w-0 overflow-x-auto hide-scrollbar ${isPanelOpen ? '' : 'hidden'}">
+        
+        <input type="hidden" name="filterOpen" value="true"/>
 
         <c:if test="${not empty searchQuery}">
             <input type="hidden" name="q" value="<c:out value='${searchQuery}'/>"/>

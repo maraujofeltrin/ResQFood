@@ -6,10 +6,11 @@ import javax.validation.constraints.Digits;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Positive;
+import javax.validation.constraints.Size;
 
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,21 +20,25 @@ import ar.edu.itba.paw.models.PackTag;
 public class CreatePackForm {
 
     // Identidad del Usuario
-    @NotEmpty(message = "{commerce.createPack.validation.email.notEmpty}")
+    @NotBlank(message = "{commerce.createPack.validation.email.notEmpty}")
     @Email(message = "{commerce.createPack.validation.email.valid}")
+    @Size(max = 255)
     private String email;
 
-    @NotEmpty(message = "{commerce.createPack.validation.name.notEmpty}")
+    @NotBlank(message = "{commerce.createPack.validation.name.notEmpty}")
     @Pattern(regexp = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ].*", message = "{commerce.createPack.validation.name.pattern}")
+    @Size(max = 100)
     private String name;
 
     // Datos del Local
-    @NotEmpty(message = "{commerce.createPack.validation.commercialName.notEmpty}")
+    @NotBlank(message = "{commerce.createPack.validation.commercialName.notEmpty}")
+    @Size(max = 100)
     private String commercialName;
 
     private Category category;
 
-    @NotEmpty(message = "{commerce.createPack.validation.street.notEmpty}")
+    @NotBlank(message = "{commerce.createPack.validation.street.notEmpty}")
+    @Size(max = 100)
     private String street;
 
     @NotNull(message = "{commerce.createPack.validation.streetNumber.notNull}")
@@ -41,27 +46,34 @@ public class CreatePackForm {
     @Max(value = 99999, message = "{commerce.createPack.validation.streetNumber.max}")
     private Integer streetNumber;
 
-    @NotEmpty(message = "{commerce.createPack.validation.postalCode.notEmpty}")
+    @NotBlank(message = "{commerce.createPack.validation.postalCode.notEmpty}")
     @Pattern(regexp = "^(?i)([cC]?[0-9]{1,5})$", message = "{commerce.createPack.validation.postalCode.pattern}")
+    @Size(max = 50)
     private String postalCode;
 
-    @NotEmpty(message = "{commerce.createPack.validation.city.notEmpty}")
+    @NotBlank(message = "{commerce.createPack.validation.city.notEmpty}")
+    @Size(max = 100)
     private String city;
 
-    @NotEmpty(message = "{commerce.createPack.validation.province.notEmpty}")
+    @NotBlank(message = "{commerce.createPack.validation.province.notEmpty}")
+    @Size(max = 100)
     private String province;
 
-    @NotEmpty(message = "{commerce.createPack.validation.openingTime.notEmpty}")
+    @NotBlank(message = "{commerce.createPack.validation.openingTime.notEmpty}")
+    @Size(max = 50)
     private String openingTime;
 
-    @NotEmpty(message = "{commerce.createPack.validation.closingTime.notEmpty}")
+    @NotBlank(message = "{commerce.createPack.validation.closingTime.notEmpty}")
+    @Size(max = 50)
     private String closingTime;
 
     // Detalles del Pack
-    @NotEmpty(message = "{commerce.createPack.validation.title.notEmpty}")
+    @NotBlank(message = "{commerce.createPack.validation.title.notEmpty}")
+    @Size(max = 100)
     private String title;
 
-    @NotEmpty(message = "{commerce.createPack.validation.description.notEmpty}")
+    @NotBlank(message = "{commerce.createPack.validation.description.notEmpty}")
+    @Size(max = 500)
     private String description;
 
     private List<PackTag> tags;

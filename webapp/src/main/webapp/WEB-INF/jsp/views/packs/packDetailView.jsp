@@ -2,6 +2,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="paw" tagdir="/WEB-INF/tags" %>
 <!DOCTYPE html>
 <html class="light" lang="${pageContext.response.locale.language}">
@@ -50,7 +51,21 @@
                         </c:if>
                     </div>
                     <h1 class="pack-detail-title font-headline"><c:out value="${packTitle}"/></h1>
-                    <p class="pack-detail-description"><c:out value="${packDescription}"/></p>
+                    <c:choose>
+                        <c:when test="${fn:length(packDescription) > 255}">
+                            <p class="pack-detail-description break-words overflow-hidden" id="pack-description-short">
+                                <c:out value="${fn:substring(packDescription, 0, 255)}"/>...
+                                <button type="button" id="read-more-btn" class="font-bold ml-1 hover:underline cursor-pointer"><spring:message code="pack.detail.readMore"/></button>
+                            </p>
+                            <p class="pack-detail-description break-words overflow-hidden hidden" id="pack-description-full">
+                                <c:out value="${packDescription}"/>
+                                <button type="button" id="read-less-btn" class="font-bold ml-1 hover:underline cursor-pointer"><spring:message code="pack.detail.readLess"/></button>
+                            </p>
+                        </c:when>
+                        <c:otherwise>
+                            <p class="pack-detail-description break-words overflow-hidden"><c:out value="${packDescription}"/></p>
+                        </c:otherwise>
+                    </c:choose>
                     <section class="pack-detail-commerce" aria-label="${packDetailCommerceSectionAria}">
                         <div class="commerce-info-card">
                             <div class="commerce-info-card__header">
@@ -296,6 +311,26 @@
                     label.textContent = btn.getAttribute('data-submitting-text');
                 }
             });
+        })();
+
+        (function () {
+            var readMoreBtn = document.getElementById('read-more-btn');
+            var readLessBtn = document.getElementById('read-less-btn');
+            var descShort = document.getElementById('pack-description-short');
+            var descFull = document.getElementById('pack-description-full');
+
+            if (readMoreBtn && readLessBtn && descShort && descFull) {
+                readMoreBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    descShort.classList.add('hidden');
+                    descFull.classList.remove('hidden');
+                });
+                readLessBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    descFull.classList.add('hidden');
+                    descShort.classList.remove('hidden');
+                });
+            }
         })();
     </script>
 </body>

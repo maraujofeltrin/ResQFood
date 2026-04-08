@@ -10,12 +10,12 @@ import javax.validation.constraints.Pattern;
 public class ReservationForm {
 
     @NotBlank
-    @Size(max = 255)
+    @Size(max = 100)
     @Pattern(regexp = "^(?:[a-zA-Z]+|\\s*)$", message = "{reservation.firstName.invalid}")
     private String firstName;
 
     @NotBlank
-    @Size(max = 255)
+    @Size(max = 100)
     @Pattern(regexp = "^[\\p{L}]+(?:\\s+[\\p{L}]+)*$", message = "{reservation.lastName.invalid}")
     private String lastName;
 
