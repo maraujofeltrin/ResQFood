@@ -5,7 +5,6 @@ import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,27 +34,24 @@ public class ReservationServiceImpl implements ReservationService {
     private final ReservationDao reservationDao;
     private final PackDao packDao;
     private final ReservationMailService reservationMailService;
-    private final String appBaseUrl;
 
     @Autowired
     public ReservationServiceImpl(final UserService userService, final ClientService clientService,
             final ReservationDao reservationDao,
             final PackDao packDao,
-            final ReservationMailService reservationMailService,
-            @Value("${app.base-url}") final String appBaseUrl) {
+            final ReservationMailService reservationMailService) {
         this.userService = userService;
         this.clientService = clientService;
         this.reservationDao = reservationDao;
         this.packDao = packDao;
         this.reservationMailService = reservationMailService;
-        this.appBaseUrl = appBaseUrl;
     }
 
     @Transactional
     @Override
     public Reservation createReservation(final long packId, final String email, final String firstName,
             final String lastName, final String phone, final int quantity, final double unitPrice,
-            final String pickupWindow) {
+            final String pickupWindow, final String baseUrl) {
         if (quantity < 1) {
             throw new IllegalArgumentException("quantity must be >= 1");
         }
@@ -95,7 +91,7 @@ public class ReservationServiceImpl implements ReservationService {
             .map(User::getEmail)
             .orElseThrow(() -> new IllegalStateException("Commerce user not found for id: " + commerceId));
 
-        reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail, appBaseUrl);
+        reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail, baseUrl);
         reservationMailService.sendReservationCodeToClient(reservation, user.getEmail());
 
         return reservation;

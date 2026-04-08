@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.models.Pack;
@@ -376,7 +377,6 @@ public class PackController {
             bindingResult.rejectValue("quantity", "reservation.quantity.exceedsStock",
                     new Object[] { stock }, null);
         }
-
         if (bindingResult.hasErrors()) {
             final ModelAndView mav = buildPackDetailModel(pack, reservationForm);
             return mav;
@@ -392,6 +392,9 @@ public class PackController {
         }
 
         final int quantity = reservationForm.getQuantity().intValue();
+        final String appBaseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+            .build()
+            .toUriString();
 
         try {
             reservationService.createReservation(
@@ -402,7 +405,8 @@ public class PackController {
                     reservationForm.getPhone(),
                     quantity,
                     finalPrice,
-                    null);
+                    null,
+                    appBaseUrl);
             redirectAttributes.addFlashAttribute("reservationAlertKind", "success");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
                     messageSource.getMessage("reservation.alert.success", null,

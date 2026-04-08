@@ -11,7 +11,7 @@ public interface ReservationService {
      * {@code clients}, y persiste la reserva con {@code customer_id} = {@code clients.user_id}.
      */
     Reservation createReservation(long packId, String email, String firstName, String lastName, String phone,
-            int quantity, double unitPrice, String pickupWindow);
+            int quantity, double unitPrice, String pickupWindow, String baseUrl);
 
     Optional<Reservation> findById(final Long id);
 

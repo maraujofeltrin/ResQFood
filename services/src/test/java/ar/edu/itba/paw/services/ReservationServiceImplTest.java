@@ -143,9 +143,9 @@ public class ReservationServiceImplTest {
         final ClientService clientService = new TestClientService(client);
         final PackDao packDao = new InMemoryPackDao(pack);
 
-        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, clientService, reservationDao, packDao, mailService, APP_URL);
+        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, clientService, reservationDao, packDao, mailService);
 
-        assertDoesNotThrow(() -> svc.createReservation(packId, email, "Test", "User", "123", 1, 5.0, "pw"));
+        assertDoesNotThrow(() -> svc.createReservation(packId, email, "Test", "User", "123", 1, 5.0, "pw", APP_URL));
 
         assertEquals(1, reservationDao.store.size(), "Reservation should be stored in DAO");
         final Reservation created = reservationDao.store.get(0);
@@ -168,9 +168,9 @@ public class ReservationServiceImplTest {
         final ClientService clientService = new TestClientService(client);
         final PackDao packDao = new InMemoryPackDao(pack);
 
-        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, clientService, reservationDao, packDao, mailService, APP_URL);
+        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, clientService, reservationDao, packDao, mailService);
 
-        assertThrows(IllegalArgumentException.class, () -> svc.createReservation(packId, email, "Test", "User", "123", 0, 5.0, "pw"));
+        assertThrows(IllegalArgumentException.class, () -> svc.createReservation(packId, email, "Test", "User", "123", 0, 5.0, "pw", APP_URL));
         assertEquals(0, reservationDao.store.size(), "No reservation should be created");
         assertEquals(0, mailService.sentToCommerce);
         assertEquals(0, mailService.sentToClient);
@@ -190,13 +190,13 @@ public class ReservationServiceImplTest {
         final ClientService clientService = new TestClientService(client);
         final PackDao packDao = new InMemoryPackDao(pack);
 
-        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, clientService, reservationDao, packDao, mailService, APP_URL);
+        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, clientService, reservationDao, packDao, mailService);
 
         final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 600; i++) sb.append('x');
         final String longPickup = sb.toString();
 
-        assertThrows(IllegalArgumentException.class, () -> svc.createReservation(packId, email, "Test", "User", "123", 1, 5.0, longPickup));
+        assertThrows(IllegalArgumentException.class, () -> svc.createReservation(packId, email, "Test", "User", "123", 1, 5.0, longPickup, APP_URL));
         assertEquals(0, reservationDao.store.size(), "No reservation should be created");
         assertEquals(0, mailService.sentToCommerce);
         assertEquals(0, mailService.sentToClient);
