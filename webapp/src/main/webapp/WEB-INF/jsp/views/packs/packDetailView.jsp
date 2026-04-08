@@ -32,9 +32,9 @@
     <c:url var="packCatalogUrl" value="/packs"/>
     <main class="pack-detail-main">
         <div class="flex items-center gap-2 mb-8 text-secondary">
-            <a href="${packCatalogUrl}" class="hover:underline flex items-center font-bold">
+            <a href="${packCatalogUrl}" class="group flex items-center font-bold">
                 <span class="material-symbols-outlined text-xl mr-1">arrow_back</span>
-                <spring:message code="pack.detail.back"/>
+                <span class="group-hover:underline"><spring:message code="pack.detail.back"/></span>
             </a>
         </div>
         <div class="pack-detail-grid">

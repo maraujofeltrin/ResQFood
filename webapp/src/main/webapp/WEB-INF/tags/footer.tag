@@ -8,7 +8,7 @@
     </div>
     <div>
       <h4 class="font-bold text-primary mb-4 uppercase tracking-widest text-xs font-headline"><spring:message code="layout.footer.contactTitle"/></h4>
-      <spring:message code="layout.footer.email" var="layoutFooterEmail"/>
+      <spring:eval expression="@environment.getProperty('mail.username')" var="layoutFooterEmail"/>
       <a class="text-secondary hover:text-primary transition-colors" href="mailto:${layoutFooterEmail}">${layoutFooterEmail}</a>
     </div>
   </div>

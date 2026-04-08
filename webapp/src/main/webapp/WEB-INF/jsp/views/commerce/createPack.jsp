@@ -24,14 +24,14 @@
 
             <body class="bg-surface font-body text-on-surface antialiased flex flex-col min-h-screen">
 
-                <!-- Navbar removed temporarily -->
+                <paw:navbar />
 
                 <main class="pack-detail-main">
                     <div class="flex items-center gap-2 mb-8 text-secondary">
                         <a href="${pageContext.request.contextPath}/commerce"
-                            class="hover:underline flex items-center font-bold">
+                            class="group flex items-center font-bold">
                             <span class="material-symbols-outlined text-xl mr-1">arrow_back</span>
-                            <spring:message code="commerce.createPack.backToDashboard"/>
+                            <span class="group-hover:underline"><spring:message code="commerce.createPack.backToDashboard"/></span>
                         </a>
                     </div>
 
@@ -260,7 +260,7 @@
                     </form:form>
                 </main>
 
-                <!-- Footer removed temporarily -->
+                <paw:footer />
 
                 <script>
                     (function () {
