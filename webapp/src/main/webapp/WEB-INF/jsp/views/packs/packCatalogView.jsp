@@ -22,6 +22,12 @@
             <div class="flex flex-col sm:flex-row items-center w-full md:w-auto gap-4">
                 <spring:message code="pack.catalog.search.placeholder" var="packCatalogSearchPlaceholder"/>
                 <form action="${pageContext.request.contextPath}/packs" method="GET" class="w-full sm:w-auto">
+                    <c:if test="${currentSort != null && currentSort.name() != 'DATE_DESC'}">
+                        <input type="hidden" name="sort" value="${currentSort.name()}"/>
+                    </c:if>
+                    <c:forEach var="tag" items="${selectedTags}">
+                        <input type="hidden" name="tags" value="${tag.name()}"/>
+                    </c:forEach>
                     <paw:searchBar value="${param.q}" placeholder="${packCatalogSearchPlaceholder}" classes="relative w-full sm:w-80" />
                 </form>
             </div>
@@ -41,6 +47,7 @@
                 selectedTags="${selectedTags}"
                 baseUrl="/packs"
                 searchQuery="${param.q}"
+                currentSort="${currentSort}"
             />
         </div>
 

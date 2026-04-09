@@ -26,6 +26,7 @@ public class PackJdbcDao implements PackDao {
     private final JdbcTemplate jdbcTemplate;
     private final SimpleJdbcInsert simpleJdbcInsert;
     private final RowMapper<Pack> packRowMapper;
+    private final RowMapper<Pack> packRowMapperNoTags;
 
     @Autowired
     public PackJdbcDao(final DataSource dataSource) {
@@ -34,6 +35,7 @@ public class PackJdbcDao implements PackDao {
             .withTableName("packs")
             .usingGeneratedKeyColumns("id");
 
+        // Full mapper: loads tags per pack (use only for single-pack queries like findById)
         this.packRowMapper = (rs, rowNum) -> {
             Long packId = rs.getLong("id");
             List<PackTag> tags = jdbcTemplate.query("SELECT tag FROM pack_tags WHERE pack_id = ?",
@@ -51,6 +53,19 @@ public class PackJdbcDao implements PackDao {
                 tags
             );
         };
+
+        // Lightweight mapper: skips tags query (use for list/catalog queries)
+        this.packRowMapperNoTags = (rs, rowNum) -> new Pack(
+            rs.getLong("id"),
+            rs.getLong("commerce_id"),
+            rs.getString("title"),
+            rs.getString("description"),
+            rs.getDouble("original_price"),
+            rs.getDouble("final_price"),
+            rs.getInt("stock"),
+            rs.getBoolean("active"),
+            Collections.emptyList()
+        );
     }
 
     @Override
@@ -93,7 +108,7 @@ public class PackJdbcDao implements PackDao {
 
     @Override
     public List<Pack> findAll() {
-        return jdbcTemplate.query("SELECT " + PACK_COLS_NO_IMAGE + " FROM packs", packRowMapper);
+        return jdbcTemplate.query("SELECT " + PACK_COLS_NO_IMAGE + " FROM packs", packRowMapperNoTags);
     }
 
     @Override
@@ -105,7 +120,7 @@ public class PackJdbcDao implements PackDao {
     public List<Pack> findActive(PackSortOption sort) {
         return jdbcTemplate.query(
                 "SELECT " + PACK_COLS_NO_IMAGE + " FROM packs WHERE active = true ORDER BY " + sort.getOrderByClause(),
-                packRowMapper
+                packRowMapperNoTags
         );
     }
 
@@ -121,7 +136,7 @@ public class PackJdbcDao implements PackDao {
             "SELECT packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active " +
             "FROM packs JOIN commerces ON packs.commerce_id = commerces.user_id " +
             "WHERE packs.active = true AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?) ORDER BY " + sort.getOrderByClause(),
-            packRowMapper,
+            packRowMapperNoTags,
             pattern,
             pattern
         );
@@ -155,7 +170,7 @@ public class PackJdbcDao implements PackDao {
             "WHERE p.active = true AND pt.tag IN (" + inClause + ") " +
             "GROUP BY p.id, p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active " +
             "HAVING COUNT(DISTINCT pt.tag) = ? ORDER BY " + orderBy,
-            packRowMapper,
+            packRowMapperNoTags,
             params.toArray()
         );
     }
@@ -187,7 +202,7 @@ public class PackJdbcDao implements PackDao {
             "WHERE packs.active = true AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?) AND pt.tag IN (" + inClause + ") " +
             "GROUP BY packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active " +
             "HAVING COUNT(DISTINCT pt.tag) = ? ORDER BY " + sort.getOrderByClause(),
-            packRowMapper,
+            packRowMapperNoTags,
             params.toArray()
         );
     }

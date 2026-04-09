@@ -5,6 +5,7 @@
 <%@ attribute name="selectedTags" required="true" type="java.util.List" %>
 <%@ attribute name="baseUrl" required="true" type="java.lang.String" %>
 <%@ attribute name="searchQuery" required="false" type="java.lang.String" %>
+<%@ attribute name="currentSort" required="false" type="ar.edu.itba.paw.models.PackSortOption" %>
 
 <c:set var="hasSelection" value="${not empty selectedTags}"/>
 <c:set var="isPanelOpen" value="${hasSelection or param.filterOpen == 'true'}"/>
@@ -35,6 +36,9 @@
             <c:if test="${not empty searchQuery}">
                 <c:param name="q" value="${searchQuery}"/>
             </c:if>
+            <c:if test="${not empty currentSort}">
+                <c:param name="sort" value="${currentSort.name()}"/>
+            </c:if>
         </c:url>
         <a href="${clearFilterUrl}"
            class="flex-shrink-0 w-8 h-8 rounded-full bg-error/10 text-error hover:bg-error/20 inline-flex items-center justify-center transition-colors duration-200"
@@ -52,6 +56,10 @@
 
         <c:if test="${not empty searchQuery}">
             <input type="hidden" name="q" value="<c:out value='${searchQuery}'/>"/>
+        </c:if>
+
+        <c:if test="${not empty currentSort}">
+            <input type="hidden" name="sort" value="<c:out value='${currentSort.name()}'/>"/>
         </c:if>
 
         <c:forEach var="tag" items="${availableTags}">
@@ -79,3 +87,4 @@
     </form>
 
 </div>
+
