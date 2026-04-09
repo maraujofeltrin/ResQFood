@@ -45,7 +45,7 @@
 
     <%-- Chips panel: hidden by default unless tags are already selected --%>
     <form id="tagFilterPanel"
-          action="${baseUrl}" method="GET"
+          action="<c:url value='${baseUrl}'/>" method="GET"
           class="flex items-center gap-2 min-w-0 overflow-x-auto hide-scrollbar ${isPanelOpen ? '' : 'hidden'}">
         
         <input type="hidden" name="filterOpen" value="true"/>

@@ -7,7 +7,7 @@
 <%@ attribute name="searchQuery" required="false" type="java.lang.String" %>
 <%@ attribute name="selectedTags" required="false" type="java.util.List" %>
 
-<form action="${baseUrl}" method="GET" class="relative inline-flex items-center max-w-full">
+<form action="<c:url value='${baseUrl}'/>" method="GET" class="relative inline-flex items-center max-w-full">
     <c:if test="${not empty searchQuery}">
         <input type="hidden" name="q" value="<c:out value='${searchQuery}'/>"/>
     </c:if>

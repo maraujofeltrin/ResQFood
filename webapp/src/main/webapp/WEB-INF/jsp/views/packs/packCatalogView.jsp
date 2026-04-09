@@ -31,7 +31,7 @@
             <paw:sortDropdown 
                 availableSorts="${availableSorts}" 
                 currentSort="${currentSort}" 
-                baseUrl="${pageContext.request.contextPath}/packs" 
+                baseUrl="/packs" 
                 searchQuery="${param.q}" 
                 selectedTags="${selectedTags}" 
             />
@@ -39,7 +39,7 @@
             <paw:tagFilter
                 availableTags="${availableTags}"
                 selectedTags="${selectedTags}"
-                baseUrl="${pageContext.request.contextPath}/packs"
+                baseUrl="/packs"
                 searchQuery="${param.q}"
             />
         </div>
