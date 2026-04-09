@@ -1,6 +1,8 @@
 package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Pack;
+import ar.edu.itba.paw.models.Pack;
+import ar.edu.itba.paw.models.PackSortOption;
 import ar.edu.itba.paw.models.Reservation;
 import ar.edu.itba.paw.models.ReservationToken;
 import ar.edu.itba.paw.persistence.PackDao;
@@ -68,6 +70,10 @@ public class ReservationMailServiceImplTest {
         @Override public boolean decrementStock(long packId, int quantity) { return true; }
         @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
         @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
+        @Override public java.util.List<Pack> findActive(PackSortOption sort) { return findActive(); }
+        @Override public java.util.List<Pack> searchPacks(String query, PackSortOption sort) { return searchPacks(query); }
+        @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption sort) { return findActiveByTags(tags); }
+        @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption sort) { return searchPacksWithTags(query, tags); }
     }
 
     static class FakeMailSender implements JavaMailSender {

@@ -27,7 +27,15 @@
             </div>
         </header>
 
-        <div class="mb-10">
+        <div class="mb-10 flex flex-col md:flex-row md:items-center justify-start gap-4">
+            <paw:sortDropdown 
+                availableSorts="${availableSorts}" 
+                currentSort="${currentSort}" 
+                baseUrl="${pageContext.request.contextPath}/packs" 
+                searchQuery="${param.q}" 
+                selectedTags="${selectedTags}" 
+            />
+
             <paw:tagFilter
                 availableTags="${availableTags}"
                 selectedTags="${selectedTags}"

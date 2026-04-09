@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Pack;
+import ar.edu.itba.paw.models.PackSortOption;
 import ar.edu.itba.paw.models.PackTag;
 
 import java.util.List;
@@ -14,6 +15,11 @@ public interface PackService {
     List<Pack> searchPacks(String query);
     List<Pack> findActiveByTags(List<PackTag> tags);
     List<Pack> searchPacksWithTags(String query, List<PackTag> tags);
+
+    List<Pack> findActive(PackSortOption sort);
+    List<Pack> searchPacks(String query, PackSortOption sort);
+    List<Pack> findActiveByTags(List<PackTag> tags, PackSortOption sort);
+    List<Pack> searchPacksWithTags(String query, List<PackTag> tags, PackSortOption sort);
     Pack update(Pack pack);
     void setActive(Long id, boolean active);
     Optional<Pack> findImageByPackId(Long id);

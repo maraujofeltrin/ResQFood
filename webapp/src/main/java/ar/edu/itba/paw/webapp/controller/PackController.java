@@ -39,6 +39,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.models.PackTag;
+import ar.edu.itba.paw.models.PackSortOption;
 import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
 import ar.edu.itba.paw.services.ReservationService;
@@ -264,9 +265,11 @@ public class PackController {
     public ModelAndView listPacks(
             @RequestParam(value = "q", required = false) final String query,
             @RequestParam(value = "tags", required = false) final List<String> tagNames,
+            @RequestParam(value = "sort", required = false) final String sort,
             @RequestParam(value = "page", defaultValue = "1") final int page) {
 
         final ModelAndView mav = new ModelAndView("packs/packCatalogView");
+        final PackSortOption sortOption = PackSortOption.fromString(sort);
 
         final List<PackTag> selectedTags = new ArrayList<>();
         if (tagNames != null) {
@@ -283,13 +286,13 @@ public class PackController {
 
         final List<Pack> allPacks;
         if (hasQuery && hasTags) {
-            allPacks = packService.searchPacksWithTags(query.trim(), selectedTags);
+            allPacks = packService.searchPacksWithTags(query.trim(), selectedTags, sortOption);
         } else if (hasTags) {
-            allPacks = packService.findActiveByTags(selectedTags);
+            allPacks = packService.findActiveByTags(selectedTags, sortOption);
         } else if (hasQuery) {
-            allPacks = packService.searchPacks(query.trim());
+            allPacks = packService.searchPacks(query.trim(), sortOption);
         } else {
-            allPacks = packService.findActive();
+            allPacks = packService.findActive(sortOption);
         }
 
         final int totalPages = Math.max(1, (int) Math.ceil((double) allPacks.size() / PAGE_SIZE));
@@ -318,11 +321,17 @@ public class PackController {
                 firstParam = false;
             }
         }
+        if (sort != null && !sort.isBlank()) {
+            baseUrlBuilder.append(firstParam ? "?" : "&").append("sort=").append(sortOption.name());
+            firstParam = false;
+        }
 
         mav.addObject("packs", packs);
         mav.addObject("commerceNames", commerceNames);
         mav.addObject("availableTags", PackTag.values());
         mav.addObject("selectedTags", selectedTags);
+        mav.addObject("availableSorts", PackSortOption.values());
+        mav.addObject("currentSort", sortOption);
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
         mav.addObject("paginationBaseUrl", baseUrlBuilder.toString());
