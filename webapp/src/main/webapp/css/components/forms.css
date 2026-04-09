@@ -1,0 +1,76 @@
+/* ── Form validation errors ──────────────────────────────── */
+
+.errors {
+  color: #BA1A1A;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* ── Inputs (global) ─────────────────────────────────────── */
+
+.input-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: min(100%, 360px);
+  margin: 1rem 0;
+}
+
+.input-label {
+  color: #404943;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.input-control {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 2px solid transparent;
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+  color: #191C1A;
+  background-color: #F3F5F3;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.input-control::placeholder {
+  color: #707973;
+}
+
+.input-control:focus {
+  outline: none;
+  background-color: #FFFFFF;
+  border-color: #059669;
+}
+
+.input-control:disabled {
+  background-color: #F3F5F3;
+  color: #707973;
+  cursor: not-allowed;
+}
+
+.input-control.is-invalid {
+  border-color: #BA1A1A;
+  background-color: #FFFFFF;
+}
+
+.input-control.is-invalid:focus {
+  border-color: #93000A;
+}
+
+.input-error {
+  color: #93000A;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.input-help {
+  color: #527A61;
+  font-size: 0.78rem;
+  line-height: 1.2;
+}

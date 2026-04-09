@@ -1,0 +1,38 @@
+/* ── Scrollbar hiding ────────────────────────────────────── */
+
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Material icons (shared) ─────────────────────────────── */
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+.card-rating-star {
+  color: rgb(255, 193, 7);
+  font-size: 20px;
+}
+
+.material-symbols-filled {
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+/* ── Surfaces / glass ────────────────────────────────────── */
+
+.tonal-shift-bg {
+  background-color: rgba(243, 245, 243, 0.8);
+}
+
+.glass-effect {
+  backdrop-filter: blur(12px);
+}

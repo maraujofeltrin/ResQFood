@@ -21,7 +21,15 @@
         </c:otherwise>
     </c:choose>
 
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components.css"/>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/tokens.css"/>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/utilities.css"/>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/buttons.css"/>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/forms.css"/>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/deal-card.css"/>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/modal.css"/>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/pack-detail-layout.css"/>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/pack-detail-commerce-card.css"/>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/pack-detail-aside.css"/>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="anonymous" href="https://fonts.gstatic.com" rel="preconnect"/>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>

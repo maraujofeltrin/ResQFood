@@ -1,0 +1,118 @@
+/* ── Pack detail page (layout & main content) ────────────── */
+
+.pack-detail-main {
+  padding-top: 6rem;
+  padding-bottom: 3rem;
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  flex-grow: 1;
+  width: 100%;
+}
+
+.pack-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .pack-detail-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+}
+
+.pack-detail-media-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  grid-column: 1 / -1;
+}
+
+.pack-detail-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .pack-detail-media-col {
+    grid-column: span 8 / span 8;
+  }
+}
+
+.pack-detail-hero {
+  position: relative;
+  border-radius: 2rem;
+  overflow: hidden;
+}
+
+.pack-detail-hero-img {
+  width: 100%;
+  height: 500px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.7s ease;
+}
+
+.pack-detail-hero:hover .pack-detail-hero-img {
+  transform: scale(1.05);
+}
+
+.pack-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pack-detail-badge {
+  background-color: #A7F3D0;
+  color: #022C22;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.125rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+/* Stock badge: modifiers must win over .pack-detail-badge (see specificity) */
+.pack-detail-badge.pack-detail-badge--stock.pack-detail-badge--stock-available {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.pack-detail-badge.pack-detail-badge--stock.pack-detail-badge--stock-unavailable {
+  background-color: #ffdad6;
+  color: #93000a;
+}
+
+.pack-detail-meta-sep {
+  color: #C2C9C2;
+}
+
+.pack-detail-merchant {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #527A61;
+}
+
+.pack-detail-title {
+  margin: 0;
+  font-size: 3rem;
+  line-height: 1.1;
+  font-weight: 800;
+  color: #059669;
+  letter-spacing: -0.05em;
+}
+
+.pack-detail-description {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.625;
+  color: #527A61;
+  max-width: 42rem;
+}
