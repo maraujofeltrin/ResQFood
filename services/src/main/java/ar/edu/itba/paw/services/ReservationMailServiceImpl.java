@@ -22,10 +22,7 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
-import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.models.Client;
-import java.time.LocalTime;
-import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -34,7 +31,6 @@ import java.time.ZonedDateTime;
 public class ReservationMailServiceImpl implements ReservationMailService {
 
     private static final DateTimeFormatter MAIL_DATE_FORMATTER = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
-    private static final DateTimeFormatter DATE_ONLY_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private static final TemplateEngine templateEngine;
 
@@ -52,8 +48,6 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     private final JavaMailSender mailSender;
     private final ReservationTokenDao reservationTokenDao;
     private final PackDao packDao;
-    private final UserService userService;
-    private final CommerceService commerceService;
     private final ClientService clientService;
     private final ZoneId displayZone;
     private final String mailFrom;
@@ -63,18 +57,14 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     public ReservationMailServiceImpl(final JavaMailSender mailSender,
             final ReservationTokenDao reservationTokenDao,
             final PackDao packDao,
-            final UserService userService,
             final ClientService clientService,
-            final CommerceService commerceService,
             @Value("${mail.username}") final String mailFrom,
             @Value("${mail.from-name:ResQFood}") final String mailFromName,
             @Value("${app.display-zone:}") final String displayZone) {
         this.mailSender = mailSender;
         this.reservationTokenDao = reservationTokenDao;
         this.packDao = packDao;
-        this.userService = userService;
         this.clientService = clientService;
-        this.commerceService = commerceService;
         this.mailFrom = mailFrom;
         this.mailFromName = mailFromName;
         this.displayZone = (displayZone == null || displayZone.trim().isEmpty()) ? ZoneId.of("America/Argentina/Buenos_Aires") : ZoneId.of(displayZone.trim());
@@ -83,7 +73,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     @Async("mailTaskExecutor")
     @Override
     public void sendReservationRequestToCommerce(final Reservation reservation, final String commerceEmail,
-            final String baseUrl) {
+            final String baseUrl, final String pickupDateStr) {
         final String acceptToken = UUID.randomUUID().toString();
         final String rejectToken = UUID.randomUUID().toString();
         final LocalDateTime now = LocalDateTime.now();
@@ -110,7 +100,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
             }
         }
         final String subject = "Solicitud de reserva #" + reservation.getId() + " de " + clientName;
-        final String html = buildCommerceHtml(reservation, packTitle, acceptUrl, rejectUrl);
+        final String html = buildCommerceHtml(reservation, packTitle, acceptUrl, rejectUrl, pickupDateStr);
 
         try {
             final MimeMessage message = mailSender.createMimeMessage();
@@ -127,7 +117,8 @@ public class ReservationMailServiceImpl implements ReservationMailService {
 
     @Async("mailTaskExecutor")
     @Override
-    public void sendReservationCodeToClient(final Reservation reservation, final String clientEmail) {
+        public void sendReservationCodeToClient(final Reservation reservation, final String clientEmail,
+            final String pickupDateStr) {
         final Pack pack = packDao.findById(reservation.getPackId()).orElse(null);
         final String localName = pack != null ? pack.getTitle() : ("Pack #" + reservation.getPackId());
         final String packLabel = pack != null
@@ -135,7 +126,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
             : ("Pack #" + reservation.getPackId());
 
         final String subject = "¡Tu reserva de " + localName + " te espera!";
-        final String html = buildClientHtml(reservation, packLabel);
+        final String html = buildClientHtml(reservation, packLabel, pickupDateStr);
         try {
             final MimeMessage message = mailSender.createMimeMessage();
             final MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -173,11 +164,10 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         }
     }
 
-        private String buildClientHtml(final Reservation reservation, final String packLabel) {
+        private String buildClientHtml(final Reservation reservation, final String packLabel, final String pickupDateStr) {
             final String reservationDateStr = reservation.getReservationDate() != null
                     ? formatToLocal(reservation.getReservationDate())
                     : "-";
-            final String pickupDateStr = computePickupDateStr(reservation);
         final String priceStr = reservation.getFinalPrice() != null ? reservation.getFinalPrice().toString() : "-";
         final String code = reservation.getPickupCode() == null ? "" : reservation.getPickupCode();
 
@@ -205,10 +195,10 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         return templateEngine.process("client-reservation-rejected", context);
     }
 
-    private String buildCommerceHtml(final Reservation reservation, final String packTitle, final String acceptUrl, final String rejectUrl) {
+    private String buildCommerceHtml(final Reservation reservation, final String packTitle, final String acceptUrl,
+            final String rejectUrl, final String pickupDateStr) {
         final String dateStr = reservation.getReservationDate() != null ? formatToLocal(reservation.getReservationDate()) : "-";
         final String priceStr = reservation.getFinalPrice() != null ? reservation.getFinalPrice().toString() : "-";
-        final String pickupDateStr = computePickupDateStr(reservation);
 
         final Context context = new Context();
         context.setVariable("packTitle", packTitle);
@@ -219,48 +209,6 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         context.setVariable("rejectUrl", rejectUrl);
 
         return templateEngine.process("commerce-reservation", context);
-    }
-
-    private String computePickupDateStr(final Reservation reservation) {
-        if (reservation == null || reservation.getReservationDate() == null) return "-";
-
-        // Convert reservation instant (stored in UTC) to local date
-        LocalDate pickupDate;
-        try {
-            pickupDate = ZonedDateTime.of(reservation.getReservationDate(), ZoneOffset.UTC).withZoneSameInstant(displayZone).toLocalDate();
-        } catch (final Exception e) {
-            pickupDate = reservation.getReservationDate().toLocalDate();
-        }
-
-        try {
-            final Pack pack = packDao.findById(reservation.getPackId()).orElse(null);
-            if (pack != null) {
-                final Long commerceId = pack.getCommerceId();
-                if (commerceId != null) {
-                    final java.util.Optional<Commerce> maybeCommerce = commerceService.findByUserId(commerceId);
-                    if (maybeCommerce.isPresent()) {
-                        final Commerce commerce = maybeCommerce.get();
-                        final String opening = commerce.getOpeningTime();
-                        final String closing = commerce.getClosingTime();
-                        if (opening != null && closing != null) {
-                            try {
-                                final LocalTime closeT = LocalTime.parse(closing);
-                                final LocalTime resTime = ZonedDateTime.of(reservation.getReservationDate(), ZoneOffset.UTC).withZoneSameInstant(displayZone).toLocalTime();
-                                if (resTime.isAfter(closeT) || resTime.equals(closeT)) {
-                                    pickupDate = pickupDate.plusDays(1);
-                                }
-                            } catch (final Exception e) {
-                                // parse error, fallback to same-day
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (final Exception e) {
-            // any issue, fallback to same-day
-        }
-
-        return pickupDate.format(DATE_ONLY_FORMATTER);
     }
 
     private String formatToLocal(final java.time.LocalDateTime dt) {

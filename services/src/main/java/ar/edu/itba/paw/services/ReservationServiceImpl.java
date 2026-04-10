@@ -2,15 +2,22 @@ package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Reservation;
 import ar.edu.itba.paw.models.User;
+import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 @Service
@@ -24,6 +31,8 @@ public class ReservationServiceImpl implements ReservationService {
 
     private static final int PICKUP_CODE_MAX_ATTEMPTS = 64;
 
+    private static final DateTimeFormatter DATE_ONLY_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     private static final SecureRandom PICKUP_CODE_RANDOM = new SecureRandom();
 
     /** Contraseña temporal hasta contar con registro/login propio ({@code users.password} NOT NULL). */
@@ -33,18 +42,26 @@ public class ReservationServiceImpl implements ReservationService {
     private final ClientService clientService;
     private final ReservationDao reservationDao;
     private final PackDao packDao;
+    private final CommerceService commerceService;
     private final ReservationMailService reservationMailService;
+    private final ZoneId displayZone;
 
     @Autowired
     public ReservationServiceImpl(final UserService userService, final ClientService clientService,
             final ReservationDao reservationDao,
             final PackDao packDao,
-            final ReservationMailService reservationMailService) {
+            final ReservationMailService reservationMailService,
+            final CommerceService commerceService,
+            @Value("${app.display-zone:}") final String displayZone) {
         this.userService = userService;
         this.clientService = clientService;
         this.reservationDao = reservationDao;
         this.packDao = packDao;
         this.reservationMailService = reservationMailService;
+        this.commerceService = commerceService;
+        this.displayZone = (displayZone == null || displayZone.trim().isEmpty())
+                ? ZoneId.of("America/Argentina/Buenos_Aires")
+                : ZoneId.of(displayZone.trim());
     }
 
     @Transactional
@@ -91,8 +108,10 @@ public class ReservationServiceImpl implements ReservationService {
             .map(User::getEmail)
             .orElseThrow(() -> new IllegalStateException("Commerce user not found for id: " + commerceId));
 
-        reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail, baseUrl);
-        reservationMailService.sendReservationCodeToClient(reservation, user.getEmail());
+        final String pickupDateStr = computePickupDateStr(reservation);
+
+        reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail, baseUrl, pickupDateStr);
+        reservationMailService.sendReservationCodeToClient(reservation, user.getEmail(), pickupDateStr);
 
         return reservation;
     }
@@ -119,6 +138,53 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public Optional<Reservation> findById(final Long id) {
         return reservationDao.findById(id);
+    }
+
+    @Override
+    public String computePickupDateStr(final Reservation reservation) {
+        if (reservation == null || reservation.getReservationDate() == null) {
+            return "-";
+        }
+
+        LocalDate pickupDate;
+        try {
+            pickupDate = ZonedDateTime.of(reservation.getReservationDate(), ZoneOffset.UTC)
+                    .withZoneSameInstant(displayZone)
+                    .toLocalDate();
+        } catch (final Exception e) {
+            pickupDate = reservation.getReservationDate().toLocalDate();
+        }
+
+        try {
+            final ar.edu.itba.paw.models.Pack pack = packDao.findById(reservation.getPackId()).orElse(null);
+            if (pack != null) {
+                final Long commerceId = pack.getCommerceId();
+                if (commerceId != null) {
+                    final Optional<Commerce> maybeCommerce = commerceService.findByUserId(commerceId);
+                    if (maybeCommerce.isPresent()) {
+                        final Commerce commerce = maybeCommerce.get();
+                        final String closing = commerce.getClosingTime();
+                        if (closing != null) {
+                            try {
+                                final LocalTime closeT = LocalTime.parse(closing);
+                                final LocalTime resTime = ZonedDateTime.of(reservation.getReservationDate(), ZoneOffset.UTC)
+                                        .withZoneSameInstant(displayZone)
+                                        .toLocalTime();
+                                if (resTime.isAfter(closeT) || resTime.equals(closeT)) {
+                                    pickupDate = pickupDate.plusDays(1);
+                                }
+                            } catch (final Exception e) {
+                                // parse error, fallback to same-day
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            // any issue, fallback to same-day
+        }
+
+        return pickupDate.format(DATE_ONLY_FORMATTER);
     }
 
     @Override

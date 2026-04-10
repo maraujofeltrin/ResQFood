@@ -15,5 +15,7 @@ public interface ReservationService {
 
     Optional<Reservation> findById(final Long id);
 
+    String computePickupDateStr(Reservation reservation);
+
     Reservation confirmPickup(final Long id);
 }

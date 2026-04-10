@@ -120,9 +120,14 @@ public class ReservationServiceImplTest {
         int sentToCommerce = 0;
         int sentToClient = 0;
         int sentRejected = 0;
-        @Override public void sendReservationRequestToCommerce(Reservation reservation, String commerceEmail, String baseUrl) { sentToCommerce++; }
-        @Override public void sendReservationCodeToClient(Reservation reservation, String clientEmail) { sentToClient++; }
+        @Override public void sendReservationRequestToCommerce(Reservation reservation, String commerceEmail, String baseUrl, String pickupDateStr) { sentToCommerce++; }
+        @Override public void sendReservationCodeToClient(Reservation reservation, String clientEmail, String pickupDateStr) { sentToClient++; }
         @Override public void sendReservationRejectedToClient(Reservation reservation, String clientEmail) { sentRejected++; }
+    }
+
+    static class TestCommerceService implements CommerceService {
+        @Override public ar.edu.itba.paw.models.Commerce getOrCreateCommerce(String email, String password, String name, String commercialName, ar.edu.itba.paw.models.Commerce.Category category, String street, Integer streetNumber, String city, String province, String postalCode, String openingTime, String closingTime) { throw new UnsupportedOperationException(); }
+        @Override public Optional<ar.edu.itba.paw.models.Commerce> findByUserId(Long userId) { return Optional.empty(); }
     }
 
     private InMemoryReservationDao reservationDao;
@@ -148,7 +153,8 @@ public class ReservationServiceImplTest {
         final ClientService clientService = new TestClientService(client);
         final PackDao packDao = new InMemoryPackDao(pack);
 
-        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, clientService, reservationDao, packDao, mailService);
+        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, clientService, reservationDao,
+            packDao, mailService, new TestCommerceService(), "America/Argentina/Buenos_Aires");
 
         assertDoesNotThrow(() -> svc.createReservation(packId, email, "Test", "User", "123", 1, 5.0, "pw", APP_URL));
 
@@ -173,7 +179,8 @@ public class ReservationServiceImplTest {
         final ClientService clientService = new TestClientService(client);
         final PackDao packDao = new InMemoryPackDao(pack);
 
-        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, clientService, reservationDao, packDao, mailService);
+        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, clientService, reservationDao,
+            packDao, mailService, new TestCommerceService(), "America/Argentina/Buenos_Aires");
 
         assertThrows(IllegalArgumentException.class, () -> svc.createReservation(packId, email, "Test", "User", "123", 0, 5.0, "pw", APP_URL));
         assertEquals(0, reservationDao.store.size(), "No reservation should be created");
@@ -195,7 +202,8 @@ public class ReservationServiceImplTest {
         final ClientService clientService = new TestClientService(client);
         final PackDao packDao = new InMemoryPackDao(pack);
 
-        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, clientService, reservationDao, packDao, mailService);
+        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, clientService, reservationDao,
+            packDao, mailService, new TestCommerceService(), "America/Argentina/Buenos_Aires");
 
         final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 600; i++) sb.append('x');

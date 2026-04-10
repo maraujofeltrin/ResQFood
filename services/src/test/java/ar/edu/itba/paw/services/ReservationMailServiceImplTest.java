@@ -1,7 +1,6 @@
 package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Pack;
-import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.models.PackSortOption;
 import ar.edu.itba.paw.models.Reservation;
 import ar.edu.itba.paw.models.ReservationToken;
@@ -124,29 +123,13 @@ public class ReservationMailServiceImplTest {
     private InMemoryReservationTokenDao tokenDao;
     private FakeMailSender mailSender;
     private ReservationMailServiceImpl svc;
-    private InMemoryUserService userService;
-    private InMemoryCommerceService commerceService;
     private InMemoryClientService clientService;
 
     @BeforeEach
     public void setUp() {
         tokenDao = new InMemoryReservationTokenDao();
         mailSender = new FakeMailSender();
-        userService = new InMemoryUserService();
-        commerceService = new InMemoryCommerceService();
         clientService = new InMemoryClientService();
-    }
-
-    static class InMemoryUserService implements ar.edu.itba.paw.services.UserService {
-        @Override public ar.edu.itba.paw.models.User createUser(final String email, final String password, final String name) { throw new UnsupportedOperationException(); }
-        @Override public ar.edu.itba.paw.models.User createUser(final String email, final String password, final String name, final String phone, final ar.edu.itba.paw.models.User.Role role) { throw new UnsupportedOperationException(); }
-        @Override public java.util.Optional<ar.edu.itba.paw.models.User> findByEmail(final String email) { return java.util.Optional.empty(); }
-        @Override public java.util.Optional<ar.edu.itba.paw.models.User> findById(final Long id) { return java.util.Optional.of(new ar.edu.itba.paw.models.User(id, "user"+id+"@example.org", "pwd", "ClientName")); }
-    }
-
-    static class InMemoryCommerceService implements ar.edu.itba.paw.services.CommerceService {
-        @Override public ar.edu.itba.paw.models.Commerce getOrCreateCommerce(String email, String password, String name, String commercialName, ar.edu.itba.paw.models.Commerce.Category category, String street, Integer streetNumber, String city, String province, String postalCode, String openingTime, String closingTime) { throw new UnsupportedOperationException(); }
-        @Override public java.util.Optional<ar.edu.itba.paw.models.Commerce> findByUserId(final Long userId) { return java.util.Optional.of(new ar.edu.itba.paw.models.Commerce(userId, "C", ar.edu.itba.paw.models.Commerce.Category.OTHER, "s", 1, "c", "p", "pc", "08:00", "20:00")); }
     }
 
     static class InMemoryClientService implements ar.edu.itba.paw.services.ClientService {
@@ -187,9 +170,10 @@ public class ReservationMailServiceImplTest {
         final Pack pack = new Pack(3L, 2L, "Delicious", "desc", 10.0, 5.0, 1, true, List.of());
 
         final PackDao packDao = new InMemoryPackDao(pack);
-        svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, userService, clientService, commerceService, "noreply@example.org", "ResQFood", "America/Argentina/Buenos_Aires");
+        svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
+            "noreply@example.org", "ResQFood", "America/Argentina/Buenos_Aires");
 
-        svc.sendReservationRequestToCommerce(reservation, "commerce@example.org", "http://app/" );
+        svc.sendReservationRequestToCommerce(reservation, "commerce@example.org", "http://app/", "10/04/2026");
 
         // two tokens created (accept + reject)
         assertEquals(2, tokenDao.store.size());
@@ -225,9 +209,10 @@ public class ReservationMailServiceImplTest {
         final Reservation reservation = new Reservation(7L, 2L, 11L, LocalDateTime.now(), 9.99, Reservation.Status.RESERVED, "PICKUPCODE", null, 1, "pw");
         final Pack pack = new Pack(11L, 2L, "Morning Bread", "desc", 10.0, 5.0, 1, true, List.of());
         final PackDao packDao = new InMemoryPackDao(pack);
-        svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, userService, clientService, commerceService, "noreply@example.org", "ResQFood", "America/Argentina/Buenos_Aires");
+        svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
+            "noreply@example.org", "ResQFood", "America/Argentina/Buenos_Aires");
 
-        svc.sendReservationCodeToClient(reservation, "client@example.org");
+        svc.sendReservationCodeToClient(reservation, "client@example.org", "10/04/2026");
 
         assertEquals(1, mailSender.sent.size());
         final MimeMessage msg = mailSender.sent.get(0);
