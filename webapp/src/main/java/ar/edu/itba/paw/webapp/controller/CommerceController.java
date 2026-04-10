@@ -25,8 +25,11 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.services.UserService;
@@ -56,11 +59,16 @@ public class CommerceController {
         this.userService = userService;
     }
 
-    @RequestMapping(method = RequestMethod.GET)
-    public ModelAndView dashboard(@RequestParam(value = "page", defaultValue = "1") final int page) {
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    public ModelAndView dashboard(@PathVariable("id") final long id, @RequestParam(value = "page", defaultValue = "1") final int page) {
+        final java.util.Optional<Commerce> commerceOpt = commerceService.findByUserId(id);
+        if (!commerceOpt.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
         final ModelAndView mav = new ModelAndView("commerce/dashboard");
 
-        final List<Pack> allPacks = packService.findAll();
+        final List<Pack> allPacks = packService.findByCommerceId(id);
         final int totalPages = Math.max(1, (int) Math.ceil((double) allPacks.size() / PAGE_SIZE));
         final int safePage = Math.max(1, Math.min(page, totalPages));
         final int fromIdx = (safePage - 1) * PAGE_SIZE;
@@ -69,14 +77,21 @@ public class CommerceController {
         mav.addObject("packs", allPacks.subList(fromIdx, toIdx));
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
-        mav.addObject("paginationBaseUrl", "/commerce");
+        mav.addObject("commerceId", id);
+        mav.addObject("paginationBaseUrl", "/commerce/" + id);
         return mav;
     }
 
-    @RequestMapping(value = "/create-pack", method = RequestMethod.GET)
-    public ModelAndView createPackForm(@ModelAttribute("createPackForm") final CreatePackForm form,
+    @RequestMapping(value = "/{id}/create-pack", method = RequestMethod.GET)
+    public ModelAndView createPackForm(@PathVariable("id") final long commerceId,
+                                      @ModelAttribute("createPackForm") final CreatePackForm form,
                                       @RequestParam(value = "error", required = false) final String error) {
+        if (commerceService.findByUserId(commerceId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
         final ModelAndView mav = new ModelAndView("commerce/createPack");
+        mav.addObject("commerceId", commerceId);
         mav.addObject("availableTags", PackTag.values());
         if ("maxUploadSize".equals(error)) {
             mav.addObject("errorMessage",
@@ -86,10 +101,15 @@ public class CommerceController {
         return mav;
     }
 
-    @RequestMapping(value = "/create-pack", method = RequestMethod.POST)
+    @RequestMapping(value = "/{id}/create-pack", method = RequestMethod.POST)
     public ModelAndView createPack(
+            @PathVariable("id") final long commerceId,
             @Valid @ModelAttribute("createPackForm") final CreatePackForm form,
             final BindingResult bindingResult) {
+
+        if (commerceService.findByUserId(commerceId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
 
         if (form.getOriginalPrice() != null && form.getFinalPrice() != null && form.getFinalPrice() > form.getOriginalPrice()) {
             bindingResult.rejectValue("finalPrice", "error.finalPrice", "El precio de venta no puede ser mayor al precio original");
@@ -106,45 +126,14 @@ public class CommerceController {
             }
         }
 
-        // Check if existing commerce
-        boolean isExistingCommerce = false;
-        if (form.getEmail() != null) {
-            java.util.Optional<User> userOpt = userService.findByEmail(form.getEmail());
-            if (userOpt.isPresent() && userOpt.get().getRole() == User.Role.COMMERCE) {
-                if (commerceService.findByUserId(userOpt.get().getId()).isPresent()) {
-                    isExistingCommerce = true;
-                }
-            }
-        }
-
-        BindingResult finalBindingResult = bindingResult;
-
-        if (isExistingCommerce && bindingResult.hasErrors()) {
-            BindingResult filteredResult = new BeanPropertyBindingResult(form, "createPackForm");
-            Set<String> commerceFields = new HashSet<>(Arrays.asList("name", "commercialName", "category", "street", "streetNumber", "postalCode", "city", "province", "openingTime", "closingTime"));
-            for (FieldError error : bindingResult.getFieldErrors()) {
-                if (!commerceFields.contains(error.getField())) {
-                    filteredResult.addError(error);
-                }
-            }
-            for (ObjectError error : bindingResult.getGlobalErrors()) {
-                filteredResult.addError(error);
-            }
-            finalBindingResult = filteredResult;
-        }
-
-        if (finalBindingResult.hasErrors()) {
+        if (bindingResult.hasErrors()) {
             final ModelAndView mav = new ModelAndView("commerce/createPack");
+            mav.addObject("commerceId", commerceId);
             mav.addObject("availableTags", PackTag.values());
-            mav.addObject(BindingResult.MODEL_KEY_PREFIX + "createPackForm", finalBindingResult);
             return mav;
         }
 
         try {
-            Commerce commerce = commerceService.getOrCreateCommerce(
-                    form.getEmail(), "mvp", form.getName(), form.getCommercialName(), form.getCategory(), form.getStreet(), form.getStreetNumber(), 
-                    form.getCity(), form.getProvince(), form.getPostalCode(), form.getOpeningTime(), form.getClosingTime()
-            );
 
             byte[] imageData = null;
             String imageContentType = null;
@@ -153,20 +142,22 @@ public class CommerceController {
                 imageContentType = image.getContentType();
             }
 
-            packService.createPack(commerce.getUserId(), form.getTitle(), form.getDescription(), 
+            packService.createPack(commerceId, form.getTitle(), form.getDescription(), 
                                    form.getOriginalPrice(), form.getFinalPrice(), form.getStock(),
                                    form.getTags() != null ? form.getTags() : Collections.emptyList(),
                                    imageData, imageContentType);
                                    
-            return new ModelAndView("redirect:/commerce");
+            return new ModelAndView("redirect:/commerce/" + commerceId);
 
         } catch (IllegalArgumentException e) {
             final ModelAndView mav = new ModelAndView("commerce/createPack");
+            mav.addObject("commerceId", commerceId);
             mav.addObject("availableTags", PackTag.values());
             mav.addObject("errorMessage", e.getMessage());
             return mav;
         } catch (IOException e) {
             final ModelAndView mav = new ModelAndView("commerce/createPack");
+            mav.addObject("commerceId", commerceId);
             mav.addObject("availableTags", PackTag.values());
             mav.addObject("errorMessage",
                     messageSource.getMessage("commerce.createPack.validation.image.processError",

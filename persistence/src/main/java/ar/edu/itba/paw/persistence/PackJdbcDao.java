@@ -112,6 +112,14 @@ public class PackJdbcDao implements PackDao {
     }
 
     @Override
+    public List<Pack> findByCommerceId(Long commerceId) {
+        return jdbcTemplate.query(
+                "SELECT " + PACK_COLS_NO_IMAGE + " FROM packs WHERE commerce_id = ? ORDER BY id DESC",
+                packRowMapperNoTags, commerceId
+        );
+    }
+
+    @Override
     public List<Pack> findActive() {
         return findActive(PackSortOption.DATE_DESC);
     }

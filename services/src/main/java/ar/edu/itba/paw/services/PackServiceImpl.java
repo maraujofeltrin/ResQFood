@@ -40,6 +40,11 @@ public class PackServiceImpl implements PackService {
     }
 
     @Override
+    public List<Pack> findByCommerceId(Long commerceId) {
+        return packDao.findByCommerceId(commerceId);
+    }
+
+    @Override
     public List<Pack> findActive() {
         return packDao.findActive();
     }

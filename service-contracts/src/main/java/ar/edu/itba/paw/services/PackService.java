@@ -11,6 +11,7 @@ public interface PackService {
     Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<PackTag> tags, byte[] imageData, String imageContentType);
     Optional<Pack> findById(Long id);
     List<Pack> findAll();
+    List<Pack> findByCommerceId(Long commerceId);
     List<Pack> findActive();
     List<Pack> searchPacks(String query);
     List<Pack> findActiveByTags(List<PackTag> tags);

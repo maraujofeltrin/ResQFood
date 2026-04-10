@@ -19,53 +19,6 @@ import ar.edu.itba.paw.models.PackTag;
 
 public class CreatePackForm {
 
-    // Identidad del Usuario
-    @NotBlank(message = "{commerce.createPack.validation.email.notEmpty}")
-    @Email(message = "{commerce.createPack.validation.email.valid}")
-    @Size(max = 255)
-    private String email;
-
-    @NotBlank(message = "{commerce.createPack.validation.name.notEmpty}")
-    @Pattern(regexp = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ].*", message = "{commerce.createPack.validation.name.pattern}")
-    @Size(max = 100)
-    private String name;
-
-    // Datos del Local
-    @NotBlank(message = "{commerce.createPack.validation.commercialName.notEmpty}")
-    @Size(max = 100)
-    private String commercialName;
-
-    private Category category;
-
-    @NotBlank(message = "{commerce.createPack.validation.street.notEmpty}")
-    @Size(max = 100)
-    private String street;
-
-    @NotNull(message = "{commerce.createPack.validation.streetNumber.notNull}")
-    @Min(value = 1, message = "{commerce.createPack.validation.streetNumber.min}")
-    @Max(value = 99999, message = "{commerce.createPack.validation.streetNumber.max}")
-    private Integer streetNumber;
-
-    @NotBlank(message = "{commerce.createPack.validation.postalCode.notEmpty}")
-    @Pattern(regexp = "^(?i)([cC]?[0-9]{1,5})$", message = "{commerce.createPack.validation.postalCode.pattern}")
-    @Size(max = 50)
-    private String postalCode;
-
-    @NotBlank(message = "{commerce.createPack.validation.city.notEmpty}")
-    @Size(max = 100)
-    private String city;
-
-    @NotBlank(message = "{commerce.createPack.validation.province.notEmpty}")
-    @Size(max = 100)
-    private String province;
-
-    @NotBlank(message = "{commerce.createPack.validation.openingTime.notEmpty}")
-    @Size(max = 50)
-    private String openingTime;
-
-    @NotBlank(message = "{commerce.createPack.validation.closingTime.notEmpty}")
-    @Size(max = 50)
-    private String closingTime;
 
     // Detalles del Pack
     @NotBlank(message = "{commerce.createPack.validation.title.notEmpty}")
@@ -97,93 +50,7 @@ public class CreatePackForm {
 
     // Getters and Setters
 
-    public String getEmail() {
-        return email;
-    }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getCommercialName() {
-        return commercialName;
-    }
-
-    public void setCommercialName(String commercialName) {
-        this.commercialName = commercialName;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
-    }
-
-    public String getStreet() {
-        return street;
-    }
-
-    public void setStreet(String street) {
-        this.street = street;
-    }
-
-    public Integer getStreetNumber() {
-        return streetNumber;
-    }
-
-    public void setStreetNumber(Integer streetNumber) {
-        this.streetNumber = streetNumber;
-    }
-
-    public String getPostalCode() {
-        return postalCode;
-    }
-
-    public void setPostalCode(String postalCode) {
-        this.postalCode = postalCode;
-    }
-
-    public String getCity() {
-        return city;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public String getProvince() {
-        return province;
-    }
-
-    public void setProvince(String province) {
-        this.province = province;
-    }
-
-    public String getOpeningTime() {
-        return openingTime;
-    }
-
-    public void setOpeningTime(String openingTime) {
-        this.openingTime = openingTime;
-    }
-
-    public String getClosingTime() {
-        return closingTime;
-    }
-
-    public void setClosingTime(String closingTime) {
-        this.closingTime = closingTime;
-    }
 
     public String getTitle() {
         return title;
