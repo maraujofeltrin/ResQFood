@@ -1,30 +1,112 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-    <body style="margin:0; padding:40px; background:#F3F5F3; font-family:Arial, Helvetica, sans-serif; color:#1f2440;">
-        <div style="max-width:600px; margin:0 auto; background:#ffffff; border:1px solid #f1c1cb; border-radius:24px; padding:40px; box-shadow:0 14px 34px rgba(114, 36, 68, 0.08);">
-            <span style="display:inline-block; background:#fde4ea; color:#b42347; border-radius:999px; padding:6px 12px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:16px;">
-                RESERVA RECHAZADA
-            </span>
-            <h1 style="margin:0 0 16px; color:#059669; font-size:32px; line-height:1.2; font-weight:800;">
-                Tu reserva fue rechazada
-            </h1>
-            <p style="margin:0 0 24px; color:#527A61; font-size:15px; line-height:1.6;">
-                Lamentablemente el comercio no pudo aceptar tu solicitud.
-            </p>
-            <div style="background:#fff7f9; border:1px solid #f1c1cb; border-radius:18px; padding:20px;">
-                <p style="margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;">
-                    <strong style="color:#b42347;">Número de reserva:</strong> #<span th:text="${reservationId}"></span>
-                </p>
-                <p style="margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;">
-                    <strong style="color:#b42347;">Pack:</strong> <span th:text="${packLabel}"></span>
-                </p>
-                <p style="margin:0; color:#1f2440; font-size:14px; line-height:1.6;">
-                    <strong style="color:#b42347;">Fecha de reserva:</strong> <span th:text="${reservationDateStr}"></span>
-                </p>
-            </div>
-            <p style="margin:28px 0 0; padding-top:20px; border-top:1px solid #f1c1cb; color:#527A61; font-size:12px; line-height:1.6;">
-                Este correo fue enviado automáticamente.
-            </p>
-        </div>
-    </body>
+  <body
+    style="
+      margin: 0;
+      padding: 40px;
+      background: #f3f5f3;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #1f2440;
+    "
+  >
+    <div
+      style="
+        max-width: 600px;
+        margin: 0 auto;
+        background: #ffffff;
+        border: 1px solid #e2d7db;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 12px 32px rgba(25, 28, 26, 0.06);
+      "
+    >
+      <span
+        style="
+          display: inline-block;
+          background: #fde4ea;
+          color: #9f1239;
+          border-radius: 999px;
+          padding: 6px 12px;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          margin-bottom: 16px;
+        "
+      >
+        RESERVA RECHAZADA
+      </span>
+      <h1
+        style="
+          margin: 0 0 16px;
+          color: #191c1a;
+          font-size: 32px;
+          line-height: 1.2;
+          font-weight: 800;
+          letter-spacing: -0.02em;
+        "
+      >
+        Tu reserva fue rechazada
+      </h1>
+      <p
+        style="
+          margin: 0 0 28px;
+          color: #5f6368;
+          font-size: 15px;
+          line-height: 1.6;
+        "
+      >
+        Lo sentimos, el comercio no pudo aceptar tu reserva en esta ocasión. A
+        continuación, te mostramos los detalles de la solicitud cancelada.
+      </p>
+      <div
+        style="
+          background: #f3f5f3;
+          border: 1px solid #e2d7db;
+          border-radius: 18px;
+          padding: 20px;
+        "
+      >
+        <p
+          style="
+            margin: 0 0 8px;
+            color: #1f2440;
+            font-size: 14px;
+            line-height: 1.6;
+          "
+        >
+          <strong style="color: #9f1239">Número de reserva:</strong> #<span
+            th:text="${reservationId}"
+          ></span>
+        </p>
+        <p
+          style="
+            margin: 0 0 8px;
+            color: #1f2440;
+            font-size: 14px;
+            line-height: 1.6;
+          "
+        >
+          <strong style="color: #9f1239">Pack:</strong>
+          <span th:text="${packLabel}"></span>
+        </p>
+        <p style="margin: 0; color: #1f2440; font-size: 14px; line-height: 1.6">
+          <strong style="color: #9f1239">Fecha de reserva:</strong>
+          <span th:text="${reservationDateStr}"></span>
+        </p>
+      </div>
+      <p
+        style="
+          margin: 28px 0 0;
+          padding-top: 20px;
+          border-top: 1px solid #e2d7db;
+          color: #6b7280;
+          font-size: 12px;
+          line-height: 1.6;
+        "
+      >
+        Este correo fue enviado automáticamente.
+      </p>
+    </div>
+  </body>
 </html>
