@@ -1,7 +1,6 @@
 package ar.edu.itba.paw.webapp.config;
 
-import ar.edu.itba.paw.models.User;
-import ar.edu.itba.paw.services.UserService;
+import ar.edu.itba.paw.webapp.auth.AuthUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -12,15 +11,6 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-
-
-import java.util.Collection;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
@@ -28,46 +18,18 @@ import static org.springframework.security.web.util.matcher.AntPathRequestMatche
 @EnableWebSecurity
 public class WebAuthConfig extends WebSecurityConfigurerAdapter {
 
-    private final UserService userService;
+    private final AuthUserDetailsService authUserDetailsService;
     private final String rememberMeKey;
     private final int rememberMeValidityDays;
 
     @Autowired
     public WebAuthConfig(
-            final UserService userService,
+            final AuthUserDetailsService authUserDetailsService,
             @Value("${security.remember-me.key:resqfood-remember-me-secret}") final String rememberMeKey,
             @Value("${security.remember-me.validity-days:7}") final int rememberMeValidityDays) {
-        this.userService = userService;
+        this.authUserDetailsService = authUserDetailsService;
         this.rememberMeKey = rememberMeKey;
         this.rememberMeValidityDays = rememberMeValidityDays;
-    }
-
-    @Bean
-    @Override
-    public UserDetailsService userDetailsServiceBean() throws Exception {
-        return new UserDetailsService() {
-            @Override
-            public UserDetails loadUserByUsername(final String username) throws UsernameNotFoundException {
-                final User user = userService.findByEmail(username)
-                        .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-                if (user.getRole() == null) {
-                    throw new UsernameNotFoundException("User " + username + " has no role assigned");
-                }
-                final String roleName = "ROLE_" + user.getRole().name();
-                final Collection<? extends GrantedAuthority> authorities =
-                        Collections.singleton(new SimpleGrantedAuthority(roleName));
-                String password = user.getPassword();
-                if ("__RESERVATION_PENDING_PASSWORD__".equals(password)) {
-                    // A sentinel value — user cannot log in. Substitute a valid-format hash
-                    // that BCryptPasswordEncoder will reject without throwing an exception.
-                    password = "$2a$10$00000000000000000000000000000000000000000000000000000";
-                }
-                return new org.springframework.security.core.userdetails.User(
-                        user.getEmail(),
-                        password,
-                        authorities);
-            }
-        };
     }
 
     @Bean
@@ -77,12 +39,12 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(final AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userDetailsServiceBean());
+        auth.userDetailsService(authUserDetailsService);
     }
 
     @Override
     protected void configure(final HttpSecurity http) throws Exception {
-        http.userDetailsService(userDetailsServiceBean())
+        http.userDetailsService(authUserDetailsService)
             .authorizeHttpRequests()
                 .requestMatchers(antMatcher("/login"), antMatcher("/register"), antMatcher("/create")).anonymous()
                 .requestMatchers(antMatcher("/logout")).authenticated()
@@ -106,7 +68,7 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                 .deleteCookies("JSESSIONID")
             .and().rememberMe()
                 .rememberMeParameter("rememberMe")
-                .userDetailsService(userDetailsServiceBean())
+                .userDetailsService(authUserDetailsService)
                 .key(rememberMeKey)
                 .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(rememberMeValidityDays))
             .and().csrf()
