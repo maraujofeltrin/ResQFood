@@ -5,6 +5,7 @@ import ar.edu.itba.paw.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -16,18 +17,21 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.concurrent.TimeUnit;
-
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
 @Configuration
 @EnableWebSecurity
 public class WebAuthConfig extends WebSecurityConfigurerAdapter {
 
+    private final UserService userService;
+
     @Autowired
-    private UserService userService;
+    public WebAuthConfig(final UserService userService) {
+        this.userService = userService;
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -39,41 +43,42 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
     public UserDetailsService userDetailsServiceBean() throws Exception {
         return new UserDetailsService() {
             @Override
-            public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-                User user = userService.findByEmail(username)
-                        .orElseThrow(() -> new UsernameNotFoundException("No user found with email " + username));
-                
-                String roleName = (user.getRole() == null) ? "ROLE_CLIENT" : "ROLE_" + user.getRole().name();
-                Collection<? extends GrantedAuthority> authorities = Collections.singleton(new SimpleGrantedAuthority(roleName));
-                
+            public UserDetails loadUserByUsername(final String username) throws UsernameNotFoundException {
+                final User user = userService.findByEmail(username)
+                        .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+                if (user.getRole() == null) {
+                    throw new UsernameNotFoundException("User " + username + " has no role assigned");
+                }
+                final String roleName = "ROLE_" + user.getRole().name();
+                final Collection<? extends GrantedAuthority> authorities =
+                        Collections.singleton(new SimpleGrantedAuthority(roleName));
                 String password = user.getPassword();
                 if ("__RESERVATION_PENDING_PASSWORD__".equals(password)) {
-                    // Provide a valid format fake bcrypt hash so BCryptPasswordEncoder doesn't warn/crash, 
-                    // but it will certainly fail to match any normal input.
+                    // A sentinel value — user cannot log in. Substitute a valid-format hash
+                    // that BCryptPasswordEncoder will reject without throwing an exception.
                     password = "$2a$10$00000000000000000000000000000000000000000000000000000";
                 }
-                
                 return new org.springframework.security.core.userdetails.User(
-                    user.getEmail(),
-                    password,
-                    authorities
-                );
+                        user.getEmail(),
+                        password,
+                        authorities);
             }
         };
     }
 
     @Override
-    protected void configure(HttpSecurity http) throws Exception {
+    protected void configure(final HttpSecurity http) throws Exception {
         http.userDetailsService(userDetailsServiceBean())
             .authorizeHttpRequests()
                 .requestMatchers(antMatcher("/css/**"), antMatcher("/images/**")).permitAll()
                 .requestMatchers(antMatcher("/login"), antMatcher("/register"), antMatcher("/create")).anonymous()
                 .requestMatchers(antMatcher("/logout")).authenticated()
                 .requestMatchers(antMatcher("/")).permitAll()
-                .requestMatchers(antMatcher("/packs/**")).permitAll()
-                .requestMatchers(antMatcher("/commerce/**")).hasRole("COMMERCE")
-                .requestMatchers(antMatcher(org.springframework.http.HttpMethod.POST, "/reservations/**")).authenticated()
-                .requestMatchers(antMatcher(org.springframework.http.HttpMethod.GET, "/reservations/**")).authenticated()
+                .requestMatchers(antMatcher(HttpMethod.GET,  "/packs/**")).permitAll()
+                .requestMatchers(antMatcher(HttpMethod.POST, "/packs/**")).authenticated()
+                .requestMatchers(antMatcher("/commerce"), antMatcher("/commerce/**")).hasRole("COMMERCE")
+                .requestMatchers(antMatcher(HttpMethod.POST, "/reservations/**")).authenticated()
+                .requestMatchers(antMatcher(HttpMethod.GET,  "/reservations/**")).authenticated()
                 .anyRequest().authenticated()
             .and().formLogin()
                 .loginPage("/login")
@@ -88,6 +93,7 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                 .deleteCookies("JSESSIONID")
             .and().rememberMe()
                 .rememberMeParameter("rememberMe")
+                .key("resqfood-remember-me-secret-2026")
                 .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(7))
             .and().csrf()
                 .ignoringRequestMatchers(antMatcher("/reservations/accept"), antMatcher("/reservations/reject"));
