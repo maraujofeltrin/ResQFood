@@ -33,8 +33,13 @@
                         </div>
                     </c:if>
 
-                    <form:form modelAttribute="createPackForm" action="${pageContext.request.contextPath}/commerce/create-pack" method="post"
+                    <c:url value="/commerce/create-pack" var="createPackAction">
+                        <c:param name="${_csrf.parameterName}" value="${_csrf.token}" />
+                    </c:url>
+
+                    <form:form modelAttribute="createPackForm" action="${createPackAction}" method="post"
                         enctype="multipart/form-data" cssClass="pack-detail-grid commerce-create-pack-form" novalidate="novalidate">
+                        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
 
                         <!-- Left Column: Form Sections -->
                         <div class="grid col-span-1 md:col-span-8 gap-8">
