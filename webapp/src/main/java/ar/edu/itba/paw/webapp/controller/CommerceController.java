@@ -60,25 +60,39 @@ public class CommerceController {
     }
 
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public ModelAndView dashboard(@PathVariable("id") final long id, @RequestParam(value = "page", defaultValue = "1") final int page) {
+    public ModelAndView dashboard(@PathVariable("id") final long id, 
+                                  @RequestParam(value = "page", defaultValue = "1") final int page,
+                                  @RequestParam(value = "tab", defaultValue = "items") final String tab) {
         final java.util.Optional<Commerce> commerceOpt = commerceService.findByUserId(id);
         if (!commerceOpt.isPresent()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
+        final Commerce commerce = commerceOpt.get();
         final ModelAndView mav = new ModelAndView("commerce/dashboard");
 
         final List<Pack> allPacks = packService.findByCommerceId(id);
-        final int totalPages = Math.max(1, (int) Math.ceil((double) allPacks.size() / PAGE_SIZE));
+        
+        // As per requirements: Items (all), Packs (packs only - currently all packs), Subasta (empty)
+        final List<Pack> displayedPacks;
+        if ("auctions".equalsIgnoreCase(tab)) {
+            displayedPacks = java.util.Collections.emptyList();
+        } else {
+            displayedPacks = allPacks;
+        }
+
+        final int totalPages = Math.max(1, (int) Math.ceil((double) displayedPacks.size() / PAGE_SIZE));
         final int safePage = Math.max(1, Math.min(page, totalPages));
         final int fromIdx = (safePage - 1) * PAGE_SIZE;
-        final int toIdx = Math.min(fromIdx + PAGE_SIZE, allPacks.size());
+        final int toIdx = Math.min(fromIdx + PAGE_SIZE, displayedPacks.size());
 
-        mav.addObject("packs", allPacks.subList(fromIdx, toIdx));
+        mav.addObject("commerce", commerce);
+        mav.addObject("packs", displayedPacks.subList(fromIdx, toIdx));
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
         mav.addObject("commerceId", id);
-        mav.addObject("paginationBaseUrl", "/commerce/" + id);
+        mav.addObject("currentTab", tab);
+        mav.addObject("paginationBaseUrl", "/commerce/" + id + "?tab=" + tab);
         return mav;
     }
 
