@@ -3,12 +3,15 @@ package ar.edu.itba.paw.webapp.config;
 import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,10 +29,17 @@ import static org.springframework.security.web.util.matcher.AntPathRequestMatche
 public class WebAuthConfig extends WebSecurityConfigurerAdapter {
 
     private final UserService userService;
+    private final String rememberMeKey;
+    private final int rememberMeValidityDays;
 
     @Autowired
-    public WebAuthConfig(final UserService userService) {
+    public WebAuthConfig(
+            final UserService userService,
+            @Value("${security.remember-me.key:resqfood-remember-me-secret}") final String rememberMeKey,
+            @Value("${security.remember-me.validity-days:7}") final int rememberMeValidityDays) {
         this.userService = userService;
+        this.rememberMeKey = rememberMeKey;
+        this.rememberMeValidityDays = rememberMeValidityDays;
     }
 
     @Bean
@@ -60,11 +70,20 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
         };
     }
 
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring().requestMatchers(antMatcher("/css/**"), antMatcher("/images/**"), antMatcher("/js/**"), antMatcher("/favicon.ico"));
+    }
+
+    @Override
+    protected void configure(final AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(userDetailsServiceBean());
+    }
+
     @Override
     protected void configure(final HttpSecurity http) throws Exception {
         http.userDetailsService(userDetailsServiceBean())
             .authorizeHttpRequests()
-                .requestMatchers(antMatcher("/css/**"), antMatcher("/images/**")).permitAll()
                 .requestMatchers(antMatcher("/login"), antMatcher("/register"), antMatcher("/create")).anonymous()
                 .requestMatchers(antMatcher("/logout")).authenticated()
                 .requestMatchers(antMatcher("/")).permitAll()
@@ -87,8 +106,9 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                 .deleteCookies("JSESSIONID")
             .and().rememberMe()
                 .rememberMeParameter("rememberMe")
-                .key("resqfood-remember-me-secret-2026")
-                .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(7))
+                .userDetailsService(userDetailsServiceBean())
+                .key(rememberMeKey)
+                .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(rememberMeValidityDays))
             .and().csrf()
                 .ignoringRequestMatchers(antMatcher("/reservations/accept"), antMatcher("/reservations/reject"));
     }
