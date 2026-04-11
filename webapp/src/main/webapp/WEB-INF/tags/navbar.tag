@@ -14,7 +14,6 @@
     <div class="flex items-center gap-4">
       <sec:authorize access="!isAuthenticated()">
           <a href="${pageContext.request.contextPath}/login" class="text-on-surface-variant hover:text-primary font-medium transition-colors"><spring:message code="layout.nav.login" text="Iniciar sesión"/></a>
-          <a href="${pageContext.request.contextPath}/register" class="bg-primary text-on-primary px-5 py-2 rounded-full font-semibold shadow-soft hover:shadow-lifted transition-all duration-300"><spring:message code="layout.nav.register" text="Registrarme"/></a>
       </sec:authorize>
       <sec:authorize access="isAuthenticated()">
           <form action="${pageContext.request.contextPath}/logout" method="post" class="m-0">
