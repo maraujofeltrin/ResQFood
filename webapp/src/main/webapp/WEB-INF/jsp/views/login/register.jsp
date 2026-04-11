@@ -67,6 +67,23 @@
                     <form:errors path="repeatPassword" cssClass="text-error text-sm mt-1" element="p"/>
                 </div>
                 
+                <div class="space-y-2">
+                    <form:label path="role" cssClass="block font-label text-sm font-medium text-secondary mb-1">
+                        <spring:message code="register.label.role" text="Tipo de cuenta"/>
+                    </form:label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer bg-surface-container-lowest border border-outline hover:border-primary p-3 rounded-lg flex-1 transition-colors">
+                            <form:radiobutton path="role" value="CLIENT" cssClass="text-primary focus:ring-primary border-outline" />
+                            <span class="text-sm font-medium text-on-surface"><spring:message code="register.role.client" text="Cliente"/></span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer bg-surface-container-lowest border border-outline hover:border-primary p-3 rounded-lg flex-1 transition-colors">
+                            <form:radiobutton path="role" value="COMMERCE" cssClass="text-primary focus:ring-primary border-outline" />
+                            <span class="text-sm font-medium text-on-surface"><spring:message code="register.role.commerce" text="Comercio"/></span>
+                        </label>
+                    </div>
+                    <form:errors path="role" cssClass="text-error text-sm mt-1" element="p"/>
+                </div>
+                
                 <button type="submit" 
                         class="w-full bg-primary text-on-primary font-semibold py-3 px-4 rounded-full transition-colors shadow-soft hover:shadow-lifted mt-6 h-12 flex items-center justify-center">
                     <spring:message code="register.submit" text="Crear cuenta"/>

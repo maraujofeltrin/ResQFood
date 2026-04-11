@@ -48,6 +48,9 @@ public class LoginController {
         if (!Objects.equals(registerForm.getPassword(), registerForm.getRepeatPassword())) {
             bindingResult.rejectValue("repeatPassword", "user.password.mismatch");
         }
+        if (userService.findByEmail(registerForm.getEmail()).isPresent()) {
+            bindingResult.rejectValue("email", "user.email.duplicate");
+        }
         if (bindingResult.hasErrors()) {
             final ModelAndView mav = new ModelAndView("login/register");
             mav.addObject("registerForm", registerForm);
@@ -57,7 +60,9 @@ public class LoginController {
         final User user = userService.createUser(
                 registerForm.getEmail(),
                 registerForm.getPassword(),
-                registerForm.getName());
+                registerForm.getName(),
+                null,
+                registerForm.getRole());
 
         // Perform auto-login
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());

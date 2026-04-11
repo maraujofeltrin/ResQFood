@@ -21,6 +21,17 @@ public class UserForm {
     @Size(min = 6, max = 100)
     private String repeatPassword;
 
+    @NotNull
+    private ar.edu.itba.paw.models.User.Role role;
+
+    public ar.edu.itba.paw.models.User.Role getRole() {
+        return role;
+    }
+
+    public void setRole(ar.edu.itba.paw.models.User.Role role) {
+        this.role = role;
+    }
+
     public String getName() {
         return name;
     }
