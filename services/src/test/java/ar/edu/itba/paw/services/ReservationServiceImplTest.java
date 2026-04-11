@@ -104,6 +104,7 @@ public class ReservationServiceImplTest {
         TestUserService(User user) { this.user = user; }
         @Override public User createUser(String email, String password, String name) { return user; }
         @Override public User createUser(String email, String password, String name, String phone, User.Role role) { return user; }
+        @Override public Optional<User> upgradeProvisionalUser(String email, String password, String name, User.Role role) { return Optional.empty(); }
         @Override public Optional<User> findByEmail(String email) { return Optional.of(user); }
         @Override public Optional<User> findById(Long id) { return Optional.of(user); }
     }

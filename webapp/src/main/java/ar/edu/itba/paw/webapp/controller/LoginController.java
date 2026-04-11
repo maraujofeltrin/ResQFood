@@ -17,6 +17,7 @@ import ar.edu.itba.paw.services.UserService;
 import ar.edu.itba.paw.webapp.form.UserForm;
 import javax.validation.Valid;
 import java.util.Objects;
+import java.util.Optional;
 
 @Controller
 public class LoginController {
@@ -45,24 +46,41 @@ public class LoginController {
     @PostMapping("/create")
     public ModelAndView create(@Valid @ModelAttribute("registerForm") final UserForm registerForm,
                                final BindingResult bindingResult) {
+        User user = null;
+
         if (!Objects.equals(registerForm.getPassword(), registerForm.getRepeatPassword())) {
             bindingResult.rejectValue("repeatPassword", "user.password.mismatch");
         }
-        if (userService.findByEmail(registerForm.getEmail()).isPresent()) {
-            bindingResult.rejectValue("email", "user.email.duplicate");
+
+        final Optional<User> existingUser = userService.findByEmail(registerForm.getEmail());
+        if (existingUser.isPresent()) {
+            final Optional<User> upgradedUser = userService.upgradeProvisionalUser(
+                    registerForm.getEmail(),
+                    registerForm.getPassword(),
+                    registerForm.getName(),
+                    registerForm.getRole());
+
+            if (upgradedUser.isPresent()) {
+                user = upgradedUser.get();
+            } else {
+                bindingResult.rejectValue("email", "user.email.duplicate");
+            }
         }
+
         if (bindingResult.hasErrors()) {
             final ModelAndView mav = new ModelAndView("login/register");
             mav.addObject("registerForm", registerForm);
             return mav;
         }
 
-        final User user = userService.createUser(
-                registerForm.getEmail(),
-                registerForm.getPassword(),
-                registerForm.getName(),
-                null,
-                registerForm.getRole());
+        if (user == null) {
+            user = userService.createUser(
+                    registerForm.getEmail(),
+                    registerForm.getPassword(),
+                    registerForm.getName(),
+                    null,
+                    registerForm.getRole());
+        }
 
         // Perform auto-login
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());

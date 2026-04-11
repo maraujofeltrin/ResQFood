@@ -20,6 +20,8 @@ public interface UserDao {
      */
     User createUser(String email, String password, String name, String phone, User.Role role);
 
+    User updateUser(Long id, String password, String name, String phone, User.Role role);
+
     Optional<User> findByEmail(String email);
 
     Optional<User> findById(Long id);
