@@ -1,0 +1,61 @@
+/* ── Auction accent overrides (DESIGN.md §2 — subtle orange) ─ */
+
+/* Submit button — orange gradient, used on auction creation form */
+.auction-submit-btn {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1rem;
+  border-radius: 9999px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #E65100 0%, #FFAB40 100%);
+  box-shadow: 0 12px 32px rgba(230, 81, 0, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.auction-submit-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 16px 40px rgba(230, 81, 0, 0.22);
+}
+
+.auction-submit-btn:active {
+  transform: scale(0.98);
+}
+
+.auction-submit-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+}
+
+.auction-submit-btn--submitting .auction-submit-btn__icon {
+  display: none;
+}
+
+/* Small inline badge for auction contexts */
+.auction-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #BF360C;
+  background-color: #FFF3E0;
+}
+
+/* Section accent — subtle left border for auction settings panel */
+.auction-settings-card {
+  border-left: 3px solid #E65100;
+}
