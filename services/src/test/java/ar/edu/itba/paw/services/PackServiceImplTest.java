@@ -34,6 +34,13 @@ public class PackServiceImplTest {
         }
 
         @Override
+        public List<Pack> findByCommerceId(Long commerceId) {
+            return store.values().stream()
+                    .filter(p -> p.getCommerceId().equals(commerceId))
+                    .collect(java.util.stream.Collectors.toList());
+        }
+
+        @Override
         public List<Pack> findActive() {
             final List<Pack> r = new ArrayList<>();
             for (Pack p : store.values()) if (Boolean.TRUE.equals(p.getActive())) r.add(p);
@@ -91,6 +98,15 @@ public class PackServiceImplTest {
 
         @Override
         public List<Pack> searchPacksWithTags(String query, List<PackTag> tags, PackSortOption sort) { return searchPacksWithTags(query, tags); }
+
+        @Override
+        public void updateImage(Long packId, byte[] imageData, String imageContentType) {
+            final Pack p = store.get(packId);
+            if (p != null) {
+                p.setImageData(imageData);
+                p.setImageContentType(imageContentType);
+            }
+        }
     }
 
     @Test

@@ -85,6 +85,12 @@ public class ReservationServiceImplTest {
         @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, java.util.List<ar.edu.itba.paw.models.PackTag> tags, byte[] imageData, String imageContentType) { throw new UnsupportedOperationException(); }
         @Override public Optional<Pack> findById(Long id) { return id.equals(pack.getId()) ? Optional.of(pack) : Optional.empty(); }
         @Override public java.util.List<Pack> findAll() { return Collections.emptyList(); }
+
+        @Override
+        public List<Pack> findByCommerceId(Long commerceId) {
+            return pack.getCommerceId().equals(commerceId) ? List.of(pack) : Collections.emptyList();
+        }
+
         @Override public java.util.List<Pack> findActive() { return Collections.emptyList(); }
         @Override public java.util.List<Pack> searchPacks(String query) { return Collections.emptyList(); }
         @Override public Pack update(Pack pack) { throw new UnsupportedOperationException(); }
@@ -97,6 +103,7 @@ public class ReservationServiceImplTest {
         @Override public java.util.List<Pack> searchPacks(String query, PackSortOption sort) { return searchPacks(query); }
         @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption sort) { return findActiveByTags(tags); }
         @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption sort) { return searchPacksWithTags(query, tags); }
+        @Override public void updateImage(Long packId, byte[] imageData, String imageContentType) { }
     }
 
     static class TestUserService implements UserService {
