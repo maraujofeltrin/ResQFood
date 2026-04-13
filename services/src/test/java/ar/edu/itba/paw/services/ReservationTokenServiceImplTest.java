@@ -96,6 +96,7 @@ public class ReservationTokenServiceImplTest {
         TestUserService(ar.edu.itba.paw.models.User user) { this.user = user; }
         @Override public ar.edu.itba.paw.models.User createUser(String email, String password, String name) { return user; }
         @Override public ar.edu.itba.paw.models.User createUser(String email, String password, String name, String phone, ar.edu.itba.paw.models.User.Role role) { return user; }
+        @Override public Optional<ar.edu.itba.paw.models.User> upgradeProvisionalUser(String email, String password, String name, ar.edu.itba.paw.models.User.Role role) { return Optional.empty(); }
         @Override public Optional<ar.edu.itba.paw.models.User> findByEmail(String email) { return Optional.of(user); }
         @Override public Optional<ar.edu.itba.paw.models.User> findById(Long id) { return Optional.of(user); }
     }

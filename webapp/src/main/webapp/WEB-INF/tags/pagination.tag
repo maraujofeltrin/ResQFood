@@ -7,27 +7,29 @@
 
 <c:set var="pageSep" value="${fn:contains(baseUrl, '?') ? '&amp;' : '?'}" />
 
-<div class="flex items-center justify-center mt-20 gap-2">
-    <c:if test="${currentPage > 1}">
-        <a href="${baseUrl}${pageSep}page=${currentPage - 1}" class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors">
-            <span class="material-symbols-outlined">chevron_left</span>
-        </a>
-    </c:if>
+<c:if test="${totalPages > 1}">
+    <div class="flex items-center justify-center mt-20 gap-2">
+        <c:if test="${currentPage > 1}">
+            <a href="${baseUrl}${pageSep}page=${currentPage - 1}" class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors">
+                <span class="material-symbols-outlined">chevron_left</span>
+            </a>
+        </c:if>
 
-    <c:forEach var="i" begin="1" end="${totalPages}">
-        <c:choose>
-            <c:when test="${i == currentPage}">
-                <span class="w-10 h-10 flex items-center justify-center rounded-lg bg-primary text-on-primary font-bold">${i}</span>
-            </c:when>
-            <c:otherwise>
-                <a href="${baseUrl}${pageSep}page=${i}" class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors">${i}</a>
-            </c:otherwise>
-        </c:choose>
-    </c:forEach>
+        <c:forEach var="i" begin="1" end="${totalPages}">
+            <c:choose>
+                <c:when test="${i == currentPage}">
+                    <span class="w-10 h-10 flex items-center justify-center rounded-lg bg-primary text-on-primary font-bold">${i}</span>
+                </c:when>
+                <c:otherwise>
+                    <a href="${baseUrl}${pageSep}page=${i}" class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors">${i}</a>
+                </c:otherwise>
+            </c:choose>
+        </c:forEach>
 
-    <c:if test="${currentPage < totalPages}">
-        <a href="${baseUrl}${pageSep}page=${currentPage + 1}" class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors">
-            <span class="material-symbols-outlined">chevron_right</span>
-        </a>
-    </c:if>
-</div>
+        <c:if test="${currentPage < totalPages}">
+            <a href="${baseUrl}${pageSep}page=${currentPage + 1}" class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors">
+                <span class="material-symbols-outlined">chevron_right</span>
+            </a>
+        </c:if>
+    </div>
+</c:if>

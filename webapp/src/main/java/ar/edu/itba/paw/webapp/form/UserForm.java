@@ -3,12 +3,17 @@ package ar.edu.itba.paw.webapp.form;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Email;
 
 public class UserForm {
 
+    @Size(min = 2, max = 100)
+    @Pattern(regexp = "[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+")
+    private String name;
+
     @Size(min = 6, max = 100)
-    @Pattern(regexp = "[a-zA-Z0-9]+")
-    private String username;
+    @Email
+    private String email;
 
     @Size(min = 6, max = 100)
     private String password;
@@ -16,12 +21,31 @@ public class UserForm {
     @Size(min = 6, max = 100)
     private String repeatPassword;
 
-    public String getUsername() {
-        return username;
+    @NotNull
+    private ar.edu.itba.paw.models.User.Role role;
+
+    public ar.edu.itba.paw.models.User.Role getRole() {
+        return role;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setRole(ar.edu.itba.paw.models.User.Role role) {
+        this.role = role;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getPassword() {

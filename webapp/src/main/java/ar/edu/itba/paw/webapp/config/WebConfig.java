@@ -20,15 +20,13 @@ import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.web.servlet.view.JstlView;
 
 import javax.sql.DataSource;
 import java.util.Properties;
-import org.flywaydb.core.Flyway;
-import org.springframework.jdbc.datasource.SimpleDriverDataSource;
+
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.validation.Validator;
@@ -37,15 +35,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.TimeZone;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
-import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
+
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.concurrent.Executor;
 
 @EnableWebMvc
 @EnableTransactionManagement
 @EnableAsync
-@ComponentScan({ "ar.edu.itba.paw.webapp.controller", "ar.edu.itba.paw.services", "ar.edu.itba.paw.persistence" })
+@ComponentScan({ "ar.edu.itba.paw.webapp.controller", "ar.edu.itba.paw.services", "ar.edu.itba.paw.persistence", "ar.edu.itba.paw.webapp.config", "ar.edu.itba.paw.webapp.auth" })
 @Configuration
 @PropertySource("classpath:/env.properties")
 public class WebConfig implements WebMvcConfigurer {
@@ -80,6 +80,11 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations("/css/");
         registry.addResourceHandler("/images/**")
                 .addResourceLocations("/images/");
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Bean

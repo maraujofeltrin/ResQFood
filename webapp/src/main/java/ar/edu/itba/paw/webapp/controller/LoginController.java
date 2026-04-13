@@ -1,0 +1,93 @@
+package ar.edu.itba.paw.webapp.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import ar.edu.itba.paw.models.User;
+import ar.edu.itba.paw.services.UserService;
+import ar.edu.itba.paw.webapp.form.UserForm;
+import javax.validation.Valid;
+import java.util.Objects;
+import java.util.Optional;
+
+@Controller
+public class LoginController {
+
+    private final UserService userService;
+    private final UserDetailsService userDetailsService;
+
+    @Autowired
+    public LoginController(final UserService userService, final UserDetailsService userDetailsService) {
+        this.userService = userService;
+        this.userDetailsService = userDetailsService;
+    }
+    
+    @GetMapping("/login")
+    public String login() {
+        return "login/loginView";
+    }
+
+    @GetMapping("/register")
+    public ModelAndView showForm() {
+        final ModelAndView mav = new ModelAndView("login/register");
+        mav.addObject("registerForm", new UserForm());
+        return mav;
+    }
+
+    @PostMapping("/create")
+    public ModelAndView create(@Valid @ModelAttribute("registerForm") final UserForm registerForm,
+                               final BindingResult bindingResult) {
+        User user = null;
+
+        if (!Objects.equals(registerForm.getPassword(), registerForm.getRepeatPassword())) {
+            bindingResult.rejectValue("repeatPassword", "user.password.mismatch");
+        }
+
+        final Optional<User> existingUser = userService.findByEmail(registerForm.getEmail());
+        if (existingUser.isPresent()) {
+            final Optional<User> upgradedUser = userService.upgradeProvisionalUser(
+                    registerForm.getEmail(),
+                    registerForm.getPassword(),
+                    registerForm.getName(),
+                    registerForm.getRole());
+
+            if (upgradedUser.isPresent()) {
+                user = upgradedUser.get();
+            } else {
+                bindingResult.rejectValue("email", "user.email.duplicate");
+            }
+        }
+
+        if (bindingResult.hasErrors()) {
+            final ModelAndView mav = new ModelAndView("login/register");
+            mav.addObject("registerForm", registerForm);
+            return mav;
+        }
+
+        if (user == null) {
+            user = userService.createUser(
+                    registerForm.getEmail(),
+                    registerForm.getPassword(),
+                    registerForm.getName(),
+                    null,
+                    registerForm.getRole());
+        }
+
+        // Perform auto-login
+        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+        Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, registerForm.getPassword(), userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        return new ModelAndView("redirect:/");
+    }
+}
+

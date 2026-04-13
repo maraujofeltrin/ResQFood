@@ -48,6 +48,14 @@ public class UserJdbcDao implements UserDao {
     }
 
     @Override
+    public User updateUser(final Long id, final String password, final String name, final String phone,
+            final User.Role role) {
+        jdbcTemplate.update("UPDATE users SET password = ?, name = ?, phone = ?, role = ? WHERE id = ?",
+                password, name, phone, role == null ? null : role.name(), id);
+        return findById(id).orElseThrow(() -> new IllegalStateException("User not found after update: " + id));
+    }
+
+    @Override
     public Optional<User> findByEmail(final String email) {
         return jdbcTemplate.query("SELECT * FROM users WHERE email = ?", USER_ROW_MAPPER, email).stream().findAny();
     }
