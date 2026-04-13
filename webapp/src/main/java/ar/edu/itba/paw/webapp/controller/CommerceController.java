@@ -35,6 +35,7 @@ import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.services.UserService;
 
 import ar.edu.itba.paw.webapp.form.CreatePackForm;
+import ar.edu.itba.paw.webapp.form.EditPackForm;
 
 @Controller
 @RequestMapping("/commerce")
@@ -178,5 +179,137 @@ public class CommerceController {
                             null, LocaleContextHolder.getLocale()));
             return mav;
         }
+    }
+
+    @RequestMapping(value = "/{id}/edit-pack/{packId}", method = RequestMethod.GET)
+    public ModelAndView editPackForm(@PathVariable("id") final long commerceId,
+                                     @PathVariable("packId") final long packId,
+                                     @ModelAttribute("editPackForm") final EditPackForm form,
+                                     @RequestParam(value = "error", required = false) final String error) {
+        if (commerceService.findByUserId(commerceId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        final java.util.Optional<Pack> packOpt = packService.findById(packId);
+        if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        final Pack pack = packOpt.get();
+
+        if (form.getTitle() == null) {
+            form.setTitle(pack.getTitle());
+            form.setDescription(pack.getDescription());
+            form.setTags(pack.getTags());
+            form.setOriginalPrice(pack.getOriginalPrice());
+            form.setFinalPrice(pack.getFinalPrice());
+            form.setStock(pack.getStock());
+        }
+
+        final ModelAndView mav = new ModelAndView("commerce/editPack");
+        mav.addObject("commerceId", commerceId);
+        mav.addObject("packId", packId);
+        mav.addObject("availableTags", PackTag.values());
+        
+        if ("maxUploadSize".equals(error)) {
+            mav.addObject("errorMessage",
+                    messageSource.getMessage("commerce.createPack.validation.image.maxSize",
+                            null, LocaleContextHolder.getLocale()));
+        }
+
+        return mav;
+    }
+
+    @RequestMapping(value = "/{id}/edit-pack/{packId}", method = RequestMethod.POST)
+    public ModelAndView editPack(
+            @PathVariable("id") final long commerceId,
+            @PathVariable("packId") final long packId,
+            @Valid @ModelAttribute("editPackForm") final EditPackForm form,
+            final BindingResult bindingResult) {
+
+        if (commerceService.findByUserId(commerceId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        final java.util.Optional<Pack> packOpt = packService.findById(packId);
+        if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        if (form.getOriginalPrice() != null && form.getFinalPrice() != null && form.getFinalPrice() > form.getOriginalPrice()) {
+            bindingResult.rejectValue("finalPrice", "error.finalPrice", "El precio de venta no puede ser mayor al precio original");
+        }
+
+        final MultipartFile image = form.getImage();
+        if (image != null && !image.isEmpty()) {
+            final String contentType = image.getContentType();
+            if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
+                bindingResult.rejectValue("image", "error.image.invalidType",
+                        messageSource.getMessage("commerce.createPack.validation.image.invalidType",
+                                null, LocaleContextHolder.getLocale()));
+            }
+        }
+
+        if (bindingResult.hasErrors()) {
+            final ModelAndView mav = new ModelAndView("commerce/editPack");
+            mav.addObject("commerceId", commerceId);
+            mav.addObject("packId", packId);
+            mav.addObject("availableTags", PackTag.values());
+            return mav;
+        }
+
+        try {
+            Pack packToUpdate = packOpt.get();
+            packToUpdate.setTitle(form.getTitle());
+            packToUpdate.setDescription(form.getDescription());
+            packToUpdate.setOriginalPrice(form.getOriginalPrice());
+            packToUpdate.setFinalPrice(form.getFinalPrice());
+            packToUpdate.setStock(form.getStock());
+            packToUpdate.setTags(form.getTags() != null ? form.getTags() : Collections.emptyList());
+
+            packService.update(packToUpdate);
+
+            if (image != null && !image.isEmpty()) {
+                packService.updateImage(packToUpdate.getId(), image.getBytes(), image.getContentType());
+            }
+
+            return new ModelAndView("redirect:/commerce/" + commerceId);
+
+        } catch (IllegalArgumentException e) {
+            final ModelAndView mav = new ModelAndView("commerce/editPack");
+            mav.addObject("commerceId", commerceId);
+            mav.addObject("packId", packId);
+            mav.addObject("availableTags", PackTag.values());
+            mav.addObject("errorMessage", e.getMessage());
+            return mav;
+        } catch (IOException e) {
+            final ModelAndView mav = new ModelAndView("commerce/editPack");
+            mav.addObject("commerceId", commerceId);
+            mav.addObject("packId", packId);
+            mav.addObject("availableTags", PackTag.values());
+            mav.addObject("errorMessage",
+                    messageSource.getMessage("commerce.createPack.validation.image.processError",
+                            null, LocaleContextHolder.getLocale()));
+            return mav;
+        }
+    }
+
+    @RequestMapping(value = "/{id}/delete-pack/{packId}", method = RequestMethod.POST)
+    public ModelAndView deletePack(
+            @PathVariable("id") final long commerceId,
+            @PathVariable("packId") final long packId) {
+
+        if (commerceService.findByUserId(commerceId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        final java.util.Optional<Pack> packOpt = packService.findById(packId);
+        if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        packService.setActive(packId, false);
+
+        return new ModelAndView("redirect:/commerce/" + commerceId);
     }
 }

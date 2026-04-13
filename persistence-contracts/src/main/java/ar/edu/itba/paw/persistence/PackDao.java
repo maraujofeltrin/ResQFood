@@ -24,6 +24,7 @@ public interface PackDao {
     Pack update(Pack pack);
     void setActive(Long id, boolean active);
     Optional<Pack> findImageByPackId(Long id);
+    void updateImage(Long packId, byte[] imageData, String imageContentType);
 
     /**
      * Resta {@code quantity} al stock del pack si hay unidades suficientes.

@@ -98,4 +98,9 @@ public class PackServiceImpl implements PackService {
     public Optional<Pack> findImageByPackId(Long id) {
         return packDao.findImageByPackId(id);
     }
+
+    @Override
+    public void updateImage(Long packId, byte[] imageData, String imageContentType) {
+        packDao.updateImage(packId, imageData, imageContentType);
+    }
 }

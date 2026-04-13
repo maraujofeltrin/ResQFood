@@ -11,7 +11,7 @@ public class Pack {
     private Double finalPrice;
     private Integer stock;
     private Boolean active;
-    private final List<PackTag> tags;
+    private List<PackTag> tags;
     private byte[] imageData;
     private String imageContentType;
 
@@ -67,6 +67,10 @@ public class Pack {
 
     public List<PackTag> getTags() {
         return tags;
+    }
+
+    public void setTags(List<PackTag> tags) {
+        this.tags = tags;
     }
 
     public void setTitle(String title) {

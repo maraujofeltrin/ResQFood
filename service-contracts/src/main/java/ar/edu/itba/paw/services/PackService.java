@@ -24,4 +24,5 @@ public interface PackService {
     Pack update(Pack pack);
     void setActive(Long id, boolean active);
     Optional<Pack> findImageByPackId(Long id);
+    void updateImage(Long packId, byte[] imageData, String imageContentType);
 }

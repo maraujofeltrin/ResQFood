@@ -279,4 +279,10 @@ public class PackJdbcDao implements PackDao {
                 id
         ).stream().findAny();
     }
+
+    @Override
+    public void updateImage(Long packId, byte[] imageData, String imageContentType) {
+        jdbcTemplate.update("UPDATE packs SET image_data = ?, image_content_type = ? WHERE id = ?",
+                imageData, imageContentType, packId);
+    }
 }

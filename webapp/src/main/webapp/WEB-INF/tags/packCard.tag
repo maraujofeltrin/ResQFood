@@ -8,11 +8,16 @@
 <%@ attribute name="price" required="true" %>
 <%@ attribute name="oldPrice" required="false" %>
 <%@ attribute name="commerceName" required="false" %>
+<%@ attribute name="commerceId" required="false" %>
+<%@ attribute name="manageable" type="java.lang.Boolean" required="false" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
 <c:set var="resolvedAlt" value="${not empty imageAlt ? imageAlt : title}"/>
 <c:set var="resolvedRescueLabel" value="${not empty rescueLabel ? rescueLabel : 'Rescue For'}"/>
+<c:if test="${empty manageable}">
+    <c:set var="manageable" value="false" />
+</c:if>
 
 <a href="${pageContext.request.contextPath}/packs/${packId}" class="bg-surface-container-lowest rounded-xl overflow-hidden group shadow-sm hover:shadow-md transition-shadow flex flex-col h-full min-w-[280px] cursor-pointer hover:bg-surface-container-low transition-colors text-inherit no-underline">
   <div class="relative h-48 sm:h-56 flex-shrink-0 overflow-hidden">
@@ -20,6 +25,20 @@
     <c:if test="${not empty badgeText}">
       <div class="absolute bottom-3 left-3 flex gap-2">
         <span class="bg-white/90 backdrop-blur text-primary px-3 py-1 rounded-full text-xs font-bold shadow-sm"><c:out value="${badgeText}"/></span>
+      </div>
+    </c:if>
+    <c:if test="${manageable}">
+      <div class="absolute top-3 right-3 flex gap-2">
+        <button type="button" 
+                onclick="event.preventDefault(); event.stopPropagation(); window.location.href='${pageContext.request.contextPath}/commerce/${commerceId}/edit-pack/${packId}';" 
+                class="bg-white/90 backdrop-blur text-secondary hover:text-primary p-2 flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform">
+            <span class="material-symbols-outlined text-[1.25rem]">edit</span>
+        </button>
+        <button type="button" 
+                onclick="event.preventDefault(); event.stopPropagation(); openDeleteModal(${packId});" 
+                class="bg-white/90 backdrop-blur text-error hover:text-on-error hover:bg-error p-2 flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform">
+            <span class="material-symbols-outlined text-[1.25rem]">delete</span>
+        </button>
       </div>
     </c:if>
   </div>
