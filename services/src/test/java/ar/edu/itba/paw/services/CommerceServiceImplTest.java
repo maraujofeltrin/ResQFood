@@ -46,6 +46,10 @@ public class CommerceServiceImplTest {
         public Optional<User> findById(Long id) {
             return byEmail.values().stream().filter(u -> u.getId().equals(id)).findFirst();
         }
+
+        @Override
+        public void updatePassword(Long userId, String encodedPassword) {
+        }
     }
 
     static class InMemoryCommerceDao implements CommerceDao {

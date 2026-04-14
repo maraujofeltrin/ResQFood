@@ -35,9 +35,6 @@ public class ReservationServiceImpl implements ReservationService {
 
     private static final SecureRandom PICKUP_CODE_RANDOM = new SecureRandom();
 
-    /** Contraseña temporal hasta contar con registro/login propio ({@code users.password} NOT NULL). */
-    private static final String RESERVATION_USER_PLACEHOLDER_PASSWORD = "__RESERVATION_PENDING_PASSWORD__";
-
     private final UserService userService;
     private final ClientService clientService;
     private final ReservationDao reservationDao;
@@ -78,7 +75,7 @@ public class ReservationServiceImpl implements ReservationService {
 
         final String displayName = firstName + " " + lastName;
         final User user = userService.findByEmail(email).orElseGet(() -> userService.createUser(email,
-                RESERVATION_USER_PLACEHOLDER_PASSWORD, displayName, phone, User.Role.CLIENT));
+            UserPasswordConstants.RESERVATION_PENDING_PASSWORD, displayName, phone, User.Role.CLIENT));
 
         clientService.findByUserId(user.getId()).orElseGet(() -> clientService.createClient(user.getId(), firstName,
                 lastName, null));

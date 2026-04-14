@@ -107,6 +107,7 @@ public class ReservationServiceImplTest {
         @Override public Optional<User> upgradeProvisionalUser(String email, String password, String name, User.Role role) { return Optional.empty(); }
         @Override public Optional<User> findByEmail(String email) { return Optional.of(user); }
         @Override public Optional<User> findById(Long id) { return Optional.of(user); }
+        @Override public void updatePassword(Long userId, String encodedPassword) { }
     }
 
     static class TestClientService implements ClientService {

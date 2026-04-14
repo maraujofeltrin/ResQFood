@@ -4,8 +4,8 @@ uri="http://www.springframework.org/tags" %> <%@ taglib prefix="paw"
 tagdir="/WEB-INF/tags" %>
 <!DOCTYPE html>
 <html class="light" lang="${pageContext.response.locale.language}">
-  <spring:message code="login.title" var="loginTitle" />
-  <paw:head title="${loginTitle}" />
+  <spring:message code="passwordReset.change.title" var="changeTitle" />
+  <paw:head title="${changeTitle}" />
   <body
     class="bg-surface text-on-surface antialiased flex flex-col min-h-screen"
   >
@@ -19,107 +19,69 @@ tagdir="/WEB-INF/tags" %>
         <h1
           class="font-headline text-3xl font-bold text-center text-primary mb-6"
         >
-          <spring:message code="login.title" />
+          <spring:message code="passwordReset.change.title" />
         </h1>
-
-        <c:if test="${not empty param.error}">
+        <c:if test="${error == 'passwords.mismatch'}">
           <div
             class="bg-error-container text-on-error-container rounded-lg p-4 mb-6 text-sm"
           >
-            <spring:message code="login.error.credentials" />
+            <spring:message
+              code="passwordReset.change.error.passwordsMismatch"
+            />
           </div>
         </c:if>
-
         <form
-          action="${pageContext.request.contextPath}/login"
+          action="${pageContext.request.contextPath}/password-reset/change"
           method="post"
           class="space-y-5"
         >
-          <input
-            type="hidden"
-            name="${_csrf.parameterName}"
-            value="${_csrf.token}"
-          />
-
+          <input type="hidden" name="token" value="${token}" />
           <div>
             <label
-              for="email"
+              for="newPassword"
               class="block font-label text-sm font-medium text-secondary mb-1"
-              ><spring:message code="login.label.email"
+              ><spring:message code="passwordReset.change.label.newPassword"
             /></label>
             <spring:message
-              code="login.placeholder.email"
-              var="emailPlaceholder"
-            />
-            <input
-              type="email"
-              id="email"
-              name="email"
-              required
-              class="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
-              placeholder="${emailPlaceholder}"
-            />
-          </div>
-
-          <div>
-            <label
-              for="password"
-              class="block font-label text-sm font-medium text-secondary mb-1"
-              ><spring:message code="login.label.password"
-            /></label>
-            <spring:message
-              code="login.placeholder.password"
-              var="passwordPlaceholder"
+              code="passwordReset.change.placeholder.newPassword"
+              var="newPasswordPlaceholder"
             />
             <input
               type="password"
-              id="password"
-              name="password"
+              id="newPassword"
+              name="newPassword"
               required
               class="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
-              placeholder="${passwordPlaceholder}"
+              placeholder="${newPasswordPlaceholder}"
             />
-            <div class="mt-2 text-right">
-              <a
-                href="${pageContext.request.contextPath}/password-reset/request"
-                class="text-primary text-xs font-medium hover:underline"
-              >
-                <spring:message code="login.link.forgotPassword" />
-              </a>
-            </div>
           </div>
-
-          <div class="flex items-center">
-            <input
-              type="checkbox"
-              id="rememberMe"
-              name="rememberMe"
-              class="h-4 w-4 text-primary focus:ring-primary border-outline rounded cursor-pointer"
-            />
+          <div>
             <label
-              for="rememberMe"
-              class="ml-2 block text-sm text-secondary cursor-pointer"
-            >
-              <spring:message code="login.label.rememberMe" />
-            </label>
+              for="confirmPassword"
+              class="block font-label text-sm font-medium text-secondary mb-1"
+              ><spring:message
+                code="passwordReset.change.label.confirmPassword"
+            /></label>
+            <spring:message
+              code="passwordReset.change.placeholder.confirmPassword"
+              var="confirmPasswordPlaceholder"
+            />
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              required
+              class="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
+              placeholder="${confirmPasswordPlaceholder}"
+            />
           </div>
-
           <button
             type="submit"
             class="w-full bg-primary text-on-primary font-semibold py-3 px-4 rounded-full transition-colors shadow-soft hover:shadow-lifted mt-4 h-12 flex items-center justify-center"
           >
-            <spring:message code="login.submit" />
+            <spring:message code="passwordReset.change.submit" />
           </button>
         </form>
-
-        <div class="mt-6 text-center text-sm text-secondary">
-          <spring:message code="login.prompt.noAccount" />
-          <a
-            href="${pageContext.request.contextPath}/register"
-            class="text-primary font-medium hover:underline"
-            ><spring:message code="login.link.register"
-          /></a>
-        </div>
       </div>
     </main>
     <paw:footer />

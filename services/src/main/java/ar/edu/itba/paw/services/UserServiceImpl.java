@@ -11,8 +11,6 @@ import java.util.Optional;
 @Service
 public class UserServiceImpl implements UserService {
 
-    private static final String RESERVATION_USER_PLACEHOLDER_PASSWORD = "__RESERVATION_PENDING_PASSWORD__";
-
     private final UserDao userDao;
     private final PasswordEncoder passwordEncoder;
 
@@ -42,8 +40,8 @@ public class UserServiceImpl implements UserService {
 
         final User existing = maybeUser.get();
         final String storedPassword = existing.getPassword();
-        final boolean isProvisional = RESERVATION_USER_PLACEHOLDER_PASSWORD.equals(storedPassword)
-                || passwordEncoder.matches(RESERVATION_USER_PLACEHOLDER_PASSWORD, storedPassword);
+        final boolean isProvisional = UserPasswordConstants.RESERVATION_PENDING_PASSWORD.equals(storedPassword)
+            || passwordEncoder.matches(UserPasswordConstants.RESERVATION_PENDING_PASSWORD, storedPassword);
         if (!isProvisional) {
             return Optional.empty();
         }
@@ -61,5 +59,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public Optional<User> findById(final Long id) {
         return userDao.findById(id);
+    }
+
+    @Override
+    public void updatePassword(final Long userId, final String encodedPassword) {
+        userDao.updatePassword(userId, encodedPassword);
     }
 }

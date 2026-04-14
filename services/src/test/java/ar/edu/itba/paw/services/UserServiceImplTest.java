@@ -60,6 +60,17 @@ public class UserServiceImplTest {
         public Optional<User> findById(final Long id) {
             return Optional.ofNullable(byId.get(id));
         }
+
+        @Override
+        public void updatePassword(final Long id, final String password) {
+            final User current = byId.get(id);
+            if (current == null) {
+                throw new IllegalStateException("User not found: " + id);
+            }
+            final User updated = new User(id, current.getEmail(), password, current.getName(), current.getPhone(), current.getRole());
+            byId.put(id, updated);
+            byEmail.put(updated.getEmail(), updated);
+        }
     }
 
     @Test

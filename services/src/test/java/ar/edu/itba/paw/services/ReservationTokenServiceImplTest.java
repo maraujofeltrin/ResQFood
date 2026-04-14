@@ -99,6 +99,7 @@ public class ReservationTokenServiceImplTest {
         @Override public Optional<ar.edu.itba.paw.models.User> upgradeProvisionalUser(String email, String password, String name, ar.edu.itba.paw.models.User.Role role) { return Optional.empty(); }
         @Override public Optional<ar.edu.itba.paw.models.User> findByEmail(String email) { return Optional.of(user); }
         @Override public Optional<ar.edu.itba.paw.models.User> findById(Long id) { return Optional.of(user); }
+        @Override public void updatePassword(Long userId, String encodedPassword) { }
     }
 
     static class InMemoryMailService implements ReservationMailService {

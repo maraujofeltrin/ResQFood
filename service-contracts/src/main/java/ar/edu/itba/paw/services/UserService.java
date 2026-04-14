@@ -9,4 +9,5 @@ public interface UserService {
     Optional<User> upgradeProvisionalUser(final String email, final String password, final String name, final User.Role role);
     Optional<User> findByEmail(final String email);
     Optional<User> findById(final Long id);
+    void updatePassword(final Long userId, final String encodedPassword);
 }
