@@ -6,6 +6,11 @@ import ar.edu.itba.paw.services.PasswordResetMailService;
 import ar.edu.itba.paw.services.PasswordResetTokenService;
 import ar.edu.itba.paw.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -25,16 +30,19 @@ public class PasswordResetController {
     private final PasswordResetTokenService passwordResetTokenService;
     private final PasswordResetMailService passwordResetMailService;
     private final PasswordEncoder passwordEncoder;
+    private final UserDetailsService userDetailsService;
 
     @Autowired
     public PasswordResetController(final UserService userService,
             final PasswordResetTokenService passwordResetTokenService,
             final PasswordResetMailService passwordResetMailService,
-            final PasswordEncoder passwordEncoder) {
+            final PasswordEncoder passwordEncoder,
+            final UserDetailsService userDetailsService) {
         this.userService = userService;
         this.passwordResetTokenService = passwordResetTokenService;
         this.passwordResetMailService = passwordResetMailService;
         this.passwordEncoder = passwordEncoder;
+        this.userDetailsService = userDetailsService;
     }
 
     @GetMapping("/request")
@@ -78,9 +86,15 @@ public class PasswordResetController {
             return "password-reset/change";
         }
         final String encodedPassword = passwordEncoder.encode(newPassword);
-        userService.updatePassword(resetToken.get().getUserId(), encodedPassword);
+        final User user = userService.findById(resetToken.get().getUserId())
+            .orElseThrow(() -> new IllegalStateException("Password reset failed")); 
+        userService.updatePassword(user.getId(), encodedPassword);
         passwordResetTokenService.markAsUsed(token);
-        return "redirect:/login?passwordReset=true";
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+        final Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, newPassword,
+            userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        return "redirect:/";
     }
 
     private String buildBaseUrl(final HttpServletRequest request) {

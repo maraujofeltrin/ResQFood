@@ -35,6 +35,11 @@ tagdir="/WEB-INF/tags" %>
           method="post"
           class="space-y-5"
         >
+          <input
+            type="hidden"
+            name="${_csrf.parameterName}"
+            value="${_csrf.token}"
+          />
           <input type="hidden" name="token" value="${token}" />
           <div>
             <label
