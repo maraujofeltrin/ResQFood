@@ -3,6 +3,8 @@ package ar.edu.itba.paw.webapp.controller;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.NumberFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -259,16 +261,47 @@ public class PackController {
         return mav;
     }
 
+        private ModelAndView buildAuctionDetailModel(final Pack pack) {
+        final Optional<Commerce> commerceOpt = commerceService.findByUserId(pack.getCommerceId());
+        final Locale locale = LocaleContextHolder.getLocale();
+
+        final String title = pack.getTitle() != null && !pack.getTitle().isBlank()
+            ? pack.getTitle()
+            : messageSource.getMessage("pack.detail.defaultTitle", null, locale);
+        final String brand = messageSource.getMessage("app.brand", null, locale);
+        final String pageTitle = messageSource.getMessage("auction.detail.pageTitle",
+            new Object[] { title, brand }, locale);
+
+        final double highestBidAmount = pack.getFinalPrice() != null ? pack.getFinalPrice() : 0d;
+        final double referenceAmount = pack.getOriginalPrice() != null ? pack.getOriginalPrice() : highestBidAmount;
+        final long auctionEndsAtMillis = Instant.now()
+            .plus(Duration.ofHours(12).plusMinutes((pack.getId() % 90L) + 15L))
+            .toEpochMilli();
+
+        final ModelAndView mav = new ModelAndView("auctions/auctionDetailView");
+        mav.addObject("auctionId", pack.getId());
+        mav.addObject("pageTitle", pageTitle);
+        mav.addObject("packTitle", title);
+        mav.addObject("packDescription", pack.getDescription() != null ? pack.getDescription() : "");
+        addCommerceDetailAttributes(mav, commerceOpt);
+        mav.addObject("highestBid", formatPrice(highestBidAmount));
+        mav.addObject("highestBidNumber", String.format(Locale.US, "%.2f", highestBidAmount));
+        mav.addObject("referencePrice", formatPrice(referenceAmount));
+        mav.addObject("auctionEndsAtMillis", auctionEndsAtMillis);
+        return mav;
+        }
+
     private static final int PAGE_SIZE = 6;
 
-    @GetMapping("/packs")
-    public ModelAndView listPacks(
-            @RequestParam(value = "q", required = false) final String query,
-            @RequestParam(value = "tags", required = false) final List<String> tagNames,
-            @RequestParam(value = "sort", required = false) final String sort,
-            @RequestParam(value = "page", defaultValue = "1") final int page) {
+    private ModelAndView buildCatalogModelAndView(
+            final String viewName,
+            final String basePath,
+            final String query,
+            final List<String> tagNames,
+            final String sort,
+            final int page) {
 
-        final ModelAndView mav = new ModelAndView("packs/packCatalogView");
+        final ModelAndView mav = new ModelAndView(viewName);
         final PackSortOption sortOption = PackSortOption.fromString(sort);
 
         final List<PackTag> selectedTags = new ArrayList<>();
@@ -302,17 +335,17 @@ public class PackController {
         final List<Pack> packs = allPacks.subList(fromIdx, toIdx);
 
         final Map<Long, String> commerceNames = packs.stream()
-            .collect(java.util.stream.Collectors.toMap(
-                Pack::getId,
-                p -> commerceService.findByUserId(p.getCommerceId())
-                            .map(Commerce::getCommercialName)
-                            .orElse("—")
-            ));
+                .collect(java.util.stream.Collectors.toMap(
+                        Pack::getId,
+                        p -> commerceService.findByUserId(p.getCommerceId())
+                                .map(Commerce::getCommercialName)
+                                .orElse("—")));
 
-        final StringBuilder baseUrlBuilder = new StringBuilder("/packs");
+        final StringBuilder baseUrlBuilder = new StringBuilder(basePath);
         boolean firstParam = true;
         if (hasQuery) {
-            baseUrlBuilder.append(firstParam ? "?" : "&").append("q=").append(java.net.URLEncoder.encode(query.trim(), java.nio.charset.StandardCharsets.UTF_8));
+            baseUrlBuilder.append(firstParam ? "?" : "&").append("q=")
+                    .append(java.net.URLEncoder.encode(query.trim(), java.nio.charset.StandardCharsets.UTF_8));
             firstParam = false;
         }
         if (hasTags) {
@@ -323,7 +356,6 @@ public class PackController {
         }
         if (sort != null && !sort.isBlank()) {
             baseUrlBuilder.append(firstParam ? "?" : "&").append("sort=").append(sortOption.name());
-            firstParam = false;
         }
 
         mav.addObject("packs", packs);
@@ -336,6 +368,26 @@ public class PackController {
         mav.addObject("totalPages", totalPages);
         mav.addObject("paginationBaseUrl", baseUrlBuilder.toString());
         return mav;
+    }
+
+    @GetMapping("/packs")
+    public ModelAndView listPacks(
+            @RequestParam(value = "q", required = false) final String query,
+            @RequestParam(value = "tags", required = false) final List<String> tagNames,
+            @RequestParam(value = "sort", required = false) final String sort,
+            @RequestParam(value = "page", defaultValue = "1") final int page) {
+
+        return buildCatalogModelAndView("packs/packCatalogView", "/packs", query, tagNames, sort, page);
+    }
+
+    @GetMapping("/auctions")
+    public ModelAndView listAuctions(
+            @RequestParam(value = "q", required = false) final String query,
+            @RequestParam(value = "tags", required = false) final List<String> tagNames,
+            @RequestParam(value = "sort", required = false) final String sort,
+            @RequestParam(value = "page", defaultValue = "1") final int page) {
+
+        return buildCatalogModelAndView("auctions/auctionCatalogView", "/auctions", query, tagNames, sort, page);
     }
 
     @GetMapping("/packs/{id}")
@@ -365,6 +417,60 @@ public class PackController {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(placeholderContentType))
                 .body(placeholder);
+    }
+
+    @GetMapping("/auctions/{id}")
+    public ModelAndView auctionDetail(@PathVariable("id") final long id) {
+        final Pack pack = packService.findById(id)
+                .filter(p -> Boolean.TRUE.equals(p.getActive()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return buildAuctionDetailModel(pack);
+    }
+
+    @GetMapping("/auctions/{id}/image")
+    @ResponseBody
+    public ResponseEntity<byte[]> auctionImage(@PathVariable("id") final long id) {
+        return packImage(id);
+    }
+
+    @PostMapping("/auctions/{auctionId}/bid")
+    public ModelAndView submitAuctionBid(
+            @PathVariable("auctionId") final long auctionId,
+            @RequestParam(value = "bidAmount", required = false) final Double bidAmount,
+            final RedirectAttributes redirectAttributes) {
+
+        final Optional<Pack> packOpt = packService.findById(auctionId)
+                .filter(p -> Boolean.TRUE.equals(p.getActive()));
+        final ModelAndView redirectView = new ModelAndView("redirect:/auctions/" + auctionId);
+        final Locale locale = LocaleContextHolder.getLocale();
+
+        if (packOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
+            redirectAttributes.addFlashAttribute("auctionAlertMessage",
+                    messageSource.getMessage("auction.alert.unavailable", null, locale));
+            return redirectView;
+        }
+
+        if (bidAmount == null || Double.isNaN(bidAmount.doubleValue()) || bidAmount.doubleValue() <= 0d) {
+            redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
+            redirectAttributes.addFlashAttribute("auctionAlertMessage",
+                    messageSource.getMessage("auction.alert.invalidAmount", null, locale));
+            return redirectView;
+        }
+
+        final double currentBid = packOpt.get().getFinalPrice() != null ? packOpt.get().getFinalPrice() : 0d;
+        if (bidAmount.doubleValue() <= currentBid) {
+            redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
+            redirectAttributes.addFlashAttribute("auctionAlertMessage",
+                    messageSource.getMessage("auction.alert.lowerThanCurrent", new Object[] { formatPrice(currentBid) },
+                            locale));
+            return redirectView;
+        }
+
+        redirectAttributes.addFlashAttribute("auctionAlertKind", "success");
+        redirectAttributes.addFlashAttribute("auctionAlertMessage",
+                messageSource.getMessage("auction.alert.success", new Object[] { formatPrice(bidAmount) }, locale));
+        return redirectView;
     }
 
     @PostMapping("/packs/{packId}/reserve")

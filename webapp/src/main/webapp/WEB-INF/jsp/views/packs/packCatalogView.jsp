@@ -22,6 +22,8 @@
                 availableTags="${availableTags}"
                 selectedTags="${selectedTags}"
                 searchQuery="${param.q}"
+                catalogBaseUrl="/packs"
+                activePortal="packs"
             />
 
             <!-- Main Grid: All Available Packs -->

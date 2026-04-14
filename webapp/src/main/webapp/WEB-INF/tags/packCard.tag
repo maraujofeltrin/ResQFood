@@ -8,15 +8,19 @@
 <%@ attribute name="price" required="true" %>
 <%@ attribute name="oldPrice" required="false" %>
 <%@ attribute name="commerceName" required="false" %>
+<%@ attribute name="detailBaseUrl" required="false" %>
+<%@ attribute name="imageBaseUrl" required="false" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
 <c:set var="resolvedAlt" value="${not empty imageAlt ? imageAlt : title}"/>
 <c:set var="resolvedRescueLabel" value="${not empty rescueLabel ? rescueLabel : 'Rescue For'}"/>
+<c:set var="resolvedDetailBaseUrl" value="${not empty detailBaseUrl ? detailBaseUrl : '/packs'}"/>
+<c:set var="resolvedImageBaseUrl" value="${not empty imageBaseUrl ? imageBaseUrl : '/packs'}"/>
 
-<a href="${pageContext.request.contextPath}/packs/${packId}" class="bg-surface-container-lowest rounded-xl overflow-hidden group shadow-sm hover:shadow-md transition-shadow flex flex-col h-full min-w-[280px] cursor-pointer hover:bg-surface-container-low transition-colors text-inherit no-underline">
+<a href="${pageContext.request.contextPath}${resolvedDetailBaseUrl}/${packId}" class="bg-surface-container-lowest rounded-xl overflow-hidden group shadow-sm hover:shadow-md transition-shadow flex flex-col h-full min-w-[280px] cursor-pointer hover:bg-surface-container-low transition-colors text-inherit no-underline">
   <div class="relative h-48 sm:h-56 flex-shrink-0 overflow-hidden">
-    <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="<c:out value="${resolvedAlt}"/>" src="${pageContext.request.contextPath}/packs/${packId}/image" alt="<c:out value="${resolvedAlt}"/>"/>
+    <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="<c:out value="${resolvedAlt}"/>" src="${pageContext.request.contextPath}${resolvedImageBaseUrl}/${packId}/image" alt="<c:out value="${resolvedAlt}"/>"/>
     <c:if test="${not empty badgeText}">
       <div class="absolute bottom-3 left-3 flex gap-2">
         <span class="bg-white/90 backdrop-blur text-primary px-3 py-1 rounded-full text-xs font-bold shadow-sm"><c:out value="${badgeText}"/></span>
