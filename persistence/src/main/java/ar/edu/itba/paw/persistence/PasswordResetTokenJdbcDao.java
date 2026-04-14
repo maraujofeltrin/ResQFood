@@ -54,7 +54,7 @@ public class PasswordResetTokenJdbcDao implements PasswordResetTokenDao {
     public void markAsUsed(final String token) {
         final int rows = jdbcTemplate.update("UPDATE password_reset_tokens SET used = true WHERE token = ?", token);
         if (rows <= 0) {
-            throw new IllegalArgumentException("Token not found: " + token);
+            throw new IllegalArgumentException("Password reset token not found");
         }
     }
 }
