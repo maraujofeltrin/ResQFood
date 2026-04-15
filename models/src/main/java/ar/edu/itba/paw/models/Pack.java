@@ -11,15 +11,16 @@ public class Pack {
     private Double finalPrice;
     private Integer stock;
     private Boolean active;
+    private Boolean deleted;
     private List<PackTag> tags;
     private byte[] imageData;
     private String imageContentType;
 
     public Pack(Long id, Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, Boolean active, List<PackTag> tags) {
-        this(id, commerceId, title, description, originalPrice, finalPrice, stock, active, tags, null, null);
+        this(id, commerceId, title, description, originalPrice, finalPrice, stock, active, false, tags, null, null);
     }
 
-    public Pack(Long id, Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, Boolean active, List<PackTag> tags, byte[] imageData, String imageContentType) {
+    public Pack(Long id, Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, Boolean active, Boolean deleted, List<PackTag> tags, byte[] imageData, String imageContentType) {
         this.id = id;
         this.commerceId = commerceId;
         this.title = title;
@@ -28,6 +29,7 @@ public class Pack {
         this.finalPrice = finalPrice;
         this.stock = stock;
         this.active = active;
+        this.deleted = deleted;
         this.tags = tags;
         this.imageData = imageData;
         this.imageContentType = imageContentType;
@@ -95,6 +97,14 @@ public class Pack {
 
     public void setActive(Boolean active) {
         this.active = active;
+    }
+
+    public Boolean getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Boolean deleted) {
+        this.deleted = deleted;
     }
 
     public byte[] getImageData() {

@@ -16,11 +16,10 @@ import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -33,7 +32,7 @@ import org.springframework.http.HttpStatus;
 
 import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.services.UserService;
-
+import ar.edu.itba.paw.webapp.auth.AuthUser;
 import ar.edu.itba.paw.webapp.form.CreatePackForm;
 import ar.edu.itba.paw.webapp.form.EditPackForm;
 
@@ -60,10 +59,23 @@ public class CommerceController {
         this.userService = userService;
     }
 
+    /**
+     * Entry point: redirige al dashboard del usuario autenticado.
+     * Spring Security ya garantiza que el usuario es ROLE_COMMERCE.
+     */
+    @GetMapping(value = "")
+    public ModelAndView myDashboard(@AuthenticationPrincipal final AuthUser principal) {
+        final User currentUser = getAuthenticatedUser(principal);
+        return new ModelAndView("redirect:/commerce/" + currentUser.getId());
+    }
+
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public ModelAndView dashboard(@PathVariable("id") final long id, 
+    public ModelAndView dashboard(@PathVariable("id") final long id,
+                                  @AuthenticationPrincipal final AuthUser principal,
                                   @RequestParam(value = "page", defaultValue = "1") final int page,
                                   @RequestParam(value = "tab", defaultValue = "items") final String tab) {
+        verifyOwnership(id, principal);
+
         final java.util.Optional<Commerce> commerceOpt = commerceService.findByUserId(id);
         if (!commerceOpt.isPresent()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -99,8 +111,11 @@ public class CommerceController {
 
     @RequestMapping(value = "/{id}/create-pack", method = RequestMethod.GET)
     public ModelAndView createPackForm(@PathVariable("id") final long commerceId,
+                                      @AuthenticationPrincipal final AuthUser principal,
                                       @ModelAttribute("createPackForm") final CreatePackForm form,
                                       @RequestParam(value = "error", required = false) final String error) {
+        verifyOwnership(commerceId, principal);
+
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
@@ -119,8 +134,11 @@ public class CommerceController {
     @RequestMapping(value = "/{id}/create-pack", method = RequestMethod.POST)
     public ModelAndView createPack(
             @PathVariable("id") final long commerceId,
+            @AuthenticationPrincipal final AuthUser principal,
             @Valid @ModelAttribute("createPackForm") final CreatePackForm form,
             final BindingResult bindingResult) {
+
+        verifyOwnership(commerceId, principal);
 
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -184,8 +202,11 @@ public class CommerceController {
     @RequestMapping(value = "/{id}/edit-pack/{packId}", method = RequestMethod.GET)
     public ModelAndView editPackForm(@PathVariable("id") final long commerceId,
                                      @PathVariable("packId") final long packId,
+                                     @AuthenticationPrincipal final AuthUser principal,
                                      @ModelAttribute("editPackForm") final EditPackForm form,
                                      @RequestParam(value = "error", required = false) final String error) {
+        verifyOwnership(commerceId, principal);
+
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
@@ -224,8 +245,11 @@ public class CommerceController {
     public ModelAndView editPack(
             @PathVariable("id") final long commerceId,
             @PathVariable("packId") final long packId,
+            @AuthenticationPrincipal final AuthUser principal,
             @Valid @ModelAttribute("editPackForm") final EditPackForm form,
             final BindingResult bindingResult) {
+
+        verifyOwnership(commerceId, principal);
 
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -297,7 +321,10 @@ public class CommerceController {
     @RequestMapping(value = "/{id}/delete-pack/{packId}", method = RequestMethod.POST)
     public ModelAndView deletePack(
             @PathVariable("id") final long commerceId,
-            @PathVariable("packId") final long packId) {
+            @PathVariable("packId") final long packId,
+            @AuthenticationPrincipal final AuthUser principal) {
+
+        verifyOwnership(commerceId, principal);
 
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -308,8 +335,35 @@ public class CommerceController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        packService.setActive(packId, false);
+        packService.deletePack(packId);
 
         return new ModelAndView("redirect:/commerce/" + commerceId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Devuelve el User del principal autenticado.
+     * Si por algún motivo el principal es nulo lanza 401.
+     */
+    private User getAuthenticatedUser(final AuthUser principal) {
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        }
+        return userService.findByEmail(principal.getUsername())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+    }
+
+    /**
+     * Lanza 403 si el {id} de la URL no coincide con el userId del usuario autenticado.
+     * Esto impide que un commerce acceda al dashboard / packs de otro commerce.
+     */
+    private void verifyOwnership(final long requestedUserId, final AuthUser principal) {
+        final User currentUser = getAuthenticatedUser(principal);
+        if (!currentUser.getId().equals(requestedUserId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
     }
 }

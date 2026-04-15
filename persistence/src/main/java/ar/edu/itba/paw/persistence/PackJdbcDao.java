@@ -21,7 +21,7 @@ import ar.edu.itba.paw.models.PackSortOption;
 public class PackJdbcDao implements PackDao {
 
     private static final String PACK_COLS_NO_IMAGE =
-            "id, commerce_id, title, description, original_price, final_price, stock, active";
+            "id, commerce_id, title, description, original_price, final_price, stock, active, deleted";
 
     private final JdbcTemplate jdbcTemplate;
     private final SimpleJdbcInsert simpleJdbcInsert;
@@ -50,7 +50,10 @@ public class PackJdbcDao implements PackDao {
                 rs.getDouble("final_price"),
                 rs.getInt("stock"),
                 rs.getBoolean("active"),
-                tags
+                rs.getBoolean("deleted"),
+                tags,
+                null,
+                null
             );
         };
 
@@ -64,7 +67,10 @@ public class PackJdbcDao implements PackDao {
             rs.getDouble("final_price"),
             rs.getInt("stock"),
             rs.getBoolean("active"),
-            Collections.emptyList()
+            rs.getBoolean("deleted"),
+            Collections.emptyList(),
+            null,
+            null
         );
     }
 
@@ -80,6 +86,7 @@ public class PackJdbcDao implements PackDao {
         parameters.put("final_price", finalPrice);
         parameters.put("stock", stock);
         parameters.put("active", true);
+        parameters.put("deleted", false);
         parameters.put("image_data", imageData);
         parameters.put("image_content_type", imageContentType);
         final Number id = simpleJdbcInsert.executeAndReturnKey(parameters);
@@ -95,7 +102,7 @@ public class PackJdbcDao implements PackDao {
         }
 
         return new Pack(id.longValue(), commerceId, title, description, originalPrice, finalPrice,
-                stock, true, tags, imageData, imageContentType);
+                stock, true, false, tags, imageData, imageContentType);
     }
 
     @Override
@@ -114,7 +121,7 @@ public class PackJdbcDao implements PackDao {
     @Override
     public List<Pack> findByCommerceId(Long commerceId) {
         return jdbcTemplate.query(
-                "SELECT " + PACK_COLS_NO_IMAGE + " FROM packs WHERE commerce_id = ? ORDER BY id DESC",
+                "SELECT " + PACK_COLS_NO_IMAGE + " FROM packs WHERE commerce_id = ? AND deleted = false ORDER BY id DESC",
                 packRowMapperNoTags, commerceId
         );
     }
@@ -127,7 +134,7 @@ public class PackJdbcDao implements PackDao {
     @Override
     public List<Pack> findActive(PackSortOption sort) {
         return jdbcTemplate.query(
-                "SELECT " + PACK_COLS_NO_IMAGE + " FROM packs WHERE active = true ORDER BY " + sort.getOrderByClause(),
+                "SELECT " + PACK_COLS_NO_IMAGE + " FROM packs WHERE active = true AND deleted = false ORDER BY " + sort.getOrderByClause(),
                 packRowMapperNoTags
         );
     }
@@ -141,9 +148,9 @@ public class PackJdbcDao implements PackDao {
     public List<Pack> searchPacks(String query, PackSortOption sort) {
         final String pattern = "%" + query + "%";
         return jdbcTemplate.query(
-            "SELECT packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active " +
+            "SELECT packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active, packs.deleted " +
             "FROM packs JOIN commerces ON packs.commerce_id = commerces.user_id " +
-            "WHERE packs.active = true AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?) ORDER BY " + sort.getOrderByClause(),
+            "WHERE packs.active = true AND packs.deleted = false AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?) ORDER BY " + sort.getOrderByClause(),
             packRowMapperNoTags,
             pattern,
             pattern
@@ -173,10 +180,10 @@ public class PackJdbcDao implements PackDao {
         String orderBy = sort.getOrderByClause().replace("packs.", "p.");
         
         return jdbcTemplate.query(
-            "SELECT p.id, p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active " +
+            "SELECT p.id, p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active, p.deleted " +
             "FROM packs p JOIN pack_tags pt ON p.id = pt.pack_id " +
-            "WHERE p.active = true AND pt.tag IN (" + inClause + ") " +
-            "GROUP BY p.id, p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active " +
+            "WHERE p.active = true AND p.deleted = false AND pt.tag IN (" + inClause + ") " +
+            "GROUP BY p.id, p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active, p.deleted " +
             "HAVING COUNT(DISTINCT pt.tag) = ? ORDER BY " + orderBy,
             packRowMapperNoTags,
             params.toArray()
@@ -203,12 +210,12 @@ public class PackJdbcDao implements PackDao {
         }
         params.add(tags.size());
         return jdbcTemplate.query(
-            "SELECT packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active " +
+            "SELECT packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active, packs.deleted " +
             "FROM packs " +
             "JOIN commerces ON packs.commerce_id = commerces.user_id " +
             "JOIN pack_tags pt ON packs.id = pt.pack_id " +
-            "WHERE packs.active = true AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?) AND pt.tag IN (" + inClause + ") " +
-            "GROUP BY packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active " +
+            "WHERE packs.active = true AND packs.deleted = false AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?) AND pt.tag IN (" + inClause + ") " +
+            "GROUP BY packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active, packs.deleted " +
             "HAVING COUNT(DISTINCT pt.tag) = ? ORDER BY " + sort.getOrderByClause(),
             packRowMapperNoTags,
             params.toArray()
@@ -240,8 +247,8 @@ public class PackJdbcDao implements PackDao {
     }
 
     @Override
-    public void setActive(final Long id, final boolean active) {
-        jdbcTemplate.update("UPDATE packs SET active = ? WHERE id = ?", active, id);
+    public void softDelete(final Long id) {
+        jdbcTemplate.update("UPDATE packs SET deleted = true WHERE id = ?", id);
     }
 
     @Override
@@ -258,7 +265,7 @@ public class PackJdbcDao implements PackDao {
     @Override
     public Optional<Pack> findImageByPackId(Long id) {
         return jdbcTemplate.query(
-                "SELECT id, commerce_id, title, description, original_price, final_price, stock, active, image_data, image_content_type FROM packs WHERE id = ?",
+                "SELECT id, commerce_id, title, description, original_price, final_price, stock, active, deleted, image_data, image_content_type FROM packs WHERE id = ?",
                 (rs, rowNum) -> {
                     byte[] imgData = rs.getBytes("image_data");
                     String imgType = rs.getString("image_content_type");
@@ -271,6 +278,7 @@ public class PackJdbcDao implements PackDao {
                             rs.getDouble("final_price"),
                             rs.getInt("stock"),
                             rs.getBoolean("active"),
+                            rs.getBoolean("deleted"),
                             Collections.emptyList(),
                             imgData,
                             imgType

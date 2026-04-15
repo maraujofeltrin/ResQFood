@@ -1,3 +1,5 @@
+ALTER TABLE packs ADD COLUMN deleted BOOLEAN NOT NULL DEFAULT FALSE;
+
 CREATE TABLE auctions (
     id                SERIAL PRIMARY KEY,
     pack_id           BIGINT NOT NULL UNIQUE,

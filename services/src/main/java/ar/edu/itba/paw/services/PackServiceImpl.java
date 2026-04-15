@@ -90,8 +90,8 @@ public class PackServiceImpl implements PackService {
     }
 
     @Override
-    public void setActive(Long id, boolean active) {
-        packDao.setActive(id, active);
+    public void deletePack(Long id) {
+        packDao.softDelete(id);
     }
 
     @Override

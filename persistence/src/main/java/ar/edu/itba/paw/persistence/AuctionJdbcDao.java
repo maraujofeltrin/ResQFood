@@ -27,7 +27,7 @@ public class AuctionJdbcDao implements AuctionDao {
     private static final String AUCTION_JOIN_PACK =
             "SELECT a.id AS auction_id, a.pack_id, a.initial_price, a.current_bid, a.current_bidder_id, " +
             "a.end_time, a.status, a.created_at, " +
-            "p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active " +
+            "p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active, p.deleted " +
             "FROM auctions a JOIN packs p ON a.pack_id = p.id";
 
     private final JdbcTemplate jdbcTemplate;
@@ -57,7 +57,10 @@ public class AuctionJdbcDao implements AuctionDao {
                 rs.getDouble("final_price"),
                 rs.getInt("stock"),
                 rs.getBoolean("active"),
-                Collections.emptyList()
+                rs.getBoolean("deleted"),
+                Collections.emptyList(),
+                null,
+                null
         );
     }
 
@@ -113,7 +116,7 @@ public class AuctionJdbcDao implements AuctionDao {
     @Override
     public List<Auction> findActive() {
         return jdbcTemplate.query(
-                AUCTION_JOIN_PACK + " WHERE a.status = 'ACTIVE' AND a.end_time > ? ORDER BY a.end_time ASC",
+                AUCTION_JOIN_PACK + " WHERE a.status = 'ACTIVE' AND a.end_time > ? AND p.deleted = false ORDER BY a.end_time ASC",
                 auctionRowMapper,
                 Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC))
         );
@@ -122,7 +125,7 @@ public class AuctionJdbcDao implements AuctionDao {
     @Override
     public List<Auction> findByCommerceId(final long commerceId) {
         return jdbcTemplate.query(
-                AUCTION_JOIN_PACK + " WHERE p.commerce_id = ? ORDER BY a.created_at DESC",
+                AUCTION_JOIN_PACK + " WHERE p.commerce_id = ? AND p.deleted = false ORDER BY a.created_at DESC",
                 auctionRowMapper, commerceId
         );
     }
@@ -130,7 +133,7 @@ public class AuctionJdbcDao implements AuctionDao {
     @Override
     public List<Auction> findByStatus(final Auction.Status status) {
         return jdbcTemplate.query(
-                AUCTION_JOIN_PACK + " WHERE a.status = ? ORDER BY a.end_time ASC",
+                AUCTION_JOIN_PACK + " WHERE a.status = ? AND p.deleted = false ORDER BY a.end_time ASC",
                 auctionRowMapper, status.name()
         );
     }
@@ -151,7 +154,7 @@ public class AuctionJdbcDao implements AuctionDao {
     @Override
     public List<Auction> findExpiredActive() {
         return jdbcTemplate.query(
-                AUCTION_JOIN_PACK + " WHERE a.status = 'ACTIVE' AND a.end_time <= ?",
+                AUCTION_JOIN_PACK + " WHERE a.status = 'ACTIVE' AND a.end_time <= ? AND p.deleted = false",
                 auctionRowMapper,
                 Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC))
         );

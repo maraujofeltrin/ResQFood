@@ -66,7 +66,7 @@ public class ReservationMailServiceImplTest {
         @Override public List<Pack> findActive() { return List.of(pack); }
         @Override public List<Pack> searchPacks(String q) { return List.of(pack); }
         @Override public Pack update(Pack p) { throw new UnsupportedOperationException(); }
-        @Override public void setActive(Long id, boolean a) { }
+        @Override public void softDelete(Long id) { }
         @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
         @Override public void updateImage(Long pId, byte[] id, String ic) { }
         @Override public boolean decrementStock(long pId, int q) { return true; }
@@ -155,7 +155,7 @@ public class ReservationMailServiceImplTest {
     public void sendReservationRequestToCommerce_createsTokens_and_sendsMail() throws Exception {
         final Reservation reservation = new Reservation(1L, 2L, 3L, LocalDateTime.now(), 5.0,
                 Reservation.Status.RESERVED, "code123", null, 1, "pw");
-        final Pack pack = new Pack(3L, 2L, "Delicious", "desc", 10.0, 5.0, 1, true, List.of());
+        final Pack pack = new Pack(3L, 2L, "Delicious", "desc", 10.0, 5.0, 1, true, false, List.of(), null, null);
 
         final PackDao packDao = new InMemoryPackDao(pack);
         svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
@@ -197,7 +197,7 @@ public class ReservationMailServiceImplTest {
     public void sendReservationCodeToClient_sendsMail_withCodeAndPackLabel() throws Exception {
         final Reservation reservation = new Reservation(7L, 2L, 11L, LocalDateTime.now(), 9.99,
                 Reservation.Status.RESERVED, "PICKUPCODE", null, 1, "pw");
-        final Pack pack = new Pack(11L, 2L, "Morning Bread", "desc", 10.0, 5.0, 1, true, List.of());
+        final Pack pack = new Pack(11L, 2L, "Morning Bread", "desc", 10.0, 5.0, 1, true, false, List.of(), null, null);
         final PackDao packDao = new InMemoryPackDao(pack);
         svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
                 "noreply@example.org", "ResQFood", "America/Argentina/Buenos_Aires");

@@ -22,7 +22,7 @@ public interface PackDao {
     List<Pack> findActiveByTags(List<PackTag> tags, PackSortOption sort);
     List<Pack> searchPacksWithTags(String query, List<PackTag> tags, PackSortOption sort);
     Pack update(Pack pack);
-    void setActive(Long id, boolean active);
+    void softDelete(Long id);
     Optional<Pack> findImageByPackId(Long id);
     void updateImage(Long packId, byte[] imageData, String imageContentType);
 

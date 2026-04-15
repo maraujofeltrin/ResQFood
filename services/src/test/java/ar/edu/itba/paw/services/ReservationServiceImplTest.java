@@ -94,7 +94,7 @@ public class ReservationServiceImplTest {
         @Override public java.util.List<Pack> findActive() { return Collections.emptyList(); }
         @Override public java.util.List<Pack> searchPacks(String query) { return Collections.emptyList(); }
         @Override public Pack update(Pack pack) { throw new UnsupportedOperationException(); }
-        @Override public void setActive(Long id, boolean active) { }
+        @Override public void softDelete(Long id) { }
         @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
         @Override public boolean decrementStock(long packId, int quantity) { return true; }
         @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
@@ -154,7 +154,7 @@ public class ReservationServiceImplTest {
         final String email = "user@example.org";
 
         final User user = new User(1L, email, "pwd", "Test User");
-        final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
+        final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, false, Collections.emptyList(), null, null);
         final Client client = new Client(user.getId(), "Test", "User", true);
 
         final UserService userService = new TestUserService(user);
@@ -180,7 +180,7 @@ public class ReservationServiceImplTest {
         final String email = "user2@example.org";
 
         final User user = new User(2L, email, "pwd", "Test User2");
-        final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
+        final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, false, Collections.emptyList(), null, null);
         final Client client = new Client(user.getId(), "Test", "User", true);
 
         final UserService userService = new TestUserService(user);
@@ -203,7 +203,7 @@ public class ReservationServiceImplTest {
         final String email = "user3@example.org";
 
         final User user = new User(3L, email, "pwd", "Test User3");
-        final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
+        final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, false, Collections.emptyList(), null, null);
         final Client client = new Client(user.getId(), "Test", "User", true);
 
         final UserService userService = new TestUserService(user);

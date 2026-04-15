@@ -34,7 +34,8 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().requestMatchers(antMatcher("/css/**"), antMatcher("/images/**"), antMatcher("/js/**"), antMatcher("/favicon.ico"));
+        return (web) -> web.ignoring().requestMatchers(antMatcher("/css/**"), antMatcher("/images/**"),
+                antMatcher("/js/**"), antMatcher("/favicon.ico"));
     }
 
     @Override
@@ -45,33 +46,33 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(final HttpSecurity http) throws Exception {
         http.userDetailsService(authUserDetailsService)
-            .authorizeHttpRequests()
+                .authorizeHttpRequests()
                 .requestMatchers(antMatcher("/login"), antMatcher("/register"), antMatcher("/create")).anonymous()
                 .requestMatchers(antMatcher("/logout")).authenticated()
                 .requestMatchers(antMatcher("/")).permitAll()
-                .requestMatchers(antMatcher(HttpMethod.GET,  "/packs/**")).permitAll()
+                .requestMatchers(antMatcher(HttpMethod.GET, "/packs/**")).permitAll()
                 .requestMatchers(antMatcher(HttpMethod.POST, "/packs/**")).authenticated()
                 .requestMatchers(antMatcher("/commerce"), antMatcher("/commerce/**")).hasRole("COMMERCE")
                 .requestMatchers(antMatcher(HttpMethod.POST, "/reservations/**")).authenticated()
-                .requestMatchers(antMatcher(HttpMethod.GET,  "/reservations/**")).authenticated()
+                .requestMatchers(antMatcher(HttpMethod.GET, "/reservations/**")).authenticated()
                 .anyRequest().authenticated()
-            .and().formLogin()
+                .and().formLogin()
                 .loginPage("/login")
                 .usernameParameter("email")
                 .passwordParameter("password")
                 .defaultSuccessUrl("/", false)
                 .failureUrl("/login?error=true")
-            .and().logout()
+                .and().logout()
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/login")
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
-            .and().rememberMe()
+                .and().rememberMe()
                 .rememberMeParameter("rememberMe")
                 .userDetailsService(authUserDetailsService)
                 .key(rememberMeKey)
                 .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(rememberMeValidityDays))
-            .and().csrf()
+                .and().csrf()
                 .ignoringRequestMatchers(antMatcher("/reservations/accept"), antMatcher("/reservations/reject"));
     }
 }

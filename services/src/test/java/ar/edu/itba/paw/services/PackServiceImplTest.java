@@ -18,7 +18,7 @@ public class PackServiceImplTest {
 
         @Override
         public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<PackTag> tags, byte[] imageData, String imageContentType) {
-            final Pack p = new Pack(nextId++, commerceId, title, description, originalPrice, finalPrice, stock, true, tags, imageData, imageContentType);
+            final Pack p = new Pack(nextId++, commerceId, title, description, originalPrice, finalPrice, stock, true, false, tags, imageData, imageContentType);
             store.put(p.getId(), p);
             return p;
         }
@@ -43,7 +43,7 @@ public class PackServiceImplTest {
         @Override
         public List<Pack> findActive() {
             final List<Pack> r = new ArrayList<>();
-            for (Pack p : store.values()) if (Boolean.TRUE.equals(p.getActive())) r.add(p);
+            for (Pack p : store.values()) if (Boolean.TRUE.equals(p.getActive()) && !Boolean.TRUE.equals(p.getDeleted())) r.add(p);
             return r;
         }
 
@@ -61,9 +61,9 @@ public class PackServiceImplTest {
         }
 
         @Override
-        public void setActive(Long id, boolean active) {
+        public void softDelete(Long id) {
             final Pack p = store.get(id);
-            if (p != null) p.setActive(active);
+            if (p != null) p.setDeleted(true);
         }
 
         @Override
@@ -122,14 +122,14 @@ public class PackServiceImplTest {
     }
 
     @Test
-    public void setActive_updatesActiveFlag() {
+    public void deletePack_updatesDeletedFlag() {
         final InMemoryPackDao dao = new InMemoryPackDao();
         final PackServiceImpl svc = new PackServiceImpl(dao);
 
         final Pack p = svc.createPack(1L, "a", "b", 1.0, 1.0, 1, Collections.emptyList(), null, null);
-        assertTrue(svc.findById(p.getId()).get().getActive());
-        svc.setActive(p.getId(), false);
-        assertFalse(svc.findById(p.getId()).get().getActive());
+        assertFalse(svc.findById(p.getId()).get().getDeleted());
+        svc.deletePack(p.getId());
+        assertTrue(svc.findById(p.getId()).get().getDeleted());
     }
 
     @Test

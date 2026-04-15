@@ -7,7 +7,9 @@
       <a href="${pageContext.request.contextPath}/" class="text-2xl font-bold tracking-tight text-primary italic"><spring:message code="app.brand"/></a>
       <div class="hidden md:flex gap-6">
         <a class="text-on-surface-variant hover:text-primary transition-all duration-300" href="${pageContext.request.contextPath}/packs"><spring:message code="layout.nav.explore"/></a>
-        <a class="text-on-surface-variant hover:text-primary transition-all duration-300" href="${pageContext.request.contextPath}/commerce"><spring:message code="layout.nav.commercePanel"/></a>
+        <sec:authorize access="hasRole('COMMERCE')">
+          <a class="text-on-surface-variant hover:text-primary transition-all duration-300" href="${pageContext.request.contextPath}/commerce"><spring:message code="layout.nav.commercePanel"/></a>
+        </sec:authorize>
       </div>
     </div>
     
