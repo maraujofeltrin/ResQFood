@@ -188,58 +188,70 @@
                         <c:otherwise>
                     <h2 class="pack-aside-heading font-headline"><spring:message code="pack.detail.reserve.title"/></h2>
 
-                    <c:url var="reservationAction" value="/packs/${packId}/reserve"/>
-                    <form:form modelAttribute="reservationForm" cssClass="pack-reservation-form" method="post"
-                               action="${reservationAction}" novalidate="novalidate">
+                    <div class="pack-price-block mb-4">
+                        <p class="pack-price-block-label"><spring:message code="pack.detail.price.perPack"/></p>
+                        <p class="pack-price-original"><c:out value="${originalPrice}"/></p>
+                        <p class="pack-price-final font-headline"><c:out value="${finalPrice}"/></p>
+                    </div>
 
-                        <div class="pack-price-block">
-                            <p class="pack-price-block-label"><spring:message code="pack.detail.price.perPack"/></p>
-                            <p class="pack-price-original"><c:out value="${originalPrice}"/></p>
-                            <p class="pack-price-final font-headline"><c:out value="${finalPrice}"/></p>
-                        </div>
+                    <sec:authorize access="hasRole('CLIENT')">
+                        <c:url var="reservationAction" value="/packs/${packId}/reserve"/>
+                        <form:form modelAttribute="reservationForm" cssClass="pack-reservation-form" method="post"
+                                   action="${reservationAction}" novalidate="novalidate">
 
-                        <spring:message code="pack.detail.form.quantity" var="labelQuantity"/>
-                        <spring:message code="pack.detail.form.quantity.placeholder" var="phQuantity"/>
-                        <c:choose>
-                            <c:when test="${quantityMax ge 1}">
-                                <spring:bind path="quantity">
-                                    <paw:input id="reservation-quantity" label="${labelQuantity}" type="number"
-                                               name="${status.expression}" value="${status.value}"
-                                               error="${status.errorMessages[0]}"
-                                               placeholder="${phQuantity}"
-                                               min="1" max="${quantityMax}" step="1"
-                                               wrapperClass="pack-form-field" labelClass="pack-form-label"
-                                               inputClass="pack-form-control pack-form-control--tabular"
-                                               errorClass="pack-feedback pack-feedback--error pack-form-errors"
-                                               errorTag="p"/>
-                                </spring:bind>
-                            </c:when>
-                            <c:otherwise>
-                                <div class="pack-form-field">
-                                    <label class="pack-form-label" for="reservation-quantity-hidden"><c:out value="${labelQuantity}"/></label>
-                                    <p class="pack-feedback pack-feedback--error" role="alert" id="reservation-quantity-unavailable">
-                                        <spring:message code="pack.detail.form.quantity.unavailable"/>
-                                    </p>
-                                    <form:hidden path="quantity" id="reservation-quantity-hidden"/>
-                                </div>
-                            </c:otherwise>
-                        </c:choose>
+                            <spring:message code="pack.detail.form.quantity" var="labelQuantity"/>
+                            <spring:message code="pack.detail.form.quantity.placeholder" var="phQuantity"/>
+                            <c:choose>
+                                <c:when test="${quantityMax ge 1}">
+                                    <spring:bind path="quantity">
+                                        <paw:input id="reservation-quantity" label="${labelQuantity}" type="number"
+                                                   name="${status.expression}" value="${status.value}"
+                                                   error="${status.errorMessages[0]}"
+                                                   placeholder="${phQuantity}"
+                                                   min="1" max="${quantityMax}" step="1"
+                                                   wrapperClass="pack-form-field" labelClass="pack-form-label"
+                                                   inputClass="pack-form-control pack-form-control--tabular"
+                                                   errorClass="pack-feedback pack-feedback--error pack-form-errors"
+                                                   errorTag="p"/>
+                                    </spring:bind>
+                                </c:when>
+                                <c:otherwise>
+                                    <div class="pack-form-field">
+                                        <label class="pack-form-label" for="reservation-quantity-hidden"><c:out value="${labelQuantity}"/></label>
+                                        <p class="pack-feedback pack-feedback--error" role="alert" id="reservation-quantity-unavailable">
+                                            <spring:message code="pack.detail.form.quantity.unavailable"/>
+                                        </p>
+                                        <form:hidden path="quantity" id="reservation-quantity-hidden"/>
+                                    </div>
+                                </c:otherwise>
+                            </c:choose>
 
-                        <div class="pack-form-field" id="reservation-total-block"
-                             data-unit-price="${unitPriceNumber}">
-                            <p class="pack-form-total-label"><spring:message code="pack.detail.form.total"/></p>
-                            <p class="pack-form-total-amount font-headline" id="reservation-total-display" aria-live="polite">—</p>
-                        </div>
+                            <div class="pack-form-field" id="reservation-total-block"
+                                 data-unit-price="${unitPriceNumber}">
+                                <p class="pack-form-total-label"><spring:message code="pack.detail.form.total"/></p>
+                                <p class="pack-form-total-amount font-headline" id="reservation-total-display" aria-live="polite">—</p>
+                            </div>
 
-                        <spring:message code="pack.detail.form.submitting" var="submittingText"/>
-                        <button type="submit" class="pack-submit-btn font-headline"
-                                id="reservation-submit-btn"
-                                data-submitting-text="${submittingText}"
-                                <c:if test="${quantityMax lt 1}">disabled="disabled" aria-disabled="true"</c:if>>
-                            <span class="pack-submit-btn__label"><spring:message code="pack.detail.form.submit"/></span>
-                            <span class="material-symbols-outlined pack-submit-btn__icon">arrow_forward</span>
-                        </button>
-                    </form:form>
+                            <spring:message code="pack.detail.form.submitting" var="submittingText"/>
+                            <button type="submit" class="pack-submit-btn font-headline"
+                                    id="reservation-submit-btn"
+                                    data-submitting-text="${submittingText}"
+                                    <c:if test="${quantityMax lt 1}">disabled="disabled" aria-disabled="true"</c:if>>
+                                <span class="pack-submit-btn__label"><spring:message code="pack.detail.form.submit"/></span>
+                                <span class="material-symbols-outlined pack-submit-btn__icon">arrow_forward</span>
+                            </button>
+                        </form:form>
+                    </sec:authorize>
+                    <sec:authorize access="isAnonymous()">
+                        <p class="text-secondary text-sm mb-2"><spring:message code="pack.detail.reserve.loginPrompt"/></p>
+                        <c:url var="loginUrlReserve" value="/login"/>
+                        <a href="${loginUrlReserve}" class="inline-flex items-center justify-center gap-2 font-bold text-primary hover:underline">
+                            <spring:message code="pack.detail.reserve.loginLink"/>
+                        </a>
+                    </sec:authorize>
+                    <sec:authorize access="hasRole('COMMERCE')">
+                        <p class="pack-feedback pack-feedback--error" role="status"><spring:message code="pack.detail.reserve.commerceCannotReserve"/></p>
+                    </sec:authorize>
                         </c:otherwise>
                     </c:choose>
                 </div>
