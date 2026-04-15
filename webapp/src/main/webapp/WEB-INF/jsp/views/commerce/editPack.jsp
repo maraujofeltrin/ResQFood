@@ -14,7 +14,7 @@
 
                 <main class="pack-detail-main">
                     <div class="flex items-center gap-2 mb-8 text-secondary">
-                        <a href="${pageContext.request.contextPath}/commerce/${commerceId}"
+                        <a href="${pageContext.request.contextPath}/commerce"
                             class="group flex items-center font-bold">
                             <span class="material-symbols-outlined text-xl mr-1">arrow_back</span>
                             <span class="group-hover:underline"><spring:message code="commerce.createPack.backToDashboard"/></span>
@@ -33,7 +33,7 @@
                         </div>
                     </c:if>
 
-                    <form:form modelAttribute="editPackForm" action="${pageContext.request.contextPath}/commerce/${commerceId}/edit-pack/${packId}" method="post"
+                    <form:form modelAttribute="editPackForm" action="${pageContext.request.contextPath}/commerce/edit-pack/${packId}" method="post"
                         enctype="multipart/form-data" cssClass="commerce-create-pack-form max-w-2xl mx-auto w-full" novalidate="novalidate">
                             <section class="pack-aside-card bg-surface-container-lowest shadow-soft">
                                 <h2 class="pack-aside-heading mb-2"><spring:message code="commerce.createPack.packDetails.title"/></h2>

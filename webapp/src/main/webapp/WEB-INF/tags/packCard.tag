@@ -30,7 +30,7 @@
     <c:if test="${manageable}">
       <div class="absolute top-3 right-3 flex gap-2">
         <button type="button" 
-                onclick="event.preventDefault(); event.stopPropagation(); window.location.href='${pageContext.request.contextPath}/commerce/${commerceId}/edit-pack/${packId}';" 
+                onclick="event.preventDefault(); event.stopPropagation(); window.location.href='${pageContext.request.contextPath}/commerce/edit-pack/${packId}';" 
                 class="bg-white/90 backdrop-blur text-secondary hover:text-primary p-2 flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform">
             <span class="material-symbols-outlined text-[1.25rem]">edit</span>
         </button>

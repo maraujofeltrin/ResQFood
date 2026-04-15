@@ -25,7 +25,7 @@
                                     </p>
                                 </div>
                                 <div class="flex items-center gap-4">
-                                    <a href="${pageContext.request.contextPath}/commerce/${commerceId}/create-pack"
+                                    <a href="${pageContext.request.contextPath}/commerce/create-pack"
                                         class="bg-primary text-on-primary px-6 py-3 rounded-full text-base font-bold flex items-center gap-2 hover:scale-105 transition-transform shadow-md">
                                         <span class="material-symbols-outlined font-bold"
                                             style="font-size: 20px;">add</span>
@@ -41,17 +41,17 @@
 
                             <section>
                                 <div class="inline-flex items-center bg-surface-variant p-1.5 rounded-full mb-8 overflow-x-auto">
-                                    <a href="${pageContext.request.contextPath}/commerce/${commerceId}?tab=items" 
+                                    <a href="${pageContext.request.contextPath}/commerce?tab=items" 
                                        class="px-6 py-2.5 text-base font-bold transition-all whitespace-nowrap rounded-full
                                        ${currentTab == 'items' ? 'bg-surface text-primary shadow-sm' : 'text-secondary hover:text-primary'}">
                                         <spring:message code="commerce.dashboard.tab.items" />
                                     </a>
-                                    <a href="${pageContext.request.contextPath}/commerce/${commerceId}?tab=packs" 
+                                    <a href="${pageContext.request.contextPath}/commerce?tab=packs" 
                                        class="px-6 py-2.5 text-base font-bold transition-all whitespace-nowrap rounded-full
                                        ${currentTab == 'packs' ? 'bg-surface text-primary shadow-sm' : 'text-secondary hover:text-primary'}">
                                         <spring:message code="commerce.dashboard.tab.packs" />
                                     </a>
-                                    <a href="${pageContext.request.contextPath}/commerce/${commerceId}?tab=auctions" 
+                                    <a href="${pageContext.request.contextPath}/commerce?tab=auctions" 
                                        class="px-6 py-2.5 text-base font-bold transition-all whitespace-nowrap rounded-full
                                        ${currentTab == 'auctions' ? 'bg-surface text-primary shadow-sm' : 'text-secondary hover:text-primary'}">
                                         <spring:message code="commerce.dashboard.tab.auctions" />
@@ -143,7 +143,7 @@
                                 const content = document.getElementById('deleteModalContent');
                                 const form = document.getElementById('deleteForm');
                                 
-                                form.action = '${pageContext.request.contextPath}/commerce/${commerceId}/delete-pack/' + packId;
+                                form.action = '${pageContext.request.contextPath}/commerce/delete-pack/' + packId;
                                 
                                 modal.classList.remove('hidden');
                                 // Trigger reflow for animation

@@ -16,13 +16,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ModelAndView handleMaxUploadSize(final MaxUploadSizeExceededException e,
-                                           final RedirectAttributes redirectAttributes) {
+            final RedirectAttributes redirectAttributes) {
         return new ModelAndView("redirect:/commerce/create-pack?error=maxUploadSize");
+    }
+
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public void handleMethodNotSupported(final org.springframework.web.HttpRequestMethodNotSupportedException e, final HttpServletResponse response) throws IOException {
+        response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
     }
 
     @ExceptionHandler(ResponseStatusException.class)
     public void handleResponseStatus(final ResponseStatusException e,
-                                     final HttpServletResponse response) throws IOException {
+            final HttpServletResponse response) throws IOException {
         response.sendError(e.getStatus().value());
     }
 

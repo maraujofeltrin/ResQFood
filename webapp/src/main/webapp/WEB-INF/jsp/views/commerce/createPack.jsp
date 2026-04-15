@@ -14,7 +14,7 @@
 
                         <main class="pack-detail-main">
                             <div class="flex items-center gap-2 mb-8 text-secondary">
-                                <a href="${pageContext.request.contextPath}/commerce/${commerceId}"
+                                <a href="${pageContext.request.contextPath}/commerce"
                                     class="group flex items-center font-bold">
                                     <span class="material-symbols-outlined text-xl mr-1">arrow_back</span>
                                     <span class="group-hover:underline">
@@ -40,7 +40,7 @@
                             </c:if>
 
                             <form:form modelAttribute="createPackForm"
-                                action="${pageContext.request.contextPath}/commerce/${commerceId}/create-pack"
+                                action="${pageContext.request.contextPath}/commerce/create-pack"
                                 method="post" enctype="multipart/form-data"
                                 cssClass="commerce-create-pack-form max-w-2xl mx-auto w-full" novalidate="novalidate">
                                 <section class="pack-aside-card bg-surface-container-lowest shadow-soft">

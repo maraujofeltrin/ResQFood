@@ -18,7 +18,7 @@
         <spring:message code="error.title.403" var="errorTitle"/>
         <spring:message code="error.message.403" var="errorMessage"/>
     </c:when>
-    <c:when test="${statusCode == 404}">
+    <c:when test="${statusCode == 404 || statusCode == 405}">
         <spring:message code="error.title.404" var="errorTitle"/>
         <spring:message code="error.message.404" var="errorMessage"/>
     </c:when>

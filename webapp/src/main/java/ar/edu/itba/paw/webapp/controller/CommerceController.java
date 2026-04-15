@@ -60,21 +60,13 @@ public class CommerceController {
     }
 
     /**
-     * Entry point: redirige al dashboard del usuario autenticado.
-     * Spring Security ya garantiza que el usuario es ROLE_COMMERCE.
+     * Entry point: renderiza el dashboard del commerce autenticado.
      */
     @GetMapping(value = "")
-    public ModelAndView myDashboard(@AuthenticationPrincipal final AuthUser principal) {
-        final User currentUser = getAuthenticatedUser(principal);
-        return new ModelAndView("redirect:/commerce/" + currentUser.getId());
-    }
-
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public ModelAndView dashboard(@PathVariable("id") final long id,
-                                  @AuthenticationPrincipal final AuthUser principal,
+    public ModelAndView dashboard(@AuthenticationPrincipal final AuthUser principal,
                                   @RequestParam(value = "page", defaultValue = "1") final int page,
                                   @RequestParam(value = "tab", defaultValue = "items") final String tab) {
-        verifyOwnership(id, principal);
+        final long id = getAuthenticatedUser(principal).getId();
 
         final java.util.Optional<Commerce> commerceOpt = commerceService.findByUserId(id);
         if (!commerceOpt.isPresent()) {
@@ -105,16 +97,15 @@ public class CommerceController {
         mav.addObject("totalPages", totalPages);
         mav.addObject("commerceId", id);
         mav.addObject("currentTab", tab);
-        mav.addObject("paginationBaseUrl", "/commerce/" + id + "?tab=" + tab);
+        mav.addObject("paginationBaseUrl", "/commerce?tab=" + tab);
         return mav;
     }
 
-    @RequestMapping(value = "/{id}/create-pack", method = RequestMethod.GET)
-    public ModelAndView createPackForm(@PathVariable("id") final long commerceId,
-                                      @AuthenticationPrincipal final AuthUser principal,
+    @RequestMapping(value = "/create-pack", method = RequestMethod.GET)
+    public ModelAndView createPackForm(@AuthenticationPrincipal final AuthUser principal,
                                       @ModelAttribute("createPackForm") final CreatePackForm form,
                                       @RequestParam(value = "error", required = false) final String error) {
-        verifyOwnership(commerceId, principal);
+        final long commerceId = getAuthenticatedUser(principal).getId();
 
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -131,14 +122,13 @@ public class CommerceController {
         return mav;
     }
 
-    @RequestMapping(value = "/{id}/create-pack", method = RequestMethod.POST)
+    @RequestMapping(value = "/create-pack", method = RequestMethod.POST)
     public ModelAndView createPack(
-            @PathVariable("id") final long commerceId,
             @AuthenticationPrincipal final AuthUser principal,
             @Valid @ModelAttribute("createPackForm") final CreatePackForm form,
             final BindingResult bindingResult) {
 
-        verifyOwnership(commerceId, principal);
+        final long commerceId = getAuthenticatedUser(principal).getId();
 
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -180,7 +170,7 @@ public class CommerceController {
                                    form.getTags() != null ? form.getTags() : Collections.emptyList(),
                                    imageData, imageContentType);
                                    
-            return new ModelAndView("redirect:/commerce/" + commerceId);
+            return new ModelAndView("redirect:/commerce");
 
         } catch (IllegalArgumentException e) {
             final ModelAndView mav = new ModelAndView("commerce/createPack");
@@ -199,13 +189,12 @@ public class CommerceController {
         }
     }
 
-    @RequestMapping(value = "/{id}/edit-pack/{packId}", method = RequestMethod.GET)
-    public ModelAndView editPackForm(@PathVariable("id") final long commerceId,
-                                     @PathVariable("packId") final long packId,
+    @RequestMapping(value = "/edit-pack/{packId}", method = RequestMethod.GET)
+    public ModelAndView editPackForm(@PathVariable("packId") final long packId,
                                      @AuthenticationPrincipal final AuthUser principal,
                                      @ModelAttribute("editPackForm") final EditPackForm form,
                                      @RequestParam(value = "error", required = false) final String error) {
-        verifyOwnership(commerceId, principal);
+        final long commerceId = getAuthenticatedUser(principal).getId();
 
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -241,15 +230,14 @@ public class CommerceController {
         return mav;
     }
 
-    @RequestMapping(value = "/{id}/edit-pack/{packId}", method = RequestMethod.POST)
+    @RequestMapping(value = "/edit-pack/{packId}", method = RequestMethod.POST)
     public ModelAndView editPack(
-            @PathVariable("id") final long commerceId,
             @PathVariable("packId") final long packId,
             @AuthenticationPrincipal final AuthUser principal,
             @Valid @ModelAttribute("editPackForm") final EditPackForm form,
             final BindingResult bindingResult) {
 
-        verifyOwnership(commerceId, principal);
+        final long commerceId = getAuthenticatedUser(principal).getId();
 
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -297,7 +285,7 @@ public class CommerceController {
                 packService.updateImage(packToUpdate.getId(), image.getBytes(), image.getContentType());
             }
 
-            return new ModelAndView("redirect:/commerce/" + commerceId);
+            return new ModelAndView("redirect:/commerce");
 
         } catch (IllegalArgumentException e) {
             final ModelAndView mav = new ModelAndView("commerce/editPack");
@@ -318,13 +306,12 @@ public class CommerceController {
         }
     }
 
-    @RequestMapping(value = "/{id}/delete-pack/{packId}", method = RequestMethod.POST)
+    @RequestMapping(value = "/delete-pack/{packId}", method = RequestMethod.POST)
     public ModelAndView deletePack(
-            @PathVariable("id") final long commerceId,
             @PathVariable("packId") final long packId,
             @AuthenticationPrincipal final AuthUser principal) {
 
-        verifyOwnership(commerceId, principal);
+        final long commerceId = getAuthenticatedUser(principal).getId();
 
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -337,7 +324,7 @@ public class CommerceController {
 
         packService.deletePack(packId);
 
-        return new ModelAndView("redirect:/commerce/" + commerceId);
+        return new ModelAndView("redirect:/commerce");
     }
 
     // -------------------------------------------------------------------------
@@ -356,14 +343,5 @@ public class CommerceController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
     }
 
-    /**
-     * Lanza 403 si el {id} de la URL no coincide con el userId del usuario autenticado.
-     * Esto impide que un commerce acceda al dashboard / packs de otro commerce.
-     */
-    private void verifyOwnership(final long requestedUserId, final AuthUser principal) {
-        final User currentUser = getAuthenticatedUser(principal);
-        if (!currentUser.getId().equals(requestedUserId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-    }
+
 }
