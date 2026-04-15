@@ -5,11 +5,11 @@ This project is a web platform designed to reduce food waste in gastronomic esta
 - Commerces publish their surplus food "packs" at reduced prices at the end of the day.
 - Customers explore, reserve, and pick up these packs based on location and preferences.
 - **Main Goal:** Create an ecosystem where commerces reduce economic losses and users access food at lower costs, promoting responsible and sustainable consumption.
-- **Features:** Search and reservation flow, notifications, favorites system, ratings, purchase history, and impact metrics (e.g., amount of rescued food).
+- **Features:** Search and reservation flow, dynamic pricing through auctions (Auction and Bids), notifications, favorites system, ratings, purchase history, and impact metrics (e.g., amount of rescued food).
 
 ### User Roles
-- **Clients:** Search, explore, and purchase/reserve packs.
-- **Commerces:** Publish and manage the availability of their surplus food offers.
+- **Clients:** Search, explore, purchase/reserve packs, and place bids on active auctions.
+- **Commerces:** Publish and manage the availability of their surplus food offers, either as direct sales or auctions.
 
 ## Technical Architecture
 

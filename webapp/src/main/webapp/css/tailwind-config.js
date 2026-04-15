@@ -72,6 +72,13 @@ tailwind.config = {
         "on-error":                   "#FFFFFF",
         "on-error-container":         "#93000A",
 
+        /* Auction accent (DESIGN.md §2 — orange for auction differentiation) */
+        "auction":                    "#E65100",
+        "auction-container":          "#FFF3E0",
+        "auction-fixed":              "#FFAB40",
+        "on-auction":                 "#FFFFFF",
+        "on-auction-container":       "#BF360C",
+
         /* Outline (DESIGN.md §4 ghost borders) */
         "outline":                    "#707973",
         "outline-variant":            "#C2C9C2",
