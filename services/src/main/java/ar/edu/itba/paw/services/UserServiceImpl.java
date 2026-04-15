@@ -1,10 +1,15 @@
 package ar.edu.itba.paw.services;
 
+import ar.edu.itba.paw.models.Client;
+import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.models.User;
+import ar.edu.itba.paw.persistence.ClientDao;
+import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.UserDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -12,28 +17,38 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
 
     private final UserDao userDao;
+    private final ClientDao clientDao;
+    private final CommerceDao commerceDao;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserServiceImpl(final UserDao userDao, final PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(final UserDao userDao, final ClientDao clientDao, final CommerceDao commerceDao,
+            final PasswordEncoder passwordEncoder) {
         this.userDao = userDao;
+        this.clientDao = clientDao;
+        this.commerceDao = commerceDao;
         this.passwordEncoder = passwordEncoder;
     }
 
+    @Transactional
     @Override
-    public User createUser(final String email, final String password, final String name) {
-        return userDao.createUser(email, passwordEncoder.encode(password), name, null, null);
+    public User createUser(final User user, final Client clientProfile, final Commerce commerceProfile) {
+        final User createdUser = userDao.createUser(
+                user.getEmail(),
+                passwordEncoder.encode(user.getPassword()),
+                user.getName(),
+                user.getPhone(),
+                user.getRole());
+
+        persistProfileByRole(createdUser, clientProfile, commerceProfile);
+        return createdUser;
     }
 
+    @Transactional
     @Override
-    public User createUser(final String email, final String password, final String name, final String phone, final User.Role role) {
-        return userDao.createUser(email, passwordEncoder.encode(password), name, phone, role);
-    }
-
-    @Override
-    public Optional<User> upgradeProvisionalUser(final String email, final String password, final String name,
-            final User.Role role) {
-        final Optional<User> maybeUser = userDao.findByEmail(email);
+    public Optional<User> upgradeProvisionalUser(final User user, final Client clientProfile,
+            final Commerce commerceProfile) {
+        final Optional<User> maybeUser = userDao.findByEmail(user.getEmail());
         if (!maybeUser.isPresent()) {
             return Optional.empty();
         }
@@ -46,9 +61,72 @@ public class UserServiceImpl implements UserService {
             return Optional.empty();
         }
 
-        final User upgraded = userDao.updateUser(existing.getId(), passwordEncoder.encode(password), name,
-                existing.getPhone(), role);
+        final User upgraded = userDao.updateUser(
+                existing.getId(),
+                passwordEncoder.encode(user.getPassword()),
+                user.getName(),
+                hasText(user.getPhone()) ? user.getPhone() : existing.getPhone(),
+                user.getRole());
+
+        persistProfileByRole(upgraded, clientProfile, commerceProfile);
         return Optional.of(upgraded);
+    }
+
+    private void persistProfileByRole(final User user, final Client clientProfile, final Commerce commerceProfile) {
+        if (user.getRole() == User.Role.CLIENT) {
+            if (clientProfile == null) {
+                throw new IllegalArgumentException("Client profile data is required for CLIENT users");
+            }
+            final Client clientToPersist = new Client(
+                    user.getId(),
+                    clientProfile.getName(),
+                    clientProfile.getLastName(),
+                    clientProfile.getNotificationsVisibilityPreferences());
+
+            clientDao.findByUserId(user.getId())
+                    .map(existingClient -> clientDao.update(clientToPersist))
+                    .orElseGet(() -> clientDao.createClient(
+                            user.getId(),
+                            clientProfile.getName(),
+                        clientProfile.getLastName(),
+                        clientProfile.getNotificationsVisibilityPreferences()));
+            return;
+        }
+
+        if (user.getRole() == User.Role.COMMERCE) {
+            if (commerceProfile == null) {
+                throw new IllegalArgumentException("Commerce profile data is required for COMMERCE users");
+            }
+            final Commerce commerceToPersist = new Commerce(
+                    user.getId(),
+                    commerceProfile.getCommercialName(),
+                    commerceProfile.getCategory(),
+                    commerceProfile.getStreet(),
+                    commerceProfile.getStreetNumber(),
+                    commerceProfile.getCity(),
+                    commerceProfile.getProvince(),
+                    commerceProfile.getPostalCode(),
+                    commerceProfile.getOpeningTime(),
+                    commerceProfile.getClosingTime());
+
+            commerceDao.findByUserId(user.getId())
+                    .map(existingCommerce -> commerceDao.update(commerceToPersist))
+                    .orElseGet(() -> commerceDao.createCommerce(
+                            user.getId(),
+                            commerceProfile.getCommercialName(),
+                            commerceProfile.getCategory(),
+                            commerceProfile.getStreet(),
+                            commerceProfile.getStreetNumber(),
+                            commerceProfile.getCity(),
+                            commerceProfile.getProvince(),
+                            commerceProfile.getPostalCode(),
+                            commerceProfile.getOpeningTime(),
+                            commerceProfile.getClosingTime()));
+        }
+    }
+
+    private static boolean hasText(final String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
     @Override

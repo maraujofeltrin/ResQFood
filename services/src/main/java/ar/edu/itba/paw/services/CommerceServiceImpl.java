@@ -45,8 +45,31 @@ public class CommerceServiceImpl implements CommerceService {
             }
         }
         
-        User newUser = userService.createUser(email, password, name, null, User.Role.COMMERCE);
-        return commerceDao.createCommerce(newUser.getId(), commercialName, category, street, streetNumber, city, province, postalCode, openingTime, closingTime);
+        final User userToCreate = new User(null, email, password, name, null, User.Role.COMMERCE);
+        final Commerce commerceProfile = new Commerce(
+            null,
+            commercialName,
+            category,
+            street,
+            streetNumber,
+            city,
+            province,
+            postalCode,
+            openingTime,
+            closingTime);
+        final User newUser = userService.createUser(userToCreate, null, commerceProfile);
+        return commerceDao.findByUserId(newUser.getId())
+            .orElseGet(() -> commerceDao.createCommerce(
+                newUser.getId(),
+                commercialName,
+                category,
+                street,
+                streetNumber,
+                city,
+                province,
+                postalCode,
+                openingTime,
+                closingTime));
     }
 
     @Override
