@@ -3,10 +3,14 @@ package ar.edu.itba.paw.webapp.controller;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -35,14 +39,20 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.security.core.context.SecurityContextHolder;
 
+import ar.edu.itba.paw.models.Auction;
 import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.models.PackTag;
 import ar.edu.itba.paw.models.PackSortOption;
+import ar.edu.itba.paw.models.User;
+import ar.edu.itba.paw.services.AuctionService;
 import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
 import ar.edu.itba.paw.services.ReservationService;
+import ar.edu.itba.paw.services.UserService;
+import ar.edu.itba.paw.webapp.form.BidForm;
 import ar.edu.itba.paw.webapp.form.ReservationForm;
 
 @Controller
@@ -51,6 +61,8 @@ public class PackController {
     private final ReservationService reservationService;
     private final PackService packService;
     private final CommerceService commerceService;
+    private final AuctionService auctionService;
+    private final UserService userService;
     private final ServletContext servletContext;
     private final MessageSource messageSource;
     private final ZoneId businessZone;
@@ -60,12 +72,15 @@ public class PackController {
 
     @Autowired
     public PackController(final ReservationService reservationService, final PackService packService,
-            final CommerceService commerceService, final ServletContext servletContext,
+            final CommerceService commerceService, final AuctionService auctionService,
+            final UserService userService, final ServletContext servletContext,
             final MessageSource messageSource,
             @Value("${app.display-zone:}") final String displayZone) {
         this.reservationService = reservationService;
         this.packService = packService;
         this.commerceService = commerceService;
+        this.auctionService = auctionService;
+        this.userService = userService;
         this.servletContext = servletContext;
         this.messageSource = messageSource;
         this.businessZone = (displayZone == null || displayZone.trim().isEmpty())
@@ -208,7 +223,17 @@ public class PackController {
         return form;
     }
 
-    private ModelAndView buildPackDetailModel(final Pack pack, final ReservationForm reservationForm) {
+    private BidForm createDefaultBidForm() {
+        return new BidForm();
+    }
+
+    private String formatAuctionEndForDisplay(final LocalDateTime endUtc, final Locale locale) {
+        final ZonedDateTime z = endUtc.atZone(ZoneOffset.UTC).withZoneSameInstant(businessZone);
+        return DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withLocale(locale).format(z);
+    }
+
+    private ModelAndView buildPackDetailModel(final Pack pack, final ReservationForm reservationForm,
+            final BidForm bidForm) {
         final Optional<Commerce> commerceOpt = commerceService.findByUserId(pack.getCommerceId());
         final Locale locale = LocaleContextHolder.getLocale();
 
@@ -222,7 +247,31 @@ public class PackController {
 
         final ModelAndView mav = new ModelAndView("packs/packDetailView");
         mav.addObject("packId", pack.getId());
-        final double unitPriceAmount = pack.getFinalPrice() != null ? pack.getFinalPrice() : 0d;
+
+        final Optional<Auction> auctionOpt = auctionService.findByPackId(pack.getId());
+        final boolean auctionActive = auctionOpt.map(Auction::isActive).orElse(false);
+        mav.addObject("auctionActive", Boolean.valueOf(auctionActive));
+
+        if (auctionOpt.isPresent()) {
+            final Auction auction = auctionOpt.get();
+            mav.addObject("auction", auction);
+            final double effective = auction.getEffectivePrice() != null ? auction.getEffectivePrice() : 0d;
+            mav.addObject("auctionEffectiveAmount", effective);
+            mav.addObject("auctionEffectivePriceDisplay", formatPrice(effective));
+            mav.addObject("auctionEndDisplay", formatAuctionEndForDisplay(auction.getEndTime(), locale));
+            mav.addObject("auctionMinBidHint",
+                    messageSource.getMessage("pack.detail.bid.minHint", new Object[] { formatPrice(effective) },
+                            locale));
+        }
+
+        final double unitPriceAmount;
+        if (auctionActive && auctionOpt.isPresent()) {
+            final Auction auction = auctionOpt.get();
+            final Double eff = auction.getEffectivePrice();
+            unitPriceAmount = eff != null ? eff : 0d;
+        } else {
+            unitPriceAmount = pack.getFinalPrice() != null ? pack.getFinalPrice() : 0d;
+        }
         mav.addObject("unitPriceAmount", unitPriceAmount);
         mav.addObject("unitPriceNumber", String.format(Locale.US, "%.2f", unitPriceAmount));
         mav.addObject("pageTitle", pageTitle);
@@ -256,6 +305,7 @@ public class PackController {
         }
 
         mav.addObject("reservationForm", reservationForm);
+        mav.addObject("bidForm", bidForm);
         return mav;
     }
 
@@ -344,7 +394,7 @@ public class PackController {
                 .filter(p -> Boolean.TRUE.equals(p.getActive()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        return buildPackDetailModel(pack, createDefaultReservationForm());
+        return buildPackDetailModel(pack, createDefaultReservationForm(), createDefaultBidForm());
     }
 
     @GetMapping("/packs/{id}/image")
@@ -387,6 +437,14 @@ public class PackController {
         }
 
         final Pack pack = packOpt.get();
+        if (auctionService.findByPackId(packId).filter(Auction::isActive).isPresent()) {
+            redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
+            redirectAttributes.addFlashAttribute("reservationAlertMessage",
+                    messageSource.getMessage("reservation.alert.activeAuction", null,
+                            LocaleContextHolder.getLocale()));
+            return redirectView;
+        }
+
         final Integer stock = pack.getStock();
         if (reservationForm.getQuantity() != null && stock != null
                 && reservationForm.getQuantity().intValue() > stock.intValue()) {
@@ -394,7 +452,7 @@ public class PackController {
                     new Object[] { stock }, null);
         }
         if (bindingResult.hasErrors()) {
-            final ModelAndView mav = buildPackDetailModel(pack, reservationForm);
+            final ModelAndView mav = buildPackDetailModel(pack, reservationForm, createDefaultBidForm());
             return mav;
         }
 
@@ -432,6 +490,66 @@ public class PackController {
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
                     messageSource.getMessage("reservation.alert.genericError", null,
                             LocaleContextHolder.getLocale()));
+        }
+        return redirectView;
+    }
+
+    @PostMapping("/packs/{packId}/bid")
+    public ModelAndView submitBid(
+            @PathVariable("packId") final long packId,
+            @Valid @ModelAttribute("bidForm") final BidForm bidForm,
+            final BindingResult bindingResult,
+            final RedirectAttributes redirectAttributes) {
+        final Locale locale = LocaleContextHolder.getLocale();
+        final ModelAndView redirectView = new ModelAndView("redirect:/packs/" + packId);
+
+        final Optional<Pack> packOpt = packService.findById(packId)
+                .filter(p -> Boolean.TRUE.equals(p.getActive()));
+        if (packOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
+            redirectAttributes.addFlashAttribute("auctionAlertMessage",
+                    messageSource.getMessage("pack.detail.bid.alert.packUnavailable", null, locale));
+            return redirectView;
+        }
+        final Pack pack = packOpt.get();
+
+        final Optional<Auction> auctionOpt = auctionService.findByPackId(packId);
+        if (auctionOpt.isEmpty() || !auctionOpt.get().isActive()) {
+            redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
+            redirectAttributes.addFlashAttribute("auctionAlertMessage",
+                    messageSource.getMessage("pack.detail.bid.alert.auctionNotActive", null, locale));
+            return redirectView;
+        }
+        final Auction auction = auctionOpt.get();
+
+        if (bindingResult.hasErrors()) {
+            return buildPackDetailModel(pack, createDefaultReservationForm(), bidForm);
+        }
+
+        final String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        final Optional<User> userOpt = userService.findByEmail(email);
+        if (userOpt.isEmpty() || userOpt.get().getRole() != User.Role.CLIENT) {
+            redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
+            redirectAttributes.addFlashAttribute("auctionAlertMessage",
+                    messageSource.getMessage("pack.detail.bid.alert.roleNotClient", null, locale));
+            return redirectView;
+        }
+        final User user = userOpt.get();
+
+        final double amount = bidForm.getAmount().doubleValue();
+        try {
+            auctionService.placeBid(auction.getId(), user.getId(), amount);
+            redirectAttributes.addFlashAttribute("auctionAlertKind", "success");
+            redirectAttributes.addFlashAttribute("auctionAlertMessage",
+                    messageSource.getMessage("pack.detail.bid.alert.success", null, locale));
+        } catch (final IllegalArgumentException | IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
+            redirectAttributes.addFlashAttribute("auctionAlertMessage",
+                    messageSource.getMessage("pack.detail.bid.alert.reject", null, locale));
+        } catch (final Exception ex) {
+            redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
+            redirectAttributes.addFlashAttribute("auctionAlertMessage",
+                    messageSource.getMessage("pack.detail.bid.alert.genericError", null, locale));
         }
         return redirectView;
     }
