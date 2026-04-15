@@ -2,21 +2,20 @@ package ar.edu.itba.paw.webapp.form;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
-public class UserForm {
-
-    @NotBlank(message = "{register.validation.name.notEmpty}")
-    @Size(max = 100, message = "{register.validation.name.size}")
-    @Pattern(regexp = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+$", message = "{register.validation.name.pattern}")
-    private String name;
+public class UserCredentialsForm {
 
     @NotBlank(message = "{register.validation.email.notEmpty}")
     @Email(message = "{register.validation.email.valid}")
     @Size(max = 255)
     private String email;
+
+    @NotBlank(message = "{register.validation.phone.notEmpty}")
+    @Size(max = 50, message = "{register.validation.phone.size}")
+    @Pattern(regexp = "^[0-9]+$", message = "{register.validation.phone.pattern}")
+    private String phone;
 
     @NotBlank(message = "{register.validation.password.notEmpty}")
     @Size(min = 8, max = 100, message = "{register.validation.password.size}")
@@ -25,31 +24,20 @@ public class UserForm {
     @NotBlank(message = "{register.validation.repeatPassword.notEmpty}")
     private String repeatPassword;
 
-    @NotNull(message = "{register.validation.role.notNull}")
-    private ar.edu.itba.paw.models.User.Role role;
-
-    public ar.edu.itba.paw.models.User.Role getRole() {
-        return role;
-    }
-
-    public void setRole(final ar.edu.itba.paw.models.User.Role role) {
-        this.role = role;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(final String name) {
-        this.name = name;
-    }
-
     public String getEmail() {
         return email;
     }
 
     public void setEmail(final String email) {
         this.email = email;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(final String phone) {
+        this.phone = phone;
     }
 
     public String getPassword() {
