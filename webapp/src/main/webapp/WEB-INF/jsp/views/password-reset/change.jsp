@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %> <%@ taglib prefix="c"
 uri="http://java.sun.com/jsp/jstl/core" %> <%@ taglib prefix="spring"
-uri="http://www.springframework.org/tags" %> <%@ taglib prefix="paw"
+uri="http://www.springframework.org/tags" %> <%@ taglib prefix="form"
+uri="http://www.springframework.org/tags/form" %> <%@ taglib prefix="paw"
 tagdir="/WEB-INF/tags" %>
 <!DOCTYPE html>
 <html class="light" lang="${pageContext.response.locale.language}">
@@ -21,18 +22,10 @@ tagdir="/WEB-INF/tags" %>
         >
           <spring:message code="passwordReset.change.title" />
         </h1>
-        <c:if test="${error == 'passwords.mismatch'}">
-          <div
-            class="bg-error-container text-on-error-container rounded-lg p-4 mb-6 text-sm"
-          >
-            <spring:message
-              code="passwordReset.change.error.passwordsMismatch"
-            />
-          </div>
-        </c:if>
-        <form
-          action="${pageContext.request.contextPath}/password-reset/change"
+        <form:form
+          modelAttribute="passwordResetChangeForm"
           method="post"
+          action="/password-reset/change"
           class="space-y-5"
         >
           <input
@@ -40,7 +33,7 @@ tagdir="/WEB-INF/tags" %>
             name="${_csrf.parameterName}"
             value="${_csrf.token}"
           />
-          <input type="hidden" name="token" value="${token}" />
+          <form:hidden path="token" value="${token}" />
           <div>
             <label
               for="newPassword"
@@ -51,13 +44,17 @@ tagdir="/WEB-INF/tags" %>
               code="passwordReset.change.placeholder.newPassword"
               var="newPasswordPlaceholder"
             />
-            <input
+            <form:input
               type="password"
               id="newPassword"
-              name="newPassword"
-              required
+              path="newPassword"
+              required="required"
               class="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
               placeholder="${newPasswordPlaceholder}"
+            />
+            <form:errors
+              path="newPassword"
+              cssClass="text-error text-sm mt-1 block"
             />
           </div>
           <div>
@@ -71,13 +68,17 @@ tagdir="/WEB-INF/tags" %>
               code="passwordReset.change.placeholder.confirmPassword"
               var="confirmPasswordPlaceholder"
             />
-            <input
+            <form:input
               type="password"
               id="confirmPassword"
-              name="confirmPassword"
-              required
+              path="confirmPassword"
+              required="required"
               class="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
               placeholder="${confirmPasswordPlaceholder}"
+            />
+            <form:errors
+              path="confirmPassword"
+              cssClass="text-error text-sm mt-1 block"
             />
           </div>
           <button
@@ -86,7 +87,7 @@ tagdir="/WEB-INF/tags" %>
           >
             <spring:message code="passwordReset.change.submit" />
           </button>
-        </form>
+        </form:form>
       </div>
     </main>
     <paw:footer />

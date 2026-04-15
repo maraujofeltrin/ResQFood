@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %> <%@ taglib prefix="c"
 uri="http://java.sun.com/jsp/jstl/core" %> <%@ taglib prefix="spring"
-uri="http://www.springframework.org/tags" %> <%@ taglib prefix="paw"
+uri="http://www.springframework.org/tags" %> <%@ taglib prefix="form"
+uri="http://www.springframework.org/tags/form" %> <%@ taglib prefix="paw"
 tagdir="/WEB-INF/tags" %>
 <!DOCTYPE html>
 <html class="light" lang="${pageContext.response.locale.language}">
@@ -33,9 +34,10 @@ tagdir="/WEB-INF/tags" %>
             <spring:message code="passwordReset.request.expired" />
           </div>
         </c:if>
-        <form
-          action="${pageContext.request.contextPath}/password-reset/request"
+        <form:form
+          modelAttribute="passwordResetRequestForm"
           method="post"
+          action="/password-reset/request"
           class="space-y-5"
         >
           <input
@@ -53,13 +55,17 @@ tagdir="/WEB-INF/tags" %>
               code="passwordReset.request.placeholder.email"
               var="emailPlaceholder"
             />
-            <input
+            <form:input
               type="email"
               id="email"
-              name="email"
-              required
+              path="email"
+              required="required"
               class="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
               placeholder="${emailPlaceholder}"
+            />
+            <form:errors
+              path="email"
+              cssClass="text-error text-sm mt-1 block"
             />
           </div>
           <button
@@ -68,7 +74,7 @@ tagdir="/WEB-INF/tags" %>
           >
             <spring:message code="passwordReset.request.submit" />
           </button>
-        </form>
+        </form:form>
       </div>
     </main>
     <paw:footer />

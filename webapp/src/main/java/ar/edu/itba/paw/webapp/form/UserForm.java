@@ -1,34 +1,38 @@
 package ar.edu.itba.paw.webapp.form;
 
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Email;
 
 public class UserForm {
 
-    @Size(min = 2, max = 100)
-    @Pattern(regexp = "[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+")
+    @NotBlank(message = "{register.validation.name.notEmpty}")
+    @Size(max = 100, message = "{register.validation.name.size}")
+    @Pattern(regexp = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+$", message = "{register.validation.name.pattern}")
     private String name;
 
-    @Size(min = 6, max = 100)
-    @Email
+    @NotBlank(message = "{register.validation.email.notEmpty}")
+    @Email(message = "{register.validation.email.valid}")
+    @Size(max = 255)
     private String email;
 
-    @Size(min = 6, max = 100)
+    @NotBlank(message = "{register.validation.password.notEmpty}")
+    @Size(min = 8, max = 100, message = "{register.validation.password.size}")
     private String password;
-    
-    @Size(min = 6, max = 100)
+
+    @NotBlank(message = "{register.validation.repeatPassword.notEmpty}")
     private String repeatPassword;
 
-    @NotNull
+    @NotNull(message = "{register.validation.role.notNull}")
     private ar.edu.itba.paw.models.User.Role role;
 
     public ar.edu.itba.paw.models.User.Role getRole() {
         return role;
     }
 
-    public void setRole(ar.edu.itba.paw.models.User.Role role) {
+    public void setRole(final ar.edu.itba.paw.models.User.Role role) {
         this.role = role;
     }
 
@@ -36,7 +40,7 @@ public class UserForm {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(final String name) {
         this.name = name;
     }
 
@@ -44,7 +48,7 @@ public class UserForm {
         return email;
     }
 
-    public void setEmail(String email) {
+    public void setEmail(final String email) {
         this.email = email;
     }
 
@@ -52,7 +56,7 @@ public class UserForm {
         return password;
     }
 
-    public void setPassword(String password) {
+    public void setPassword(final String password) {
         this.password = password;
     }
 
@@ -60,7 +64,7 @@ public class UserForm {
         return repeatPassword;
     }
 
-    public void setRepeatPassword(String repeatPassword) {
+    public void setRepeatPassword(final String repeatPassword) {
         this.repeatPassword = repeatPassword;
     }
 }

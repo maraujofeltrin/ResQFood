@@ -5,20 +5,20 @@ import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.services.PasswordResetMailService;
 import ar.edu.itba.paw.services.PasswordResetTokenService;
 import ar.edu.itba.paw.services.UserService;
+import ar.edu.itba.paw.webapp.form.PasswordResetChangeForm;
+import ar.edu.itba.paw.webapp.form.PasswordResetRequestForm;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import javax.validation.Valid;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
@@ -30,29 +30,33 @@ public class PasswordResetController {
     private final PasswordResetTokenService passwordResetTokenService;
     private final PasswordResetMailService passwordResetMailService;
     private final PasswordEncoder passwordEncoder;
-    private final UserDetailsService userDetailsService;
 
     @Autowired
     public PasswordResetController(final UserService userService,
             final PasswordResetTokenService passwordResetTokenService,
             final PasswordResetMailService passwordResetMailService,
-            final PasswordEncoder passwordEncoder,
-            final UserDetailsService userDetailsService) {
+            final PasswordEncoder passwordEncoder) {
         this.userService = userService;
         this.passwordResetTokenService = passwordResetTokenService;
         this.passwordResetMailService = passwordResetMailService;
         this.passwordEncoder = passwordEncoder;
-        this.userDetailsService = userDetailsService;
     }
 
     @GetMapping("/request")
-    public String requestForm() {
+    public String requestForm(final Model model) {
+        model.addAttribute("passwordResetRequestForm", new PasswordResetRequestForm());
         return "password-reset/request";
     }
 
     @PostMapping("/request")
-    public String submitRequest(@RequestParam final String email, final HttpServletRequest request) {
-        final Optional<User> user = userService.findByEmail(email);
+    public String submitRequest(@Valid @ModelAttribute("passwordResetRequestForm") final PasswordResetRequestForm form,
+            final BindingResult errors,
+            final HttpServletRequest request) {
+        if (errors.hasErrors()) {
+            return "password-reset/request";
+        }
+
+        final Optional<User> user = userService.findByEmail(form.getEmail());
         if (user.isPresent()) {
             final PasswordResetToken token = passwordResetTokenService.createForUser(user.get().getId());
             final String resetUrl = buildBaseUrl(request) + "/password-reset/change?token=" + token.getToken();
@@ -67,34 +71,39 @@ public class PasswordResetController {
         if (resetToken.isEmpty() || !passwordResetTokenService.isValid(resetToken.get())) {
             return "redirect:/password-reset/request?expired=true";
         }
+        model.addAttribute("passwordResetChangeForm", new PasswordResetChangeForm());
         model.addAttribute("token", token);
         return "password-reset/change";
     }
 
     @PostMapping("/change")
     public String changePassword(@RequestParam final String token,
-            @RequestParam final String newPassword,
-            @RequestParam final String confirmPassword,
+            @Valid @ModelAttribute("passwordResetChangeForm") final PasswordResetChangeForm form,
+            final BindingResult errors,
             final Model model) {
         final Optional<PasswordResetToken> resetToken = passwordResetTokenService.findByToken(token);
         if (resetToken.isEmpty() || !passwordResetTokenService.isValid(resetToken.get())) {
             return "redirect:/password-reset/request?expired=true";
         }
-        if (!newPassword.equals(confirmPassword)) {
+
+        if (errors.hasErrors()) {
             model.addAttribute("token", token);
-            model.addAttribute("error", "passwords.mismatch");
             return "password-reset/change";
         }
-        final String encodedPassword = passwordEncoder.encode(newPassword);
+
+        if (!form.getNewPassword().equals(form.getConfirmPassword())) {
+            errors.rejectValue("confirmPassword", "passwordReset.validation.passwords.mismatch",
+                "{passwordReset.validation.passwords.mismatch}");
+            model.addAttribute("token", token);
+            return "password-reset/change";
+        }
+
+        final String encodedPassword = passwordEncoder.encode(form.getNewPassword());
         final User user = userService.findById(resetToken.get().getUserId())
-            .orElseThrow(() -> new IllegalStateException("Password reset failed")); 
+            .orElseThrow(() -> new IllegalStateException("Password reset failed"));
         userService.updatePassword(user.getId(), encodedPassword);
         passwordResetTokenService.markAsUsed(token);
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
-        final Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, newPassword,
-            userDetails.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        return "redirect:/";
+        return "redirect:/login?passwordReset=true";
     }
 
     private String buildBaseUrl(final HttpServletRequest request) {
