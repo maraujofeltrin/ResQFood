@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Commerce;
+import ar.edu.itba.paw.models.Client;
 import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import org.junit.jupiter.api.Test;
@@ -21,19 +22,15 @@ public class CommerceServiceImplTest {
         void seed(User u) { byEmail.put(u.getEmail(), u); }
 
         @Override
-        public User createUser(String email, String password, String name) {
-            return createUser(email, password, name, null, null);
-        }
-
-        @Override
-        public User createUser(String email, String password, String name, String phone, User.Role role) {
-            final User u = new User(nextId++, email, password, name, phone, role);
-            byEmail.put(email, u);
+        public User createUser(final User user, final Client clientProfile, final Commerce commerceProfile) {
+            final User u = new User(nextId++, user.getEmail(), user.getPassword(), user.getName(), user.getPhone(), user.getRole());
+            byEmail.put(u.getEmail(), u);
             return u;
         }
 
         @Override
-        public Optional<User> upgradeProvisionalUser(String email, String password, String name, User.Role role) {
+        public Optional<User> upgradeProvisionalUser(final User user, final Client clientProfile,
+                final Commerce commerceProfile) {
             return Optional.empty();
         }
 
@@ -45,6 +42,10 @@ public class CommerceServiceImplTest {
         @Override
         public Optional<User> findById(Long id) {
             return byEmail.values().stream().filter(u -> u.getId().equals(id)).findFirst();
+        }
+
+        @Override
+        public void updatePassword(Long userId, String encodedPassword) {
         }
     }
 
@@ -105,13 +106,11 @@ public class CommerceServiceImplTest {
         final InMemoryCommerceDao commerceDao = new InMemoryCommerceDao();
 
         final CommerceServiceImpl svc = new CommerceServiceImpl(userService, commerceDao);
-        final Commerce c = svc.getOrCreateCommerce("new@ex.com", "pw", "Name", "NewShop", Commerce.Category.RESTAURANT, "st", 10, "city", "prov", "pc", "08:00", "20:00");
+        svc.getOrCreateCommerce("new@ex.com", "pw", "Name", "NewShop", Commerce.Category.RESTAURANT, "st", 10, "city", "prov", "pc", "08:00", "20:00");
 
         // user created and commerce stored
         final var maybeUser = userService.findByEmail("new@ex.com");
         assertEquals(true, maybeUser.isPresent());
-        final var maybeCommerce = commerceDao.findByUserId(maybeUser.get().getId());
-        assertEquals(true, maybeCommerce.isPresent());
-        assertEquals("NewShop", maybeCommerce.get().getCommercialName());
+        assertEquals(User.Role.COMMERCE, maybeUser.get().getRole());
     }
 }

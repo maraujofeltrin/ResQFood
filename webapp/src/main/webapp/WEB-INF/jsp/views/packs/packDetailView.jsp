@@ -198,57 +198,6 @@
                             <p class="pack-price-final font-headline"><c:out value="${finalPrice}"/></p>
                         </div>
 
-                        <spring:message code="pack.detail.form.firstName" var="labelFirstName"/>
-                        <spring:message code="pack.detail.form.firstName.placeholder" var="phFirstName"/>
-                        <spring:bind path="firstName">
-                            <paw:input id="reservation-firstName" label="${labelFirstName}" type="text"
-                                       name="${status.expression}" value="${status.value}"
-                                       error="${status.errorMessages[0]}"
-                                       placeholder="${phFirstName}"
-                                       wrapperClass="pack-form-field" labelClass="pack-form-label"
-                                       inputClass="pack-form-control"
-                                       errorClass="pack-feedback pack-feedback--error pack-form-errors"
-                                       errorTag="p"/>
-                        </spring:bind>
-                        <spring:message code="pack.detail.form.lastName" var="labelLastName"/>
-                        <spring:message code="pack.detail.form.lastName.placeholder" var="phLastName"/>
-                        <spring:bind path="lastName">
-                            <paw:input id="reservation-lastName" label="${labelLastName}" type="text"
-                                       name="${status.expression}" value="${status.value}"
-                                       error="${status.errorMessages[0]}"
-                                       placeholder="${phLastName}"
-                                       wrapperClass="pack-form-field" labelClass="pack-form-label"
-                                       inputClass="pack-form-control"
-                                       errorClass="pack-feedback pack-feedback--error pack-form-errors"
-                                       errorTag="p"/>
-                        </spring:bind>
-                        <spring:message code="pack.detail.form.email" var="labelEmail"/>
-                        <spring:message code="pack.detail.form.email.placeholder" var="phEmail"/>
-                        <spring:bind path="email">
-                            <paw:input id="reservation-email" label="${labelEmail}" type="email"
-                                       name="${status.expression}" value="${status.value}"
-                                       error="${status.errorMessages[0]}"
-                                       placeholder="${phEmail}"
-                                       autocomplete="email"
-                                       wrapperClass="pack-form-field" labelClass="pack-form-label"
-                                       inputClass="pack-form-control"
-                                       errorClass="pack-feedback pack-feedback--error pack-form-errors"
-                                       errorTag="p"/>
-                        </spring:bind>
-                        <spring:message code="pack.detail.form.phone" var="labelPhone"/>
-                        <spring:message code="pack.detail.form.phone.placeholder" var="phPhone"/>
-                        <spring:bind path="phone">
-                            <paw:input id="reservation-phone" label="${labelPhone}" type="tel"
-                                       name="${status.expression}" value="${status.value}"
-                                       error="${status.errorMessages[0]}"
-                                       placeholder="${phPhone}"
-                                       autocomplete="tel"
-                                       wrapperClass="pack-form-field" labelClass="pack-form-label"
-                                       inputClass="pack-form-control"
-                                       errorClass="pack-feedback pack-feedback--error pack-form-errors"
-                                       errorTag="p"/>
-                        </spring:bind>
-
                         <spring:message code="pack.detail.form.quantity" var="labelQuantity"/>
                         <spring:message code="pack.detail.form.quantity.placeholder" var="phQuantity"/>
                         <c:choose>

@@ -27,6 +27,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,7 +40,6 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import ar.edu.itba.paw.models.Auction;
 import ar.edu.itba.paw.models.Commerce;
@@ -73,7 +73,8 @@ public class PackController {
     @Autowired
     public PackController(final ReservationService reservationService, final PackService packService,
             final CommerceService commerceService, final AuctionService auctionService,
-            final UserService userService, final ServletContext servletContext,
+            final UserService userService,
+            final ServletContext servletContext,
             final MessageSource messageSource,
             @Value("${app.display-zone:}") final String displayZone) {
         this.reservationService = reservationService;
@@ -469,14 +470,14 @@ public class PackController {
         final String appBaseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
             .build()
             .toUriString();
+        final String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        final User authenticatedUser = userService.findByEmail(username)
+                .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
 
         try {
             reservationService.createReservation(
                     packId,
-                    reservationForm.getEmail(),
-                    reservationForm.getFirstName(),
-                    reservationForm.getLastName(),
-                    reservationForm.getPhone(),
+                    authenticatedUser.getId(),
                     quantity,
                     finalPrice,
                     null,

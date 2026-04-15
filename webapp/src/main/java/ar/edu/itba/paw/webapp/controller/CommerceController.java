@@ -1,17 +1,17 @@
 package ar.edu.itba.paw.webapp.controller;
 
-import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.models.PackTag;
+import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.services.AuctionService;
 import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Collections;
 import java.util.Set;
 import javax.validation.Valid;
 
@@ -145,7 +145,6 @@ public class CommerceController {
                                        form.getTags() != null ? form.getTags() : Collections.emptyList(),
                                        imageData, imageContentType);
             }
-
             return new ModelAndView("redirect:/commerce");
 
         } catch (IllegalArgumentException e) {
