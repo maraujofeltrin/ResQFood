@@ -3,24 +3,28 @@ package ar.edu.itba.paw.webapp.form;
 import java.util.List;
 
 import javax.validation.constraints.Digits;
-import javax.validation.constraints.Email;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 
 import org.springframework.web.multipart.MultipartFile;
 
-import ar.edu.itba.paw.models.Commerce.Category;
 import ar.edu.itba.paw.models.PackTag;
 
-public class CreatePackForm {
+/**
+ * Unified form for creating both Packs (direct sale) and Auctions.
+ * <p>
+ * When {@code isAuction == false} (default): {@code finalPrice} and {@code stock} are required
+ * (validated in the controller).
+ * <p>
+ * When {@code isAuction == true}: {@code initialPrice}, {@code endDate} and {@code endTime} are
+ * required (validated in the controller).
+ */
+public class CreateOfferForm {
 
+    // ── Common Fields ──────────────────────────────────────────
 
-    // Detalles del Pack
     @NotBlank(message = "{commerce.createPack.validation.title.notEmpty}")
     @Size(max = 100)
     private String title;
@@ -36,21 +40,27 @@ public class CreatePackForm {
     @Digits(integer = 7, fraction = 2, message = "{commerce.createPack.validation.originalPrice.digits}")
     private Double originalPrice;
 
-    @NotNull(message = "{commerce.createPack.validation.finalPrice.notNull}")
-    @Positive(message = "{commerce.createPack.validation.finalPrice.positive}")
-    @Digits(integer = 7, fraction = 2, message = "{commerce.createPack.validation.finalPrice.digits}")
-    private Double finalPrice;
-
-    @NotNull(message = "{commerce.createPack.validation.stock.notNull}")
-    @Positive(message = "{commerce.createPack.validation.stock.positive}")
-    @Max(value = 999, message = "{commerce.createPack.validation.stock.max}")
-    private Integer stock;
-
     private MultipartFile image;
 
-    // Getters and Setters
+    // ── Mode Toggle ────────────────────────────────────────────
 
+    private boolean isAuction;
 
+    // ── Pack-only Fields (validated when isAuction == false) ──
+
+    private Double finalPrice;
+
+    private Integer stock;
+
+    // ── Auction-only Fields (validated when isAuction == true) ─
+
+    private Double initialPrice;
+
+    private String endDate;
+
+    private String endTime;
+
+    // ── Getters and Setters ────────────────────────────────────
 
     public String getTitle() {
         return title;
@@ -84,6 +94,22 @@ public class CreatePackForm {
         this.originalPrice = originalPrice;
     }
 
+    public MultipartFile getImage() {
+        return image;
+    }
+
+    public void setImage(MultipartFile image) {
+        this.image = image;
+    }
+
+    public boolean getIsAuction() {
+        return isAuction;
+    }
+
+    public void setIsAuction(boolean isAuction) {
+        this.isAuction = isAuction;
+    }
+
     public Double getFinalPrice() {
         return finalPrice;
     }
@@ -100,11 +126,27 @@ public class CreatePackForm {
         this.stock = stock;
     }
 
-    public MultipartFile getImage() {
-        return image;
+    public Double getInitialPrice() {
+        return initialPrice;
     }
 
-    public void setImage(MultipartFile image) {
-        this.image = image;
+    public void setInitialPrice(Double initialPrice) {
+        this.initialPrice = initialPrice;
+    }
+
+    public String getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(String endDate) {
+        this.endDate = endDate;
+    }
+
+    public String getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(String endTime) {
+        this.endTime = endTime;
     }
 }

@@ -25,16 +25,11 @@
                                     </p>
                                 </div>
                                 <div class="flex items-center gap-4">
-                                    <a href="${pageContext.request.contextPath}/commerce/create-pack"
+                                    <a href="${pageContext.request.contextPath}/commerce/create-offer"
                                         class="bg-primary text-on-primary px-6 py-3 rounded-full text-base font-bold flex items-center gap-2 hover:scale-105 transition-transform shadow-md">
                                         <span class="material-symbols-outlined font-bold"
                                             style="font-size: 20px;">add</span>
-                                        <spring:message code="commerce.dashboard.createPack" />
-                                    </a>
-                                    <a href="#" class="bg-secondary text-on-secondary px-6 py-3 rounded-full text-base font-bold flex items-center gap-2 hover:scale-105 transition-transform shadow-md">
-                                        <span class="material-symbols-outlined font-bold"
-                                            style="font-size: 20px;">gavel</span>
-                                        <spring:message code="commerce.dashboard.createAuction" />
+                                        <spring:message code="commerce.dashboard.createOffer" />
                                     </a>
                                 </div>
                             </header>

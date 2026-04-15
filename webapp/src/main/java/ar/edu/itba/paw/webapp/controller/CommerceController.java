@@ -1,15 +1,17 @@
 package ar.edu.itba.paw.webapp.controller;
 
-import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.models.PackTag;
+import ar.edu.itba.paw.models.Commerce;
+import ar.edu.itba.paw.services.AuctionService;
 import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Collections;
 import java.util.Set;
 import javax.validation.Valid;
 
@@ -17,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,7 +36,7 @@ import org.springframework.http.HttpStatus;
 import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.services.UserService;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
-import ar.edu.itba.paw.webapp.form.CreatePackForm;
+import ar.edu.itba.paw.webapp.form.CreateOfferForm;
 import ar.edu.itba.paw.webapp.form.EditPackForm;
 
 @Controller
@@ -47,14 +50,17 @@ public class CommerceController {
 
     private final CommerceService commerceService;
     private final PackService packService;
+    private final AuctionService auctionService;
     private final MessageSource messageSource;
     private final UserService userService;
 
     @Autowired
     public CommerceController(final CommerceService commerceService, final PackService packService,
-                              final MessageSource messageSource, final UserService userService) {
+                              final AuctionService auctionService, final MessageSource messageSource,
+                              final UserService userService) {
         this.commerceService = commerceService;
         this.packService = packService;
+        this.auctionService = auctionService;
         this.messageSource = messageSource;
         this.userService = userService;
     }
@@ -101,18 +107,12 @@ public class CommerceController {
         return mav;
     }
 
-    @RequestMapping(value = "/create-pack", method = RequestMethod.GET)
-    public ModelAndView createPackForm(@AuthenticationPrincipal final AuthUser principal,
-                                      @ModelAttribute("createPackForm") final CreatePackForm form,
-                                      @RequestParam(value = "error", required = false) final String error) {
-        final long commerceId = getAuthenticatedUser(principal).getId();
+    // ── Create Offer (unified pack / auction) ────────────────
 
-        if (commerceService.findByUserId(commerceId).isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-
-        final ModelAndView mav = new ModelAndView("commerce/createPack");
-        mav.addObject("commerceId", commerceId);
+    @RequestMapping(value = "/create-offer", method = RequestMethod.GET)
+    public ModelAndView createOfferForm(@ModelAttribute("createOfferForm") final CreateOfferForm form,
+                                        @RequestParam(value = "error", required = false) final String error) {
+        final ModelAndView mav = new ModelAndView("commerce/createOfferView");
         mav.addObject("availableTags", PackTag.values());
         if ("maxUploadSize".equals(error)) {
             mav.addObject("errorMessage",
@@ -122,24 +122,174 @@ public class CommerceController {
         return mav;
     }
 
-    @RequestMapping(value = "/create-pack", method = RequestMethod.POST)
-    public ModelAndView createPack(
-            @AuthenticationPrincipal final AuthUser principal,
-            @Valid @ModelAttribute("createPackForm") final CreatePackForm form,
+    @RequestMapping(value = "/create-offer", method = RequestMethod.POST)
+    public ModelAndView createOffer(
+            @Valid @ModelAttribute("createOfferForm") final CreateOfferForm form,
             final BindingResult bindingResult) {
 
-        final long commerceId = getAuthenticatedUser(principal).getId();
+        final boolean isAuction = form.getIsAuction();
 
-        if (commerceService.findByUserId(commerceId).isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        // ── Conditional validation ──
+        if (isAuction) {
+            validateAuctionFields(form, bindingResult);
+        } else {
+            validatePackFields(form, bindingResult);
         }
 
-        if (form.getOriginalPrice() != null && form.getFinalPrice() != null && form.getFinalPrice() > form.getOriginalPrice()) {
-            bindingResult.rejectValue("finalPrice", "error.finalPrice", "El precio de venta no puede ser mayor al precio original");
+        validateImage(form.getImage(), bindingResult);
+
+        if (bindingResult.hasErrors()) {
+            final ModelAndView mav = new ModelAndView("commerce/createOfferView");
+            mav.addObject("availableTags", PackTag.values());
+            return mav;
         }
 
-        // Server-side image type validation
-        final MultipartFile image = form.getImage();
+        try {
+            final Commerce commerce = getAuthenticatedCommerce();
+
+            byte[] imageData = null;
+            String imageContentType = null;
+            final MultipartFile image = form.getImage();
+            if (image != null && !image.isEmpty()) {
+                imageData = image.getBytes();
+                imageContentType = image.getContentType();
+            }
+
+            if (isAuction) {
+                // Create the underlying pack (stock=1, finalPrice=initialPrice as floor)
+                Pack pack = packService.createPack(
+                        commerce.getUserId(), form.getTitle(), form.getDescription(),
+                        form.getOriginalPrice(), form.getInitialPrice(), 1,
+                        form.getTags() != null ? form.getTags() : Collections.emptyList(),
+                        imageData, imageContentType
+                );
+
+                // Parse auction end date/time (already validated)
+                LocalDateTime endDateTime = LocalDateTime.parse(form.getEndDate() + "T" + form.getEndTime());
+
+                // Create the auction wrapping the pack
+                auctionService.createAuction(pack.getId(), form.getInitialPrice(), endDateTime);
+
+            } else {
+                packService.createPack(commerce.getUserId(), form.getTitle(), form.getDescription(),
+                                       form.getOriginalPrice(), form.getFinalPrice(), form.getStock(),
+                                       form.getTags() != null ? form.getTags() : Collections.emptyList(),
+                                       imageData, imageContentType);
+            }
+            return new ModelAndView("redirect:/commerce");
+
+        } catch (IllegalArgumentException e) {
+            final ModelAndView mav = new ModelAndView("commerce/createOfferView");
+            mav.addObject("availableTags", PackTag.values());
+            mav.addObject("errorMessage", e.getMessage());
+            return mav;
+        } catch (IOException e) {
+            final ModelAndView mav = new ModelAndView("commerce/createOfferView");
+            mav.addObject("availableTags", PackTag.values());
+            mav.addObject("errorMessage",
+                    messageSource.getMessage("commerce.createPack.validation.image.processError",
+                            null, LocaleContextHolder.getLocale()));
+            return mav;
+        }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────
+
+    /**
+     * Retrieves the Commerce entity for the currently authenticated user.
+     */
+    private Commerce getAuthenticatedCommerce() {
+        final String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        final User user = userService.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("Authenticated user not found: " + email));
+        return commerceService.findByUserId(user.getId())
+                .orElseThrow(() -> new IllegalStateException("Commerce not found for user: " + user.getId()));
+    }
+
+    /**
+     * Validates pack-specific fields (finalPrice, stock) when isAuction is false.
+     */
+    private void validatePackFields(final CreateOfferForm form, final BindingResult bindingResult) {
+        if (form.getFinalPrice() == null) {
+            bindingResult.rejectValue("finalPrice", "error.finalPrice",
+                    messageSource.getMessage("commerce.createPack.validation.finalPrice.notNull",
+                            null, LocaleContextHolder.getLocale()));
+        } else if (form.getFinalPrice() <= 0) {
+            bindingResult.rejectValue("finalPrice", "error.finalPrice",
+                    messageSource.getMessage("commerce.createPack.validation.finalPrice.positive",
+                            null, LocaleContextHolder.getLocale()));
+        } else if (form.getOriginalPrice() != null && form.getFinalPrice() > form.getOriginalPrice()) {
+            bindingResult.rejectValue("finalPrice", "error.finalPrice",
+                    messageSource.getMessage("commerce.createPack.validation.finalPrice.exceedsOriginal",
+                            null, LocaleContextHolder.getLocale()));
+        }
+
+        if (form.getStock() == null) {
+            bindingResult.rejectValue("stock", "error.stock",
+                    messageSource.getMessage("commerce.createPack.validation.stock.notNull",
+                            null, LocaleContextHolder.getLocale()));
+        } else if (form.getStock() <= 0) {
+            bindingResult.rejectValue("stock", "error.stock",
+                    messageSource.getMessage("commerce.createPack.validation.stock.positive",
+                            null, LocaleContextHolder.getLocale()));
+        } else if (form.getStock() > 999) {
+            bindingResult.rejectValue("stock", "error.stock",
+                    messageSource.getMessage("commerce.createPack.validation.stock.max",
+                            null, LocaleContextHolder.getLocale()));
+        }
+    }
+
+    /**
+     * Validates auction-specific fields (initialPrice, endDate, endTime) when isAuction is true.
+     */
+    private void validateAuctionFields(final CreateOfferForm form, final BindingResult bindingResult) {
+        if (form.getInitialPrice() == null) {
+            bindingResult.rejectValue("initialPrice", "error.initialPrice",
+                    messageSource.getMessage("commerce.createAuction.validation.initialPrice.notNull",
+                            null, LocaleContextHolder.getLocale()));
+        } else if (form.getInitialPrice() <= 0) {
+            bindingResult.rejectValue("initialPrice", "error.initialPrice",
+                    messageSource.getMessage("commerce.createAuction.validation.initialPrice.positive",
+                            null, LocaleContextHolder.getLocale()));
+        } else if (form.getOriginalPrice() != null && form.getInitialPrice() > form.getOriginalPrice()) {
+            bindingResult.rejectValue("initialPrice", "error.initialPrice",
+                    messageSource.getMessage("commerce.createAuction.validation.initialPrice.exceedsOriginal",
+                            null, LocaleContextHolder.getLocale()));
+        }
+
+        if (form.getEndDate() == null || form.getEndDate().isBlank()) {
+            bindingResult.rejectValue("endDate", "error.endDate",
+                    messageSource.getMessage("commerce.createAuction.validation.endDate.notEmpty",
+                            null, LocaleContextHolder.getLocale()));
+        }
+        if (form.getEndTime() == null || form.getEndTime().isBlank()) {
+            bindingResult.rejectValue("endTime", "error.endTime",
+                    messageSource.getMessage("commerce.createAuction.validation.endTime.notEmpty",
+                            null, LocaleContextHolder.getLocale()));
+        }
+
+        // Validate endDateTime if both date and time are present
+        if (form.getEndDate() != null && !form.getEndDate().isBlank()
+                && form.getEndTime() != null && !form.getEndTime().isBlank()) {
+            try {
+                LocalDateTime endDateTime = LocalDateTime.parse(form.getEndDate() + "T" + form.getEndTime());
+                if (endDateTime.isBefore(LocalDateTime.now())) {
+                    bindingResult.rejectValue("endDate", "error.endDate",
+                            messageSource.getMessage("commerce.createAuction.validation.endDateTime.future",
+                                    null, LocaleContextHolder.getLocale()));
+                }
+            } catch (Exception e) {
+                bindingResult.rejectValue("endDate", "error.endDate",
+                        messageSource.getMessage("commerce.createAuction.validation.endDateTime.invalid",
+                                null, LocaleContextHolder.getLocale()));
+            }
+        }
+    }
+
+    /**
+     * Server-side image type validation.
+     */
+    private void validateImage(final MultipartFile image, final BindingResult bindingResult) {
         if (image != null && !image.isEmpty()) {
             final String contentType = image.getContentType();
             if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
@@ -149,44 +299,6 @@ public class CommerceController {
             }
         }
 
-        if (bindingResult.hasErrors()) {
-            final ModelAndView mav = new ModelAndView("commerce/createPack");
-            mav.addObject("commerceId", commerceId);
-            mav.addObject("availableTags", PackTag.values());
-            return mav;
-        }
-
-        try {
-
-            byte[] imageData = null;
-            String imageContentType = null;
-            if (image != null && !image.isEmpty()) {
-                imageData = image.getBytes();
-                imageContentType = image.getContentType();
-            }
-
-            packService.createPack(commerceId, form.getTitle(), form.getDescription(), 
-                                   form.getOriginalPrice(), form.getFinalPrice(), form.getStock(),
-                                   form.getTags() != null ? form.getTags() : Collections.emptyList(),
-                                   imageData, imageContentType);
-                                   
-            return new ModelAndView("redirect:/commerce");
-
-        } catch (IllegalArgumentException e) {
-            final ModelAndView mav = new ModelAndView("commerce/createPack");
-            mav.addObject("commerceId", commerceId);
-            mav.addObject("availableTags", PackTag.values());
-            mav.addObject("errorMessage", e.getMessage());
-            return mav;
-        } catch (IOException e) {
-            final ModelAndView mav = new ModelAndView("commerce/createPack");
-            mav.addObject("commerceId", commerceId);
-            mav.addObject("availableTags", PackTag.values());
-            mav.addObject("errorMessage",
-                    messageSource.getMessage("commerce.createPack.validation.image.processError",
-                            null, LocaleContextHolder.getLocale()));
-            return mav;
-        }
     }
 
     @RequestMapping(value = "/edit-pack/{packId}", method = RequestMethod.GET)

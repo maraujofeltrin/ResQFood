@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.webapp.auth;
 
 import ar.edu.itba.paw.models.User;
+import ar.edu.itba.paw.services.UserPasswordConstants;
 import ar.edu.itba.paw.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -37,7 +38,7 @@ public class AuthUserDetailsService implements UserDetailsService {
                 Collections.singleton(new SimpleGrantedAuthority(roleName));
 
         String password = user.getPassword();
-        if ("__RESERVATION_PENDING_PASSWORD__".equals(password)) {
+        if (UserPasswordConstants.RESERVATION_PENDING_PASSWORD.equals(password)) {
             // A sentinel value — user cannot log in. Substitute a valid-format hash
             // that BCryptPasswordEncoder will reject without throwing an exception.
             password = "$2a$10$00000000000000000000000000000000000000000000000000000";

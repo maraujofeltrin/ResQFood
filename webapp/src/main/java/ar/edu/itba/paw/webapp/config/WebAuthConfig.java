@@ -47,9 +47,10 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
     protected void configure(final HttpSecurity http) throws Exception {
         http.userDetailsService(authUserDetailsService)
                 .authorizeHttpRequests()
-                .requestMatchers(antMatcher("/login"), antMatcher("/register"), antMatcher("/create")).anonymous()
+                .requestMatchers(antMatcher("/login"), antMatcher("/register")).anonymous()
                 .requestMatchers(antMatcher("/logout")).authenticated()
                 .requestMatchers(antMatcher("/")).permitAll()
+                .requestMatchers(antMatcher("/password-reset/request"), antMatcher("/password-reset/change")).permitAll()
                 .requestMatchers(antMatcher(HttpMethod.GET, "/packs/**")).permitAll()
                 .requestMatchers(antMatcher(HttpMethod.POST, "/packs/**")).authenticated()
                 .requestMatchers(antMatcher("/commerce"), antMatcher("/commerce/**")).hasRole("COMMERCE")

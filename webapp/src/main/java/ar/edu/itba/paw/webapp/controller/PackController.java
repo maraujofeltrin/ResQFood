@@ -23,6 +23,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,9 +41,11 @@ import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.models.PackTag;
 import ar.edu.itba.paw.models.PackSortOption;
+import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
 import ar.edu.itba.paw.services.ReservationService;
+import ar.edu.itba.paw.services.UserService;
 import ar.edu.itba.paw.webapp.form.ReservationForm;
 
 @Controller
@@ -51,6 +54,7 @@ public class PackController {
     private final ReservationService reservationService;
     private final PackService packService;
     private final CommerceService commerceService;
+    private final UserService userService;
     private final ServletContext servletContext;
     private final MessageSource messageSource;
     private final ZoneId businessZone;
@@ -60,12 +64,14 @@ public class PackController {
 
     @Autowired
     public PackController(final ReservationService reservationService, final PackService packService,
-            final CommerceService commerceService, final ServletContext servletContext,
+            final CommerceService commerceService, final UserService userService,
+            final ServletContext servletContext,
             final MessageSource messageSource,
             @Value("${app.display-zone:}") final String displayZone) {
         this.reservationService = reservationService;
         this.packService = packService;
         this.commerceService = commerceService;
+        this.userService = userService;
         this.servletContext = servletContext;
         this.messageSource = messageSource;
         this.businessZone = (displayZone == null || displayZone.trim().isEmpty())
@@ -411,14 +417,14 @@ public class PackController {
         final String appBaseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
             .build()
             .toUriString();
+        final String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        final User authenticatedUser = userService.findByEmail(username)
+                .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
 
         try {
             reservationService.createReservation(
                     packId,
-                    reservationForm.getEmail(),
-                    reservationForm.getFirstName(),
-                    reservationForm.getLastName(),
-                    reservationForm.getPhone(),
+                    authenticatedUser.getId(),
                     quantity,
                     finalPrice,
                     null,
