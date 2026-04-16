@@ -21,12 +21,14 @@ public class AuctionServiceImpl implements AuctionService {
     private final AuctionDao auctionDao;
     private final BidDao bidDao;
     private final PackDao packDao;
+    private final ReservationService reservationService;
 
     @Autowired
-    public AuctionServiceImpl(final AuctionDao auctionDao, final BidDao bidDao, final PackDao packDao) {
+    public AuctionServiceImpl(final AuctionDao auctionDao, final BidDao bidDao, final PackDao packDao, final ReservationService reservationService) {
         this.auctionDao = auctionDao;
         this.bidDao = bidDao;
         this.packDao = packDao;
+        this.reservationService = reservationService;
     }
 
     @Transactional
@@ -128,6 +130,17 @@ public class AuctionServiceImpl implements AuctionService {
         for (final Auction auction : expired) {
             auctionDao.updateStatus(auction.getId(), Auction.Status.FINISHED);
             closed++;
+
+            if (auction.getCurrentBidderId() != null && auction.getCurrentBid() != null) {
+                reservationService.createReservation(
+                        auction.getPack().getId(),
+                        auction.getCurrentBidderId(),
+                        1,
+                        auction.getCurrentBid(),
+                        null,
+                        ""
+                );
+            }
 
             // TODO: Notification hook — notify winner
             // if (auction.getCurrentBidderId() != null) {
