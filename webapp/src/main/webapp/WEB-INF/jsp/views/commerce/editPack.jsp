@@ -33,8 +33,13 @@
                         </div>
                     </c:if>
 
-                    <form:form modelAttribute="editPackForm" action="${pageContext.request.contextPath}/commerce/edit-pack/${packId}" method="post"
+                    <c:url value="/commerce/edit-pack/${packId}" var="editPackAction">
+                        <c:param name="${_csrf.parameterName}" value="${_csrf.token}" />
+                    </c:url>
+
+                    <form:form modelAttribute="editPackForm" action="${editPackAction}" method="post"
                         enctype="multipart/form-data" cssClass="commerce-create-pack-form max-w-2xl mx-auto w-full" novalidate="novalidate">
+                        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
                             <section class="pack-aside-card bg-surface-container-lowest shadow-soft">
                                 <h2 class="pack-aside-heading mb-2"><spring:message code="commerce.createPack.packDetails.title"/></h2>
 
