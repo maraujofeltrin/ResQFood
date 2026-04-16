@@ -44,11 +44,11 @@
                         <c:set var="dateLabel" value="${formattedReservationDatesById[reservation.id]}" />
 
                         <article class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
-                            <a href="${pageContext.request.contextPath}/packs/${pack.id}" class="relative h-48 sm:h-56 overflow-hidden">
+                            <div class="relative h-48 sm:h-56 overflow-hidden">
                                 <img src="${pageContext.request.contextPath}/packs/${pack.id}/image"
                                      alt="${pack.title}"
-                                     class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
-                            </a>
+                                     class="w-full h-full object-cover" />
+                            </div>
 
                             <div class="p-5 flex flex-col gap-4 flex-grow">
                                 <div>

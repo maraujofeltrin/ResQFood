@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.nio.charset.StandardCharsets;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -97,24 +99,98 @@ public class ReservationController {
         return handleConsumePost(token, null, model, ReservationToken.Action.REJECT, "RECHAZADA");
     }
 
+    private static boolean containsIgnoreCase(final String value, final String needle) {
+        return value != null && needle != null && value.toLowerCase(Locale.ROOT).contains(needle.toLowerCase(Locale.ROOT));
+    }
+
+    private static Reservation.Status parseStatusFilter(final String statusValue) {
+        if (statusValue == null || statusValue.isBlank()) {
+            return null;
+        }
+        try {
+            return Reservation.Status.valueOf(statusValue.trim().toUpperCase(Locale.ROOT));
+        } catch (final IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    private static String buildPaginationBaseUrl(final String query, final Reservation.Status statusFilter) {
+        final StringBuilder baseUrl = new StringBuilder("/reservations/mine");
+        boolean firstParam = true;
+
+        if (query != null && !query.isBlank()) {
+            baseUrl.append(firstParam ? "?" : "&")
+                    .append("q=")
+                    .append(URLEncoder.encode(query.trim(), StandardCharsets.UTF_8));
+            firstParam = false;
+        }
+
+        if (statusFilter != null) {
+            baseUrl.append(firstParam ? "?" : "&")
+                    .append("status=")
+                    .append(statusFilter.name());
+        }
+
+        return baseUrl.toString();
+    }
+
     @GetMapping("/mine")
     public ModelAndView myReservations(@RequestParam(value = "page", defaultValue = "1") final int page,
+            @RequestParam(value = "q", required = false) final String query,
+            @RequestParam(value = "status", required = false) final String status,
             final Authentication authentication) {
         final User currentUser = resolveCurrentUser(authentication);
         if (currentUser.getRole() != User.Role.CLIENT) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
+        final String normalizedQuery = query == null ? "" : query.trim();
+        final Reservation.Status statusFilter = parseStatusFilter(status);
+
         final List<Reservation> allReservations = new ArrayList<>(
             reservationService.findByCustomerId(currentUser.getId()));
         allReservations.sort(Comparator.comparing(Reservation::getReservationDate,
                 Comparator.nullsLast(LocalDateTime::compareTo)).reversed());
 
-        final int totalPages = Math.max(1, (int) Math.ceil((double) allReservations.size() / PAGE_SIZE));
+        final List<Reservation> filteredReservations = new ArrayList<>();
+        final Map<Long, Pack> allPacksByReservationId = new HashMap<>();
+        final Map<Long, String> allCommerceNamesByReservationId = new HashMap<>();
+
+        for (final Reservation reservation : allReservations) {
+            Pack pack = null;
+            String commerceName = "-";
+
+            if (reservation.getPackId() != null) {
+                final Optional<Pack> packOpt = packService.findById(reservation.getPackId());
+                if (packOpt.isPresent()) {
+                    pack = packOpt.get();
+                    commerceName = commerceService.findByUserId(pack.getCommerceId())
+                            .map(Commerce::getCommercialName)
+                            .filter(name -> name != null && !name.isBlank())
+                            .orElse("-");
+                }
+            }
+
+            final boolean matchesStatus = statusFilter == null || statusFilter.equals(reservation.getStatus());
+            final boolean matchesQuery = normalizedQuery.isBlank()
+                    || containsIgnoreCase(pack == null ? null : pack.getTitle(), normalizedQuery)
+                    || containsIgnoreCase(pack == null ? null : pack.getDescription(), normalizedQuery)
+                    || containsIgnoreCase(commerceName, normalizedQuery);
+
+            if (matchesStatus && matchesQuery) {
+                filteredReservations.add(reservation);
+                if (pack != null) {
+                    allPacksByReservationId.put(reservation.getId(), pack);
+                }
+                allCommerceNamesByReservationId.put(reservation.getId(), commerceName);
+            }
+        }
+
+        final int totalPages = Math.max(1, (int) Math.ceil((double) filteredReservations.size() / PAGE_SIZE));
         final int safePage = Math.max(1, Math.min(page, totalPages));
         final int fromIdx = (safePage - 1) * PAGE_SIZE;
-        final int toIdx = Math.min(fromIdx + PAGE_SIZE, allReservations.size());
-        final List<Reservation> reservations = allReservations.subList(fromIdx, toIdx);
+        final int toIdx = Math.min(fromIdx + PAGE_SIZE, filteredReservations.size());
+        final List<Reservation> reservations = filteredReservations.subList(fromIdx, toIdx);
 
         final Map<Long, Pack> packsByReservationId = new HashMap<>();
         final Map<Long, String> commerceNamesByReservationId = new HashMap<>();
@@ -130,14 +206,12 @@ public class ReservationController {
                 continue;
             }
 
-            packService.findById(reservation.getPackId()).ifPresent(pack -> {
-                packsByReservationId.put(reservation.getId(), pack);
-                final String commerceName = commerceService.findByUserId(pack.getCommerceId())
-                        .map(Commerce::getCommercialName)
-                        .filter(name -> name != null && !name.isBlank())
-                        .orElse("-");
-                commerceNamesByReservationId.put(reservation.getId(), commerceName);
-            });
+            if (allPacksByReservationId.containsKey(reservation.getId())) {
+                packsByReservationId.put(reservation.getId(), allPacksByReservationId.get(reservation.getId()));
+            }
+            if (allCommerceNamesByReservationId.containsKey(reservation.getId())) {
+                commerceNamesByReservationId.put(reservation.getId(), allCommerceNamesByReservationId.get(reservation.getId()));
+            }
         }
 
         final ModelAndView mav = new ModelAndView("reservations/myReservations");
@@ -145,9 +219,14 @@ public class ReservationController {
         mav.addObject("packsByReservationId", packsByReservationId);
         mav.addObject("commerceNamesByReservationId", commerceNamesByReservationId);
         mav.addObject("formattedReservationDatesById", formattedReservationDatesById);
+        mav.addObject("searchQuery", normalizedQuery);
+        mav.addObject("selectedStatus", statusFilter == null ? "" : statusFilter.name());
+        mav.addObject("statusOptions", Reservation.Status.values());
+        mav.addObject("hasAnyReservations", !allReservations.isEmpty());
+        mav.addObject("hasActiveFilters", !normalizedQuery.isBlank() || statusFilter != null);
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
-        mav.addObject("paginationBaseUrl", "/reservations/mine");
+        mav.addObject("paginationBaseUrl", buildPaginationBaseUrl(normalizedQuery, statusFilter));
         return mav;
     }
 
