@@ -313,7 +313,7 @@ public class CommerceController {
         }
 
         final java.util.Optional<Pack> packOpt = packService.findById(packId);
-        if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId) {
+        if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId || Boolean.TRUE.equals(packOpt.get().getDeleted())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
@@ -356,7 +356,7 @@ public class CommerceController {
         }
 
         final java.util.Optional<Pack> packOpt = packService.findById(packId);
-        if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId) {
+        if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId || Boolean.TRUE.equals(packOpt.get().getDeleted())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
@@ -430,7 +430,7 @@ public class CommerceController {
         }
 
         final java.util.Optional<Pack> packOpt = packService.findById(packId);
-        if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId) {
+        if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId || Boolean.TRUE.equals(packOpt.get().getDeleted())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
