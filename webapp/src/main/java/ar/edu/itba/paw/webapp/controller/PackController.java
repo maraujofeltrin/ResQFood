@@ -40,6 +40,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import ar.edu.itba.paw.models.Auction;
 import ar.edu.itba.paw.models.Commerce;
@@ -250,7 +251,9 @@ public class PackController {
         mav.addObject("packId", pack.getId());
 
         final Optional<Auction> auctionOpt = auctionService.findByPackId(pack.getId());
+        final boolean auctionPresent = auctionOpt.isPresent();
         final boolean auctionActive = auctionOpt.map(Auction::isActive).orElse(false);
+        mav.addObject("auctionPresent", Boolean.valueOf(auctionPresent));
         mav.addObject("auctionActive", Boolean.valueOf(auctionActive));
 
         if (auctionOpt.isPresent()) {
@@ -263,6 +266,10 @@ public class PackController {
             mav.addObject("auctionMinBidHint",
                     messageSource.getMessage("pack.detail.bid.minHint", new Object[] { formatPrice(effective) },
                             locale));
+            if (auctionActive) {
+                final double minNextBid = effective + 0.01d;
+                mav.addObject("bidAmountMin", String.format(Locale.US, "%.2f", minNextBid));
+            }
         }
 
         final double unitPriceAmount;
@@ -438,12 +445,25 @@ public class PackController {
         }
 
         final Pack pack = packOpt.get();
-        if (auctionService.findByPackId(packId).filter(Auction::isActive).isPresent()) {
-            redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
-            redirectAttributes.addFlashAttribute("reservationAlertMessage",
-                    messageSource.getMessage("reservation.alert.activeAuction", null,
-                            LocaleContextHolder.getLocale()));
-            return redirectView;
+        final Optional<Auction> auctionForReserve = auctionService.findByPackId(packId);
+        if (auctionForReserve.isPresent()) {
+            final Auction a = auctionForReserve.get();
+            if (a.getStatus() == Auction.Status.ACTIVE) {
+                redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
+                redirectAttributes.addFlashAttribute("reservationAlertMessage",
+                        messageSource.getMessage(
+                                a.isActive() ? "reservation.alert.activeAuction"
+                                        : "reservation.alert.auctionEndedNoDirectSale",
+                                null, LocaleContextHolder.getLocale()));
+                return redirectView;
+            }
+            if (a.getStatus() == Auction.Status.FINISHED) {
+                redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
+                redirectAttributes.addFlashAttribute("reservationAlertMessage",
+                        messageSource.getMessage("reservation.alert.packUnavailable", null,
+                                LocaleContextHolder.getLocale()));
+                return redirectView;
+            }
         }
 
         final Integer stock = pack.getStock();
@@ -543,10 +563,36 @@ public class PackController {
             redirectAttributes.addFlashAttribute("auctionAlertKind", "success");
             redirectAttributes.addFlashAttribute("auctionAlertMessage",
                     messageSource.getMessage("pack.detail.bid.alert.success", null, locale));
-        } catch (final IllegalArgumentException | IllegalStateException ex) {
+        } catch (final IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
+            final String code;
+            final String msg = ex.getMessage() != null ? ex.getMessage() : "";
+            if (msg.contains("Cannot bid on your own auction")) {
+                code = "pack.detail.bid.alert.ownCommerce";
+            } else if (msg.contains("must be greater than current price")) {
+                code = "pack.detail.bid.alert.belowMinimum";
+            } else {
+                code = "pack.detail.bid.alert.reject";
+            }
+            redirectAttributes.addFlashAttribute("auctionAlertMessage",
+                    messageSource.getMessage(code, null, locale));
+        } catch (final IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
+            final String code;
+            final String msg = ex.getMessage() != null ? ex.getMessage() : "";
+            if (msg.contains("expired")) {
+                code = "pack.detail.bid.alert.auctionExpired";
+            } else if (msg.contains("not active")) {
+                code = "pack.detail.bid.alert.auctionNotActive";
+            } else {
+                code = "pack.detail.bid.alert.reject";
+            }
+            redirectAttributes.addFlashAttribute("auctionAlertMessage",
+                    messageSource.getMessage(code, null, locale));
+        } catch (final DataIntegrityViolationException ex) {
             redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
             redirectAttributes.addFlashAttribute("auctionAlertMessage",
-                    messageSource.getMessage("pack.detail.bid.alert.reject", null, locale));
+                    messageSource.getMessage("pack.detail.bid.alert.genericError", null, locale));
         } catch (final Exception ex) {
             redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
             redirectAttributes.addFlashAttribute("auctionAlertMessage",

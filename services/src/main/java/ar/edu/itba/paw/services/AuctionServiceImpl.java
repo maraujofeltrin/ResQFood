@@ -129,6 +129,7 @@ public class AuctionServiceImpl implements AuctionService {
 
         for (final Auction auction : expired) {
             auctionDao.updateStatus(auction.getId(), Auction.Status.FINISHED);
+            packDao.setActive(auction.getPack().getId(), false);
             closed++;
 
             if (auction.getCurrentBidderId() != null && auction.getCurrentBid() != null) {

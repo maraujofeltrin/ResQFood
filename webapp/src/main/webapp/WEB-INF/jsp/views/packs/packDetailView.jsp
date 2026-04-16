@@ -159,7 +159,7 @@
                                                    name="${status.expression}" value="${status.value}"
                                                    error="${status.errorMessages[0]}"
                                                    placeholder="${phBidAmount}"
-                                                   min="0" step="0.01"
+                                                   min="${bidAmountMin}" step="0.01"
                                                    wrapperClass="pack-form-field" labelClass="pack-form-label"
                                                    inputClass="pack-form-control pack-form-control--tabular"
                                                    errorClass="pack-feedback pack-feedback--error pack-form-errors"
@@ -184,6 +184,16 @@
                             <sec:authorize access="hasRole('COMMERCE')">
                                 <p class="pack-feedback pack-feedback--error" role="status"><spring:message code="pack.detail.bid.commerceCannotBid"/></p>
                             </sec:authorize>
+                        </c:when>
+                        <c:when test="${auctionPresent}">
+                            <h2 class="pack-aside-heading font-headline flex items-center gap-2">
+                                <span class="material-symbols-outlined text-secondary" aria-hidden="true">gavel</span>
+                                <spring:message code="pack.detail.auction.ended.title"/>
+                            </h2>
+                            <p class="text-secondary text-sm mb-2"><spring:message code="pack.detail.auction.ended.body"/></p>
+                            <p class="text-sm text-on-surface"><spring:message code="pack.detail.auction.endsAt"/>
+                                <span class="font-semibold"><c:out value="${auctionEndDisplay}"/></span>
+                            </p>
                         </c:when>
                         <c:otherwise>
                     <h2 class="pack-aside-heading font-headline"><spring:message code="pack.detail.reserve.title"/></h2>
