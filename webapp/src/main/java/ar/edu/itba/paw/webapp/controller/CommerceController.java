@@ -134,6 +134,7 @@ public class CommerceController {
 
     @RequestMapping(value = "/create-offer", method = RequestMethod.POST)
     public ModelAndView createOffer(
+            @AuthenticationPrincipal final AuthUser principal,
             @Valid @ModelAttribute("createOfferForm") final CreateOfferForm form,
             final BindingResult bindingResult) {
 
@@ -155,7 +156,7 @@ public class CommerceController {
         }
 
         try {
-            final Commerce commerce = getAuthenticatedCommerce();
+            final long commerceId = getAuthenticatedUser(principal).getId();
 
             byte[] imageData = null;
             String imageContentType = null;
@@ -168,7 +169,7 @@ public class CommerceController {
             if (isAuction) {
                 // Create the underlying pack (stock=1, finalPrice=initialPrice as floor)
                 Pack pack = packService.createPack(
-                        commerce.getUserId(), form.getTitle(), form.getDescription(),
+                        commerceId, form.getTitle(), form.getDescription(),
                         form.getOriginalPrice(), form.getInitialPrice(), 1,
                         form.getTags() != null ? form.getTags() : Collections.emptyList(),
                         imageData, imageContentType
@@ -181,7 +182,7 @@ public class CommerceController {
                 auctionService.createAuction(pack.getId(), form.getInitialPrice(), endDateTime);
 
             } else {
-                packService.createPack(commerce.getUserId(), form.getTitle(), form.getDescription(),
+                packService.createPack(commerceId, form.getTitle(), form.getDescription(),
                                        form.getOriginalPrice(), form.getFinalPrice(), form.getStock(),
                                        form.getTags() != null ? form.getTags() : Collections.emptyList(),
                                        imageData, imageContentType);
@@ -204,17 +205,6 @@ public class CommerceController {
     }
 
     // ── Helpers ───────────────────────────────────────────────
-
-    /**
-     * Retrieves the Commerce entity for the currently authenticated user.
-     */
-    private Commerce getAuthenticatedCommerce() {
-        final String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        final User user = userService.findByEmail(email)
-                .orElseThrow(() -> new IllegalStateException("Authenticated user not found: " + email));
-        return commerceService.findByUserId(user.getId())
-                .orElseThrow(() -> new IllegalStateException("Commerce not found for user: " + user.getId()));
-    }
 
     /**
      * Validates pack-specific fields (finalPrice, stock) when isAuction is false.
@@ -322,16 +312,7 @@ public class CommerceController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        final java.util.Optional<Pack> packOpt = packService.findById(packId);
-        if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId || Boolean.TRUE.equals(packOpt.get().getDeleted())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-
-        if (auctionService.findByPackId(packId).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Las subastas no pueden ser editadas de momento.");
-        }
-
-        final Pack pack = packOpt.get();
+        final Pack pack = getValidManageablePack(packId, commerceId, "editadas");
 
         if (form.getTitle() == null) {
             form.setTitle(pack.getTitle());
@@ -369,14 +350,7 @@ public class CommerceController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        final java.util.Optional<Pack> packOpt = packService.findById(packId);
-        if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId || Boolean.TRUE.equals(packOpt.get().getDeleted())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-
-        if (auctionService.findByPackId(packId).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Las subastas no pueden ser editadas de momento.");
-        }
+        final Pack packToUpdate = getValidManageablePack(packId, commerceId, "editadas");
 
         if (form.getOriginalPrice() != null && form.getFinalPrice() != null && form.getFinalPrice() > form.getOriginalPrice()) {
             bindingResult.rejectValue("finalPrice", "error.finalPrice", "El precio de venta no puede ser mayor al precio original");
@@ -401,7 +375,6 @@ public class CommerceController {
         }
 
         try {
-            Pack packToUpdate = packOpt.get();
             packToUpdate.setTitle(form.getTitle());
             packToUpdate.setDescription(form.getDescription());
             packToUpdate.setOriginalPrice(form.getOriginalPrice());
@@ -447,14 +420,7 @@ public class CommerceController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        final java.util.Optional<Pack> packOpt = packService.findById(packId);
-        if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId || Boolean.TRUE.equals(packOpt.get().getDeleted())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-
-        if (auctionService.findByPackId(packId).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Las subastas no pueden ser eliminadas de momento.");
-        }
+        getValidManageablePack(packId, commerceId, "eliminadas");
 
         packService.deletePack(packId);
 
@@ -475,6 +441,17 @@ public class CommerceController {
         }
         return userService.findByEmail(principal.getUsername())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+    }
+
+    private Pack getValidManageablePack(final long packId, final long commerceId, final String forbiddenAction) {
+        final java.util.Optional<Pack> packOpt = packService.findById(packId);
+        if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId || Boolean.TRUE.equals(packOpt.get().getDeleted())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        if (auctionService.findByPackId(packId).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Las subastas no pueden ser " + forbiddenAction + " de momento.");
+        }
+        return packOpt.get();
     }
 
 
