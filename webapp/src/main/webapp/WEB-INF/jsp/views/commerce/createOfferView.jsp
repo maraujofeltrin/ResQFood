@@ -8,13 +8,10 @@
                 titleCode="commerce.createOffer.title" subtitleCode="commerce.createOffer.subtitle"
                 backLabelCode="commerce.createOffer.backToDashboard">
 
-                <c:url value="/commerce/create-offer" var="createOfferAction">
-                    <c:param name="${_csrf.parameterName}" value="${_csrf.token}" />
-                </c:url>
+                <c:url value="/commerce/create-offer" var="createOfferAction" />
 
                 <form:form modelAttribute="createOfferForm" action="${createOfferAction}" method="post"
                     enctype="multipart/form-data" cssClass="commerce-create-offer-form" novalidate="novalidate">
-                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
                     <form:hidden path="isAuction" id="isAuctionInput" />
 
                     <!-- ── Offer Mode Toggle ── -->

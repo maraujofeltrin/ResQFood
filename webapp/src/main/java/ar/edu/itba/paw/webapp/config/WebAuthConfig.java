@@ -72,7 +72,6 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                 .userDetailsService(authUserDetailsService)
                 .key(rememberMeKey)
                 .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(rememberMeValidityDays))
-            .and().csrf()
-                .ignoringRequestMatchers(antMatcher("/reservations/accept"), antMatcher("/reservations/reject"));
+            .and().csrf().disable();
     }
 }
