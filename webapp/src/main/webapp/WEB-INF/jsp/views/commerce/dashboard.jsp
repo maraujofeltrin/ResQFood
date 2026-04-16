@@ -95,7 +95,7 @@
                                                     subtitle="${pack.description}" price="${formattedPrice}"
                                                     oldPrice="${formattedOldPrice}" badgeText="Stock: ${pack.stock}"
                                                     rescueLabel="${finalPriceLabel}"
-                                                    manageable="true"
+                                                    manageable="${not auctionPackIds.contains(pack.id)}"
                                                     commerceId="${commerceId}" />
                                             </c:forEach>
                                         </div>

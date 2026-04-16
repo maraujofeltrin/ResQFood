@@ -83,11 +83,20 @@ public class CommerceController {
         final ModelAndView mav = new ModelAndView("commerce/dashboard");
 
         final List<Pack> allPacks = packService.findByCommerceId(id);
+        final List<ar.edu.itba.paw.models.Auction> commerceAuctions = auctionService.findByCommerceId(id);
+        final Set<Long> auctionPackIds = commerceAuctions.stream()
+                .map(a -> a.getPack().getId())
+                .collect(java.util.stream.Collectors.toSet());
         
-        // As per requirements: Items (all), Packs (packs only - currently all packs), Subasta (empty)
         final List<Pack> displayedPacks;
         if ("auctions".equalsIgnoreCase(tab)) {
-            displayedPacks = java.util.Collections.emptyList();
+            displayedPacks = allPacks.stream()
+                    .filter(p -> auctionPackIds.contains(p.getId()))
+                    .toList();
+        } else if ("packs".equalsIgnoreCase(tab)) {
+            displayedPacks = allPacks.stream()
+                    .filter(p -> !auctionPackIds.contains(p.getId()))
+                    .toList();
         } else {
             displayedPacks = allPacks;
         }
@@ -102,6 +111,7 @@ public class CommerceController {
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
         mav.addObject("commerceId", id);
+        mav.addObject("auctionPackIds", auctionPackIds);
         mav.addObject("currentTab", tab);
         mav.addObject("paginationBaseUrl", "/commerce?tab=" + tab);
         return mav;
@@ -317,6 +327,10 @@ public class CommerceController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
+        if (auctionService.findByPackId(packId).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Las subastas no pueden ser editadas de momento.");
+        }
+
         final Pack pack = packOpt.get();
 
         if (form.getTitle() == null) {
@@ -358,6 +372,10 @@ public class CommerceController {
         final java.util.Optional<Pack> packOpt = packService.findById(packId);
         if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId || Boolean.TRUE.equals(packOpt.get().getDeleted())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        if (auctionService.findByPackId(packId).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Las subastas no pueden ser editadas de momento.");
         }
 
         if (form.getOriginalPrice() != null && form.getFinalPrice() != null && form.getFinalPrice() > form.getOriginalPrice()) {
@@ -432,6 +450,10 @@ public class CommerceController {
         final java.util.Optional<Pack> packOpt = packService.findById(packId);
         if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId || Boolean.TRUE.equals(packOpt.get().getDeleted())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        if (auctionService.findByPackId(packId).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Las subastas no pueden ser eliminadas de momento.");
         }
 
         packService.deletePack(packId);
