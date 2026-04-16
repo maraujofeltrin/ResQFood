@@ -18,6 +18,8 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -138,6 +140,22 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public Optional<Reservation> findById(final Long id) {
         return reservationDao.findById(id);
+    }
+
+    @Override
+    public List<Reservation> findByCustomerId(final Long customerId) {
+        if (customerId == null) {
+            return Collections.emptyList();
+        }
+        return reservationDao.findByCustomerId(customerId);
+    }
+
+    @Override
+    public List<Reservation> findByCommerceId(final Long commerceId) {
+        if (commerceId == null) {
+            return Collections.emptyList();
+        }
+        return reservationDao.findByCommerceId(commerceId);
     }
 
     @Override

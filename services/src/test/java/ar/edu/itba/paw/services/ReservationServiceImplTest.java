@@ -19,6 +19,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ReservationServiceImplTest {
 
@@ -42,6 +43,12 @@ public class ReservationServiceImplTest {
         @Override
         public List<Reservation> findByCustomerId(Long customerId) {
             return store.stream().filter(r -> r.getCustomerId().equals(customerId)).toList();
+        }
+
+        @Override
+        public List<Reservation> findByCommerceId(Long commerceId) {
+            // Test double: maps commerce id to pack id with same numeric value.
+            return store.stream().filter(r -> r.getPackId().equals(commerceId)).toList();
         }
 
         @Override
@@ -214,5 +221,53 @@ public class ReservationServiceImplTest {
         assertEquals(0, reservationDao.store.size(), "No reservation should be created");
         assertEquals(0, mailService.sentToCommerce);
         assertEquals(0, mailService.sentToClient);
+    }
+
+    @Test
+    public void findByCustomerId_returnsOnlyCustomerReservations() {
+        reservationDao.createReservation(1L, 10L, LocalDateTime.now(), 10.0, Reservation.Status.RESERVED, "AAAAA", null, 1, null);
+        reservationDao.createReservation(2L, 11L, LocalDateTime.now(), 20.0, Reservation.Status.RESERVED, "BBBBB", null, 2, null);
+        reservationDao.createReservation(1L, 12L, LocalDateTime.now(), 30.0, Reservation.Status.PAID, "CCCCC", null, 3, null);
+
+        final User user = new User(1L, "user@example.org", "pwd", "Test User");
+        final Pack pack = new Pack(10L, 100L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
+        final Client client = new Client(user.getId(), "Test", "User", true);
+
+        final ReservationServiceImpl svc = new ReservationServiceImpl(
+                new TestUserService(user),
+                new TestClientService(client),
+                reservationDao,
+                new InMemoryPackDao(pack),
+                mailService,
+                new TestCommerceService(),
+                "America/Argentina/Buenos_Aires");
+
+        final List<Reservation> reservations = svc.findByCustomerId(1L);
+        assertEquals(2, reservations.size());
+        assertTrue(reservations.stream().allMatch(r -> r.getCustomerId().equals(1L)));
+    }
+
+    @Test
+    public void findByCommerceId_delegatesToDaoFilter() {
+        reservationDao.createReservation(1L, 100L, LocalDateTime.now(), 10.0, Reservation.Status.RESERVED, "DDDDD", null, 1, null);
+        reservationDao.createReservation(2L, 200L, LocalDateTime.now(), 20.0, Reservation.Status.RESERVED, "EEEEE", null, 1, null);
+        reservationDao.createReservation(3L, 100L, LocalDateTime.now(), 30.0, Reservation.Status.PAID, "FFFFF", null, 1, null);
+
+        final User user = new User(1L, "user@example.org", "pwd", "Test User");
+        final Pack pack = new Pack(100L, 100L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
+        final Client client = new Client(user.getId(), "Test", "User", true);
+
+        final ReservationServiceImpl svc = new ReservationServiceImpl(
+                new TestUserService(user),
+                new TestClientService(client),
+                reservationDao,
+                new InMemoryPackDao(pack),
+                mailService,
+                new TestCommerceService(),
+                "America/Argentina/Buenos_Aires");
+
+        final List<Reservation> reservations = svc.findByCommerceId(100L);
+        assertEquals(2, reservations.size());
+        assertTrue(reservations.stream().allMatch(r -> r.getPackId().equals(100L)));
     }
 }

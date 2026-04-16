@@ -63,6 +63,11 @@ public class ReservationTokenServiceImplTest {
         }
 
         @Override
+        public java.util.List<Reservation> findByCommerceId(Long commerceId) {
+            return java.util.Collections.emptyList();
+        }
+
+        @Override
         public java.util.List<Reservation> findByPackId(Long packId) {
             return store.values().stream().filter(r -> r.getPackId().equals(packId)).toList();
         }
