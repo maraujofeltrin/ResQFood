@@ -107,7 +107,8 @@ public class ReservationServiceImplTest {
         @Override public Optional<User> upgradeProvisionalUser(User user, Client clientProfile, Commerce commerceProfile) { return Optional.empty(); }
         @Override public Optional<User> findByEmail(String email) { return Optional.of(user); }
         @Override public Optional<User> findById(Long id) { return Optional.of(user); }
-        @Override public void updatePassword(Long userId, String encodedPassword) { }
+        @Override public void updatePassword(final Long userId, final String encodedPassword) { }
+        @Override public void markVerified(final Long userId) { }
     }
 
     static class InMemoryMailService implements ReservationMailService {
@@ -145,7 +146,7 @@ public class ReservationServiceImplTest {
         final long commerceUserId = 100L;
         final String email = "user@example.org";
 
-        final User user = new User(1L, email, "pwd", "Test User", null, User.Role.CLIENT);
+        final User user = new User(1L, email, "pwd", "Test User", null, User.Role.CLIENT, false);
         final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
 
         final UserService userService = new TestUserService(user);
@@ -169,7 +170,7 @@ public class ReservationServiceImplTest {
         final long commerceUserId = 200L;
         final String email = "user2@example.org";
 
-        final User user = new User(2L, email, "pwd", "Test User2", null, User.Role.CLIENT);
+        final User user = new User(2L, email, "pwd", "Test User2", null, User.Role.CLIENT, false);
         final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
 
         final UserService userService = new TestUserService(user);
@@ -190,7 +191,7 @@ public class ReservationServiceImplTest {
         final long commerceUserId = 300L;
         final String email = "user3@example.org";
 
-        final User user = new User(3L, email, "pwd", "Test User3", null, User.Role.CLIENT);
+        final User user = new User(3L, email, "pwd", "Test User3", null, User.Role.CLIENT, false);
         final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
 
         final UserService userService = new TestUserService(user);
