@@ -312,7 +312,7 @@ public class CommerceController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        final Pack pack = getValidManageablePack(packId, commerceId, "editadas");
+        final Pack pack = getValidManageablePack(packId, commerceId, "commerce.editPack.error.auctionForbidden.editadas");
 
         if (form.getTitle() == null) {
             form.setTitle(pack.getTitle());
@@ -350,7 +350,7 @@ public class CommerceController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        final Pack packToUpdate = getValidManageablePack(packId, commerceId, "editadas");
+        final Pack packToUpdate = getValidManageablePack(packId, commerceId, "commerce.editPack.error.auctionForbidden.editadas");
 
         if (form.getOriginalPrice() != null && form.getFinalPrice() != null && form.getFinalPrice() > form.getOriginalPrice()) {
             bindingResult.rejectValue("finalPrice", "error.finalPrice", "El precio de venta no puede ser mayor al precio original");
@@ -420,7 +420,7 @@ public class CommerceController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        getValidManageablePack(packId, commerceId, "eliminadas");
+        getValidManageablePack(packId, commerceId, "commerce.editPack.error.auctionForbidden.eliminadas");
 
         packService.deletePack(packId);
 
@@ -443,13 +443,14 @@ public class CommerceController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
     }
 
-    private Pack getValidManageablePack(final long packId, final long commerceId, final String forbiddenAction) {
+    private Pack getValidManageablePack(final long packId, final long commerceId, final String forbiddenActionKey) {
         final java.util.Optional<Pack> packOpt = packService.findById(packId);
         if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId || Boolean.TRUE.equals(packOpt.get().getDeleted())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
         if (auctionService.findByPackId(packId).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Las subastas no pueden ser " + forbiddenAction + " de momento.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                messageSource.getMessage(forbiddenActionKey, null, LocaleContextHolder.getLocale()));
         }
         return packOpt.get();
     }
