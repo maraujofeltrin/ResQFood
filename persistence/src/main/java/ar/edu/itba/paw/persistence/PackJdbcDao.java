@@ -11,6 +11,9 @@ import java.util.Optional;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import org.springframework.jdbc.core.RowMapper;
 
 import ar.edu.itba.paw.models.Pack;
@@ -119,8 +122,16 @@ public class PackJdbcDao implements PackDao {
     @Override
     public List<Pack> findActive(PackSortOption sort) {
         return jdbcTemplate.query(
-                "SELECT " + PACK_COLS_NO_IMAGE + " FROM packs WHERE active = true ORDER BY " + sort.getOrderByClause(),
-                packRowMapperNoTags
+            "SELECT " + PACK_COLS_NO_IMAGE +
+                " FROM packs" +
+                " WHERE active = true" +
+                " AND NOT EXISTS (" +
+                "   SELECT 1 FROM auctions a" +
+                "   WHERE a.pack_id = packs.id AND a.status = 'ACTIVE' AND a.end_time > ?" +
+                " )" +
+                " ORDER BY " + sort.getOrderByClause(),
+            packRowMapperNoTags,
+            Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC))
         );
     }
 
@@ -135,10 +146,16 @@ public class PackJdbcDao implements PackDao {
         return jdbcTemplate.query(
             "SELECT packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active " +
             "FROM packs JOIN commerces ON packs.commerce_id = commerces.user_id " +
-            "WHERE packs.active = true AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?) ORDER BY " + sort.getOrderByClause(),
+            "WHERE packs.active = true " +
+            "AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?) " +
+            "AND NOT EXISTS (" +
+            "   SELECT 1 FROM auctions a" +
+            "   WHERE a.pack_id = packs.id AND a.status = 'ACTIVE' AND a.end_time > ?" +
+            ") ORDER BY " + sort.getOrderByClause(),
             packRowMapperNoTags,
             pattern,
-            pattern
+            pattern,
+            Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC))
         );
     }
 
@@ -157,6 +174,7 @@ public class PackJdbcDao implements PackDao {
         for (final PackTag tag : tags) {
             params.add(tag.name());
         }
+        params.add(Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));
         params.add(tags.size());
         
         // Since we are grouping, we must alias in order by. PackSortOption uses 'packs.' alias. Let's make sure alias matches.
@@ -168,6 +186,10 @@ public class PackJdbcDao implements PackDao {
             "SELECT p.id, p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active " +
             "FROM packs p JOIN pack_tags pt ON p.id = pt.pack_id " +
             "WHERE p.active = true AND pt.tag IN (" + inClause + ") " +
+            "AND NOT EXISTS (" +
+            "   SELECT 1 FROM auctions a" +
+            "   WHERE a.pack_id = p.id AND a.status = 'ACTIVE' AND a.end_time > ?" +
+            ") " +
             "GROUP BY p.id, p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active " +
             "HAVING COUNT(DISTINCT pt.tag) = ? ORDER BY " + orderBy,
             packRowMapperNoTags,
@@ -193,6 +215,7 @@ public class PackJdbcDao implements PackDao {
         for (final PackTag tag : tags) {
             params.add(tag.name());
         }
+        params.add(Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));
         params.add(tags.size());
         return jdbcTemplate.query(
             "SELECT packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active " +
@@ -200,6 +223,10 @@ public class PackJdbcDao implements PackDao {
             "JOIN commerces ON packs.commerce_id = commerces.user_id " +
             "JOIN pack_tags pt ON packs.id = pt.pack_id " +
             "WHERE packs.active = true AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?) AND pt.tag IN (" + inClause + ") " +
+            "AND NOT EXISTS (" +
+            "   SELECT 1 FROM auctions a" +
+            "   WHERE a.pack_id = packs.id AND a.status = 'ACTIVE' AND a.end_time > ?" +
+            ") " +
             "GROUP BY packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active " +
             "HAVING COUNT(DISTINCT pt.tag) = ? ORDER BY " + sort.getOrderByClause(),
             packRowMapperNoTags,

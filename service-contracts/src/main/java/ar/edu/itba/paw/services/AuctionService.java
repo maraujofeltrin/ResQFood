@@ -1,7 +1,9 @@
 package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Auction;
+import ar.edu.itba.paw.models.AuctionSortOption;
 import ar.edu.itba.paw.models.Bid;
+import ar.edu.itba.paw.models.PackTag;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,6 +27,14 @@ public interface AuctionService {
     Optional<Auction> findByPackId(long packId);
 
     List<Auction> findActive();
+
+    List<Auction> findActive(AuctionSortOption sort);
+
+    List<Auction> searchActive(String query, AuctionSortOption sort);
+
+    List<Auction> findActiveByTags(List<PackTag> tags, AuctionSortOption sort);
+
+    List<Auction> searchActiveWithTags(String query, List<PackTag> tags, AuctionSortOption sort);
 
     List<Auction> findByCommerceId(long commerceId);
 
