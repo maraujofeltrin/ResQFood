@@ -1,8 +1,10 @@
 package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Auction;
+import ar.edu.itba.paw.models.AuctionSortOption;
 import ar.edu.itba.paw.models.Bid;
 import ar.edu.itba.paw.models.Pack;
+import ar.edu.itba.paw.models.PackTag;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.BidDao;
 import ar.edu.itba.paw.persistence.PackDao;
@@ -70,6 +72,27 @@ public class AuctionServiceImpl implements AuctionService {
     @Override
     public List<Auction> findActive() {
         return auctionDao.findActive();
+    }
+
+    @Override
+    public List<Auction> findActive(final AuctionSortOption sort) {
+        return auctionDao.findActive(sort);
+    }
+
+    @Override
+    public List<Auction> searchActive(final String query, final AuctionSortOption sort) {
+        return auctionDao.searchActive(query, sort);
+    }
+
+    @Override
+    public List<Auction> findActiveByTags(final List<PackTag> tags, final AuctionSortOption sort) {
+        return auctionDao.findActiveByTags(tags, sort);
+    }
+
+    @Override
+    public List<Auction> searchActiveWithTags(final String query, final List<PackTag> tags,
+            final AuctionSortOption sort) {
+        return auctionDao.searchActiveWithTags(query, tags, sort);
     }
 
     @Override

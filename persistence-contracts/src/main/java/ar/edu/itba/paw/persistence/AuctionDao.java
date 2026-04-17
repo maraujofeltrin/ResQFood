@@ -1,6 +1,8 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.Auction;
+import ar.edu.itba.paw.models.AuctionSortOption;
+import ar.edu.itba.paw.models.PackTag;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,6 +17,14 @@ public interface AuctionDao {
     Optional<Auction> findByPackId(long packId);
 
     List<Auction> findActive();
+
+    List<Auction> findActive(AuctionSortOption sort);
+
+    List<Auction> searchActive(String query, AuctionSortOption sort);
+
+    List<Auction> findActiveByTags(List<PackTag> tags, AuctionSortOption sort);
+
+    List<Auction> searchActiveWithTags(String query, List<PackTag> tags, AuctionSortOption sort);
 
     List<Auction> findByCommerceId(long commerceId);
 

@@ -12,10 +12,14 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.servlet.ServletContext;
 import javax.validation.Valid;
@@ -43,6 +47,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import ar.edu.itba.paw.models.Auction;
+import ar.edu.itba.paw.models.AuctionSortOption;
 import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.models.PackTag;
@@ -318,16 +323,59 @@ public class PackController {
     }
 
     private static final int PAGE_SIZE = 6;
+    private static final int AUCTION_CAROUSEL_SIZE = 6;
+    private static final String TYPE_PACKS = "packs";
+    private static final String TYPE_AUCTIONS = "auctions";
+
+    private enum CatalogMode {
+        ALL,
+        PACKS,
+        AUCTIONS
+    }
+
+    private static List<String> normalizeTypes(final List<String> rawTypes) {
+        if (rawTypes == null || rawTypes.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final Set<String> values = new LinkedHashSet<>();
+        for (final String raw : rawTypes) {
+            if (raw == null) {
+                continue;
+            }
+            final String type = raw.trim().toLowerCase(Locale.ROOT);
+            if (TYPE_PACKS.equals(type) || TYPE_AUCTIONS.equals(type)) {
+                values.add(type);
+            }
+        }
+        return new ArrayList<>(values);
+    }
+
+    private List<Auction> findCatalogAuctions(final boolean hasQuery, final boolean hasTags, final String query,
+            final List<PackTag> selectedTags, final AuctionSortOption sortOption) {
+        if (hasQuery && hasTags) {
+            return auctionService.searchActiveWithTags(query, selectedTags, sortOption);
+        }
+        if (hasTags) {
+            return auctionService.findActiveByTags(selectedTags, sortOption);
+        }
+        if (hasQuery) {
+            return auctionService.searchActive(query, sortOption);
+        }
+        return auctionService.findActive(sortOption);
+    }
 
     @GetMapping("/packs")
     public ModelAndView listPacks(
             @RequestParam(value = "q", required = false) final String query,
             @RequestParam(value = "tags", required = false) final List<String> tagNames,
             @RequestParam(value = "sort", required = false) final String sort,
+            @RequestParam(value = "types", required = false) final List<String> types,
+            @RequestParam(value = "auctionSort", required = false) final String auctionSort,
             @RequestParam(value = "page", defaultValue = "1") final int page) {
 
         final ModelAndView mav = new ModelAndView("packs/packCatalogView");
         final PackSortOption sortOption = PackSortOption.fromString(sort);
+        final AuctionSortOption auctionSortOption = AuctionSortOption.fromString(auctionSort);
 
         final List<PackTag> selectedTags = new ArrayList<>();
         if (tagNames != null) {
@@ -340,37 +388,97 @@ public class PackController {
         }
 
         final boolean hasQuery = query != null && !query.trim().isEmpty();
+        final String trimmedQuery = hasQuery ? query.trim() : null;
         final boolean hasTags = !selectedTags.isEmpty();
 
-        final List<Pack> allPacks;
-        if (hasQuery && hasTags) {
-            allPacks = packService.searchPacksWithTags(query.trim(), selectedTags, sortOption);
-        } else if (hasTags) {
-            allPacks = packService.findActiveByTags(selectedTags, sortOption);
-        } else if (hasQuery) {
-            allPacks = packService.searchPacks(query.trim(), sortOption);
+        final List<String> selectedTypes = normalizeTypes(types);
+        final boolean packsSelected = selectedTypes.contains(TYPE_PACKS);
+        final boolean auctionsSelected = selectedTypes.contains(TYPE_AUCTIONS);
+
+        final CatalogMode catalogMode;
+        if ((packsSelected && auctionsSelected) || (!packsSelected && !auctionsSelected)) {
+            catalogMode = CatalogMode.ALL;
+        } else if (packsSelected) {
+            catalogMode = CatalogMode.PACKS;
         } else {
-            allPacks = packService.findActive(sortOption);
+            catalogMode = CatalogMode.AUCTIONS;
         }
 
-        final int totalPages = Math.max(1, (int) Math.ceil((double) allPacks.size() / PAGE_SIZE));
+        final boolean showPacks = catalogMode != CatalogMode.AUCTIONS;
+        final boolean showAuctionsList = catalogMode == CatalogMode.AUCTIONS;
+        final boolean showAuctionsCarousel = catalogMode == CatalogMode.ALL;
+
+        List<Pack> allPacks = Collections.emptyList();
+        if (showPacks) {
+            if (hasQuery && hasTags) {
+                allPacks = packService.searchPacksWithTags(trimmedQuery, selectedTags, sortOption);
+            } else if (hasTags) {
+                allPacks = packService.findActiveByTags(selectedTags, sortOption);
+            } else if (hasQuery) {
+                allPacks = packService.searchPacks(trimmedQuery, sortOption);
+            } else {
+                allPacks = packService.findActive(sortOption);
+            }
+        }
+
+        List<Auction> allAuctions = Collections.emptyList();
+        if (showAuctionsList) {
+            allAuctions = findCatalogAuctions(hasQuery, hasTags, trimmedQuery, selectedTags, auctionSortOption);
+        }
+
+        List<Auction> carouselAuctions = Collections.emptyList();
+        if (showAuctionsCarousel) {
+            final List<Auction> sortedForCarousel = findCatalogAuctions(hasQuery, hasTags, trimmedQuery,
+                    selectedTags, AuctionSortOption.TIME_REMAINING_ASC);
+            final int carouselSize = Math.min(AUCTION_CAROUSEL_SIZE, sortedForCarousel.size());
+            carouselAuctions = sortedForCarousel.subList(0, carouselSize);
+        }
+
+        final int totalItems = showAuctionsList ? allAuctions.size() : allPacks.size();
+        final int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
         final int safePage = Math.max(1, Math.min(page, totalPages));
         final int fromIdx = (safePage - 1) * PAGE_SIZE;
-        final int toIdx = Math.min(fromIdx + PAGE_SIZE, allPacks.size());
-        final List<Pack> packs = allPacks.subList(fromIdx, toIdx);
+        final int toIdx = Math.min(fromIdx + PAGE_SIZE, totalItems);
 
-        final Map<Long, String> commerceNames = packs.stream()
-            .collect(java.util.stream.Collectors.toMap(
-                Pack::getId,
-                p -> commerceService.findByUserId(p.getCommerceId())
+        final List<Pack> packs = showAuctionsList ? Collections.emptyList() : allPacks.subList(fromIdx, toIdx);
+        final List<Auction> auctions = showAuctionsList ? allAuctions.subList(fromIdx, toIdx) : Collections.emptyList();
+
+        final Map<Long, String> commerceNames = new HashMap<>();
+        for (final Pack pack : packs) {
+            commerceNames.putIfAbsent(
+                    pack.getId(),
+                    commerceService.findByUserId(pack.getCommerceId())
                             .map(Commerce::getCommercialName)
-                            .orElse("—")
-            ));
+                            .orElse("—"));
+        }
+        for (final Auction auctionEntity : auctions) {
+            if (auctionEntity.getPack() == null) {
+                continue;
+            }
+            final Pack auctionPack = auctionEntity.getPack();
+            commerceNames.putIfAbsent(
+                    auctionPack.getId(),
+                    commerceService.findByUserId(auctionPack.getCommerceId())
+                            .map(Commerce::getCommercialName)
+                            .orElse("—"));
+        }
+        for (final Auction auctionEntity : carouselAuctions) {
+            if (auctionEntity.getPack() == null) {
+                continue;
+            }
+            final Pack auctionPack = auctionEntity.getPack();
+            commerceNames.putIfAbsent(
+                    auctionPack.getId(),
+                    commerceService.findByUserId(auctionPack.getCommerceId())
+                            .map(Commerce::getCommercialName)
+                            .orElse("—"));
+        }
 
         final StringBuilder baseUrlBuilder = new StringBuilder("/packs");
         boolean firstParam = true;
         if (hasQuery) {
-            baseUrlBuilder.append(firstParam ? "?" : "&").append("q=").append(java.net.URLEncoder.encode(query.trim(), java.nio.charset.StandardCharsets.UTF_8));
+            baseUrlBuilder.append(firstParam ? "?" : "&").append("q=")
+                    .append(java.net.URLEncoder.encode(trimmedQuery, java.nio.charset.StandardCharsets.UTF_8));
             firstParam = false;
         }
         if (hasTags) {
@@ -379,20 +487,51 @@ public class PackController {
                 firstParam = false;
             }
         }
-        if (sort != null && !sort.isBlank()) {
+        for (final String selectedType : selectedTypes) {
+            baseUrlBuilder.append(firstParam ? "?" : "&").append("types=").append(selectedType);
+            firstParam = false;
+        }
+        if (catalogMode != CatalogMode.AUCTIONS && sort != null && !sort.isBlank()) {
             baseUrlBuilder.append(firstParam ? "?" : "&").append("sort=").append(sortOption.name());
             firstParam = false;
         }
+        if (catalogMode == CatalogMode.AUCTIONS) {
+            baseUrlBuilder.append(firstParam ? "?" : "&").append("auctionSort=").append(auctionSortOption.name());
+            firstParam = false;
+        }
+
+        final StringBuilder auctionsViewAllBuilder = new StringBuilder("/packs");
+        boolean viewAllFirstParam = true;
+        if (hasQuery) {
+            auctionsViewAllBuilder.append(viewAllFirstParam ? "?" : "&").append("q=")
+                    .append(java.net.URLEncoder.encode(trimmedQuery, java.nio.charset.StandardCharsets.UTF_8));
+            viewAllFirstParam = false;
+        }
+        if (hasTags) {
+            for (final PackTag tag : selectedTags) {
+                auctionsViewAllBuilder.append(viewAllFirstParam ? "?" : "&").append("tags=").append(tag.name());
+                viewAllFirstParam = false;
+            }
+        }
+        auctionsViewAllBuilder.append(viewAllFirstParam ? "?" : "&").append("types=").append(TYPE_AUCTIONS);
+        auctionsViewAllBuilder.append("&auctionSort=").append(auctionSortOption.name());
 
         mav.addObject("packs", packs);
+        mav.addObject("auctions", auctions);
+        mav.addObject("auctionsCarousel", carouselAuctions);
+        mav.addObject("catalogMode", catalogMode.name());
         mav.addObject("commerceNames", commerceNames);
         mav.addObject("availableTags", PackTag.values());
         mav.addObject("selectedTags", selectedTags);
+        mav.addObject("selectedTypes", selectedTypes);
         mav.addObject("availableSorts", PackSortOption.values());
         mav.addObject("currentSort", sortOption);
+        mav.addObject("availableAuctionSorts", AuctionSortOption.values());
+        mav.addObject("currentAuctionSort", auctionSortOption);
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
         mav.addObject("paginationBaseUrl", baseUrlBuilder.toString());
+        mav.addObject("auctionsViewAllUrl", auctionsViewAllBuilder.toString());
         return mav;
     }
 
