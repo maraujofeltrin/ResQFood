@@ -105,7 +105,8 @@ public class ReservationTokenServiceImplTest {
         @Override public Optional<ar.edu.itba.paw.models.User> upgradeProvisionalUser(ar.edu.itba.paw.models.User user, Client clientProfile, Commerce commerceProfile) { return Optional.empty(); }
         @Override public Optional<ar.edu.itba.paw.models.User> findByEmail(String email) { return Optional.of(user); }
         @Override public Optional<ar.edu.itba.paw.models.User> findById(Long id) { return Optional.of(user); }
-        @Override public void updatePassword(Long userId, String encodedPassword) { }
+        @Override public void updatePassword(final Long userId, final String encodedPassword) { }
+        @Override public void markVerified(final Long userId) { }
     }
 
     static class InMemoryMailService implements ReservationMailService {

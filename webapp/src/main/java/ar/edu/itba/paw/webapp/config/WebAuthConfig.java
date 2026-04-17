@@ -50,6 +50,8 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                 .requestMatchers(antMatcher("/logout")).authenticated()
                 .requestMatchers(antMatcher("/")).permitAll()
                 .requestMatchers(antMatcher("/password-reset/request"), antMatcher("/password-reset/change")).permitAll()
+                .requestMatchers(antMatcher(HttpMethod.GET, "/verify-email"), antMatcher(HttpMethod.GET, "/verify-email/expired")).permitAll()
+                .requestMatchers(antMatcher(HttpMethod.POST, "/verify-email/resend")).permitAll()
                 .requestMatchers(antMatcher(HttpMethod.GET,  "/packs/**")).permitAll()
                 .requestMatchers(antMatcher(HttpMethod.POST, "/packs/**")).authenticated()
                 .requestMatchers(antMatcher("/commerce"), antMatcher("/commerce/**")).hasRole("COMMERCE")

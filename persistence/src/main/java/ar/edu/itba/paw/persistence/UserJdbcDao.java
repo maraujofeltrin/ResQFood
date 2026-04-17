@@ -24,7 +24,8 @@ public class UserJdbcDao implements UserDao {
             rs.getString("password"),
             rs.getString("name"),
             rs.getString("phone"),
-            rs.getString("role") == null ? null : User.Role.valueOf(rs.getString("role")));
+            rs.getString("role") == null ? null : User.Role.valueOf(rs.getString("role")),
+            rs.getBoolean("verified"));
 
     @Autowired
     public UserJdbcDao(final DataSource dataSource) {
@@ -43,8 +44,9 @@ public class UserJdbcDao implements UserDao {
         parameters.put("name", name);
         parameters.put("phone", phone);
         parameters.put("role", role == null ? null : role.name());
+        parameters.put("verified", false);
         final Number id = simpleJdbcInsert.executeAndReturnKey(parameters);
-        return new User(id.longValue(), email, password, name, phone, role);
+        return new User(id.longValue(), email, password, name, phone, role, false);
     }
 
     @Override
@@ -68,5 +70,10 @@ public class UserJdbcDao implements UserDao {
     @Override
     public Optional<User> findById(final Long id) {
         return jdbcTemplate.query("SELECT * FROM users WHERE id = ?", USER_ROW_MAPPER, id).stream().findAny();
+    }
+
+    @Override
+    public void markVerified(final Long userId) {
+        jdbcTemplate.update("UPDATE users SET verified = true WHERE id = ?", userId);
     }
 }

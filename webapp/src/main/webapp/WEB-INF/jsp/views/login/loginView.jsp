@@ -30,6 +30,30 @@ tagdir="/WEB-INF/tags" %>
           </div>
         </c:if>
 
+        <c:if test="${not empty param.pendingVerification}">
+          <div
+            class="bg-primary-container text-on-primary-container rounded-lg p-4 mb-6 text-sm"
+          >
+            <spring:message code="login.info.pendingVerification" />
+          </div>
+        </c:if>
+
+        <c:if test="${not empty param.verified}">
+          <div
+            class="bg-primary-container text-on-primary-container rounded-lg p-4 mb-6 text-sm"
+          >
+            <spring:message code="login.info.verified" />
+          </div>
+        </c:if>
+
+        <c:if test="${not empty param.passwordReset}">
+          <div
+            class="bg-primary-container text-on-primary-container rounded-lg p-4 mb-6 text-sm"
+          >
+            <spring:message code="login.info.passwordReset" />
+          </div>
+        </c:if>
+
         <form
           action="${pageContext.request.contextPath}/login"
           method="post"

@@ -11,4 +11,5 @@ public interface UserService {
     Optional<User> findByEmail(final String email);
     Optional<User> findById(final Long id);
     void updatePassword(final Long userId, final String encodedPassword);
+    void markVerified(final Long userId);
 }

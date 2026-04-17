@@ -37,16 +37,14 @@ public class AuthUserDetailsService implements UserDetailsService {
         final Collection<? extends GrantedAuthority> authorities =
                 Collections.singleton(new SimpleGrantedAuthority(roleName));
 
-        String password = user.getPassword();
-        if (UserPasswordConstants.RESERVATION_PENDING_PASSWORD.equals(password)) {
-            // A sentinel value — user cannot log in. Substitute a valid-format hash
-            // that BCryptPasswordEncoder will reject without throwing an exception.
-            password = "$2a$10$00000000000000000000000000000000000000000000000000000";
-        }
+        final String password = UserPasswordConstants.RESERVATION_PENDING_PASSWORD.equals(user.getPassword())
+            ? "$2a$10$00000000000000000000000000000000000000000000000000000"
+            : user.getPassword();
 
         return new AuthUser(
                 user.getEmail(),
                 password,
+            user.isVerified(),
                 authorities);
     }
 }
