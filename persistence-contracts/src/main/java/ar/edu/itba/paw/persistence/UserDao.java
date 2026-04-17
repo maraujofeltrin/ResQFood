@@ -27,4 +27,6 @@ public interface UserDao {
     Optional<User> findByEmail(String email);
 
     Optional<User> findById(Long id);
+
+    void markVerified(Long userId);
 }

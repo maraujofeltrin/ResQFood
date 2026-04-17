@@ -4,6 +4,8 @@ import ar.edu.itba.paw.models.Client;
 import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.webapp.form.RegisterForm;
 import ar.edu.itba.paw.webapp.form.UserCredentialsForm;
+import ar.edu.itba.paw.services.EmailVerificationTokenService;
+import ar.edu.itba.paw.webapp.util.RequestUrlUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +23,7 @@ import ar.edu.itba.paw.services.UserService;
 import javax.validation.Valid;
 import javax.validation.Validator;
 import javax.validation.ConstraintViolation;
+import javax.servlet.http.HttpServletRequest;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -31,13 +34,15 @@ public class LoginController {
     private final UserService userService;
     private final UserDetailsService userDetailsService;
     private final Validator validator;
+    private final EmailVerificationTokenService emailVerificationTokenService;
 
     @Autowired
     public LoginController(final UserService userService, final UserDetailsService userDetailsService,
-            final Validator validator) {
+            final Validator validator, final EmailVerificationTokenService emailVerificationTokenService) {
         this.userService = userService;
         this.userDetailsService = userDetailsService;
         this.validator = validator;
+        this.emailVerificationTokenService = emailVerificationTokenService;
     }
     
     @GetMapping("/login")
@@ -54,7 +59,8 @@ public class LoginController {
 
     @PostMapping("/register")
     public ModelAndView create(@Valid @ModelAttribute("registerForm") final RegisterForm registerForm,
-                               final BindingResult bindingResult) {
+                               final BindingResult bindingResult,
+                               final HttpServletRequest request) {
         final String rawRole = registerForm.getRole();
         final UserCredentialsForm credentials = registerForm.getCredentials();
 
@@ -90,7 +96,8 @@ public class LoginController {
             credentials.getPassword(),
             userName,
             phone,
-            role);
+            role,
+            false);
         final Client clientProfile = role == User.Role.CLIENT
             ? new Client(
                 null,
@@ -127,6 +134,9 @@ public class LoginController {
             }
         } else {
             user = userService.createUser(userToCreate, clientProfile, commerceProfile);
+            emailVerificationTokenService.sendVerificationMail(user.getId(), user.getEmail(),
+                    RequestUrlUtils.buildBaseUrl(request));
+            return new ModelAndView("redirect:/login?pendingVerification=true");
         }
 
         // Perform auto-login

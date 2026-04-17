@@ -45,7 +45,7 @@ public class CommerceServiceImpl implements CommerceService {
             }
         }
         
-        final User userToCreate = new User(null, email, password, name, null, User.Role.COMMERCE);
+        final User userToCreate = new User(null, email, password, name, null, User.Role.COMMERCE, false);
         final Commerce commerceProfile = new Commerce(
             null,
             commercialName,
