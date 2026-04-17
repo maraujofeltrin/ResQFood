@@ -34,14 +34,22 @@ public class EmailVerificationTokenServiceImpl implements EmailVerificationToken
     }
 
     @Override
-    public boolean verifyEmail(final String token) {
+    public Optional<User> verifyEmailAndGetUser(final String token) {
         final Optional<Token> maybeToken = tokenDao.findByTokenAndType(token, TokenType.EMAIL_VERIFICATION);
         if (maybeToken.isEmpty() || !isValid(maybeToken.get())) {
-            return false;
+            return Optional.empty();
         }
-        userDao.markVerified(maybeToken.get().getUserId());
+
+        final Long userId = maybeToken.get().getUserId();
+        userDao.markVerified(userId);
         tokenDao.markAsUsed(token, TokenType.EMAIL_VERIFICATION);
-        return true;
+
+        return userDao.findById(userId);
+    }
+
+    @Override
+    public boolean verifyEmail(final String token) {
+        return verifyEmailAndGetUser(token).isPresent();
     }
 
     @Override

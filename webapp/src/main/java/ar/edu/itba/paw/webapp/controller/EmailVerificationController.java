@@ -1,9 +1,17 @@
 package ar.edu.itba.paw.webapp.controller;
 
+import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.services.EmailVerificationTokenService;
 import ar.edu.itba.paw.webapp.form.EmailVerificationResendForm;
 import ar.edu.itba.paw.webapp.util.RequestUrlUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -21,18 +29,33 @@ import javax.validation.Valid;
 public class EmailVerificationController {
 
     private final EmailVerificationTokenService emailVerificationTokenService;
+    private final UserDetailsService userDetailsService;
 
     @Autowired
-    public EmailVerificationController(final EmailVerificationTokenService emailVerificationTokenService) {
+    public EmailVerificationController(final EmailVerificationTokenService emailVerificationTokenService,
+            final UserDetailsService userDetailsService) {
         this.emailVerificationTokenService = emailVerificationTokenService;
+        this.userDetailsService = userDetailsService;
     }
 
     @GetMapping
-    public String verify(@RequestParam final String token) {
-        if (!emailVerificationTokenService.verifyEmail(token)) {
+    public String verify(@RequestParam final String token, final HttpServletRequest request) {
+        final User verifiedUser = emailVerificationTokenService.verifyEmailAndGetUser(token)
+                .orElse(null);
+        if (verifiedUser == null) {
             return "redirect:/verify-email/expired";
         }
-        return "redirect:/login?verified=true";
+
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(verifiedUser.getEmail());
+        final Authentication authentication =
+                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        final SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+        securityContext.setAuthentication(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        request.getSession(true).setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                securityContext);
+
+        return "redirect:/?verified=true";
     }
 
     @GetMapping("/expired")
