@@ -87,47 +87,12 @@
                                 <c:set var="commerceName" value="${commerceNamesByReservationId[reservation.id]}" />
                                 <c:set var="dateLabel" value="${formattedReservationDatesById[reservation.id]}" />
 
-                                <article class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
-                                    <div class="relative h-48 sm:h-56 overflow-hidden">
-                                        <img src="${pageContext.request.contextPath}/packs/${pack.id}/image"
-                                             alt="${pack.title}"
-                                             class="w-full h-full object-cover" />
-                                    </div>
-
-                                    <div class="p-5 flex flex-col gap-4 flex-grow">
-                                        <div>
-                                            <div class="flex items-center gap-2 text-secondary text-sm font-medium mb-1">
-                                                <span class="material-symbols-outlined text-[1rem]">storefront</span>
-                                                <c:out value="${commerceName}" />
-                                            </div>
-                                            <h3 class="font-bold text-lg text-on-surface truncate"><c:out value="${pack.title}" /></h3>
-                                            <p class="text-secondary text-sm mt-1 line-clamp-2 h-10"><c:out value="${pack.description}" /></p>
-                                        </div>
-
-                                        <div class="bg-surface-container rounded-xl p-4 space-y-2 text-sm">
-                                            <div class="flex items-center justify-between gap-3">
-                                                <span class="text-on-surface-variant"><spring:message code="reservation.my.card.status" /></span>
-                                                <span class="font-semibold text-primary">
-                                                    <spring:message code="reservation.status.${reservation.status}" />
-                                                </span>
-                                            </div>
-                                            <div class="flex items-center justify-between gap-3">
-                                                <span class="text-on-surface-variant"><spring:message code="reservation.my.card.quantity" /></span>
-                                                <span class="font-semibold text-on-surface"><c:out value="${reservation.quantity}" /></span>
-                                            </div>
-                                            <div class="flex items-center justify-between gap-3">
-                                                <span class="text-on-surface-variant"><spring:message code="reservation.my.card.date" /></span>
-                                                <span class="font-semibold text-on-surface"><c:out value="${dateLabel}" /></span>
-                                            </div>
-                                            <div class="flex items-center justify-between gap-3">
-                                                <span class="text-on-surface-variant"><spring:message code="reservation.my.card.total" /></span>
-                                                <span class="font-semibold text-primary">
-                                                    <fmt:formatNumber value="${reservation.finalPrice}" type="currency" currencyCode="ARS" />
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </article>
+                                <paw:reservationCard
+                                        reservation="${reservation}"
+                                        pack="${pack}"
+                                        dateLabel="${dateLabel}"
+                                        commerceName="${commerceName}"
+                                        messagePrefix="reservation.my" />
                             </c:forEach>
                         </div>
 
