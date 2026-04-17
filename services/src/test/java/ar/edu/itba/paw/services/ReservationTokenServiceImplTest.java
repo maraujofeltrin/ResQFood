@@ -1,5 +1,7 @@
 package ar.edu.itba.paw.services;
 
+import ar.edu.itba.paw.models.Client;
+import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.models.Reservation;
 import ar.edu.itba.paw.models.ReservationToken;
 import ar.edu.itba.paw.persistence.ReservationDao;
@@ -63,6 +65,11 @@ public class ReservationTokenServiceImplTest {
         }
 
         @Override
+        public java.util.List<Reservation> findByCommerceId(Long commerceId) {
+            return java.util.Collections.emptyList();
+        }
+
+        @Override
         public java.util.List<Reservation> findByPackId(Long packId) {
             return store.values().stream().filter(r -> r.getPackId().equals(packId)).toList();
         }
@@ -94,11 +101,11 @@ public class ReservationTokenServiceImplTest {
     static class TestUserService implements UserService {
         private final ar.edu.itba.paw.models.User user;
         TestUserService(ar.edu.itba.paw.models.User user) { this.user = user; }
-        @Override public ar.edu.itba.paw.models.User createUser(String email, String password, String name) { return user; }
-        @Override public ar.edu.itba.paw.models.User createUser(String email, String password, String name, String phone, ar.edu.itba.paw.models.User.Role role) { return user; }
-        @Override public Optional<ar.edu.itba.paw.models.User> upgradeProvisionalUser(String email, String password, String name, ar.edu.itba.paw.models.User.Role role) { return Optional.empty(); }
+        @Override public ar.edu.itba.paw.models.User createUser(ar.edu.itba.paw.models.User user, Client clientProfile, Commerce commerceProfile) { return this.user; }
+        @Override public Optional<ar.edu.itba.paw.models.User> upgradeProvisionalUser(ar.edu.itba.paw.models.User user, Client clientProfile, Commerce commerceProfile) { return Optional.empty(); }
         @Override public Optional<ar.edu.itba.paw.models.User> findByEmail(String email) { return Optional.of(user); }
         @Override public Optional<ar.edu.itba.paw.models.User> findById(Long id) { return Optional.of(user); }
+        @Override public void updatePassword(Long userId, String encodedPassword) { }
     }
 
     static class InMemoryMailService implements ReservationMailService {

@@ -1,0 +1,131 @@
+/* ── Auction accent overrides (DESIGN.md §2 — subtle orange) ─ */
+
+/* Submit button — orange gradient, used on auction creation form */
+.auction-submit-btn {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1rem;
+  border-radius: 9999px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #E65100 0%, #FFAB40 100%);
+  box-shadow: 0 12px 32px rgba(230, 81, 0, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.auction-submit-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 16px 40px rgba(230, 81, 0, 0.22);
+}
+
+.auction-submit-btn:active {
+  transform: scale(0.98);
+}
+
+.auction-submit-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+}
+
+.auction-submit-btn--submitting .auction-submit-btn__icon {
+  display: none;
+}
+
+/* Small inline badge for auction contexts */
+.auction-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #BF360C;
+  background-color: #FFF3E0;
+}
+
+/* Section accent — subtle left border for auction settings panel */
+.auction-settings-card {
+  border-left: 3px solid #E65100;
+}
+
+/* ── Offer Mode Toggle ────────────────────────────── */
+
+.offer-mode-toggle {
+  display: flex;
+  gap: 0;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: var(--md-sys-color-surface-container, #EAECEA);
+  padding: 4px;
+  margin-bottom: 1.5rem;
+  max-width: 400px;
+}
+
+.offer-mode-toggle__option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: transparent;
+  color: var(--md-sys-color-secondary, #527A61);
+  transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.offer-mode-toggle__option:hover {
+  background: var(--md-sys-color-surface-container-highest, #DFE2DF);
+}
+
+.offer-mode-toggle__option--pack.offer-mode-toggle__option--active {
+  background: var(--md-sys-color-primary, #059669);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+}
+
+.offer-mode-toggle__option--auction.offer-mode-toggle__option--active {
+  background: #E65100;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(230, 81, 0, 0.25);
+}
+
+/* ── Offer Form Layout ────────────────────────────── */
+
+.commerce-create-offer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 560px;
+}
+
+.offer-form-section {
+  transition: opacity 0.2s ease;
+}
+
+/* ── Submit Button — Auction Variant ──────────────── */
+
+.offer-submit-btn--auction {
+  background: linear-gradient(135deg, #E65100 0%, #FFAB40 100%) !important;
+  box-shadow: 0 12px 32px rgba(230, 81, 0, 0.15) !important;
+}
+
+.offer-submit-btn--auction:hover {
+  box-shadow: 0 16px 40px rgba(230, 81, 0, 0.22) !important;
+}
