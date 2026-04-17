@@ -95,11 +95,16 @@ public class WebConfig implements WebMvcConfigurer {
         return resolver;
     }
 
-    @Override
-    public Validator getValidator() {
-        LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+    @Bean
+    public LocalValidatorFactoryBean localValidatorFactoryBean() {
+        final LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
         validator.setValidationMessageSource(messageSource());
         return validator;
+    }
+
+    @Override
+    public Validator getValidator() {
+        return localValidatorFactoryBean();
     }
 
     @Bean

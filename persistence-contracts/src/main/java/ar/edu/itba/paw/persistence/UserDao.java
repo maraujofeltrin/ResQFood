@@ -22,6 +22,8 @@ public interface UserDao {
 
     User updateUser(Long id, String password, String name, String phone, User.Role role);
 
+    void updatePassword(final Long id, final String password);
+
     Optional<User> findByEmail(String email);
 
     Optional<User> findById(Long id);

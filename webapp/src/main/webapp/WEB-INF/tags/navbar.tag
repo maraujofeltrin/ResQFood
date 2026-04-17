@@ -23,7 +23,6 @@
       </sec:authorize>
       <sec:authorize access="isAuthenticated()">
           <form action="${pageContext.request.contextPath}/logout" method="post" class="m-0">
-              <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
               <button type="submit" class="text-on-surface-variant hover:text-error transition-colors font-medium">
                 <spring:message code="layout.nav.logout" text="Cerrar sesión"/>
               </button>

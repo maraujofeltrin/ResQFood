@@ -1,6 +1,7 @@
    package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Client;
+import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.models.PackSortOption;
 import ar.edu.itba.paw.models.Reservation;
@@ -109,19 +110,11 @@ public class ReservationServiceImplTest {
     static class TestUserService implements UserService {
         private final User user;
         TestUserService(User user) { this.user = user; }
-        @Override public User createUser(String email, String password, String name) { return user; }
-        @Override public User createUser(String email, String password, String name, String phone, User.Role role) { return user; }
-        @Override public Optional<User> upgradeProvisionalUser(String email, String password, String name, User.Role role) { return Optional.empty(); }
+        @Override public User createUser(User user, Client clientProfile, Commerce commerceProfile) { return this.user; }
+        @Override public Optional<User> upgradeProvisionalUser(User user, Client clientProfile, Commerce commerceProfile) { return Optional.empty(); }
         @Override public Optional<User> findByEmail(String email) { return Optional.of(user); }
         @Override public Optional<User> findById(Long id) { return Optional.of(user); }
-    }
-
-    static class TestClientService implements ClientService {
-        private final Client client;
-        TestClientService(Client client) { this.client = client; }
-        @Override public Client createClient(Long userId, String name, String lastName, Boolean notificationsVisibilityPreferences) { return client; }
-        @Override public Optional<Client> findByUserId(Long userId) { return Optional.of(client); }
-        @Override public Client update(Client client) { return client; }
+        @Override public void updatePassword(Long userId, String encodedPassword) { }
     }
 
     static class InMemoryMailService implements ReservationMailService {
@@ -136,6 +129,12 @@ public class ReservationServiceImplTest {
     static class TestCommerceService implements CommerceService {
         @Override public ar.edu.itba.paw.models.Commerce getOrCreateCommerce(String email, String password, String name, String commercialName, ar.edu.itba.paw.models.Commerce.Category category, String street, Integer streetNumber, String city, String province, String postalCode, String openingTime, String closingTime) { throw new UnsupportedOperationException(); }
         @Override public Optional<ar.edu.itba.paw.models.Commerce> findByUserId(Long userId) { return Optional.empty(); }
+    }
+
+    static class TestClientService implements ClientService {
+        @Override public Client createClient(Long userId, String name, String lastName, Boolean notificationsVisibilityPreferences) { throw new UnsupportedOperationException(); }
+        @Override public Optional<Client> findByUserId(Long userId) { return Optional.of(new Client(userId, "Test", "User", true)); }
+        @Override public Client update(Client client) { return client; }
     }
 
     private InMemoryReservationDao reservationDao;
@@ -153,18 +152,16 @@ public class ReservationServiceImplTest {
         final long commerceUserId = 100L;
         final String email = "user@example.org";
 
-        final User user = new User(1L, email, "pwd", "Test User");
+        final User user = new User(1L, email, "pwd", "Test User", null, User.Role.CLIENT);
         final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
-        final Client client = new Client(user.getId(), "Test", "User", true);
 
         final UserService userService = new TestUserService(user);
-        final ClientService clientService = new TestClientService(client);
         final PackDao packDao = new InMemoryPackDao(pack);
 
-        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, clientService, reservationDao,
+        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, new TestClientService(), reservationDao,
             packDao, mailService, new TestCommerceService(), "America/Argentina/Buenos_Aires");
 
-        assertDoesNotThrow(() -> svc.createReservation(packId, email, "Test", "User", "123", 1, 5.0, "pw", APP_URL));
+        assertDoesNotThrow(() -> svc.createReservation(packId, user.getId(), 1, 5.0, "pw", APP_URL));
 
         assertEquals(1, reservationDao.store.size(), "Reservation should be stored in DAO");
         final Reservation created = reservationDao.store.get(0);
@@ -179,18 +176,16 @@ public class ReservationServiceImplTest {
         final long commerceUserId = 200L;
         final String email = "user2@example.org";
 
-        final User user = new User(2L, email, "pwd", "Test User2");
+        final User user = new User(2L, email, "pwd", "Test User2", null, User.Role.CLIENT);
         final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
-        final Client client = new Client(user.getId(), "Test", "User", true);
 
         final UserService userService = new TestUserService(user);
-        final ClientService clientService = new TestClientService(client);
         final PackDao packDao = new InMemoryPackDao(pack);
 
-        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, clientService, reservationDao,
+        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, new TestClientService(), reservationDao,
             packDao, mailService, new TestCommerceService(), "America/Argentina/Buenos_Aires");
 
-        assertThrows(IllegalArgumentException.class, () -> svc.createReservation(packId, email, "Test", "User", "123", 0, 5.0, "pw", APP_URL));
+        assertThrows(IllegalArgumentException.class, () -> svc.createReservation(packId, user.getId(), 0, 5.0, "pw", APP_URL));
         assertEquals(0, reservationDao.store.size(), "No reservation should be created");
         assertEquals(0, mailService.sentToCommerce);
         assertEquals(0, mailService.sentToClient);
@@ -202,22 +197,20 @@ public class ReservationServiceImplTest {
         final long commerceUserId = 300L;
         final String email = "user3@example.org";
 
-        final User user = new User(3L, email, "pwd", "Test User3");
+        final User user = new User(3L, email, "pwd", "Test User3", null, User.Role.CLIENT);
         final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
-        final Client client = new Client(user.getId(), "Test", "User", true);
 
         final UserService userService = new TestUserService(user);
-        final ClientService clientService = new TestClientService(client);
         final PackDao packDao = new InMemoryPackDao(pack);
 
-        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, clientService, reservationDao,
+        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, new TestClientService(), reservationDao,
             packDao, mailService, new TestCommerceService(), "America/Argentina/Buenos_Aires");
 
         final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 600; i++) sb.append('x');
         final String longPickup = sb.toString();
 
-        assertThrows(IllegalArgumentException.class, () -> svc.createReservation(packId, email, "Test", "User", "123", 1, 5.0, longPickup, APP_URL));
+        assertThrows(IllegalArgumentException.class, () -> svc.createReservation(packId, user.getId(), 1, 5.0, longPickup, APP_URL));
         assertEquals(0, reservationDao.store.size(), "No reservation should be created");
         assertEquals(0, mailService.sentToCommerce);
         assertEquals(0, mailService.sentToClient);

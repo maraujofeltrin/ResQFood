@@ -37,9 +37,6 @@ public class ReservationServiceImpl implements ReservationService {
 
     private static final SecureRandom PICKUP_CODE_RANDOM = new SecureRandom();
 
-    /** Contraseña temporal hasta contar con registro/login propio ({@code users.password} NOT NULL). */
-    private static final String RESERVATION_USER_PLACEHOLDER_PASSWORD = "__RESERVATION_PENDING_PASSWORD__";
-
     private final UserService userService;
     private final ClientService clientService;
     private final ReservationDao reservationDao;
@@ -49,7 +46,8 @@ public class ReservationServiceImpl implements ReservationService {
     private final ZoneId displayZone;
 
     @Autowired
-    public ReservationServiceImpl(final UserService userService, final ClientService clientService,
+    public ReservationServiceImpl(final UserService userService,
+            final ClientService clientService,
             final ReservationDao reservationDao,
             final PackDao packDao,
             final ReservationMailService reservationMailService,
@@ -68,8 +66,8 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Transactional
     @Override
-    public Reservation createReservation(final long packId, final String email, final String firstName,
-            final String lastName, final String phone, final int quantity, final double unitPrice,
+    public Reservation createReservation(final long packId, final long userId, final int quantity,
+            final double unitPrice,
             final String pickupWindow, final String baseUrl) {
         if (quantity < 1) {
             throw new IllegalArgumentException("quantity must be >= 1");
@@ -78,12 +76,13 @@ public class ReservationServiceImpl implements ReservationService {
             throw new IllegalArgumentException("pickup_window must be at most " + PICKUP_WINDOW_MAX_LEN + " characters");
         }
 
-        final String displayName = firstName + " " + lastName;
-        final User user = userService.findByEmail(email).orElseGet(() -> userService.createUser(email,
-                RESERVATION_USER_PLACEHOLDER_PASSWORD, displayName, phone, User.Role.CLIENT));
-
-        clientService.findByUserId(user.getId()).orElseGet(() -> clientService.createClient(user.getId(), firstName,
-                lastName, null));
+        final User user = userService.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User not found for id: " + userId));
+        if (user.getRole() != User.Role.CLIENT) {
+            throw new IllegalStateException("Only CLIENT users can create reservations");
+        }
+        clientService.findByUserId(userId)
+                .orElseThrow(() -> new IllegalStateException("Client profile not found for user id: " + userId));
 
         if (!packDao.decrementStock(packId, quantity)) {
             throw new IllegalStateException("Could not decrement stock for pack: " + packId);

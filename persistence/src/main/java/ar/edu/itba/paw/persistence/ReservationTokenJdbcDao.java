@@ -56,7 +56,7 @@ public class ReservationTokenJdbcDao implements ReservationTokenDao {
     public void markAsUsed(final String token) {
         final int rows = jdbcTemplate.update("UPDATE reservation_tokens SET used = true WHERE token = ?", token);
         if (rows <= 0) {
-            throw new IllegalArgumentException("Token not found: " + token);
+            throw new IllegalArgumentException("Reservation token not found");
         }
     }
 }
