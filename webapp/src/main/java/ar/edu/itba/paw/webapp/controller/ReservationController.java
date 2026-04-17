@@ -1,10 +1,12 @@
 package ar.edu.itba.paw.webapp.controller;
 
 import ar.edu.itba.paw.models.Commerce;
+import ar.edu.itba.paw.models.Client;
 import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.models.Reservation;
 import ar.edu.itba.paw.models.ReservationToken;
 import ar.edu.itba.paw.models.User;
+import ar.edu.itba.paw.services.ClientService;
 import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
 import ar.edu.itba.paw.services.ReservationService;
@@ -51,6 +53,7 @@ public class ReservationController {
     private final UserService userService;
     private final PackService packService;
     private final CommerceService commerceService;
+    private final ClientService clientService;
     private final ZoneId displayZone;
 
     @Autowired
@@ -59,12 +62,14 @@ public class ReservationController {
             final UserService userService,
             final PackService packService,
             final CommerceService commerceService,
+            final ClientService clientService,
             @Value("${app.display-zone:}") final String displayZoneStr) {
         this.reservationTokenService = reservationTokenService;
         this.reservationService = reservationService;
         this.userService = userService;
         this.packService = packService;
         this.commerceService = commerceService;
+        this.clientService = clientService;
         this.displayZone = (displayZoneStr == null || displayZoneStr.trim().isEmpty())
                 ? ZoneId.of("America/Argentina/Buenos_Aires")
                 : ZoneId.of(displayZoneStr.trim());
@@ -114,8 +119,18 @@ public class ReservationController {
         }
     }
 
+    private String formatClientName(final Client client) {
+        if (client == null) {
+            return "-";
+        }
+        final String firstName = client.getName() == null ? "" : client.getName().trim();
+        final String lastName = client.getLastName() == null ? "" : client.getLastName().trim();
+        final String fullName = (firstName + " " + lastName).trim();
+        return fullName.isEmpty() ? "-" : fullName;
+    }
+
     private static String buildPaginationBaseUrl(final String query, final Reservation.Status statusFilter) {
-        final StringBuilder baseUrl = new StringBuilder("/reservations/mine");
+        final StringBuilder baseUrl = new StringBuilder("/reservations");
         boolean firstParam = true;
 
         if (query != null && !query.isBlank()) {
@@ -134,55 +149,81 @@ public class ReservationController {
         return baseUrl.toString();
     }
 
-    @GetMapping("/mine")
-    public ModelAndView myReservations(@RequestParam(value = "page", defaultValue = "1") final int page,
+    @GetMapping
+    public ModelAndView reservations(@RequestParam(value = "page", defaultValue = "1") final int page,
             @RequestParam(value = "q", required = false) final String query,
             @RequestParam(value = "status", required = false) final String status,
             final Authentication authentication) {
         final User currentUser = resolveCurrentUser(authentication);
-        if (currentUser.getRole() != User.Role.CLIENT) {
+        final boolean isCommerce = currentUser.getRole() == User.Role.COMMERCE;
+        final boolean isClient = currentUser.getRole() == User.Role.CLIENT;
+
+        if (!isCommerce && !isClient) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
         final String normalizedQuery = query == null ? "" : query.trim();
         final Reservation.Status statusFilter = parseStatusFilter(status);
 
-        final List<Reservation> allReservations = new ArrayList<>(
-            reservationService.findByCustomerId(currentUser.getId()));
+        List<Reservation> allReservations;
+        if (isCommerce) {
+            final Commerce commerce = commerceService.findByUserId(currentUser.getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN));
+            allReservations = new ArrayList<>(reservationService.findByCommerceId(commerce.getUserId()));
+        } else {
+            allReservations = new ArrayList<>(reservationService.findByCustomerId(currentUser.getId()));
+        }
+
         allReservations.sort(Comparator.comparing(Reservation::getReservationDate,
                 Comparator.nullsLast(LocalDateTime::compareTo)).reversed());
 
         final List<Reservation> filteredReservations = new ArrayList<>();
         final Map<Long, Pack> allPacksByReservationId = new HashMap<>();
         final Map<Long, String> allCommerceNamesByReservationId = new HashMap<>();
+        final Map<Long, String> allClientNamesByReservationId = new HashMap<>();
 
         for (final Reservation reservation : allReservations) {
             Pack pack = null;
             String commerceName = "-";
+            String clientName = "-";
 
             if (reservation.getPackId() != null) {
                 final Optional<Pack> packOpt = packService.findById(reservation.getPackId());
                 if (packOpt.isPresent()) {
                     pack = packOpt.get();
-                    commerceName = commerceService.findByUserId(pack.getCommerceId())
-                            .map(Commerce::getCommercialName)
-                            .filter(name -> name != null && !name.isBlank())
-                            .orElse("-");
+                    if (isClient) {
+                        commerceName = commerceService.findByUserId(pack.getCommerceId())
+                                .map(Commerce::getCommercialName)
+                                .filter(name -> name != null && !name.isBlank())
+                                .orElse("-");
+                    }
                 }
+            }
+
+            if (isCommerce && reservation.getCustomerId() != null) {
+                clientName = clientService.findByUserId(reservation.getCustomerId())
+                        .map(this::formatClientName)
+                        .orElse("-");
             }
 
             final boolean matchesStatus = statusFilter == null || statusFilter.equals(reservation.getStatus());
             final boolean matchesQuery = normalizedQuery.isBlank()
                     || containsIgnoreCase(pack == null ? null : pack.getTitle(), normalizedQuery)
                     || containsIgnoreCase(pack == null ? null : pack.getDescription(), normalizedQuery)
-                    || containsIgnoreCase(commerceName, normalizedQuery);
+                    || (isClient && containsIgnoreCase(commerceName, normalizedQuery))
+                    || (isCommerce && containsIgnoreCase(clientName, normalizedQuery));
 
             if (matchesStatus && matchesQuery) {
                 filteredReservations.add(reservation);
                 if (pack != null) {
                     allPacksByReservationId.put(reservation.getId(), pack);
                 }
-                allCommerceNamesByReservationId.put(reservation.getId(), commerceName);
+                if (isClient) {
+                    allCommerceNamesByReservationId.put(reservation.getId(), commerceName);
+                }
+                if (isCommerce) {
+                    allClientNamesByReservationId.put(reservation.getId(), clientName);
+                }
             }
         }
 
@@ -194,6 +235,7 @@ public class ReservationController {
 
         final Map<Long, Pack> packsByReservationId = new HashMap<>();
         final Map<Long, String> commerceNamesByReservationId = new HashMap<>();
+        final Map<Long, String> clientNamesByReservationId = new HashMap<>();
         final Map<Long, String> formattedReservationDatesById = new HashMap<>();
 
         for (final Reservation reservation : reservations) {
@@ -209,15 +251,19 @@ public class ReservationController {
             if (allPacksByReservationId.containsKey(reservation.getId())) {
                 packsByReservationId.put(reservation.getId(), allPacksByReservationId.get(reservation.getId()));
             }
-            if (allCommerceNamesByReservationId.containsKey(reservation.getId())) {
+            if (isClient && allCommerceNamesByReservationId.containsKey(reservation.getId())) {
                 commerceNamesByReservationId.put(reservation.getId(), allCommerceNamesByReservationId.get(reservation.getId()));
+            }
+            if (isCommerce && allClientNamesByReservationId.containsKey(reservation.getId())) {
+                clientNamesByReservationId.put(reservation.getId(), allClientNamesByReservationId.get(reservation.getId()));
             }
         }
 
-        final ModelAndView mav = new ModelAndView("reservations/myReservations");
+        final ModelAndView mav = new ModelAndView("reservations/reservationsView");
         mav.addObject("reservations", reservations);
         mav.addObject("packsByReservationId", packsByReservationId);
         mav.addObject("commerceNamesByReservationId", commerceNamesByReservationId);
+        mav.addObject("clientNamesByReservationId", clientNamesByReservationId);
         mav.addObject("formattedReservationDatesById", formattedReservationDatesById);
         mav.addObject("searchQuery", normalizedQuery);
         mav.addObject("selectedStatus", statusFilter == null ? "" : statusFilter.name());
@@ -227,6 +273,7 @@ public class ReservationController {
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
         mav.addObject("paginationBaseUrl", buildPaginationBaseUrl(normalizedQuery, statusFilter));
+        mav.addObject("messagePrefix", isCommerce ? "commerce.reservations" : "reservation.my");
         return mav;
     }
 

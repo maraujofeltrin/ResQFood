@@ -54,69 +54,27 @@ import ar.edu.itba.paw.webapp.form.CreateOfferForm;
 public class CommerceController {
 
     private static final int PAGE_SIZE = 6;
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
     private static final Set<String> ALLOWED_IMAGE_TYPES = new HashSet<>(Arrays.asList(
             "image/jpeg", "image/png", "image/webp", "image/gif"
     ));
 
     private final CommerceService commerceService;
-    private final ClientService clientService;
     private final PackService packService;
-    private final ReservationService reservationService;
     private final AuctionService auctionService;
     private final MessageSource messageSource;
     private final UserService userService;
-    private final ZoneId displayZone;
 
     @Autowired
     public CommerceController(final CommerceService commerceService, final PackService packService,
-                              final ReservationService reservationService, final ClientService clientService,
                               final AuctionService auctionService, final MessageSource messageSource,
-                              final UserService userService,
-                              @Value("${app.display-zone:}") final String displayZone) {
+                              final UserService userService) {
         this.commerceService = commerceService;
-        this.clientService = clientService;
         this.packService = packService;
-        this.reservationService = reservationService;
         this.auctionService = auctionService;
         this.messageSource = messageSource;
         this.userService = userService;
-        this.displayZone = (displayZone == null || displayZone.trim().isEmpty())
-                ? ZoneId.of("America/Argentina/Buenos_Aires")
-                : ZoneId.of(displayZone.trim());
     }
 
-    private String formatUtcDateTimeForDisplay(final LocalDateTime utc) {
-        if (utc == null) {
-            return null;
-        }
-        return ZonedDateTime.of(utc, ZoneOffset.UTC).withZoneSameInstant(displayZone).format(DATE_FORMATTER);
-    }
-
-    private User resolveCurrentUser(final Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        }
-
-        final String email = authentication.getName();
-        if (email == null || email.isBlank() || "anonymousUser".equalsIgnoreCase(email)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        }
-
-        return userService.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-    }
-
-    private String formatClientName(final Client client) {
-        if (client == null) {
-            return "-";
-        }
-
-        final String firstName = client.getName() == null ? "" : client.getName().trim();
-        final String lastName = client.getLastName() == null ? "" : client.getLastName().trim();
-        final String fullName = (firstName + " " + lastName).trim();
-        return fullName.isEmpty() ? "-" : fullName;
-    }
 
     @RequestMapping(method = RequestMethod.GET)
     public ModelAndView dashboard(@RequestParam(value = "page", defaultValue = "1") final int page) {
@@ -134,63 +92,6 @@ public class CommerceController {
         mav.addObject("paginationBaseUrl", "/commerce");
         return mav;
     }
-
-    @RequestMapping(value = "/reservations", method = RequestMethod.GET)
-    public ModelAndView reservations(@RequestParam(value = "page", defaultValue = "1") final int page,
-                                     final Authentication authentication) {
-        final User currentUser = resolveCurrentUser(authentication);
-        if (currentUser.getRole() != User.Role.COMMERCE) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-
-        final Commerce commerce = commerceService.findByUserId(currentUser.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN));
-
-        final List<Reservation> allReservations = new ArrayList<>(
-                reservationService.findByCommerceId(commerce.getUserId()));
-        allReservations.sort(Comparator.comparing(Reservation::getReservationDate,
-                Comparator.nullsLast(LocalDateTime::compareTo)).reversed());
-
-        final int totalPages = Math.max(1, (int) Math.ceil((double) allReservations.size() / PAGE_SIZE));
-        final int safePage = Math.max(1, Math.min(page, totalPages));
-        final int fromIdx = (safePage - 1) * PAGE_SIZE;
-        final int toIdx = Math.min(fromIdx + PAGE_SIZE, allReservations.size());
-        final List<Reservation> reservations = allReservations.subList(fromIdx, toIdx);
-
-        final Map<Long, Pack> packsByReservationId = new HashMap<>();
-        final Map<Long, String> clientNamesByReservationId = new HashMap<>();
-        final Map<Long, String> formattedReservationDatesById = new HashMap<>();
-
-        for (final Reservation reservation : reservations) {
-            if (reservation.getReservationDate() != null) {
-                formattedReservationDatesById.put(reservation.getId(),
-                        formatUtcDateTimeForDisplay(reservation.getReservationDate()));
-            }
-
-            if (reservation.getPackId() != null) {
-                packService.findById(reservation.getPackId())
-                        .ifPresent(pack -> packsByReservationId.put(reservation.getId(), pack));
-            }
-
-            if (reservation.getCustomerId() != null) {
-                final String clientName = clientService.findByUserId(reservation.getCustomerId())
-                        .map(this::formatClientName)
-                        .orElse("-");
-                clientNamesByReservationId.put(reservation.getId(), clientName);
-            }
-        }
-
-        final ModelAndView mav = new ModelAndView("commerce/reservations");
-        mav.addObject("reservations", reservations);
-        mav.addObject("packsByReservationId", packsByReservationId);
-        mav.addObject("clientNamesByReservationId", clientNamesByReservationId);
-        mav.addObject("formattedReservationDatesById", formattedReservationDatesById);
-        mav.addObject("currentPage", safePage);
-        mav.addObject("totalPages", totalPages);
-        mav.addObject("paginationBaseUrl", "/commerce/reservations");
-        return mav;
-    }
-
     // ── Create Offer (unified pack / auction) ────────────────
 
     @RequestMapping(value = "/create-offer", method = RequestMethod.GET)

@@ -9,10 +9,10 @@
         <a class="text-on-surface-variant hover:text-primary transition-all duration-300" href="${pageContext.request.contextPath}/packs"><spring:message code="layout.nav.explore"/></a>
         <a class="text-on-surface-variant hover:text-primary transition-all duration-300" href="${pageContext.request.contextPath}/commerce"><spring:message code="layout.nav.commercePanel"/></a>
         <sec:authorize access="hasRole('CLIENT')">
-          <a class="text-on-surface-variant hover:text-primary transition-all duration-300" href="${pageContext.request.contextPath}/reservations/mine"><spring:message code="layout.nav.myReservations"/></a>
+          <a class="text-on-surface-variant hover:text-primary transition-all duration-300" href="${pageContext.request.contextPath}/reservations"><spring:message code="layout.nav.myReservations"/></a>
         </sec:authorize>
         <sec:authorize access="hasRole('COMMERCE')">
-          <a class="text-on-surface-variant hover:text-primary transition-all duration-300" href="${pageContext.request.contextPath}/commerce/reservations"><spring:message code="layout.nav.myReservations"/></a>
+          <a class="text-on-surface-variant hover:text-primary transition-all duration-300" href="${pageContext.request.contextPath}/reservations"><spring:message code="layout.nav.myReservations"/></a>
         </sec:authorize>
       </div>
     </div>

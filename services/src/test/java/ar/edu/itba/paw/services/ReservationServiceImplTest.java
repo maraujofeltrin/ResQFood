@@ -228,7 +228,7 @@ public class ReservationServiceImplTest {
 
         final ReservationServiceImpl svc = new ReservationServiceImpl(
                 new TestUserService(user),
-                new TestClientService(client),
+                new TestClientService(),
                 reservationDao,
                 new InMemoryPackDao(pack),
                 mailService,
@@ -252,7 +252,7 @@ public class ReservationServiceImplTest {
 
         final ReservationServiceImpl svc = new ReservationServiceImpl(
                 new TestUserService(user),
-                new TestClientService(client),
+                new TestClientService(),
                 reservationDao,
                 new InMemoryPackDao(pack),
                 mailService,
