@@ -96,12 +96,12 @@ public class ReservationController {
     public String acceptPost(@RequestParam(required = false) final String token,
                              @RequestParam(required = false) final String pickupCode,
                              final Model model) {
-        return handleConsumePost(token, pickupCode, model, ReservationToken.Action.ACCEPT, "ACEPTADA");
+        return handleConsumePost(token, pickupCode, model, ReservationToken.Action.ACCEPT, "reservation.token.action.accepted");
     }
 
     @PostMapping("/reject")
     public String rejectPost(@RequestParam(required = false) final String token, final Model model) {
-        return handleConsumePost(token, null, model, ReservationToken.Action.REJECT, "RECHAZADA");
+        return handleConsumePost(token, null, model, ReservationToken.Action.REJECT, "reservation.token.action.rejected");
     }
 
     private static boolean containsIgnoreCase(final String value, final String needle) {
@@ -338,7 +338,7 @@ public class ReservationController {
     }
 
     private String handleConsumePost(final String token, final String pickupCode, final Model model, final ReservationToken.Action action,
-            final String actionLabel) {
+            final String actionCode) {
         if (token == null || token.isBlank()) {
             model.addAttribute("tokenStatus", "invalid");
             return "reservations/token-status";
@@ -370,7 +370,7 @@ public class ReservationController {
                     final String storedCode = res.getPickupCode() == null ? ""
                             : res.getPickupCode().trim().toUpperCase(Locale.ROOT);
                     if (!inputCode.equals(storedCode)) {
-                        model.addAttribute("pickupError", "Código de retiro inválido.");
+                        model.addAttribute("pickupError", "reservation.token.pickup.invalidCode");
                         model.addAttribute("confirmEndpoint", "accept");
                         return "reservations/confirm-action";
                     }
@@ -393,14 +393,14 @@ public class ReservationController {
                     }
 
                     reservationService.confirmPickup(reservationId);
-                    model.addAttribute("action", actionLabel);
+                    model.addAttribute("actionCode", actionCode);
                     return "reservations/action-success";
                 } else {
                     // Non-accept actions (e.g., REJECT): consume token and apply effect
                     final TokenValidationResult result = reservationTokenService.validateAndConsume(token, action);
                     switch (result) {
                         case SUCCESS:
-                            model.addAttribute("action", actionLabel);
+                            model.addAttribute("actionCode", actionCode);
                             return "reservations/action-success";
                         case ALREADY_USED:
                             return buildAlreadyUsedView(token, model);
@@ -432,9 +432,9 @@ public class ReservationController {
             if (reservation.isPresent() && reservation.get().getStatus() != null) {
                 final Reservation.Status status = reservation.get().getStatus();
                 if (status == Reservation.Status.PAID) {
-                    model.addAttribute("alreadyUsedDetail", "Este pedido ya fue aceptado.");
+                    model.addAttribute("alreadyUsedDetailCode", "reservation.token.status.used.accepted");
                 } else if (status == Reservation.Status.CANCELED) {
-                    model.addAttribute("alreadyUsedDetail", "Este pedido ya fue rechazado.");
+                    model.addAttribute("alreadyUsedDetailCode", "reservation.token.status.used.rejected");
                 }
             }
         }

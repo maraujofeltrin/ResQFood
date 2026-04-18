@@ -6,8 +6,8 @@ import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.models.PackTag;
 import ar.edu.itba.paw.models.Reservation;
 import ar.edu.itba.paw.services.AuctionService;
-import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.ClientService;
+import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
 import ar.edu.itba.paw.services.ReservationService;
 import java.io.IOException;
@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -59,17 +60,22 @@ public class CommerceController {
     ));
 
     private final CommerceService commerceService;
+    private final ClientService clientService;
     private final PackService packService;
+    private final ReservationService reservationService;
     private final AuctionService auctionService;
     private final MessageSource messageSource;
     private final UserService userService;
 
     @Autowired
-    public CommerceController(final CommerceService commerceService, final PackService packService,
+    public CommerceController(final CommerceService commerceService, final ClientService clientService,
+                              final PackService packService, final ReservationService reservationService,
                               final AuctionService auctionService, final MessageSource messageSource,
                               final UserService userService) {
         this.commerceService = commerceService;
+        this.clientService = clientService;
         this.packService = packService;
+        this.reservationService = reservationService;
         this.auctionService = auctionService;
         this.messageSource = messageSource;
         this.userService = userService;
@@ -92,6 +98,76 @@ public class CommerceController {
         mav.addObject("paginationBaseUrl", "/commerce");
         return mav;
     }
+    // ── Verify Pickup ────────────────────────────────────────
+
+    @RequestMapping(value = "/verify-pickup", method = RequestMethod.GET)
+    public ModelAndView verifyPickupForm() {
+        return new ModelAndView("commerce/verify-pickup");
+    }
+
+    @RequestMapping(value = "/verify-pickup", method = RequestMethod.POST)
+    public ModelAndView verifyPickupPost(@RequestParam(value = "pickupCode", required = false) final String pickupCode) {
+        final ModelAndView mav = new ModelAndView("commerce/verify-pickup");
+
+        try {
+            final Commerce commerce = getAuthenticatedCommerce();
+            final Reservation confirmed = reservationService.confirmPickupByCode(pickupCode, commerce.getUserId());
+
+            mav.addObject("pickupSuccess", true);
+            mav.addObject("confirmedReservation", confirmed);
+
+            if (confirmed.getPackId() != null) {
+                packService.findById(confirmed.getPackId())
+                        .ifPresent(pack -> mav.addObject("confirmedPack", pack));
+            }
+
+            if (confirmed.getCustomerId() != null) {
+                clientService.findByUserId(confirmed.getCustomerId())
+                        .ifPresent(client -> {
+                            final String firstName = client.getName() == null ? "" : client.getName().trim();
+                            final String lastName = client.getLastName() == null ? "" : client.getLastName().trim();
+                            final String fullName = (firstName + " " + lastName).trim();
+                            mav.addObject("confirmedClientName", fullName.isEmpty() ? "-" : fullName);
+                        });
+            }
+
+        } catch (final IllegalArgumentException ex) {
+            final String key;
+            switch (ex.getMessage()) {
+                case "EMPTY":
+                    key = "commerce.verifyPickup.error.empty";
+                    break;
+                case "NOT_FOUND":
+                    key = "commerce.verifyPickup.error.notFound";
+                    break;
+                case "WRONG_COMMERCE":
+                    key = "commerce.verifyPickup.error.wrongCommerce";
+                    break;
+                default:
+                    key = "commerce.verifyPickup.error.notFound";
+                    break;
+            }
+            mav.addObject("pickupError", key);
+        } catch (final IllegalStateException ex) {
+            final String key;
+            switch (ex.getMessage()) {
+                case "ALREADY_COMPLETED":
+                    key = "commerce.verifyPickup.error.alreadyCompleted";
+                    break;
+                case "ALREADY_CANCELED":
+                    key = "commerce.verifyPickup.error.alreadyCanceled";
+                    break;
+                default:
+                    key = "commerce.verifyPickup.error.notFound";
+                    break;
+            }
+            mav.addObject("pickupError", key);
+        }
+
+        mav.addObject("submittedCode", pickupCode);
+        return mav;
+    }
+
     // ── Create Offer (unified pack / auction) ────────────────
 
     @RequestMapping(value = "/create-offer", method = RequestMethod.GET)

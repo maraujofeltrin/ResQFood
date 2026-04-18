@@ -34,6 +34,15 @@
                         <spring:message code="${messagePrefix}.subtitle" />
                     </p>
                 </div>
+                <c:if test="${messagePrefix == 'commerce.reservations'}">
+                    <div class="flex items-center gap-4">
+                        <a href="${pageContext.request.contextPath}/commerce/verify-pickup"
+                           class="bg-primary text-on-primary px-6 py-3 rounded-full text-base font-bold flex items-center gap-2 hover:scale-105 transition-transform shadow-md">
+                            <span class="material-symbols-outlined font-bold" style="font-size: 20px;">qr_code_scanner</span>
+                            <spring:message code="commerce.reservations.verifyPickup" />
+                        </a>
+                    </div>
+                </c:if>
             </header>
 
             <section>
