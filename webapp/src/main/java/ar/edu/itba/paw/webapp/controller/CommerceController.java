@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 
@@ -136,7 +137,8 @@ public class CommerceController {
     public ModelAndView createOffer(
             @AuthenticationPrincipal final AuthUser principal,
             @Valid @ModelAttribute("createOfferForm") final CreateOfferForm form,
-            final BindingResult bindingResult) {
+            final BindingResult bindingResult,
+            final RedirectAttributes redirectAttributes) {
 
         final boolean isAuction = form.getIsAuction();
 
@@ -181,11 +183,16 @@ public class CommerceController {
                 // Create the auction wrapping the pack
                 auctionService.createAuction(pack.getId(), form.getInitialPrice(), endDateTime);
 
+                redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
+                redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource.getMessage("commerce.dashboard.success.create.auction", null, LocaleContextHolder.getLocale()));
+
             } else {
                 packService.createPack(commerceId, form.getTitle(), form.getDescription(),
                                        form.getOriginalPrice(), form.getFinalPrice(), form.getStock(),
                                        form.getTags() != null ? form.getTags() : Collections.emptyList(),
                                        imageData, imageContentType);
+                redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
+                redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource.getMessage("commerce.dashboard.success.create.pack", null, LocaleContextHolder.getLocale()));
             }
             return new ModelAndView("redirect:/commerce");
 
@@ -342,7 +349,8 @@ public class CommerceController {
             @PathVariable("packId") final long packId,
             @AuthenticationPrincipal final AuthUser principal,
             @Valid @ModelAttribute("editPackForm") final EditPackForm form,
-            final BindingResult bindingResult) {
+            final BindingResult bindingResult,
+            final RedirectAttributes redirectAttributes) {
 
         final long commerceId = getAuthenticatedUser(principal).getId();
 
@@ -388,6 +396,9 @@ public class CommerceController {
                 packService.updateImage(packToUpdate.getId(), image.getBytes(), image.getContentType());
             }
 
+            redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
+            redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource.getMessage("commerce.dashboard.success.edit", null, LocaleContextHolder.getLocale()));
+
             return new ModelAndView("redirect:/commerce");
 
         } catch (IllegalArgumentException e) {
@@ -412,7 +423,8 @@ public class CommerceController {
     @RequestMapping(value = "/delete-pack/{packId}", method = RequestMethod.POST)
     public ModelAndView deletePack(
             @PathVariable("packId") final long packId,
-            @AuthenticationPrincipal final AuthUser principal) {
+            @AuthenticationPrincipal final AuthUser principal,
+            final RedirectAttributes redirectAttributes) {
 
         final long commerceId = getAuthenticatedUser(principal).getId();
 
@@ -423,6 +435,9 @@ public class CommerceController {
         getValidManageablePack(packId, commerceId, "commerce.editPack.error.auctionForbidden.eliminadas");
 
         packService.deletePack(packId);
+
+        redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
+        redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource.getMessage("commerce.dashboard.success.delete", null, LocaleContextHolder.getLocale()));
 
         return new ModelAndView("redirect:/commerce");
     }

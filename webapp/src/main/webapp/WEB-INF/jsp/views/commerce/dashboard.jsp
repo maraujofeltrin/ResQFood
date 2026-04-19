@@ -34,6 +34,12 @@
                                 </div>
                             </header>
 
+                            <c:if test="${dashboardAlertKind eq 'success'}">
+                                <div class="mb-4">
+                                    <p class="pack-feedback pack-feedback--success" role="alert"><c:out value="${dashboardAlertMessage}"/></p>
+                                </div>
+                            </c:if>
+
                             <section>
                                 <div class="inline-flex items-center bg-surface-variant p-1.5 rounded-full mb-8 overflow-x-auto">
                                     <a href="${pageContext.request.contextPath}/commerce?tab=items" 
