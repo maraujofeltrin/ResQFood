@@ -50,11 +50,14 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                 .requestMatchers(antMatcher("/logout")).authenticated()
                 .requestMatchers(antMatcher("/")).permitAll()
                 .requestMatchers(antMatcher("/password-reset/request"), antMatcher("/password-reset/change")).permitAll()
+                .requestMatchers(antMatcher(HttpMethod.GET, "/verify-email"), antMatcher(HttpMethod.GET, "/verify-email/expired")).permitAll()
+                .requestMatchers(antMatcher(HttpMethod.POST, "/verify-email/resend")).permitAll()
                 .requestMatchers(antMatcher(HttpMethod.GET,  "/packs/**")).permitAll()
                 .requestMatchers(antMatcher(HttpMethod.POST, "/packs/*/bid")).hasRole("CLIENT")
                 .requestMatchers(antMatcher(HttpMethod.POST, "/packs/*/reserve")).hasRole("CLIENT")
                 .requestMatchers(antMatcher(HttpMethod.POST, "/packs/**")).authenticated()
                 .requestMatchers(antMatcher("/commerce"), antMatcher("/commerce/**")).hasRole("COMMERCE")
+                .requestMatchers(antMatcher(HttpMethod.GET, "/reservations/mine")).hasRole("CLIENT")
                 .requestMatchers(antMatcher(HttpMethod.POST, "/reservations/**")).authenticated()
                 .requestMatchers(antMatcher(HttpMethod.GET,  "/reservations/**")).authenticated()
                 .anyRequest().authenticated()
@@ -74,7 +77,6 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                 .userDetailsService(authUserDetailsService)
                 .key(rememberMeKey)
                 .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(rememberMeValidityDays))
-            .and().csrf()
-                .ignoringRequestMatchers(antMatcher("/reservations/accept"), antMatcher("/reservations/reject"));
+            .and().csrf().disable();
     }
 }

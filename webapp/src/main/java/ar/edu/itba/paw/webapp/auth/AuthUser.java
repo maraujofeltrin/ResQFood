@@ -9,7 +9,8 @@ public class AuthUser extends User {
 
     public AuthUser(final String username,
                     final String password,
+                    final boolean enabled,
                     final Collection<? extends GrantedAuthority> authorities) {
-        super(username, password, authorities);
+        super(username, password, enabled, true, true, true, authorities);
     }
 }

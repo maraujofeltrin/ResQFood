@@ -1,11 +1,15 @@
 package ar.edu.itba.paw.webapp.controller;
 
+import ar.edu.itba.paw.models.Commerce;
+import ar.edu.itba.paw.models.Client;
 import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.models.PackTag;
-import ar.edu.itba.paw.models.Commerce;
+import ar.edu.itba.paw.models.Reservation;
 import ar.edu.itba.paw.services.AuctionService;
+import ar.edu.itba.paw.services.ClientService;
 import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
+import ar.edu.itba.paw.services.ReservationService;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -16,9 +20,13 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import javax.validation.Valid;
 
@@ -26,6 +34,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
@@ -34,6 +44,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
 import ar.edu.itba.paw.models.User;
@@ -51,7 +62,9 @@ public class CommerceController {
     ));
 
     private final CommerceService commerceService;
+    private final ClientService clientService;
     private final PackService packService;
+    private final ReservationService reservationService;
     private final AuctionService auctionService;
     private final MessageSource messageSource;
     private final UserService userService;
@@ -59,12 +72,15 @@ public class CommerceController {
     private final ZoneId businessZone;
 
     @Autowired
-    public CommerceController(final CommerceService commerceService, final PackService packService,
+    public CommerceController(final CommerceService commerceService, final ClientService clientService,
+                              final PackService packService, final ReservationService reservationService,
                               final AuctionService auctionService, final MessageSource messageSource,
                               final UserService userService,
                               @Value("${app.display-zone:}") final String displayZone) {
         this.commerceService = commerceService;
+        this.clientService = clientService;
         this.packService = packService;
+        this.reservationService = reservationService;
         this.auctionService = auctionService;
         this.messageSource = messageSource;
         this.userService = userService;
@@ -72,6 +88,7 @@ public class CommerceController {
                 ? ZoneId.of("America/Argentina/Buenos_Aires")
                 : ZoneId.of(displayZone.trim());
     }
+
 
     @RequestMapping(method = RequestMethod.GET)
     public ModelAndView dashboard(@RequestParam(value = "page", defaultValue = "1") final int page) {
@@ -87,6 +104,75 @@ public class CommerceController {
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
         mav.addObject("paginationBaseUrl", "/commerce");
+        return mav;
+    }
+    // ── Verify Pickup ────────────────────────────────────────
+
+    @RequestMapping(value = "/verify-pickup", method = RequestMethod.GET)
+    public ModelAndView verifyPickupForm() {
+        return new ModelAndView("commerce/verify-pickup");
+    }
+
+    @RequestMapping(value = "/verify-pickup", method = RequestMethod.POST)
+    public ModelAndView verifyPickupPost(@RequestParam(value = "pickupCode", required = false) final String pickupCode) {
+        final ModelAndView mav = new ModelAndView("commerce/verify-pickup");
+
+        try {
+            final Commerce commerce = getAuthenticatedCommerce();
+            final Reservation confirmed = reservationService.confirmPickupByCode(pickupCode, commerce.getUserId());
+
+            mav.addObject("pickupSuccess", true);
+            mav.addObject("confirmedReservation", confirmed);
+
+            if (confirmed.getPackId() != null) {
+                packService.findById(confirmed.getPackId())
+                        .ifPresent(pack -> mav.addObject("confirmedPack", pack));
+            }
+
+            if (confirmed.getCustomerId() != null) {
+                clientService.findByUserId(confirmed.getCustomerId())
+                        .ifPresent(client -> {
+                            final String firstName = client.getName() == null ? "" : client.getName().trim();
+                            final String lastName = client.getLastName() == null ? "" : client.getLastName().trim();
+                            final String fullName = (firstName + " " + lastName).trim();
+                            mav.addObject("confirmedClientName", fullName.isEmpty() ? "-" : fullName);
+                        });
+            }
+
+        } catch (final IllegalArgumentException ex) {
+            final String key;
+            switch (ex.getMessage()) {
+                case "EMPTY":
+                    key = "commerce.verifyPickup.error.empty";
+                    break;
+                case "NOT_FOUND":
+                    key = "commerce.verifyPickup.error.notFound";
+                    break;
+                case "WRONG_COMMERCE":
+                    key = "commerce.verifyPickup.error.wrongCommerce";
+                    break;
+                default:
+                    key = "commerce.verifyPickup.error.notFound";
+                    break;
+            }
+            mav.addObject("pickupError", key);
+        } catch (final IllegalStateException ex) {
+            final String key;
+            switch (ex.getMessage()) {
+                case "ALREADY_COMPLETED":
+                    key = "commerce.verifyPickup.error.alreadyCompleted";
+                    break;
+                case "ALREADY_CANCELED":
+                    key = "commerce.verifyPickup.error.alreadyCanceled";
+                    break;
+                default:
+                    key = "commerce.verifyPickup.error.notFound";
+                    break;
+            }
+            mav.addObject("pickupError", key);
+        }
+
+        mav.addObject("submittedCode", pickupCode);
         return mav;
     }
 

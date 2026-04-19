@@ -40,11 +40,6 @@ tagdir="/WEB-INF/tags" %>
           action="/password-reset/request"
           class="space-y-5"
         >
-          <input
-            type="hidden"
-            name="${_csrf.parameterName}"
-            value="${_csrf.token}"
-          />
           <div>
             <label
               for="email"

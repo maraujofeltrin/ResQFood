@@ -5,8 +5,8 @@ uri="http://www.springframework.org/tags/form" %> <%@ taglib prefix="paw"
 tagdir="/WEB-INF/tags" %>
 <!DOCTYPE html>
 <html class="light" lang="${pageContext.response.locale.language}">
-  <spring:message code="passwordReset.change.title" var="changeTitle" />
-  <paw:head title="${changeTitle}" />
+  <spring:message code="emailVerification.expired.title" var="expiredTitle" />
+  <paw:head title="${expiredTitle}" />
   <body
     class="bg-surface text-on-surface antialiased flex flex-col min-h-screen"
   >
@@ -20,59 +20,39 @@ tagdir="/WEB-INF/tags" %>
         <h1
           class="font-headline text-3xl font-bold text-center text-primary mb-6"
         >
-          <spring:message code="passwordReset.change.title" />
+          <spring:message code="emailVerification.expired.title" />
         </h1>
+        <div
+          class="bg-primary-container text-on-primary-container rounded-lg p-4 mb-6 text-sm"
+        >
+          <spring:message code="emailVerification.expired.message" />
+        </div>
         <form:form
-          modelAttribute="passwordResetChangeForm"
+          modelAttribute="resendForm"
           method="post"
-          action="/password-reset/change"
+          action="${pageContext.request.contextPath}/verify-email/resend"
           class="space-y-5"
         >
-          <form:hidden path="token" value="${token}" />
           <div>
             <label
-              for="newPassword"
+              for="email"
               class="block font-label text-sm font-medium text-secondary mb-1"
-              ><spring:message code="passwordReset.change.label.newPassword"
+              ><spring:message code="emailVerification.expired.label.email"
             /></label>
             <spring:message
-              code="passwordReset.change.placeholder.newPassword"
-              var="newPasswordPlaceholder"
+              code="emailVerification.expired.placeholder.email"
+              var="emailPlaceholder"
             />
             <form:input
-              type="password"
-              id="newPassword"
-              path="newPassword"
+              type="email"
+              id="email"
+              path="email"
               required="required"
               class="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
-              placeholder="${newPasswordPlaceholder}"
+              placeholder="${emailPlaceholder}"
             />
             <form:errors
-              path="newPassword"
-              cssClass="text-error text-sm mt-1 block"
-            />
-          </div>
-          <div>
-            <label
-              for="confirmPassword"
-              class="block font-label text-sm font-medium text-secondary mb-1"
-              ><spring:message
-                code="passwordReset.change.label.confirmPassword"
-            /></label>
-            <spring:message
-              code="passwordReset.change.placeholder.confirmPassword"
-              var="confirmPasswordPlaceholder"
-            />
-            <form:input
-              type="password"
-              id="confirmPassword"
-              path="confirmPassword"
-              required="required"
-              class="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
-              placeholder="${confirmPasswordPlaceholder}"
-            />
-            <form:errors
-              path="confirmPassword"
+              path="email"
               cssClass="text-error text-sm mt-1 block"
             />
           </div>
@@ -80,7 +60,7 @@ tagdir="/WEB-INF/tags" %>
             type="submit"
             class="w-full bg-primary text-on-primary font-semibold py-3 px-4 rounded-full transition-colors shadow-soft hover:shadow-lifted mt-4 h-12 flex items-center justify-center"
           >
-            <spring:message code="passwordReset.change.submit" />
+            <spring:message code="emailVerification.expired.submit" />
           </button>
         </form:form>
       </div>

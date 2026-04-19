@@ -20,6 +20,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ReservationServiceImplTest {
 
@@ -43,6 +44,12 @@ public class ReservationServiceImplTest {
         @Override
         public List<Reservation> findByCustomerId(Long customerId) {
             return store.stream().filter(r -> r.getCustomerId().equals(customerId)).toList();
+        }
+
+        @Override
+        public List<Reservation> findByCommerceId(Long commerceId) {
+            // Test double: maps commerce id to pack id with same numeric value.
+            return store.stream().filter(r -> r.getPackId().equals(commerceId)).toList();
         }
 
         @Override
@@ -107,7 +114,8 @@ public class ReservationServiceImplTest {
         @Override public Optional<User> upgradeProvisionalUser(User user, Client clientProfile, Commerce commerceProfile) { return Optional.empty(); }
         @Override public Optional<User> findByEmail(String email) { return Optional.of(user); }
         @Override public Optional<User> findById(Long id) { return Optional.of(user); }
-        @Override public void updatePassword(Long userId, String encodedPassword) { }
+        @Override public void updatePassword(final Long userId, final String encodedPassword) { }
+        @Override public void markVerified(final Long userId) { }
     }
 
     static class InMemoryMailService implements ReservationMailService {
@@ -145,7 +153,7 @@ public class ReservationServiceImplTest {
         final long commerceUserId = 100L;
         final String email = "user@example.org";
 
-        final User user = new User(1L, email, "pwd", "Test User", null, User.Role.CLIENT);
+        final User user = new User(1L, email, "pwd", "Test User", null, User.Role.CLIENT, false);
         final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
 
         final UserService userService = new TestUserService(user);
@@ -169,7 +177,7 @@ public class ReservationServiceImplTest {
         final long commerceUserId = 200L;
         final String email = "user2@example.org";
 
-        final User user = new User(2L, email, "pwd", "Test User2", null, User.Role.CLIENT);
+        final User user = new User(2L, email, "pwd", "Test User2", null, User.Role.CLIENT, false);
         final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
 
         final UserService userService = new TestUserService(user);
@@ -190,7 +198,7 @@ public class ReservationServiceImplTest {
         final long commerceUserId = 300L;
         final String email = "user3@example.org";
 
-        final User user = new User(3L, email, "pwd", "Test User3", null, User.Role.CLIENT);
+        final User user = new User(3L, email, "pwd", "Test User3", null, User.Role.CLIENT, false);
         final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
 
         final UserService userService = new TestUserService(user);
@@ -207,5 +215,53 @@ public class ReservationServiceImplTest {
         assertEquals(0, reservationDao.store.size(), "No reservation should be created");
         assertEquals(0, mailService.sentToCommerce);
         assertEquals(0, mailService.sentToClient);
+    }
+
+    @Test
+    public void findByCustomerId_returnsOnlyCustomerReservations() {
+        reservationDao.createReservation(1L, 10L, LocalDateTime.now(), 10.0, Reservation.Status.RESERVED, "AAAAA", null, 1, null);
+        reservationDao.createReservation(2L, 11L, LocalDateTime.now(), 20.0, Reservation.Status.RESERVED, "BBBBB", null, 2, null);
+        reservationDao.createReservation(1L, 12L, LocalDateTime.now(), 30.0, Reservation.Status.PAID, "CCCCC", null, 3, null);
+
+        final User user = new User(1L, "user@example.org", "pwd", "Test User");
+        final Pack pack = new Pack(10L, 100L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
+        final Client client = new Client(user.getId(), "Test", "User", true);
+
+        final ReservationServiceImpl svc = new ReservationServiceImpl(
+                new TestUserService(user),
+                new TestClientService(),
+                reservationDao,
+                new InMemoryPackDao(pack),
+                mailService,
+                new TestCommerceService(),
+                "America/Argentina/Buenos_Aires");
+
+        final List<Reservation> reservations = svc.findByCustomerId(1L);
+        assertEquals(2, reservations.size());
+        assertTrue(reservations.stream().allMatch(r -> r.getCustomerId().equals(1L)));
+    }
+
+    @Test
+    public void findByCommerceId_delegatesToDaoFilter() {
+        reservationDao.createReservation(1L, 100L, LocalDateTime.now(), 10.0, Reservation.Status.RESERVED, "DDDDD", null, 1, null);
+        reservationDao.createReservation(2L, 200L, LocalDateTime.now(), 20.0, Reservation.Status.RESERVED, "EEEEE", null, 1, null);
+        reservationDao.createReservation(3L, 100L, LocalDateTime.now(), 30.0, Reservation.Status.PAID, "FFFFF", null, 1, null);
+
+        final User user = new User(1L, "user@example.org", "pwd", "Test User");
+        final Pack pack = new Pack(100L, 100L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
+        final Client client = new Client(user.getId(), "Test", "User", true);
+
+        final ReservationServiceImpl svc = new ReservationServiceImpl(
+                new TestUserService(user),
+                new TestClientService(),
+                reservationDao,
+                new InMemoryPackDao(pack),
+                mailService,
+                new TestCommerceService(),
+                "America/Argentina/Buenos_Aires");
+
+        final List<Reservation> reservations = svc.findByCommerceId(100L);
+        assertEquals(2, reservations.size());
+        assertTrue(reservations.stream().allMatch(r -> r.getPackId().equals(100L)));
     }
 }
