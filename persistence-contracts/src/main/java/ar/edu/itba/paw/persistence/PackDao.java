@@ -30,4 +30,17 @@ public interface PackDao {
      * @return {@code true} si se actualizó exactamente una fila
      */
     boolean decrementStock(long packId, int quantity);
+
+    /**
+     * Unified filter: searches active packs applying all optional criteria at once.
+     *
+     * @param query     free-text search on title/commerce name (nullable = skip)
+     * @param tags      required tags – all must match (nullable/empty = skip)
+     * @param city      exact city to match against {@code commerces.city} (nullable = skip)
+     * @param timeRanges list of time-of-day labels ("morning","afternoon","evening") to match against
+     *                   {@code commerces.opening_time} (nullable/empty = skip)
+     * @param sort      ordering criterion
+     */
+    List<Pack> filterPacks(String query, List<PackTag> tags, String city,
+                           List<String> timeRanges, PackSortOption sort);
 }

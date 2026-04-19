@@ -93,4 +93,11 @@ public class PackServiceImpl implements PackService {
     public Optional<Pack> findImageByPackId(Long id) {
         return packDao.findImageByPackId(id);
     }
+
+    @Override
+    public List<Pack> filterPacks(final String query, final List<PackTag> tags,
+                                  final String city, final List<String> timeRanges,
+                                  final PackSortOption sort) {
+        return packDao.filterPacks(query, tags, city, timeRanges, sort);
+    }
 }

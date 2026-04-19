@@ -8,6 +8,9 @@
 <%@ attribute name="availableTags" required="true" type="ar.edu.itba.paw.models.PackTag[]" %>
 <%@ attribute name="selectedTags" required="true" type="java.util.List" %>
 <%@ attribute name="searchQuery" required="false" type="java.lang.String" %>
+<%@ attribute name="availableMunicipalities" required="false" type="ar.edu.itba.paw.models.Municipality[]" %>
+<%@ attribute name="selectedMunicipality" required="false" type="ar.edu.itba.paw.models.Municipality" %>
+<%@ attribute name="selectedTimeRanges" required="false" type="java.util.List" %>
 
 <header class="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-12">
     <div>
@@ -46,6 +49,9 @@
                 baseUrl="/packs"
                 searchQuery="${searchQuery}"
                 currentSort="${currentSort}"
+                availableMunicipalities="${availableMunicipalities}"
+                selectedMunicipality="${selectedMunicipality}"
+                selectedTimeRanges="${selectedTimeRanges}"
             />
         </div>
     </div>

@@ -7,8 +7,11 @@
 <%@ attribute name="baseUrl" required="true" type="java.lang.String" %>
 <%@ attribute name="searchQuery" required="false" type="java.lang.String" %>
 <%@ attribute name="currentSort" required="false" type="ar.edu.itba.paw.models.PackSortOption" %>
+<%@ attribute name="availableMunicipalities" required="false" type="ar.edu.itba.paw.models.Municipality[]" %>
+<%@ attribute name="selectedMunicipality" required="false" type="ar.edu.itba.paw.models.Municipality" %>
+<%@ attribute name="selectedTimeRanges" required="false" type="java.util.List" %>
 
-<c:set var="hasSelection" value="${not empty selectedTags}"/>
+<c:set var="hasSelection" value="${not empty selectedTags || not empty selectedMunicipality || not empty selectedTimeRanges}"/>
 
 <form id="tagFilterForm" action="<c:url value='${baseUrl}'/>" method="GET">
 
@@ -70,9 +73,16 @@
             </h4>
             <div class="relative">
                 <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" style="font-size: 20px;">location_on</span>
-                <input type="text" name="location" value="${param.location}" placeholder="<spring:message code="pack.catalog.filter.location.placeholder"/>"
-                       class="w-full pl-11 pr-4 py-2.5 bg-surface-container-low text-sm font-medium text-on-surface rounded-full border border-outline-variant/30 hover:border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors duration-200 shadow-sm"
-                       onchange="this.form.submit()"/>
+                <select name="location"
+                        onchange="this.form.submit()"
+                        class="w-full pl-11 pr-4 py-2.5 bg-surface-container-low text-sm font-medium text-on-surface rounded-full border border-outline-variant/30 hover:border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors duration-200 shadow-sm appearance-none cursor-pointer">
+                    <option value=""><spring:message code="pack.catalog.filter.location.any"/></option>
+                    <c:forEach var="muni" items="${availableMunicipalities}">
+                        <option value="${muni.name()}" ${selectedMunicipality != null && selectedMunicipality == muni ? 'selected' : ''}>
+                            <spring:message code="pack.catalog.filter.location.municipality.${muni.name()}"/>
+                        </option>
+                    </c:forEach>
+                </select>
             </div>
         </div>
 
@@ -81,23 +91,38 @@
                 <spring:message code="pack.catalog.filter.time"/>
             </h4>
             <div class="flex flex-col gap-3">
+                <%-- Morning --%>
+                <c:set var="morningSelected" value="false"/>
+                <c:forEach var="tr" items="${selectedTimeRanges}">
+                    <c:if test="${tr == 'morning'}"><c:set var="morningSelected" value="true"/></c:if>
+                </c:forEach>
                 <label class="cursor-pointer group flex items-center gap-3 w-fit">
                     <div class="relative flex items-center justify-center">
-                        <input type="checkbox" name="timeRange" value="morning" onchange="this.form.submit()" ${fn:contains(paramValues.timeRange, 'morning') ? 'checked' : ''} class="peer appearance-none w-5 h-5 border border-outline-variant rounded bg-surface-container-low checked:bg-primary checked:border-primary transition-colors cursor-pointer shadow-sm" />
+                        <input type="checkbox" name="timeRange" value="morning" onchange="this.form.submit()" ${morningSelected ? 'checked' : ''} class="peer appearance-none w-5 h-5 border border-outline-variant rounded bg-surface-container-low checked:bg-primary checked:border-primary transition-colors cursor-pointer shadow-sm" />
                         <span class="material-symbols-outlined absolute text-on-primary text-[16px] opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity">check</span>
                     </div>
                     <span class="text-sm font-medium text-on-surface-variant group-hover:text-on-surface transition-colors"><spring:message code="pack.catalog.filter.time.morning"/></span>
                 </label>
+                <%-- Afternoon --%>
+                <c:set var="afternoonSelected" value="false"/>
+                <c:forEach var="tr" items="${selectedTimeRanges}">
+                    <c:if test="${tr == 'afternoon'}"><c:set var="afternoonSelected" value="true"/></c:if>
+                </c:forEach>
                 <label class="cursor-pointer group flex items-center gap-3 w-fit">
                     <div class="relative flex items-center justify-center">
-                        <input type="checkbox" name="timeRange" value="afternoon" onchange="this.form.submit()" ${fn:contains(paramValues.timeRange, 'afternoon') ? 'checked' : ''} class="peer appearance-none w-5 h-5 border border-outline-variant rounded bg-surface-container-low checked:bg-primary checked:border-primary transition-colors cursor-pointer shadow-sm" />
+                        <input type="checkbox" name="timeRange" value="afternoon" onchange="this.form.submit()" ${afternoonSelected ? 'checked' : ''} class="peer appearance-none w-5 h-5 border border-outline-variant rounded bg-surface-container-low checked:bg-primary checked:border-primary transition-colors cursor-pointer shadow-sm" />
                         <span class="material-symbols-outlined absolute text-on-primary text-[16px] opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity">check</span>
                     </div>
                     <span class="text-sm font-medium text-on-surface-variant group-hover:text-on-surface transition-colors"><spring:message code="pack.catalog.filter.time.afternoon"/></span>
                 </label>
+                <%-- Evening --%>
+                <c:set var="eveningSelected" value="false"/>
+                <c:forEach var="tr" items="${selectedTimeRanges}">
+                    <c:if test="${tr == 'evening'}"><c:set var="eveningSelected" value="true"/></c:if>
+                </c:forEach>
                 <label class="cursor-pointer group flex items-center gap-3 w-fit">
                     <div class="relative flex items-center justify-center">
-                        <input type="checkbox" name="timeRange" value="evening" onchange="this.form.submit()" ${fn:contains(paramValues.timeRange, 'evening') ? 'checked' : ''} class="peer appearance-none w-5 h-5 border border-outline-variant rounded bg-surface-container-low checked:bg-primary checked:border-primary transition-colors cursor-pointer shadow-sm" />
+                        <input type="checkbox" name="timeRange" value="evening" onchange="this.form.submit()" ${eveningSelected ? 'checked' : ''} class="peer appearance-none w-5 h-5 border border-outline-variant rounded bg-surface-container-low checked:bg-primary checked:border-primary transition-colors cursor-pointer shadow-sm" />
                         <span class="material-symbols-outlined absolute text-on-primary text-[16px] opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity">check</span>
                     </div>
                     <span class="text-sm font-medium text-on-surface-variant group-hover:text-on-surface transition-colors"><spring:message code="pack.catalog.filter.time.evening"/></span>

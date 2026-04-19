@@ -271,4 +271,105 @@ public class PackJdbcDao implements PackDao {
                 id
         ).stream().findAny();
     }
+
+    @Override
+    public List<Pack> filterPacks(final String query, final List<PackTag> tags,
+                                  final String city, final List<String> timeRanges,
+                                  final PackSortOption sort) {
+
+        final boolean hasQuery = query != null && !query.isBlank();
+        final boolean hasTags = tags != null && !tags.isEmpty();
+        final boolean hasCity = city != null && !city.isBlank();
+        final boolean hasTime = timeRanges != null && !timeRanges.isEmpty();
+
+        /*
+         * Build a dynamic query.  We always JOIN commerces (needed for city,
+         * time, and text-search on commercial_name).  When tags are requested
+         * we also JOIN pack_tags and use GROUP BY + HAVING.
+         */
+        final StringBuilder sql = new StringBuilder();
+        sql.append("SELECT p.id, p.commerce_id, p.title, p.description, ")
+           .append("p.original_price, p.final_price, p.stock, p.active ")
+           .append("FROM packs p ")
+           .append("JOIN commerces c ON p.commerce_id = c.user_id ");
+
+        if (hasTags) {
+            sql.append("JOIN pack_tags pt ON p.id = pt.pack_id ");
+        }
+
+        sql.append("WHERE p.active = true ");
+
+        final List<Object> params = new ArrayList<>();
+
+        // --- text search ---
+        if (hasQuery) {
+            final String pattern = "%" + query.trim() + "%";
+            sql.append("AND (p.title ILIKE ? OR c.commercial_name ILIKE ?) ");
+            params.add(pattern);
+            params.add(pattern);
+        }
+
+        // --- city ---
+        if (hasCity) {
+            sql.append("AND c.city = ? ");
+            params.add(city);
+        }
+
+        // --- time ranges (safe cast + integer comparison) ---
+        if (hasTime) {
+            /*
+             * Time format in DB: "HH:mm" or "H:mm".
+             * We cast the hour portion to integer for safe comparison.
+             * morning   = hour in [0, 12)
+             * afternoon = hour in [12, 17)
+             * evening   = hour in [17, 24)
+             */
+            final List<String> timeConditions = new ArrayList<>();
+            for (final String range : timeRanges) {
+                switch (range) {
+                    case "morning":
+                        timeConditions.add(
+                            "CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) < 12");
+                        break;
+                    case "afternoon":
+                        timeConditions.add(
+                            "CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) >= 12 "
+                          + "AND CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) < 17");
+                        break;
+                    case "evening":
+                        timeConditions.add(
+                            "CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) >= 17");
+                        break;
+                    default:
+                        // unknown range value — silently ignore (whitelist approach)
+                        break;
+                }
+            }
+            if (!timeConditions.isEmpty()) {
+                sql.append("AND (")
+                   .append(String.join(" OR ", timeConditions))
+                   .append(") ");
+            }
+        }
+
+        // --- tags ---
+        if (hasTags) {
+            final String inClause = String.join(", ", Collections.nCopies(tags.size(), "?"));
+            sql.append("AND pt.tag IN (").append(inClause).append(") ");
+            for (final PackTag tag : tags) {
+                params.add(tag.name());
+            }
+            sql.append("GROUP BY p.id, p.commerce_id, p.title, p.description, ")
+               .append("p.original_price, p.final_price, p.stock, p.active ")
+               .append("HAVING COUNT(DISTINCT pt.tag) = ? ");
+            params.add(tags.size());
+        }
+
+        // --- ordering ---
+        final PackSortOption safeSortOption = sort != null ? sort : PackSortOption.DATE_DESC;
+        final String orderBy = safeSortOption.getOrderByClause().replace("packs.", "p.");
+        sql.append("ORDER BY ").append(orderBy);
+
+        return jdbcTemplate.query(sql.toString(), packRowMapperNoTags, params.toArray());
+    }
 }

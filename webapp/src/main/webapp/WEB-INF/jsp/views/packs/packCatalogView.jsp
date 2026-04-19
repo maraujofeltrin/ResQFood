@@ -22,6 +22,9 @@
                 availableTags="${availableTags}"
                 selectedTags="${selectedTags}"
                 searchQuery="${param.q}"
+                availableMunicipalities="${availableMunicipalities}"
+                selectedMunicipality="${selectedMunicipality}"
+                selectedTimeRanges="${selectedTimeRanges}"
             />
 
             <!-- Main Grid: All Available Packs -->

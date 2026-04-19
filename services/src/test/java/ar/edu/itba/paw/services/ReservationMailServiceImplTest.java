@@ -73,6 +73,7 @@ public class ReservationMailServiceImplTest {
         @Override public java.util.List<Pack> searchPacks(String query, PackSortOption sort) { return searchPacks(query); }
         @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption sort) { return findActiveByTags(tags); }
         @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption sort) { return searchPacksWithTags(query, tags); }
+        @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort) { return Collections.emptyList(); }
     }
 
     static class FakeMailSender implements JavaMailSender {

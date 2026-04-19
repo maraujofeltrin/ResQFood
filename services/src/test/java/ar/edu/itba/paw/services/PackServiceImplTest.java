@@ -91,6 +91,9 @@ public class PackServiceImplTest {
 
         @Override
         public List<Pack> searchPacksWithTags(String query, List<PackTag> tags, PackSortOption sort) { return searchPacksWithTags(query, tags); }
+
+        @Override
+        public List<Pack> filterPacks(String query, List<PackTag> tags, String city, List<String> timeRanges, PackSortOption sort) { return findActive(); }
     }
 
     @Test

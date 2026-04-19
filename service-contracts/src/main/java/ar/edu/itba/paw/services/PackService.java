@@ -23,4 +23,7 @@ public interface PackService {
     Pack update(Pack pack);
     void setActive(Long id, boolean active);
     Optional<Pack> findImageByPackId(Long id);
+
+    List<Pack> filterPacks(String query, List<PackTag> tags, String city,
+                           List<String> timeRanges, PackSortOption sort);
 }

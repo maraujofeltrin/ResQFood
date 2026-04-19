@@ -41,6 +41,7 @@ import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.models.PackTag;
 import ar.edu.itba.paw.models.PackSortOption;
+import ar.edu.itba.paw.models.Municipality;
 import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
@@ -272,11 +273,14 @@ public class PackController {
             @RequestParam(value = "q", required = false) final String query,
             @RequestParam(value = "tags", required = false) final List<String> tagNames,
             @RequestParam(value = "sort", required = false) final String sort,
+            @RequestParam(value = "location", required = false) final String locationParam,
+            @RequestParam(value = "timeRange", required = false) final List<String> timeRange,
             @RequestParam(value = "page", defaultValue = "1") final int page) {
 
         final ModelAndView mav = new ModelAndView("packs/packCatalogView");
         final PackSortOption sortOption = PackSortOption.fromString(sort);
 
+        // --- parse tags (whitelist via enum) ---
         final List<PackTag> selectedTags = new ArrayList<>();
         if (tagNames != null) {
             for (final String name : tagNames) {
@@ -287,20 +291,22 @@ public class PackController {
             }
         }
 
-        final boolean hasQuery = query != null && !query.trim().isEmpty();
-        final boolean hasTags = !selectedTags.isEmpty();
+        // --- parse location (whitelist via Municipality enum) ---
+        final Municipality municipality = Municipality.fromString(locationParam);
+        final String cityFilter = municipality != null ? municipality.getCityName() : null;
 
-        final List<Pack> allPacks;
-        if (hasQuery && hasTags) {
-            allPacks = packService.searchPacksWithTags(query.trim(), selectedTags, sortOption);
-        } else if (hasTags) {
-            allPacks = packService.findActiveByTags(selectedTags, sortOption);
-        } else if (hasQuery) {
-            allPacks = packService.searchPacks(query.trim(), sortOption);
-        } else {
-            allPacks = packService.findActive(sortOption);
-        }
+        // --- sanitise timeRange (DAO switch-case silently ignores unknown values) ---
+        final List<String> safeTimeRange = timeRange != null ? timeRange : new ArrayList<>();
 
+        // --- query text ---
+        final String trimmedQuery = (query != null && !query.trim().isEmpty()) ? query.trim() : null;
+
+        // --- unified filter ---
+        final List<Pack> allPacks = packService.filterPacks(
+                trimmedQuery, selectedTags.isEmpty() ? null : selectedTags,
+                cityFilter, safeTimeRange.isEmpty() ? null : safeTimeRange, sortOption);
+
+        // --- pagination ---
         final int totalPages = Math.max(1, (int) Math.ceil((double) allPacks.size() / PAGE_SIZE));
         final int safePage = Math.max(1, Math.min(page, totalPages));
         final int fromIdx = (safePage - 1) * PAGE_SIZE;
@@ -315,13 +321,14 @@ public class PackController {
                             .orElse("—")
             ));
 
+        // --- build pagination base URL preserving all current filters ---
         final StringBuilder baseUrlBuilder = new StringBuilder("/packs");
         boolean firstParam = true;
-        if (hasQuery) {
-            baseUrlBuilder.append(firstParam ? "?" : "&").append("q=").append(java.net.URLEncoder.encode(query.trim(), java.nio.charset.StandardCharsets.UTF_8));
+        if (trimmedQuery != null) {
+            baseUrlBuilder.append(firstParam ? "?" : "&").append("q=").append(java.net.URLEncoder.encode(trimmedQuery, java.nio.charset.StandardCharsets.UTF_8));
             firstParam = false;
         }
-        if (hasTags) {
+        if (!selectedTags.isEmpty()) {
             for (final PackTag tag : selectedTags) {
                 baseUrlBuilder.append(firstParam ? "?" : "&").append("tags=").append(tag.name());
                 firstParam = false;
@@ -331,6 +338,16 @@ public class PackController {
             baseUrlBuilder.append(firstParam ? "?" : "&").append("sort=").append(sortOption.name());
             firstParam = false;
         }
+        if (municipality != null) {
+            baseUrlBuilder.append(firstParam ? "?" : "&").append("location=").append(municipality.name());
+            firstParam = false;
+        }
+        if (!safeTimeRange.isEmpty()) {
+            for (final String tr : safeTimeRange) {
+                baseUrlBuilder.append(firstParam ? "?" : "&").append("timeRange=").append(tr);
+                firstParam = false;
+            }
+        }
 
         mav.addObject("packs", packs);
         mav.addObject("commerceNames", commerceNames);
@@ -338,6 +355,9 @@ public class PackController {
         mav.addObject("selectedTags", selectedTags);
         mav.addObject("availableSorts", PackSortOption.values());
         mav.addObject("currentSort", sortOption);
+        mav.addObject("availableMunicipalities", Municipality.values());
+        mav.addObject("selectedMunicipality", municipality);
+        mav.addObject("selectedTimeRanges", safeTimeRange);
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
         mav.addObject("paginationBaseUrl", baseUrlBuilder.toString());
