@@ -19,11 +19,14 @@
     
     <div class="flex items-center gap-4">
       <sec:authorize access="!isAuthenticated()">
-          <a href="${pageContext.request.contextPath}/login" class="text-on-surface-variant hover:text-primary font-medium transition-colors"><spring:message code="layout.nav.login" text="Iniciar sesión"/></a>
+          <a href="${pageContext.request.contextPath}/login" class="text-on-surface-variant hover:text-primary font-medium transition-colors flex items-center gap-2">
+			  <span class="material-symbols-outlined text-[1.25rem]" data-icon="login">login</span>
+			  <spring:message code="layout.nav.login" text="Iniciar sesión"/></a>
       </sec:authorize>
       <sec:authorize access="isAuthenticated()">
           <form action="${pageContext.request.contextPath}/logout" method="post" class="m-0">
-              <button type="submit" class="text-on-surface-variant hover:text-error transition-colors font-medium">
+              <button type="submit" class="text-on-surface-variant hover:text-error transition-colors font-medium flex items-center gap-2">
+                <span class="material-symbols-outlined text-[1.25rem]" data-icon="logout">logout</span>
                 <spring:message code="layout.nav.logout" text="Cerrar sesión"/>
               </button>
           </form>

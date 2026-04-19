@@ -8,14 +8,18 @@
 <%@ attribute name="price" required="true" %>
 <%@ attribute name="oldPrice" required="false" %>
 <%@ attribute name="commerceName" required="false" %>
+<%@ attribute name="smallSize" required="false" type="java.lang.Boolean" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
 <c:set var="resolvedAlt" value="${not empty imageAlt ? imageAlt : title}"/>
 <c:set var="resolvedRescueLabel" value="${not empty rescueLabel ? rescueLabel : 'Rescue For'}"/>
 
-<a href="${pageContext.request.contextPath}/packs/${packId}" class="bg-surface-container-lowest rounded-xl overflow-hidden group shadow-sm hover:shadow-md transition-shadow flex flex-col h-full min-w-[280px] cursor-pointer hover:bg-surface-container-low transition-colors text-inherit no-underline">
-  <div class="relative h-48 sm:h-56 flex-shrink-0 overflow-hidden">
+<c:set var="minWClass" value="${smallSize ? 'min-w-[220px]' : 'min-w-[280px]'}"/>
+<c:set var="imgHClass" value="${smallSize ? 'h-36 sm:h-44' : 'h-48 sm:h-56'}"/>
+
+<a href="${pageContext.request.contextPath}/packs/${packId}" class="bg-surface-container-lowest rounded-xl overflow-hidden group shadow-sm hover:shadow-md transition-shadow flex flex-col h-full ${minWClass} cursor-pointer hover:bg-surface-container-low transition-colors text-inherit no-underline">
+  <div class="relative ${imgHClass} flex-shrink-0 overflow-hidden">
     <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="<c:out value="${resolvedAlt}"/>" src="${pageContext.request.contextPath}/packs/${packId}/image" alt="<c:out value="${resolvedAlt}"/>"/>
     <c:if test="${not empty badgeText}">
       <div class="absolute bottom-3 left-3 flex gap-2">
