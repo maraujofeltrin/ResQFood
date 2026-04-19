@@ -107,6 +107,10 @@ public class CommerceController {
         final int fromIdx = (safePage - 1) * PAGE_SIZE;
         final int toIdx = Math.min(fromIdx + PAGE_SIZE, displayedPacks.size());
 
+        final int itemsCount = allPacks.size();
+        final int auctionsCount = (int) allPacks.stream().filter(p -> auctionPackIds.contains(p.getId())).count();
+        final int packsCount = itemsCount - auctionsCount;
+
         mav.addObject("commerce", commerce);
         mav.addObject("packs", displayedPacks.subList(fromIdx, toIdx));
         mav.addObject("currentPage", safePage);
@@ -115,6 +119,9 @@ public class CommerceController {
         mav.addObject("auctionPackIds", auctionPackIds);
         mav.addObject("currentTab", tab);
         mav.addObject("paginationBaseUrl", "/commerce?tab=" + tab);
+        mav.addObject("itemsCount", itemsCount);
+        mav.addObject("packsCount", packsCount);
+        mav.addObject("auctionsCount", auctionsCount);
         return mav;
     }
 
