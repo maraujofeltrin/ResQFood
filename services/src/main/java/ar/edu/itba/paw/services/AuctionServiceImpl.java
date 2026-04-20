@@ -20,6 +20,8 @@ import java.util.Optional;
 @Service
 public class AuctionServiceImpl implements AuctionService {
 
+    private static final double MIN_BID_INCREMENT_ARS = 500.0;
+
     private final AuctionDao auctionDao;
     private final BidDao bidDao;
     private final PackDao packDao;
@@ -122,11 +124,15 @@ public class AuctionServiceImpl implements AuctionService {
             throw new IllegalArgumentException("Cannot bid on your own auction");
         }
 
-        // Validate bid amount
-        final double minimumBid = auction.getEffectivePrice();
-        if (amount <= minimumBid) {
-            throw new IllegalArgumentException(
-                    "Bid amount (" + amount + ") must be greater than current price (" + minimumBid + ")");
+        final Long currentLeaderId = auction.getCurrentBidderId();
+        if (currentLeaderId != null && currentLeaderId.equals(clientId)) {
+            throw new IllegalArgumentException("Already highest bidder");
+        }
+
+        final double base = auction.getEffectivePrice();
+        final double minimumRequired = base + MIN_BID_INCREMENT_ARS;
+        if (amount < minimumRequired) {
+            throw new IllegalArgumentException("Minimum bid increment");
         }
 
         // Capture previous bidder for notification hook

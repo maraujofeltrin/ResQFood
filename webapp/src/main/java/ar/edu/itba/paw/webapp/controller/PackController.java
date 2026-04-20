@@ -64,6 +64,9 @@ import ar.edu.itba.paw.webapp.form.ReservationForm;
 @Controller
 public class PackController {
 
+    /** Kept in sync with {@code AuctionServiceImpl}. */
+    private static final double AUCTION_MIN_BID_INCREMENT_ARS = 500.0;
+
     private final ReservationService reservationService;
     private final PackService packService;
     private final CommerceService commerceService;
@@ -261,20 +264,39 @@ public class PackController {
         mav.addObject("auctionPresent", Boolean.valueOf(auctionPresent));
         mav.addObject("auctionActive", Boolean.valueOf(auctionActive));
 
+        boolean auctionClientIsLeading = false;
         if (auctionOpt.isPresent()) {
             final Auction auction = auctionOpt.get();
             mav.addObject("auction", auction);
             final double effective = auction.getEffectivePrice() != null ? auction.getEffectivePrice() : 0d;
+            final double minimumBidAmount = effective + AUCTION_MIN_BID_INCREMENT_ARS;
             mav.addObject("auctionEffectiveAmount", effective);
             mav.addObject("auctionEffectivePriceDisplay", formatPrice(effective));
             mav.addObject("auctionEndDisplay", formatAuctionEndForDisplay(auction.getEndTime(), locale));
             mav.addObject("auctionMinBidHint",
-                    messageSource.getMessage("pack.detail.bid.minHint", new Object[] { formatPrice(effective) },
+                    messageSource.getMessage("pack.detail.bid.minHint",
+                            new Object[] { formatPrice(effective), formatPrice(minimumBidAmount) },
                             locale));
             if (auctionActive) {
-                final double minNextBid = effective + 0.01d;
-                mav.addObject("bidAmountMin", String.format(Locale.US, "%.2f", minNextBid));
+                mav.addObject("bidAmountMin", String.format(Locale.US, "%.2f", minimumBidAmount));
+                if (auction.getCurrentBidderId() != null) {
+                    final org.springframework.security.core.Authentication auth =
+                            SecurityContextHolder.getContext().getAuthentication();
+                    if (auth != null && auth.isAuthenticated()) {
+                        final Object principal = auth.getPrincipal();
+                        if (principal != null && !"anonymousUser".equals(principal)) {
+                            final Optional<User> bidderUserOpt = userService.findByEmail(auth.getName());
+                            if (bidderUserOpt.isPresent() && bidderUserOpt.get().getRole() == User.Role.CLIENT
+                                    && bidderUserOpt.get().getId().equals(auction.getCurrentBidderId())) {
+                                auctionClientIsLeading = true;
+                            }
+                        }
+                    }
+                }
             }
+            mav.addObject("auctionClientIsLeading", Boolean.valueOf(auctionClientIsLeading));
+        } else {
+            mav.addObject("auctionClientIsLeading", Boolean.FALSE);
         }
 
         final double unitPriceAmount;
@@ -708,6 +730,10 @@ public class PackController {
             final String msg = ex.getMessage() != null ? ex.getMessage() : "";
             if (msg.contains("Cannot bid on your own auction")) {
                 code = "pack.detail.bid.alert.ownCommerce";
+            } else if (msg.contains("Already highest bidder")) {
+                code = "pack.detail.bid.alert.alreadyLeading";
+            } else if (msg.contains("Minimum bid increment")) {
+                code = "pack.detail.bid.alert.belowIncrement";
             } else if (msg.contains("must be greater than current price")) {
                 code = "pack.detail.bid.alert.belowMinimum";
             } else {

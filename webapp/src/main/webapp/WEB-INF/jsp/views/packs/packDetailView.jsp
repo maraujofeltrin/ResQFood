@@ -149,30 +149,37 @@
                             </div>
 
                             <sec:authorize access="hasRole('CLIENT')">
-                                <c:url var="bidAction" value="/packs/${packId}/bid"/>
-                                <form:form modelAttribute="bidForm" cssClass="auction-bid-form" method="post"
-                                           action="${bidAction}" novalidate="novalidate" id="auction-bid-form">
-                                    <spring:message code="pack.detail.bid.amount.label" var="labelBidAmount"/>
-                                    <spring:message code="pack.detail.bid.amount.placeholder" var="phBidAmount"/>
-                                    <spring:bind path="amount">
-                                        <paw:input id="bid-amount" label="${labelBidAmount}" type="number"
-                                                   name="${status.expression}" value="${status.value}"
-                                                   error="${status.errorMessages[0]}"
-                                                   placeholder="${phBidAmount}"
-                                                   min="${bidAmountMin}" step="0.01"
-                                                   wrapperClass="pack-form-field" labelClass="pack-form-label"
-                                                   inputClass="pack-form-control pack-form-control--tabular"
-                                                   errorClass="pack-feedback pack-feedback--error pack-form-errors"
-                                                   errorTag="p"/>
-                                    </spring:bind>
-                                    <spring:message code="pack.detail.bid.form.submitting" var="bidSubmittingText"/>
-                                    <button type="submit" class="auction-submit-btn font-headline mt-2 w-full"
-                                            id="auction-bid-submit-btn"
-                                            data-submitting-text="${bidSubmittingText}">
-                                        <span class="auction-submit-btn__label"><spring:message code="pack.detail.bid.form.submit"/></span>
-                                        <span class="material-symbols-outlined auction-submit-btn__icon">gavel</span>
-                                    </button>
-                                </form:form>
+                                <c:choose>
+                                    <c:when test="${auctionClientIsLeading}">
+                                        <p class="text-secondary text-sm mb-2" role="status"><spring:message code="pack.detail.bid.leadingInfo"/></p>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <c:url var="bidAction" value="/packs/${packId}/bid"/>
+                                        <form:form modelAttribute="bidForm" cssClass="auction-bid-form" method="post"
+                                                   action="${bidAction}" novalidate="novalidate" id="auction-bid-form">
+                                            <spring:message code="pack.detail.bid.amount.label" var="labelBidAmount"/>
+                                            <spring:message code="pack.detail.bid.amount.placeholder" var="phBidAmount"/>
+                                            <spring:bind path="amount">
+                                                <paw:input id="bid-amount" label="${labelBidAmount}" type="number"
+                                                           name="${status.expression}" value="${status.value}"
+                                                           error="${status.errorMessages[0]}"
+                                                           placeholder="${phBidAmount}"
+                                                           min="${bidAmountMin}" step="0.01"
+                                                           wrapperClass="pack-form-field" labelClass="pack-form-label"
+                                                           inputClass="pack-form-control pack-form-control--tabular"
+                                                           errorClass="pack-feedback pack-feedback--error pack-form-errors"
+                                                           errorTag="p"/>
+                                            </spring:bind>
+                                            <spring:message code="pack.detail.bid.form.submitting" var="bidSubmittingText"/>
+                                            <button type="submit" class="auction-submit-btn font-headline mt-2 w-full"
+                                                    id="auction-bid-submit-btn"
+                                                    data-submitting-text="${bidSubmittingText}">
+                                                <span class="auction-submit-btn__label"><spring:message code="pack.detail.bid.form.submit"/></span>
+                                                <span class="material-symbols-outlined auction-submit-btn__icon">gavel</span>
+                                            </button>
+                                        </form:form>
+                                    </c:otherwise>
+                                </c:choose>
                             </sec:authorize>
                             <sec:authorize access="isAnonymous()">
                                 <p class="text-secondary text-sm mb-2"><spring:message code="pack.detail.bid.loginPrompt"/></p>
