@@ -36,24 +36,27 @@
 
                             <c:if test="${dashboardAlertKind eq 'success'}">
                                 <div class="mb-4">
-                                    <p class="pack-feedback pack-feedback--success" role="alert"><c:out value="${dashboardAlertMessage}"/></p>
+                                    <p class="pack-feedback pack-feedback--success" role="alert">
+                                        <c:out value="${dashboardAlertMessage}" />
+                                    </p>
                                 </div>
                             </c:if>
 
                             <section>
-                                <div class="inline-flex items-center bg-surface-variant p-1.5 rounded-full mb-8 overflow-x-auto">
-                                    <a href="${pageContext.request.contextPath}/commerce?tab=items" 
-                                       class="px-6 py-2.5 text-base font-bold transition-all whitespace-nowrap rounded-full
+                                <div
+                                    class="inline-flex items-center bg-surface-variant p-1.5 rounded-full mb-8 overflow-x-auto">
+                                    <a href="${pageContext.request.contextPath}/commerce?tab=items"
+                                        class="px-6 py-2.5 text-base font-bold transition-all whitespace-nowrap rounded-full
                                        ${currentTab == 'items' ? 'bg-surface text-primary shadow-sm' : 'text-secondary hover:text-primary'}">
                                         <spring:message code="commerce.dashboard.tab.items" /> (${itemsCount})
                                     </a>
-                                    <a href="${pageContext.request.contextPath}/commerce?tab=packs" 
-                                       class="px-6 py-2.5 text-base font-bold transition-all whitespace-nowrap rounded-full
+                                    <a href="${pageContext.request.contextPath}/commerce?tab=packs"
+                                        class="px-6 py-2.5 text-base font-bold transition-all whitespace-nowrap rounded-full
                                        ${currentTab == 'packs' ? 'bg-surface text-primary shadow-sm' : 'text-secondary hover:text-primary'}">
                                         <spring:message code="commerce.dashboard.tab.packs" /> (${packsCount})
                                     </a>
-                                    <a href="${pageContext.request.contextPath}/commerce?tab=auctions" 
-                                       class="px-6 py-2.5 text-base font-bold transition-all whitespace-nowrap rounded-full
+                                    <a href="${pageContext.request.contextPath}/commerce?tab=auctions"
+                                        class="px-6 py-2.5 text-base font-bold transition-all whitespace-nowrap rounded-full
                                        ${currentTab == 'auctions' ? 'bg-surface text-primary shadow-sm' : 'text-secondary hover:text-primary'}">
                                         <spring:message code="commerce.dashboard.tab.auctions" /> (${auctionsCount})
                                     </a>
@@ -63,13 +66,26 @@
                                     <c:when test="${empty packs}">
                                         <c:choose>
                                             <c:when test="${currentTab == 'auctions'}">
-                                                <spring:message var="emptyTitle" code="commerce.dashboard.empty.auctions.title" />
-                                                <spring:message var="emptyDesc" code="commerce.dashboard.empty.auctions.description" />
-                                                <paw:packEmptyState icon="gavel" title="${emptyTitle}" description="${emptyDesc}" />
+                                                <spring:message var="emptyTitle"
+                                                    code="commerce.dashboard.empty.auctions.title" />
+                                                <spring:message var="emptyDesc"
+                                                    code="commerce.dashboard.empty.auctions.description" />
+                                                <paw:packEmptyState icon="gavel" title="${emptyTitle}"
+                                                    description="${emptyDesc}" />
+                                            </c:when>
+                                            <c:when test="${currentTab == 'items'}">
+                                                <spring:message var="emptyTitle"
+                                                    code="commerce.dashboard.empty.items.title" />
+                                                <spring:message var="emptyDesc"
+                                                    code="commerce.dashboard.empty.items.description" />
+                                                <paw:packEmptyState icon="restaurant" title="${emptyTitle}"
+                                                    description="${emptyDesc}" />
                                             </c:when>
                                             <c:otherwise>
-                                                <spring:message var="emptyTitle" code="commerce.dashboard.empty.title" />
-                                                <spring:message var="emptyDesc" code="commerce.dashboard.empty.description" />
+                                                <spring:message var="emptyTitle"
+                                                    code="commerce.dashboard.empty.title" />
+                                                <spring:message var="emptyDesc"
+                                                    code="commerce.dashboard.empty.description" />
                                                 <paw:packEmptyState icon="inventory_2" title="${emptyTitle}"
                                                     description="${emptyDesc}" />
                                             </c:otherwise>
@@ -79,9 +95,15 @@
                                         <div class="flex items-center gap-3 mb-8">
                                             <h2 class="text-2xl font-headline font-bold text-on-surface">
                                                 <c:choose>
-                                                    <c:when test="${currentTab == 'items'}"><spring:message code="commerce.dashboard.section.allItems" /></c:when>
-                                                    <c:when test="${currentTab == 'packs'}"><spring:message code="commerce.dashboard.section.allPacks" /></c:when>
-                                                    <c:otherwise><spring:message code="commerce.dashboard.section.allAuctions" /></c:otherwise>
+                                                    <c:when test="${currentTab == 'items'}">
+                                                        <spring:message code="commerce.dashboard.section.allItems" />
+                                                    </c:when>
+                                                    <c:when test="${currentTab == 'packs'}">
+                                                        <spring:message code="commerce.dashboard.section.allPacks" />
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <spring:message code="commerce.dashboard.section.allAuctions" />
+                                                    </c:otherwise>
                                                 </c:choose>
                                             </h2>
                                             <div class="h-[1px] flex-grow bg-outline-variant"></div>
@@ -117,20 +139,28 @@
 
                         <!-- Delete Confirmation Modal -->
                         <div id="deleteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-                            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
-                            <div class="relative bg-surface rounded-2xl p-8 max-w-md w-full shadow-2xl flex flex-col gap-4 transform transition-all scale-95 opacity-0" id="deleteModalContent">
+                            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeDeleteModal()">
+                            </div>
+                            <div class="relative bg-surface rounded-2xl p-8 max-w-md w-full shadow-2xl flex flex-col gap-4 transform transition-all scale-95 opacity-0"
+                                id="deleteModalContent">
                                 <div class="flex items-center gap-4 text-error mb-2">
                                     <span class="material-symbols-outlined text-4xl">warning</span>
-                                    <h3 class="text-2xl font-headline font-bold text-on-surface"><spring:message code="commerce.dashboard.delete.title" /></h3>
+                                    <h3 class="text-2xl font-headline font-bold text-on-surface">
+                                        <spring:message code="commerce.dashboard.delete.title" />
+                                    </h3>
                                 </div>
-                                <p class="text-secondary font-body"><spring:message code="commerce.dashboard.delete.description" /></p>
+                                <p class="text-secondary font-body">
+                                    <spring:message code="commerce.dashboard.delete.description" />
+                                </p>
                                 <div class="flex items-center justify-end gap-3 mt-4">
-                                    <button type="button" onclick="closeDeleteModal()" class="px-6 py-2 rounded-full font-bold text-secondary hover:bg-surface-variant transition-colors">
+                                    <button type="button" onclick="closeDeleteModal()"
+                                        class="px-6 py-2 rounded-full font-bold text-secondary hover:bg-surface-variant transition-colors">
                                         <spring:message code="commerce.dashboard.delete.cancel" />
                                     </button>
                                     <form id="deleteForm" method="POST" action="">
                                         <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
-                                        <button type="submit" class="bg-error text-on-error px-6 py-2 rounded-full font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2">
+                                        <button type="submit"
+                                            class="bg-error text-on-error px-6 py-2 rounded-full font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2">
                                             <span class="material-symbols-outlined text-[20px]">delete</span>
                                             <spring:message code="commerce.dashboard.delete.confirm" />
                                         </button>
@@ -144,9 +174,9 @@
                                 const modal = document.getElementById('deleteModal');
                                 const content = document.getElementById('deleteModalContent');
                                 const form = document.getElementById('deleteForm');
-                                
+
                                 form.action = '${pageContext.request.contextPath}/commerce/delete-pack/' + packId + '?${_csrf.parameterName}=${_csrf.token}';
-                                
+
                                 modal.classList.remove('hidden');
                                 // Trigger reflow for animation
                                 void modal.offsetWidth;
@@ -157,10 +187,10 @@
                             function closeDeleteModal() {
                                 const modal = document.getElementById('deleteModal');
                                 const content = document.getElementById('deleteModalContent');
-                                
+
                                 content.classList.remove('scale-100', 'opacity-100');
                                 content.classList.add('scale-95', 'opacity-0');
-                                
+
                                 setTimeout(() => {
                                     modal.classList.add('hidden');
                                 }, 200); // Wait for transition
