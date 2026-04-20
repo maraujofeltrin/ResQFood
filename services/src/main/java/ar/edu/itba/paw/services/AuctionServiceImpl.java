@@ -1,8 +1,10 @@
 package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Auction;
+import ar.edu.itba.paw.models.AuctionSortOption;
 import ar.edu.itba.paw.models.Bid;
 import ar.edu.itba.paw.models.Pack;
+import ar.edu.itba.paw.models.PackTag;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.BidDao;
 import ar.edu.itba.paw.persistence.PackDao;
@@ -18,15 +20,19 @@ import java.util.Optional;
 @Service
 public class AuctionServiceImpl implements AuctionService {
 
+    private static final double MIN_BID_INCREMENT_ARS = 500.0;
+
     private final AuctionDao auctionDao;
     private final BidDao bidDao;
     private final PackDao packDao;
+    private final ReservationService reservationService;
 
     @Autowired
-    public AuctionServiceImpl(final AuctionDao auctionDao, final BidDao bidDao, final PackDao packDao) {
+    public AuctionServiceImpl(final AuctionDao auctionDao, final BidDao bidDao, final PackDao packDao, final ReservationService reservationService) {
         this.auctionDao = auctionDao;
         this.bidDao = bidDao;
         this.packDao = packDao;
+        this.reservationService = reservationService;
     }
 
     @Transactional
@@ -71,6 +77,27 @@ public class AuctionServiceImpl implements AuctionService {
     }
 
     @Override
+    public List<Auction> findActive(final AuctionSortOption sort) {
+        return auctionDao.findActive(sort);
+    }
+
+    @Override
+    public List<Auction> searchActive(final String query, final AuctionSortOption sort) {
+        return auctionDao.searchActive(query, sort);
+    }
+
+    @Override
+    public List<Auction> findActiveByTags(final List<PackTag> tags, final AuctionSortOption sort) {
+        return auctionDao.findActiveByTags(tags, sort);
+    }
+
+    @Override
+    public List<Auction> searchActiveWithTags(final String query, final List<PackTag> tags,
+            final AuctionSortOption sort) {
+        return auctionDao.searchActiveWithTags(query, tags, sort);
+    }
+
+    @Override
     public List<Auction> findByCommerceId(final long commerceId) {
         return auctionDao.findByCommerceId(commerceId);
     }
@@ -97,11 +124,15 @@ public class AuctionServiceImpl implements AuctionService {
             throw new IllegalArgumentException("Cannot bid on your own auction");
         }
 
-        // Validate bid amount
-        final double minimumBid = auction.getEffectivePrice();
-        if (amount <= minimumBid) {
-            throw new IllegalArgumentException(
-                    "Bid amount (" + amount + ") must be greater than current price (" + minimumBid + ")");
+        final Long currentLeaderId = auction.getCurrentBidderId();
+        if (currentLeaderId != null && currentLeaderId.equals(clientId)) {
+            throw new IllegalArgumentException("Already highest bidder");
+        }
+
+        final double base = auction.getEffectivePrice();
+        final double minimumRequired = base + MIN_BID_INCREMENT_ARS;
+        if (amount < minimumRequired) {
+            throw new IllegalArgumentException("Minimum bid increment");
         }
 
         // Capture previous bidder for notification hook
@@ -127,7 +158,19 @@ public class AuctionServiceImpl implements AuctionService {
 
         for (final Auction auction : expired) {
             auctionDao.updateStatus(auction.getId(), Auction.Status.FINISHED);
+            packDao.setActive(auction.getPack().getId(), false);
             closed++;
+
+            if (auction.getCurrentBidderId() != null && auction.getCurrentBid() != null) {
+                reservationService.createReservation(
+                        auction.getPack().getId(),
+                        auction.getCurrentBidderId(),
+                        1,
+                        auction.getCurrentBid(),
+                        null,
+                        ""
+                );
+            }
 
             // TODO: Notification hook — notify winner
             // if (auction.getCurrentBidderId() != null) {

@@ -11,24 +11,13 @@
                 <c:url value="/commerce/create-offer" var="createOfferAction" />
 
                 <form:form modelAttribute="createOfferForm" action="${createOfferAction}" method="post"
-                    enctype="multipart/form-data" cssClass="commerce-create-offer-form" novalidate="novalidate">
+                    enctype="multipart/form-data" cssClass="w-full max-w-5xl mx-auto js-create-offer-form commerce-create-offer-form" novalidate="novalidate">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
                     <form:hidden path="isAuction" id="isAuctionInput" />
 
-                    <!-- ── Offer Mode Toggle ── -->
-                    <div class="offer-mode-toggle" id="offer-mode-toggle">
-                        <spring:message code="commerce.createOffer.toggle.pack" var="togglePackLabel"/>
-                        <spring:message code="commerce.createOffer.toggle.auction" var="toggleAuctionLabel"/>
-                        <button type="button" class="offer-mode-toggle__option offer-mode-toggle__option--pack offer-mode-toggle__option--active"
-                                id="toggle-pack-btn" data-mode="pack">
-                            <span class="material-symbols-outlined" style="font-size:18px;">inventory_2</span>
-                            ${togglePackLabel}
-                        </button>
-                        <button type="button" class="offer-mode-toggle__option offer-mode-toggle__option--auction"
-                                id="toggle-auction-btn" data-mode="auction">
-                            <span class="material-symbols-outlined" style="font-size:18px;">gavel</span>
-                            ${toggleAuctionLabel}
-                        </button>
-                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-2">
+                        <div class="flex flex-col gap-6">
+
 
                     <!-- ── Pack Details Section ── -->
                     <section class="pack-aside-card bg-surface-container-lowest shadow-soft offer-form-section">
@@ -45,7 +34,7 @@
                             <div class="pack-form-field">
                                 <label class="pack-form-label"><spring:message code="commerce.createPack.form.description.label"/></label>
                                 <spring:message code="commerce.createPack.form.description.placeholder" var="descPlch"/>
-                                <form:textarea path="description" class="pack-form-control" cssErrorClass="pack-form-control is-invalid" rows="3"
+                                <form:textarea path="description" class="pack-form-control resize-none overflow-y-auto" cssErrorClass="pack-form-control resize-none overflow-y-auto is-invalid" rows="3"
                                     placeholder="${descPlch}" required="required"></form:textarea>
                                 <form:errors path="description" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                             </div>
@@ -65,100 +54,107 @@
                                 </div>
                             </div>
 
-                            <div class="pack-form-field">
-                                <label class="pack-form-label text-secondary"><spring:message code="commerce.createPack.form.originalPrice.label"/></label>
-                                <div class="relative">
-                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary font-bold">$</span>
-                                    <form:input type="number" step="0.01" path="originalPrice"
-                                        class="pack-form-control pack-form-control--tabular pl-8" cssErrorClass="pack-form-control pack-form-control--tabular pl-8 is-invalid"
-                                        placeholder="0.00" required="required" maxlength="10" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
-                                </div>
-                                <form:errors path="originalPrice" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
-                            </div>
 
-                            <div class="pack-form-field mt-2">
-                                <label class="pack-form-label"><spring:message code="commerce.createPack.form.image.label"/></label>
-                                <input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif"
-                                    class="pack-form-control file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-fixed file:text-on-primary-fixed hover:file:bg-primary-fixed-dim cursor-pointer" />
-                                <form:errors path="image" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
-                                <p class="text-xs text-secondary mt-1"><spring:message code="commerce.createPack.form.image.hint"/></p>
-                            </div>
+
+
                         </div>
                     </section>
+                        </div>
 
-                    <!-- ── Pack-only Fields: Price & Stock ── -->
-                    <section class="pack-aside-card bg-surface-container-lowest shadow-soft offer-form-section" id="pack-fields-section">
-                        <h2 class="pack-aside-heading flex items-center gap-2 mb-2">
-                            <span class="material-symbols-outlined text-primary">sell</span>
-                            <spring:message code="commerce.createPack.form.finalPrice.label"/>
-                        </h2>
-                        <div class="pack-reservation-form mt-2">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="pack-form-field">
-                                    <label class="pack-form-label text-primary"><spring:message code="commerce.createPack.form.finalPrice.label"/></label>
-                                    <div class="relative">
-                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold">$</span>
-                                        <form:input type="number" step="0.01" path="finalPrice"
-                                            class="pack-form-control pack-form-control--tabular pl-8 font-bold" cssErrorClass="pack-form-control pack-form-control--tabular pl-8 font-bold is-invalid"
-                                            placeholder="0.00" maxlength="10" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
+                        <div class="flex flex-col gap-6">
+
+                            <!-- ── Image Upload Section ── -->
+                            <paw:offerImageUpload path="image" />
+                            <!-- ── Pricing & Settings ── -->
+                            <section class="pack-aside-card bg-surface-container-lowest shadow-soft offer-form-section relative">
+                                <!-- HEADER with integrated toggle -->
+                                <header class="flex items-start justify-between gap-4 mb-4">
+                                    <div class="flex-1">
+                                        <!-- Pack Header -->
+                                        <h2 class="pack-aside-heading flex items-center gap-2 m-0" data-mode-group="pack">
+                                            <span class="material-symbols-outlined text-primary">sell</span>
+                                            <spring:message code="commerce.createPack.form.finalPrice.label"/>
+                                        </h2>
+                                        <!-- Auction Header -->
+                                        <h2 class="pack-aside-heading flex items-center gap-2 m-0" data-mode-group="auction" style="display:none;">
+                                            <span class="material-symbols-outlined text-auction">gavel</span>
+                                            <spring:message code="commerce.createAuction.auctionSettings.title"/>
+                                        </h2>
                                     </div>
-                                    <form:errors path="finalPrice" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
-                                </div>
-                                <div class="pack-form-field">
-                                    <label class="pack-form-label flex justify-between">
-                                        <spring:message code="commerce.createPack.form.quantity.label"/>
-                                        <span class="text-xs text-secondary font-normal"><spring:message code="commerce.createPack.form.quantity.hint"/></span>
-                                    </label>
-                                    <spring:message code="commerce.createPack.form.quantity.placeholder" var="qtyPlch"/>
-                                    <form:input type="number" path="stock"
-                                        class="pack-form-control pack-form-control--tabular" cssErrorClass="pack-form-control pack-form-control--tabular is-invalid" placeholder="${qtyPlch}"
-                                        maxlength="3" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
-                                    <form:errors path="stock" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
-                                </div>
-                            </div>
-                        </div>
-                    </section>
+                                    
+                                    <paw:offerModeToggle />
+                                </header>
+                                
+                                <div class="pack-reservation-form">
+                                    <!-- Grid for Prices -->
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <!-- Common: Original Price -->
+                                        <div class="pack-form-field">
+                                            <label class="pack-form-label text-secondary"><spring:message code="commerce.createPack.form.originalPrice.label"/></label>
+                                            <div class="relative">
+                                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary font-bold">$</span>
+                                                <form:input type="number" step="0.01" path="originalPrice"
+                                                    class="pack-form-control pack-form-control--tabular pl-8" cssErrorClass="pack-form-control pack-form-control--tabular pl-8 is-invalid"
+                                                    placeholder="0.00" required="required" maxlength="10" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
+                                            </div>
+                                            <form:errors path="originalPrice" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
+                                        </div>
 
-                    <!-- ── Auction-only Fields: Initial Price & End Date/Time ── -->
-                    <section class="pack-aside-card bg-surface-container-lowest shadow-soft auction-settings-card offer-form-section" id="auction-fields-section" style="display:none;">
-                        <h2 class="pack-aside-heading flex items-center gap-2 mb-2">
-                            <span class="material-symbols-outlined text-auction">gavel</span>
-                            <spring:message code="commerce.createAuction.auctionSettings.title"/>
-                            <span class="auction-badge ml-auto">
-                                <span class="material-symbols-outlined" style="font-size: 14px;">bolt</span>
-                                <spring:message code="commerce.createAuction.badge"/>
-                            </span>
-                        </h2>
+                                        <!-- Pack: Final Price -->
+                                        <div class="pack-form-field" data-mode-group="pack">
+                                            <label class="pack-form-label text-primary"><spring:message code="commerce.createPack.form.finalPrice.label"/></label>
+                                            <div class="relative">
+                                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold">$</span>
+                                                <form:input type="number" step="0.01" path="finalPrice"
+                                                    class="pack-form-control pack-form-control--tabular pl-8 font-bold" cssErrorClass="pack-form-control pack-form-control--tabular pl-8 font-bold is-invalid"
+                                                    placeholder="0.00" maxlength="10" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
+                                            </div>
+                                            <form:errors path="finalPrice" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
+                                        </div>
 
-                        <div class="pack-reservation-form mt-2">
-                            <div class="pack-form-field">
-                                <label class="pack-form-label text-auction"><spring:message code="commerce.createAuction.form.initialPrice.label"/></label>
-                                <div class="relative">
-                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-auction font-bold">$</span>
-                                    <form:input type="number" step="0.01" path="initialPrice"
-                                        class="pack-form-control pack-form-control--tabular pl-8 font-bold" cssErrorClass="pack-form-control pack-form-control--tabular pl-8 font-bold is-invalid"
-                                        placeholder="0.00" maxlength="10" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
-                                </div>
-                                <p class="text-xs text-secondary mt-1"><spring:message code="commerce.createAuction.form.initialPrice.hint"/></p>
-                                <form:errors path="initialPrice" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
-                            </div>
+                                        <!-- Auction: Initial Price -->
+                                        <div class="pack-form-field" data-mode-group="auction" style="display:none;">
+                                            <label class="pack-form-label text-auction"><spring:message code="commerce.createAuction.form.initialPrice.label"/></label>
+                                            <div class="relative">
+                                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-auction font-bold">$</span>
+                                                <form:input type="number" step="0.01" path="initialPrice"
+                                                    class="pack-form-control pack-form-control--tabular pl-8 font-bold" cssErrorClass="pack-form-control pack-form-control--tabular pl-8 font-bold is-invalid"
+                                                    placeholder="0.00" maxlength="10" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
+                                            </div>
+                                            <form:errors path="initialPrice" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
+                                        </div>
+                                    </div>
 
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="pack-form-field">
-                                    <label class="pack-form-label"><spring:message code="commerce.createAuction.form.endDate.label"/></label>
-                                    <form:input type="date" path="endDate"
-                                        class="pack-form-control pack-form-control--tabular" cssErrorClass="pack-form-control pack-form-control--tabular is-invalid" />
-                                    <form:errors path="endDate" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
+                                    <!-- Pack: Stock -->
+                                    <div class="pack-form-field mt-4" data-mode-group="pack">
+                                        <label class="pack-form-label flex flex-col">
+                                            <span><spring:message code="commerce.createPack.form.quantity.label"/></span>
+                                            <span class="text-xs text-secondary font-normal mt-1"><spring:message code="commerce.createPack.form.quantity.hint"/></span>
+                                        </label>
+                                        <spring:message code="commerce.createPack.form.quantity.placeholder" var="qtyPlch"/>
+                                        <form:input type="number" path="stock"
+                                            class="pack-form-control pack-form-control--tabular w-1/2" cssErrorClass="pack-form-control pack-form-control--tabular w-1/2 is-invalid" placeholder="${qtyPlch}"
+                                            maxlength="3" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
+                                        <form:errors path="stock" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
+                                    </div>
+
+                                    <!-- Auction: Dates -->
+                                    <div class="grid grid-cols-2 gap-4 mt-4" data-mode-group="auction" style="display:none;">
+                                        <div class="pack-form-field">
+                                            <label class="pack-form-label"><spring:message code="commerce.createAuction.form.endDate.label"/></label>
+                                            <form:input type="date" path="endDate"
+                                                class="pack-form-control pack-form-control--tabular" cssErrorClass="pack-form-control pack-form-control--tabular is-invalid" />
+                                            <form:errors path="endDate" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
+                                        </div>
+                                        <div class="pack-form-field">
+                                            <label class="pack-form-label"><spring:message code="commerce.createAuction.form.endTime.label"/></label>
+                                            <form:input type="time" path="endTime"
+                                                class="pack-form-control pack-form-control--tabular" cssErrorClass="pack-form-control pack-form-control--tabular is-invalid" />
+                                            <form:errors path="endTime" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="pack-form-field">
-                                    <label class="pack-form-label"><spring:message code="commerce.createAuction.form.endTime.label"/></label>
-                                    <form:input type="time" path="endTime"
-                                        class="pack-form-control pack-form-control--tabular" cssErrorClass="pack-form-control pack-form-control--tabular is-invalid" />
-                                    <form:errors path="endTime" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
-                                </div>
-                            </div>
-                        </div>
-                    </section>
+                            </section>
 
                     <!-- ── Submit Button ── -->
                     <spring:message code="commerce.createOffer.form.submitting" var="submittingText"/>
@@ -171,6 +167,8 @@
                         <span class="pack-submit-btn__label">${submitPackLabel}</span>
                         <span class="material-symbols-outlined pack-submit-btn__icon" id="submit-btn-icon">rocket_launch</span>
                     </button>
+                        </div>
+                    </div>
 
                 </form:form>
 
@@ -179,8 +177,8 @@
                         var isAuctionInput = document.getElementById('isAuctionInput');
                         var togglePackBtn = document.getElementById('toggle-pack-btn');
                         var toggleAuctionBtn = document.getElementById('toggle-auction-btn');
-                        var packSection = document.getElementById('pack-fields-section');
-                        var auctionSection = document.getElementById('auction-fields-section');
+                        var packElements = document.querySelectorAll('[data-mode-group="pack"]');
+                        var auctionElements = document.querySelectorAll('[data-mode-group="auction"]');
                         var submitBtn = document.getElementById('create-offer-submit-btn');
                         var submitLabel = submitBtn.querySelector('.pack-submit-btn__label');
                         var submitIcon = document.getElementById('submit-btn-icon');
@@ -190,17 +188,21 @@
 
                             if (isAuction) {
                                 togglePackBtn.classList.remove('offer-mode-toggle__option--active');
+                                togglePackBtn.classList.add('text-secondary');
                                 toggleAuctionBtn.classList.add('offer-mode-toggle__option--active');
-                                packSection.style.display = 'none';
-                                auctionSection.style.display = '';
+                                toggleAuctionBtn.classList.remove('text-secondary');
+                                packElements.forEach(function(el) { el.style.display = 'none'; });
+                                auctionElements.forEach(function(el) { el.style.display = ''; });
                                 submitLabel.textContent = submitBtn.getAttribute('data-auction-label');
                                 submitIcon.textContent = 'gavel';
                                 submitBtn.classList.add('offer-submit-btn--auction');
                             } else {
                                 toggleAuctionBtn.classList.remove('offer-mode-toggle__option--active');
+                                toggleAuctionBtn.classList.add('text-secondary');
                                 togglePackBtn.classList.add('offer-mode-toggle__option--active');
-                                packSection.style.display = '';
-                                auctionSection.style.display = 'none';
+                                togglePackBtn.classList.remove('text-secondary');
+                                packElements.forEach(function(el) { el.style.display = ''; });
+                                auctionElements.forEach(function(el) { el.style.display = 'none'; });
                                 submitLabel.textContent = submitBtn.getAttribute('data-pack-label');
                                 submitIcon.textContent = 'rocket_launch';
                                 submitBtn.classList.remove('offer-submit-btn--auction');
@@ -216,7 +218,7 @@
 
                     // ── Prevent double-submit ──
                     (function () {
-                        var form = document.querySelector('.commerce-create-offer-form');
+                        var form = document.querySelector('.js-create-offer-form');
                         var btn = document.getElementById('create-offer-submit-btn');
                         if (!form || !btn) return;
                         var submitted = false;
@@ -233,37 +235,7 @@
                         });
                     })();
 
-                    // ── Client-side image validation ──
-                    document.addEventListener("DOMContentLoaded", function () {
-                        var imageInput = document.querySelector('input[name="image"]');
-                        if (!imageInput) return;
-                        var maxFileSize = 5 * 1024 * 1024;
-                        var allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-                        imageInput.addEventListener('change', function (event) {
-                            var file = event.target.files[0];
-                            var errorContainer = event.target.parentNode;
-
-                            var existingErrors = errorContainer.querySelectorAll('.image-js-error');
-                            existingErrors.forEach(function(e) { e.remove(); });
-
-                            if (file) {
-                                var errorMsg = '';
-                                if (file.size > maxFileSize) {
-                                    errorMsg = "<spring:message code='commerce.createPack.validation.image.maxSize' javaScriptEscape='true'/>";
-                                } else if (allowedTypes.indexOf(file.type) === -1) {
-                                    errorMsg = "<spring:message code='commerce.createPack.validation.image.invalidType' javaScriptEscape='true'/>";
-                                }
-                                if (errorMsg !== '') {
-                                    event.target.value = '';
-                                    var errorElement = document.createElement('p');
-                                    errorElement.className = 'pack-feedback pack-feedback--error pack-form-errors image-js-error mt-2';
-                                    errorElement.textContent = errorMsg;
-                                    event.target.parentNode.insertBefore(errorElement, event.target.nextSibling);
-                                }
-                            }
-                        });
-                    });
                 </script>
 
             </paw:commerceFormLayout>

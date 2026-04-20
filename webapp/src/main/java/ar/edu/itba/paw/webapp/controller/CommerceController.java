@@ -11,12 +11,14 @@ import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
 import ar.edu.itba.paw.services.ReservationService;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -66,12 +68,15 @@ public class CommerceController {
     private final AuctionService auctionService;
     private final MessageSource messageSource;
     private final UserService userService;
+    /** Same zone as commerce opening/closing / pack detail display ({@code app.display-zone}). */
+    private final ZoneId businessZone;
 
     @Autowired
     public CommerceController(final CommerceService commerceService, final ClientService clientService,
                               final PackService packService, final ReservationService reservationService,
                               final AuctionService auctionService, final MessageSource messageSource,
-                              final UserService userService) {
+                              final UserService userService,
+                              @Value("${app.display-zone:}") final String displayZone) {
         this.commerceService = commerceService;
         this.clientService = clientService;
         this.packService = packService;
@@ -79,6 +84,9 @@ public class CommerceController {
         this.auctionService = auctionService;
         this.messageSource = messageSource;
         this.userService = userService;
+        this.businessZone = (displayZone == null || displayZone.trim().isEmpty())
+                ? ZoneId.of("America/Argentina/Buenos_Aires")
+                : ZoneId.of(displayZone.trim());
     }
 
 
@@ -225,11 +233,11 @@ public class CommerceController {
                         imageData, imageContentType
                 );
 
-                // Parse auction end date/time (already validated)
-                LocalDateTime endDateTime = LocalDateTime.parse(form.getEndDate() + "T" + form.getEndTime());
+                // Wall-clock in business zone → UTC (same convention as auction storage / display)
+                final LocalDateTime endUtc = parseAuctionEndAsUtc(form.getEndDate(), form.getEndTime());
 
                 // Create the auction wrapping the pack
-                auctionService.createAuction(pack.getId(), form.getInitialPrice(), endDateTime);
+                auctionService.createAuction(pack.getId(), form.getInitialPrice(), endUtc);
 
             } else {
                 packService.createPack(commerce.getUserId(), form.getTitle(), form.getDescription(),
@@ -329,22 +337,36 @@ public class CommerceController {
                             null, LocaleContextHolder.getLocale()));
         }
 
-        // Validate endDateTime if both date and time are present
+        // Validate end instant if both date and time are present (interpreted in business zone)
         if (form.getEndDate() != null && !form.getEndDate().isBlank()
                 && form.getEndTime() != null && !form.getEndTime().isBlank()) {
             try {
-                LocalDateTime endDateTime = LocalDateTime.parse(form.getEndDate() + "T" + form.getEndTime());
-                if (endDateTime.isBefore(LocalDateTime.now())) {
+                final LocalDate date = LocalDate.parse(form.getEndDate().trim());
+                final LocalTime time = LocalTime.parse(form.getEndTime().trim());
+                final ZonedDateTime endZoned = ZonedDateTime.of(date, time, businessZone);
+                if (!endZoned.toInstant().isAfter(Instant.now())) {
                     bindingResult.rejectValue("endDate", "error.endDate",
                             messageSource.getMessage("commerce.createAuction.validation.endDateTime.future",
                                     null, LocaleContextHolder.getLocale()));
                 }
-            } catch (Exception e) {
+            } catch (DateTimeParseException e) {
                 bindingResult.rejectValue("endDate", "error.endDate",
                         messageSource.getMessage("commerce.createAuction.validation.endDateTime.invalid",
                                 null, LocaleContextHolder.getLocale()));
             }
         }
+    }
+
+    /**
+     * HTML {@code date}/{@code time} fields are wall-clock in the business display zone (see
+     * {@link #businessZone}), matching commerce opening/closing semantics; persisted end is UTC.
+     */
+    private LocalDateTime parseAuctionEndAsUtc(final String endDate, final String endTime) {
+        final LocalDate date = LocalDate.parse(endDate.trim());
+        final LocalTime time = LocalTime.parse(endTime.trim());
+        return ZonedDateTime.of(date, time, businessZone)
+                .withZoneSameInstant(ZoneOffset.UTC)
+                .toLocalDateTime();
     }
 
     /**
