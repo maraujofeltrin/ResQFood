@@ -46,8 +46,7 @@ public class CommerceController {
 
     private static final int PAGE_SIZE = 6;
     private static final Set<String> ALLOWED_IMAGE_TYPES = new HashSet<>(Arrays.asList(
-            "image/jpeg", "image/png", "image/webp", "image/gif"
-    ));
+            "image/jpeg", "image/png", "image/webp", "image/gif"));
 
     private final CommerceService commerceService;
     private final PackService packService;
@@ -57,8 +56,8 @@ public class CommerceController {
 
     @Autowired
     public CommerceController(final CommerceService commerceService, final PackService packService,
-                              final AuctionService auctionService, final MessageSource messageSource,
-                              final UserService userService) {
+            final AuctionService auctionService, final MessageSource messageSource,
+            final UserService userService) {
         this.commerceService = commerceService;
         this.packService = packService;
         this.auctionService = auctionService;
@@ -71,8 +70,8 @@ public class CommerceController {
      */
     @GetMapping(value = "")
     public ModelAndView dashboard(@AuthenticationPrincipal final AuthUser principal,
-                                  @RequestParam(value = "page", defaultValue = "1") final int page,
-                                  @RequestParam(value = "tab", defaultValue = "items") final String tab) {
+            @RequestParam(value = "page", defaultValue = "1") final int page,
+            @RequestParam(value = "tab", defaultValue = "items") final String tab) {
         final long id = getAuthenticatedUser(principal).getId();
 
         final java.util.Optional<Commerce> commerceOpt = commerceService.findByUserId(id);
@@ -88,7 +87,7 @@ public class CommerceController {
         final Set<Long> auctionPackIds = commerceAuctions.stream()
                 .map(a -> a.getPack().getId())
                 .collect(java.util.stream.Collectors.toSet());
-        
+
         final List<Pack> displayedPacks;
         if ("auctions".equalsIgnoreCase(tab)) {
             displayedPacks = allPacks.stream()
@@ -129,7 +128,7 @@ public class CommerceController {
 
     @RequestMapping(value = "/create-offer", method = RequestMethod.GET)
     public ModelAndView createOfferForm(@ModelAttribute("createOfferForm") final CreateOfferForm form,
-                                        @RequestParam(value = "error", required = false) final String error) {
+            @RequestParam(value = "error", required = false) final String error) {
         final ModelAndView mav = new ModelAndView("commerce/createOfferView");
         mav.addObject("availableTags", PackTag.values());
         if ("maxUploadSize".equals(error)) {
@@ -181,8 +180,7 @@ public class CommerceController {
                         commerceId, form.getTitle(), form.getDescription(),
                         form.getOriginalPrice(), form.getInitialPrice(), 1,
                         form.getTags() != null ? form.getTags() : Collections.emptyList(),
-                        imageData, imageContentType
-                );
+                        imageData, imageContentType);
 
                 // Parse auction end date/time (already validated)
                 LocalDateTime endDateTime = LocalDateTime.parse(form.getEndDate() + "T" + form.getEndTime());
@@ -191,15 +189,17 @@ public class CommerceController {
                 auctionService.createAuction(pack.getId(), form.getInitialPrice(), endDateTime);
 
                 redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
-                redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource.getMessage("commerce.dashboard.success.create.auction", null, LocaleContextHolder.getLocale()));
+                redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource.getMessage(
+                        "commerce.dashboard.success.create.auction", null, LocaleContextHolder.getLocale()));
 
             } else {
                 packService.createPack(commerceId, form.getTitle(), form.getDescription(),
-                                       form.getOriginalPrice(), form.getFinalPrice(), form.getStock(),
-                                       form.getTags() != null ? form.getTags() : Collections.emptyList(),
-                                       imageData, imageContentType);
+                        form.getOriginalPrice(), form.getFinalPrice(), form.getStock(),
+                        form.getTags() != null ? form.getTags() : Collections.emptyList(),
+                        imageData, imageContentType);
                 redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
-                redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource.getMessage("commerce.dashboard.success.create.pack", null, LocaleContextHolder.getLocale()));
+                redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource
+                        .getMessage("commerce.dashboard.success.create.pack", null, LocaleContextHolder.getLocale()));
             }
             return new ModelAndView("redirect:/commerce");
 
@@ -218,11 +218,152 @@ public class CommerceController {
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────
+    @RequestMapping(value = "/edit-pack/{packId}", method = RequestMethod.GET)
+    public ModelAndView editPackForm(@PathVariable("packId") final long packId,
+            @AuthenticationPrincipal final AuthUser principal,
+            @ModelAttribute("editPackForm") final EditPackForm form,
+            @RequestParam(value = "error", required = false) final String error) {
+        final long commerceId = getAuthenticatedUser(principal).getId();
 
-    /**
-     * Validates pack-specific fields (finalPrice, stock) when isAuction is false.
-     */
+        if (commerceService.findByUserId(commerceId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        final Pack pack = getValidManageablePack(packId, commerceId,
+                "commerce.editPack.error.auctionForbidden.editadas");
+
+        if (form.getTitle() == null) {
+            form.setTitle(pack.getTitle());
+            form.setDescription(pack.getDescription());
+            form.setTags(pack.getTags());
+            form.setOriginalPrice(pack.getOriginalPrice());
+            form.setFinalPrice(pack.getFinalPrice());
+            form.setStock(pack.getStock());
+        }
+
+        final ModelAndView mav = new ModelAndView("commerce/editPack");
+        mav.addObject("commerceId", commerceId);
+        mav.addObject("packId", packId);
+        mav.addObject("availableTags", PackTag.values());
+
+        if ("maxUploadSize".equals(error)) {
+            mav.addObject("errorMessage",
+                    messageSource.getMessage("commerce.createPack.validation.image.maxSize",
+                            null, LocaleContextHolder.getLocale()));
+        }
+
+        return mav;
+    }
+
+    @RequestMapping(value = "/edit-pack/{packId}", method = RequestMethod.POST)
+    public ModelAndView editPack(
+            @PathVariable("packId") final long packId,
+            @AuthenticationPrincipal final AuthUser principal,
+            @Valid @ModelAttribute("editPackForm") final EditPackForm form,
+            final BindingResult bindingResult,
+            final RedirectAttributes redirectAttributes) {
+
+        final long commerceId = getAuthenticatedUser(principal).getId();
+
+        if (commerceService.findByUserId(commerceId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        final Pack packToUpdate = getValidManageablePack(packId, commerceId,
+                "commerce.editPack.error.auctionForbidden.editadas");
+
+        if (form.getOriginalPrice() != null && form.getFinalPrice() != null
+                && form.getFinalPrice() > form.getOriginalPrice()) {
+            bindingResult.rejectValue("finalPrice", "error.finalPrice",
+                    messageSource.getMessage("commerce.createPack.validation.finalPrice.exceedsOriginal",
+                            null, LocaleContextHolder.getLocale()));
+        }
+
+        final MultipartFile image = form.getImage();
+        if (image != null && !image.isEmpty()) {
+            final String contentType = image.getContentType();
+            if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
+                bindingResult.rejectValue("image", "error.image.invalidType",
+                        messageSource.getMessage("commerce.createPack.validation.image.invalidType",
+                                null, LocaleContextHolder.getLocale()));
+            }
+        }
+
+        if (bindingResult.hasErrors()) {
+            final ModelAndView mav = new ModelAndView("commerce/editPack");
+            mav.addObject("commerceId", commerceId);
+            mav.addObject("packId", packId);
+            mav.addObject("availableTags", PackTag.values());
+            return mav;
+        }
+
+        try {
+            packToUpdate.setTitle(form.getTitle());
+            packToUpdate.setDescription(form.getDescription());
+            packToUpdate.setOriginalPrice(form.getOriginalPrice());
+            packToUpdate.setFinalPrice(form.getFinalPrice());
+            packToUpdate.setStock(form.getStock());
+            packToUpdate.setTags(form.getTags() != null ? form.getTags() : Collections.emptyList());
+
+            packService.update(packToUpdate);
+
+            if (image != null && !image.isEmpty()) {
+                packService.updateImage(packToUpdate.getId(), image.getBytes(), image.getContentType());
+            }
+
+            redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
+            redirectAttributes.addFlashAttribute("dashboardAlertMessage",
+                    messageSource.getMessage("commerce.dashboard.success.edit", null, LocaleContextHolder.getLocale()));
+
+            return new ModelAndView("redirect:/commerce");
+
+        } catch (IllegalArgumentException e) {
+            final ModelAndView mav = new ModelAndView("commerce/editPack");
+            mav.addObject("commerceId", commerceId);
+            mav.addObject("packId", packId);
+            mav.addObject("availableTags", PackTag.values());
+            mav.addObject("errorMessage", e.getMessage());
+            return mav;
+        } catch (IOException e) {
+            final ModelAndView mav = new ModelAndView("commerce/editPack");
+            mav.addObject("commerceId", commerceId);
+            mav.addObject("packId", packId);
+            mav.addObject("availableTags", PackTag.values());
+            mav.addObject("errorMessage",
+                    messageSource.getMessage("commerce.createPack.validation.image.processError",
+                            null, LocaleContextHolder.getLocale()));
+            return mav;
+        }
+    }
+
+    @RequestMapping(value = "/delete-pack/{packId}", method = RequestMethod.POST)
+    public ModelAndView deletePack(
+            @PathVariable("packId") final long packId,
+            @AuthenticationPrincipal final AuthUser principal,
+            final RedirectAttributes redirectAttributes) {
+
+        final long commerceId = getAuthenticatedUser(principal).getId();
+
+        if (commerceService.findByUserId(commerceId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        getValidManageablePack(packId, commerceId, "commerce.editPack.error.auctionForbidden.eliminadas");
+
+        packService.deletePack(packId);
+
+        redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
+        redirectAttributes.addFlashAttribute("dashboardAlertMessage",
+                messageSource.getMessage("commerce.dashboard.success.delete", null, LocaleContextHolder.getLocale()));
+
+        return new ModelAndView("redirect:/commerce");
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    // validates pack-specific fields (finalPrice, stock) when isAuction is false
     private void validatePackFields(final CreateOfferForm form, final BindingResult bindingResult) {
         if (form.getFinalPrice() == null) {
             bindingResult.rejectValue("finalPrice", "error.finalPrice",
@@ -253,9 +394,7 @@ public class CommerceController {
         }
     }
 
-    /**
-     * Validates auction-specific fields (initialPrice, endDate, endTime) when isAuction is true.
-     */
+    // validates auction-specific fields (initialPrice, endDate, endTime) when isAuction is true
     private void validateAuctionFields(final CreateOfferForm form, final BindingResult bindingResult) {
         if (form.getInitialPrice() == null) {
             bindingResult.rejectValue("initialPrice", "error.initialPrice",
@@ -300,9 +439,7 @@ public class CommerceController {
         }
     }
 
-    /**
-     * Server-side image type validation.
-     */
+    // server-side image type validation
     private void validateImage(final MultipartFile image, final BindingResult bindingResult) {
         if (image != null && !image.isEmpty()) {
             final String contentType = image.getContentType();
@@ -312,151 +449,9 @@ public class CommerceController {
                                 null, LocaleContextHolder.getLocale()));
             }
         }
-
     }
 
-    @RequestMapping(value = "/edit-pack/{packId}", method = RequestMethod.GET)
-    public ModelAndView editPackForm(@PathVariable("packId") final long packId,
-                                     @AuthenticationPrincipal final AuthUser principal,
-                                     @ModelAttribute("editPackForm") final EditPackForm form,
-                                     @RequestParam(value = "error", required = false) final String error) {
-        final long commerceId = getAuthenticatedUser(principal).getId();
-
-        if (commerceService.findByUserId(commerceId).isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-
-        final Pack pack = getValidManageablePack(packId, commerceId, "commerce.editPack.error.auctionForbidden.editadas");
-
-        if (form.getTitle() == null) {
-            form.setTitle(pack.getTitle());
-            form.setDescription(pack.getDescription());
-            form.setTags(pack.getTags());
-            form.setOriginalPrice(pack.getOriginalPrice());
-            form.setFinalPrice(pack.getFinalPrice());
-            form.setStock(pack.getStock());
-        }
-
-        final ModelAndView mav = new ModelAndView("commerce/editPack");
-        mav.addObject("commerceId", commerceId);
-        mav.addObject("packId", packId);
-        mav.addObject("availableTags", PackTag.values());
-        
-        if ("maxUploadSize".equals(error)) {
-            mav.addObject("errorMessage",
-                    messageSource.getMessage("commerce.createPack.validation.image.maxSize",
-                            null, LocaleContextHolder.getLocale()));
-        }
-
-        return mav;
-    }
-
-    @RequestMapping(value = "/edit-pack/{packId}", method = RequestMethod.POST)
-    public ModelAndView editPack(
-            @PathVariable("packId") final long packId,
-            @AuthenticationPrincipal final AuthUser principal,
-            @Valid @ModelAttribute("editPackForm") final EditPackForm form,
-            final BindingResult bindingResult,
-            final RedirectAttributes redirectAttributes) {
-
-        final long commerceId = getAuthenticatedUser(principal).getId();
-
-        if (commerceService.findByUserId(commerceId).isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-
-        final Pack packToUpdate = getValidManageablePack(packId, commerceId, "commerce.editPack.error.auctionForbidden.editadas");
-
-        if (form.getOriginalPrice() != null && form.getFinalPrice() != null && form.getFinalPrice() > form.getOriginalPrice()) {
-            bindingResult.rejectValue("finalPrice", "error.finalPrice", "El precio de venta no puede ser mayor al precio original");
-        }
-
-        final MultipartFile image = form.getImage();
-        if (image != null && !image.isEmpty()) {
-            final String contentType = image.getContentType();
-            if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
-                bindingResult.rejectValue("image", "error.image.invalidType",
-                        messageSource.getMessage("commerce.createPack.validation.image.invalidType",
-                                null, LocaleContextHolder.getLocale()));
-            }
-        }
-
-        if (bindingResult.hasErrors()) {
-            final ModelAndView mav = new ModelAndView("commerce/editPack");
-            mav.addObject("commerceId", commerceId);
-            mav.addObject("packId", packId);
-            mav.addObject("availableTags", PackTag.values());
-            return mav;
-        }
-
-        try {
-            packToUpdate.setTitle(form.getTitle());
-            packToUpdate.setDescription(form.getDescription());
-            packToUpdate.setOriginalPrice(form.getOriginalPrice());
-            packToUpdate.setFinalPrice(form.getFinalPrice());
-            packToUpdate.setStock(form.getStock());
-            packToUpdate.setTags(form.getTags() != null ? form.getTags() : Collections.emptyList());
-
-            packService.update(packToUpdate);
-
-            if (image != null && !image.isEmpty()) {
-                packService.updateImage(packToUpdate.getId(), image.getBytes(), image.getContentType());
-            }
-
-            redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
-            redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource.getMessage("commerce.dashboard.success.edit", null, LocaleContextHolder.getLocale()));
-
-            return new ModelAndView("redirect:/commerce");
-
-        } catch (IllegalArgumentException e) {
-            final ModelAndView mav = new ModelAndView("commerce/editPack");
-            mav.addObject("commerceId", commerceId);
-            mav.addObject("packId", packId);
-            mav.addObject("availableTags", PackTag.values());
-            mav.addObject("errorMessage", e.getMessage());
-            return mav;
-        } catch (IOException e) {
-            final ModelAndView mav = new ModelAndView("commerce/editPack");
-            mav.addObject("commerceId", commerceId);
-            mav.addObject("packId", packId);
-            mav.addObject("availableTags", PackTag.values());
-            mav.addObject("errorMessage",
-                    messageSource.getMessage("commerce.createPack.validation.image.processError",
-                            null, LocaleContextHolder.getLocale()));
-            return mav;
-        }
-    }
-
-    @RequestMapping(value = "/delete-pack/{packId}", method = RequestMethod.POST)
-    public ModelAndView deletePack(
-            @PathVariable("packId") final long packId,
-            @AuthenticationPrincipal final AuthUser principal,
-            final RedirectAttributes redirectAttributes) {
-
-        final long commerceId = getAuthenticatedUser(principal).getId();
-
-        if (commerceService.findByUserId(commerceId).isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-
-        getValidManageablePack(packId, commerceId, "commerce.editPack.error.auctionForbidden.eliminadas");
-
-        packService.deletePack(packId);
-
-        redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
-        redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource.getMessage("commerce.dashboard.success.delete", null, LocaleContextHolder.getLocale()));
-
-        return new ModelAndView("redirect:/commerce");
-    }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
-
-    /**
-     * Devuelve el User del principal autenticado.
-     * Si por algún motivo el principal es nulo lanza 401.
-     */
+    // returns the user from the authenticated principal, if the principal is null throws 401
     private User getAuthenticatedUser(final AuthUser principal) {
         if (principal == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
@@ -465,17 +460,18 @@ public class CommerceController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
     }
 
+    // returns the pack if it is valid and manageable, otherwise throws 404 or 403
     private Pack getValidManageablePack(final long packId, final long commerceId, final String forbiddenActionKey) {
         final java.util.Optional<Pack> packOpt = packService.findById(packId);
-        if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId || Boolean.TRUE.equals(packOpt.get().getDeleted())) {
+        if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId
+                || Boolean.TRUE.equals(packOpt.get().getDeleted())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
         if (auctionService.findByPackId(packId).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
-                messageSource.getMessage(forbiddenActionKey, null, LocaleContextHolder.getLocale()));
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    messageSource.getMessage(forbiddenActionKey, null, LocaleContextHolder.getLocale()));
         }
         return packOpt.get();
     }
-
 
 }
