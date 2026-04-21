@@ -103,16 +103,22 @@ public class ReservationServiceImpl implements ReservationService {
                 pickupWindow);
 
         final Long commerceId = packDao.findById(packId)
-            .orElseThrow(() -> new IllegalStateException("Pack not found after stock update: " + packId))
-            .getCommerceId();
+                .orElseThrow(() -> new IllegalStateException("Pack not found after stock update: " + packId))
+                .getCommerceId();
         final String commerceEmail = userService.findById(commerceId)
-            .map(User::getEmail)
-            .orElseThrow(() -> new IllegalStateException("Commerce user not found for id: " + commerceId));
+                .map(User::getEmail)
+                .orElseThrow(() -> new IllegalStateException("Commerce user not found for id: " + commerceId));
 
         final String pickupDateStr = computePickupDateStr(reservation);
+        final boolean auctionReservation = baseUrl == null || baseUrl.trim().isEmpty();
 
-        reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail, baseUrl, pickupDateStr);
-        reservationMailService.sendReservationCodeToClient(reservation, user.getEmail(), pickupDateStr);
+        if (auctionReservation) {
+            reservationMailService.sendAuctionWinnerCodeToClient(reservation, user.getEmail(), pickupDateStr);
+            reservationMailService.sendAuctionWinnerCodeToCommerce(reservation, commerceEmail, pickupDateStr);
+        } else {
+            reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail, baseUrl, pickupDateStr);
+            reservationMailService.sendReservationCodeToClient(reservation, user.getEmail(), pickupDateStr);
+        }
 
         return reservation;
     }

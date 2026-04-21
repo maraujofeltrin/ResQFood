@@ -113,6 +113,8 @@ public class ReservationTokenServiceImplTest {
         int sentRejected = 0;
         @Override public void sendReservationRequestToCommerce(Reservation reservation, String commerceEmail, String baseUrl, String pickupDateStr) { }
         @Override public void sendReservationCodeToClient(Reservation reservation, String clientEmail, String pickupDateStr) { }
+        @Override public void sendAuctionWinnerCodeToClient(Reservation reservation, String clientEmail, String pickupDateStr) { }
+        @Override public void sendAuctionWinnerCodeToCommerce(Reservation reservation, String commerceEmail, String pickupDateStr) { }
         @Override public void sendReservationRejectedToClient(Reservation reservation, String clientEmail) { sentRejected++; }
     }
 
