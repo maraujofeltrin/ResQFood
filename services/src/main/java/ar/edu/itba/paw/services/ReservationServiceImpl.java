@@ -164,6 +164,28 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
+    public void validateReservationBelongsToCommerce(final Long reservationId, final Long commerceUserId) {
+        if (reservationId == null || commerceUserId == null) {
+            throw new IllegalArgumentException("INVALID_PARAMS");
+        }
+
+        final Reservation reservation = reservationDao.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("RESERVATION_NOT_FOUND"));
+        
+        if (reservation.getPackId() == null) {
+            throw new IllegalArgumentException("PACK_NOT_FOUND");
+        }
+
+        final boolean isOwned = packDao.findById(reservation.getPackId())
+                .map(pack -> commerceUserId.equals(pack.getCommerceId()))
+                .orElse(false);
+        
+        if (!isOwned) {
+            throw new IllegalArgumentException("WRONG_COMMERCE");
+        }
+    }
+
+    @Override
     public String computePickupDateStr(final Reservation reservation) {
         if (reservation == null || reservation.getReservationDate() == null) {
             return "-";

@@ -83,25 +83,29 @@ public class ReservationController {
     }
 
     @GetMapping("/accept")
-    public String acceptGet(@RequestParam(required = false) final String token, final Model model) {
-        return handleConfirmGet(token, model, ReservationToken.Action.ACCEPT, "reservations/confirm-action");
+    public String acceptGet(@RequestParam(required = false) final String token, final Model model,
+            final Authentication authentication) {
+        return handleConfirmGet(token, model, authentication, ReservationToken.Action.ACCEPT, "reservations/confirm-action");
     }
 
     @GetMapping("/reject")
-    public String rejectGet(@RequestParam(required = false) final String token, final Model model) {
-        return handleConfirmGet(token, model, ReservationToken.Action.REJECT, "reservations/reject-confirm");
+    public String rejectGet(@RequestParam(required = false) final String token, final Model model,
+            final Authentication authentication) {
+        return handleConfirmGet(token, model, authentication, ReservationToken.Action.REJECT, "reservations/reject-confirm");
     }
 
     @PostMapping("/accept")
     public String acceptPost(@RequestParam(required = false) final String token,
                              @RequestParam(required = false) final String pickupCode,
-                             final Model model) {
-        return handleConsumePost(token, pickupCode, model, ReservationToken.Action.ACCEPT, "reservation.token.action.accepted");
+                             final Model model,
+                             final Authentication authentication) {
+        return handleConsumePost(token, pickupCode, model, authentication, ReservationToken.Action.ACCEPT, "reservation.token.action.accepted");
     }
 
     @PostMapping("/reject")
-    public String rejectPost(@RequestParam(required = false) final String token, final Model model) {
-        return handleConsumePost(token, null, model, ReservationToken.Action.REJECT, "reservation.token.action.rejected");
+    public String rejectPost(@RequestParam(required = false) final String token, final Model model,
+            final Authentication authentication) {
+        return handleConsumePost(token, null, model, authentication, ReservationToken.Action.REJECT, "reservation.token.action.rejected");
     }
 
     private static boolean containsIgnoreCase(final String value, final String needle) {
@@ -291,13 +295,21 @@ public class ReservationController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
     }
 
-    private String handleConfirmGet(final String token, final Model model, final ReservationToken.Action action,
+    private String handleConfirmGet(final String token, final Model model, final Authentication authentication,
+            final ReservationToken.Action action,
             final String viewName) {
         if (token == null || token.isBlank()) {
             model.addAttribute("tokenStatus", "invalid");
             return "reservations/token-status";
         }
         final TokenValidationResult result = reservationTokenService.validateOnly(token, action);
+        if (result == TokenValidationResult.SUCCESS || result == TokenValidationResult.ALREADY_USED) {
+            try {
+                verifyReservationOwnership(token, authentication);
+            } catch (final IllegalArgumentException ex) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+        }
         switch (result) {
             case SUCCESS:
                 final Long reservationId = reservationTokenService
@@ -337,13 +349,21 @@ public class ReservationController {
         }
     }
 
-    private String handleConsumePost(final String token, final String pickupCode, final Model model, final ReservationToken.Action action,
+    private String handleConsumePost(final String token, final String pickupCode, final Model model,
+            final Authentication authentication, final ReservationToken.Action action,
             final String actionCode) {
         if (token == null || token.isBlank()) {
             model.addAttribute("tokenStatus", "invalid");
             return "reservations/token-status";
         }
         final TokenValidationResult validate = reservationTokenService.validateOnly(token, action);
+        if (validate == TokenValidationResult.SUCCESS || validate == TokenValidationResult.ALREADY_USED) {
+            try {
+                verifyReservationOwnership(token, authentication);
+            } catch (final IllegalArgumentException ex) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+        }
         switch (validate) {
             case SUCCESS:
                 // If accepting, require pickup code to confirm pickup
@@ -440,5 +460,18 @@ public class ReservationController {
         }
         model.addAttribute("tokenStatus", "already-used");
         return "reservations/token-status";
+    }
+
+    private void verifyReservationOwnership(final String token, final Authentication authentication) {
+        final User currentUser = resolveCurrentUser(authentication);
+        if (currentUser.getRole() != User.Role.COMMERCE) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        final Commerce commerce = commerceService.findByUserId(currentUser.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN));
+        final Long reservationId = reservationTokenService.findReservationIdByToken(token)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN));
+        reservationService.validateReservationBelongsToCommerce(reservationId, commerce.getUserId());
     }
 }

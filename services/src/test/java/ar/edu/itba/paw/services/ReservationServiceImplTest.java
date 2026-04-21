@@ -295,4 +295,44 @@ public class ReservationServiceImplTest {
         assertEquals(2, reservations.size());
         assertTrue(reservations.stream().allMatch(r -> r.getPackId().equals(100L)));
     }
+
+    @Test
+    public void validateReservationBelongsToCommerce_validatesOwnershipAndThrowsOnMismatch() {
+        final long reservationId = reservationDao.createReservation(1L, 10L, LocalDateTime.now(), 10.0,
+                Reservation.Status.RESERVED, "GGGGG", null, 1, null).getId();
+
+        final Pack ownedPack = new Pack(10L, 77L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
+        final Pack otherPack = new Pack(11L, 88L, "title2", "desc2", 10.0, 5.0, 5, true, Collections.emptyList());
+
+        final ReservationServiceImpl svc = new ReservationServiceImpl(
+                new TestUserService(new User(1L, "user@example.org", "pwd", "Test User")),
+                new TestClientService(),
+                reservationDao,
+                new PackDao() {
+                    @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, java.util.List<ar.edu.itba.paw.models.PackTag> tags, byte[] imageData, String imageContentType) { throw new UnsupportedOperationException(); }
+                    @Override public Optional<Pack> findById(Long id) { return id.equals(ownedPack.getId()) ? Optional.of(ownedPack) : id.equals(otherPack.getId()) ? Optional.of(otherPack) : Optional.empty(); }
+                    @Override public java.util.List<Pack> findAll() { return Collections.emptyList(); }
+                    @Override public java.util.List<Pack> findActive() { return Collections.emptyList(); }
+                    @Override public java.util.List<Pack> searchPacks(String query) { return Collections.emptyList(); }
+                    @Override public Pack update(Pack pack) { throw new UnsupportedOperationException(); }
+                    @Override public void setActive(Long id, boolean active) { }
+                    @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
+                    @Override public boolean decrementStock(long packId, int quantity) { return true; }
+                    @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
+                    @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
+                    @Override public java.util.List<Pack> findActive(PackSortOption sort) { return findActive(); }
+                    @Override public java.util.List<Pack> searchPacks(String query, PackSortOption sort) { return searchPacks(query); }
+                    @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption sort) { return findActiveByTags(tags); }
+                    @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption sort) { return searchPacksWithTags(query, tags); }
+                    @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort) { return Collections.emptyList(); }
+                },
+                mailService,
+                new TestCommerceService(),
+                "America/Argentina/Buenos_Aires");
+
+        assertDoesNotThrow(() -> svc.validateReservationBelongsToCommerce(reservationId, 77L));
+        assertThrows(IllegalArgumentException.class, () -> svc.validateReservationBelongsToCommerce(reservationId, 88L));
+        assertThrows(IllegalArgumentException.class, () -> svc.validateReservationBelongsToCommerce(null, 77L));
+        assertThrows(IllegalArgumentException.class, () -> svc.validateReservationBelongsToCommerce(reservationId, null));
+    }
 }

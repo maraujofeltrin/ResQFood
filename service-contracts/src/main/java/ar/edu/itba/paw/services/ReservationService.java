@@ -18,6 +18,8 @@ public interface ReservationService {
 
     String computePickupDateStr(Reservation reservation);
 
+    void validateReservationBelongsToCommerce(Long reservationId, Long commerceUserId);
+
     Reservation confirmPickup(final Long id);
 
     /**
