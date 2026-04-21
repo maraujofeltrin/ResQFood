@@ -11,20 +11,23 @@ public class User {
     private String name;
     private String phone;
     private Role role;
+    private final boolean verified;
 
     private final Long id;
     
-    public User(Long id, String email, String password, String name) {
-        this(id, email, password, name, null, null);
+    public User(final Long id, final String email, final String password, final String name) {
+        this(id, email, password, name, null, null, false);
     }
 
-    public User(Long id, String email, String password, String name, String phone, Role role) {
+    public User(final Long id, final String email, final String password, final String name, final String phone,
+            final Role role, final boolean verified) {
         this.id = id;
         this.email = email;
         this.password = password;
         this.name = name;
         this.phone = phone;
         this.role = role;
+        this.verified = verified;
     }
 
     public String getEmail() {
@@ -51,9 +54,13 @@ public class User {
         return id;
     }
 
+    public boolean isVerified() {
+        return verified;
+    }
+
     @Override
     public String toString() {
         return "User [id=" + id + ", email=" + email + ", password=" + password + ", name=" + name
-                + ", phone=" + phone + ", role=" + role + "]";
+                + ", phone=" + phone + ", role=" + role + ", verified=" + verified + "]";
     }
 }

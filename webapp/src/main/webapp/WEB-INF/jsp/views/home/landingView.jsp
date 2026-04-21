@@ -14,9 +14,7 @@
     <paw:navbar />
 
     <main class="pt-24 flex-grow">
-        
-        <%-- <paw:landingHero /> --%>
-
+        <paw:landingHero previewPacks="${previewPacks}" />
         <!-- Dual Path Section -->
         <section class="max-w-7xl mx-auto px-6 py-12">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">

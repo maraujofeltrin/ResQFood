@@ -23,7 +23,8 @@ public class CommerceServiceImplTest {
 
         @Override
         public User createUser(final User user, final Client clientProfile, final Commerce commerceProfile) {
-            final User u = new User(nextId++, user.getEmail(), user.getPassword(), user.getName(), user.getPhone(), user.getRole());
+            final User u = new User(nextId++, user.getEmail(), user.getPassword(), user.getName(), user.getPhone(),
+                    user.getRole(), user.isVerified());
             byEmail.put(u.getEmail(), u);
             return u;
         }
@@ -45,7 +46,11 @@ public class CommerceServiceImplTest {
         }
 
         @Override
-        public void updatePassword(Long userId, String encodedPassword) {
+        public void updatePassword(final Long userId, final String encodedPassword) {
+        }
+
+        @Override
+        public void markVerified(final Long userId) {
         }
     }
 
@@ -76,7 +81,7 @@ public class CommerceServiceImplTest {
         final InMemoryUserService userService = new InMemoryUserService();
         final InMemoryCommerceDao commerceDao = new InMemoryCommerceDao();
 
-        final User existing = new User(1L, "u@ex.com", "pwd", "Name", null, User.Role.CLIENT);
+        final User existing = new User(1L, "u@ex.com", "pwd", "Name", null, User.Role.CLIENT, false);
         userService.seed(existing);
 
         final CommerceServiceImpl svc = new CommerceServiceImpl(userService, commerceDao);
@@ -89,7 +94,7 @@ public class CommerceServiceImplTest {
         final InMemoryUserService userService = new InMemoryUserService();
         final InMemoryCommerceDao commerceDao = new InMemoryCommerceDao();
 
-        final User existing = new User(2L, "shop@ex.com", "pwd", "Shop", null, User.Role.COMMERCE);
+        final User existing = new User(2L, "shop@ex.com", "pwd", "Shop", null, User.Role.COMMERCE, false);
         userService.seed(existing);
         final Commerce stored = commerceDao.createCommerce(existing.getId(), "ShopName", Commerce.Category.BAKERY, "s", 1, "city", "prov", "pc", "09:00", "18:00");
 

@@ -103,4 +103,11 @@ public class PackServiceImpl implements PackService {
     public void updateImage(Long packId, byte[] imageData, String imageContentType) {
         packDao.updateImage(packId, imageData, imageContentType);
     }
+
+    @Override
+    public List<Pack> filterPacks(final String query, final List<PackTag> tags,
+                                  final String city, final List<String> timeRanges,
+                                  final PackSortOption sort) {
+        return packDao.filterPacks(query, tags, city, timeRanges, sort);
+    }
 }

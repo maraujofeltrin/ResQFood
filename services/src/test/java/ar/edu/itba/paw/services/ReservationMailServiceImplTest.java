@@ -67,15 +67,17 @@ public class ReservationMailServiceImplTest {
         @Override public List<Pack> searchPacks(String q) { return List.of(pack); }
         @Override public Pack update(Pack p) { throw new UnsupportedOperationException(); }
         @Override public void softDelete(Long id) { }
+        @Override public void setActive(Long id, boolean active) { }
         @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
         @Override public void updateImage(Long pId, byte[] id, String ic) { }
-        @Override public boolean decrementStock(long pId, int q) { return true; }
-        @Override public List<Pack> findActiveByTags(List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
-        @Override public List<Pack> searchPacksWithTags(String q, List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
-        @Override public List<Pack> findActive(PackSortOption s) { return findActive(); }
-        @Override public List<Pack> searchPacks(String q, PackSortOption s) { return searchPacks(q); }
-        @Override public List<Pack> findActiveByTags(List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption s) { return findActiveByTags(tags); }
-        @Override public List<Pack> searchPacksWithTags(String q, List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption s) { return searchPacksWithTags(q, tags); }
+        @Override public boolean decrementStock(long packId, int quantity) { return true; }
+        @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
+        @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
+        @Override public java.util.List<Pack> findActive(PackSortOption sort) { return findActive(); }
+        @Override public java.util.List<Pack> searchPacks(String query, PackSortOption sort) { return searchPacks(query); }
+        @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption sort) { return findActiveByTags(tags); }
+        @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption sort) { return searchPacksWithTags(query, tags); }
+        @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort) { return Collections.emptyList(); }
     }
 
     static class FakeMailSender implements JavaMailSender {

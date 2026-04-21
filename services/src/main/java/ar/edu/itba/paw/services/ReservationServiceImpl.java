@@ -18,6 +18,8 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -140,6 +142,22 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
+    public List<Reservation> findByCustomerId(final Long customerId) {
+        if (customerId == null) {
+            return Collections.emptyList();
+        }
+        return reservationDao.findByCustomerId(customerId);
+    }
+
+    @Override
+    public List<Reservation> findByCommerceId(final Long commerceId) {
+        if (commerceId == null) {
+            return Collections.emptyList();
+        }
+        return reservationDao.findByCommerceId(commerceId);
+    }
+
+    @Override
     public String computePickupDateStr(final Reservation reservation) {
         if (reservation == null || reservation.getReservationDate() == null) {
             return "-";
@@ -186,8 +204,48 @@ public class ReservationServiceImpl implements ReservationService {
         return pickupDate.format(DATE_ONLY_FORMATTER);
     }
 
+    @Transactional
     @Override
     public Reservation confirmPickup(final Long id) {
-        return reservationDao.confirmPickup(id, java.time.LocalDateTime.now());
+        final Reservation reservation = reservationDao.findById(id)
+                .orElseThrow(() -> new IllegalStateException("Reservation not found: " + id));
+        if (reservation.getStatus() != Reservation.Status.RESERVED) {
+            throw new IllegalStateException("Cannot confirm pickup: reservation status is " + reservation.getStatus());
+        }
+        return reservationDao.confirmPickup(id, LocalDateTime.now(ZoneOffset.UTC));
+    }
+
+    @Transactional
+    @Override
+    public Reservation confirmPickupByCode(final String pickupCode, final Long commerceUserId) {
+        if (pickupCode == null || pickupCode.isBlank()) {
+            throw new IllegalArgumentException("EMPTY");
+        }
+
+        final String normalizedCode = pickupCode.trim().toUpperCase(java.util.Locale.ROOT);
+
+        final Reservation reservation = reservationDao.findByPickupCode(normalizedCode)
+                .orElseThrow(() -> new IllegalArgumentException("NOT_FOUND"));
+
+        final Reservation.Status status = reservation.getStatus();
+        if (status == Reservation.Status.PAID) {
+            throw new IllegalStateException("ALREADY_COMPLETED");
+        }
+        if (status == Reservation.Status.CANCELED) {
+            throw new IllegalStateException("ALREADY_CANCELED");
+        }
+        if (status != Reservation.Status.RESERVED) {
+            throw new IllegalStateException("INVALID_STATUS");
+        }
+
+        final Long packCommerceId = packDao.findById(reservation.getPackId())
+                .orElseThrow(() -> new IllegalStateException("Pack not found for reservation: " + reservation.getId()))
+                .getCommerceId();
+
+        if (!packCommerceId.equals(commerceUserId)) {
+            throw new IllegalArgumentException("WRONG_COMMERCE");
+        }
+
+        return reservationDao.confirmPickup(reservation.getId(), LocalDateTime.now(ZoneOffset.UTC));
     }
 }

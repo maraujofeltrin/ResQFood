@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.Auction;
+import ar.edu.itba.paw.models.AuctionSortOption;
 import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.models.PackTag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -115,10 +117,96 @@ public class AuctionJdbcDao implements AuctionDao {
 
     @Override
     public List<Auction> findActive() {
+        return findActive(AuctionSortOption.TIME_REMAINING_ASC);
+    }
+
+    @Override
+    public List<Auction> findActive(final AuctionSortOption sort) {
         return jdbcTemplate.query(
-                AUCTION_JOIN_PACK + " WHERE a.status = 'ACTIVE' AND a.end_time > ? AND p.deleted = false ORDER BY a.end_time ASC",
+                AUCTION_JOIN_PACK + " WHERE a.status = 'ACTIVE' AND a.end_time > ? AND p.active = true "
+                        + "AND p.deleted = false ORDER BY " + sort.getOrderByClause(),
                 auctionRowMapper,
                 Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC))
+        );
+    }
+
+    @Override
+    public List<Auction> searchActive(final String query, final AuctionSortOption sort) {
+        final String pattern = "%" + query + "%";
+        return jdbcTemplate.query(
+                AUCTION_JOIN_PACK +
+                        " JOIN commerces c ON p.commerce_id = c.user_id" +
+                        " WHERE a.status = 'ACTIVE' AND a.end_time > ? AND p.active = true" +
+                        " AND (p.title ILIKE ? OR c.commercial_name ILIKE ?)" +
+                        " ORDER BY " + sort.getOrderByClause(),
+                auctionRowMapper,
+                Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)),
+                pattern,
+                pattern
+        );
+    }
+
+    @Override
+    public List<Auction> findActiveByTags(final List<PackTag> tags, final AuctionSortOption sort) {
+        if (tags == null || tags.isEmpty()) {
+            return findActive(sort);
+        }
+        final String inClause = String.join(", ", Collections.nCopies(tags.size(), "?"));
+        final List<Object> params = new ArrayList<>();
+        params.add(Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));
+        for (final PackTag tag : tags) {
+            params.add(tag.name());
+        }
+        params.add(tags.size());
+
+        return jdbcTemplate.query(
+                AUCTION_JOIN_PACK +
+                        " WHERE a.status = 'ACTIVE' AND a.end_time > ? AND p.active = true" +
+                        " AND p.id IN (" +
+                        "     SELECT pt.pack_id" +
+                        "     FROM pack_tags pt" +
+                        "     WHERE pt.tag IN (" + inClause + ")" +
+                        "     GROUP BY pt.pack_id" +
+                        "     HAVING COUNT(DISTINCT pt.tag) = ?" +
+                        " )" +
+                        " ORDER BY " + sort.getOrderByClause(),
+                auctionRowMapper,
+                params.toArray()
+        );
+    }
+
+    @Override
+    public List<Auction> searchActiveWithTags(final String query, final List<PackTag> tags,
+            final AuctionSortOption sort) {
+        if (tags == null || tags.isEmpty()) {
+            return searchActive(query, sort);
+        }
+        final String pattern = "%" + query + "%";
+        final String inClause = String.join(", ", Collections.nCopies(tags.size(), "?"));
+        final List<Object> params = new ArrayList<>();
+        params.add(Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));
+        params.add(pattern);
+        params.add(pattern);
+        for (final PackTag tag : tags) {
+            params.add(tag.name());
+        }
+        params.add(tags.size());
+
+        return jdbcTemplate.query(
+                AUCTION_JOIN_PACK +
+                        " JOIN commerces c ON p.commerce_id = c.user_id" +
+                        " WHERE a.status = 'ACTIVE' AND a.end_time > ? AND p.active = true" +
+                        " AND (p.title ILIKE ? OR c.commercial_name ILIKE ?)" +
+                        " AND p.id IN (" +
+                        "     SELECT pt.pack_id" +
+                        "     FROM pack_tags pt" +
+                        "     WHERE pt.tag IN (" + inClause + ")" +
+                        "     GROUP BY pt.pack_id" +
+                        "     HAVING COUNT(DISTINCT pt.tag) = ?" +
+                        " )" +
+                        " ORDER BY " + sort.getOrderByClause(),
+                auctionRowMapper,
+                params.toArray()
         );
     }
 

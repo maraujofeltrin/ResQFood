@@ -158,7 +158,6 @@
                                         <spring:message code="commerce.dashboard.delete.cancel" />
                                     </button>
                                     <form id="deleteForm" method="POST" action="">
-                                        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
                                         <button type="submit"
                                             class="bg-error text-on-error px-6 py-2 rounded-full font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2">
                                             <span class="material-symbols-outlined text-[20px]">delete</span>
@@ -175,7 +174,7 @@
                                 const content = document.getElementById('deleteModalContent');
                                 const form = document.getElementById('deleteForm');
 
-                                form.action = '${pageContext.request.contextPath}/commerce/delete-pack/' + packId + '?${_csrf.parameterName}=${_csrf.token}';
+                                form.action = '${pageContext.request.contextPath}/commerce/delete-pack/' + packId;
 
                                 modal.classList.remove('hidden');
                                 // Trigger reflow for animation

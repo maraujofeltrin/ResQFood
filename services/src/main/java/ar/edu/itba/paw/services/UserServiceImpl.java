@@ -143,4 +143,9 @@ public class UserServiceImpl implements UserService {
     public void updatePassword(final Long userId, final String encodedPassword) {
         userDao.updatePassword(userId, encodedPassword);
     }
+
+    @Override
+    public void markVerified(final Long userId) {
+        userDao.markVerified(userId);
+    }
 }

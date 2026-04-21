@@ -1,7 +1,9 @@
 package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Auction;
+import ar.edu.itba.paw.models.AuctionSortOption;
 import ar.edu.itba.paw.models.Bid;
+import ar.edu.itba.paw.models.PackTag;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,17 +28,26 @@ public interface AuctionService {
 
     List<Auction> findActive();
 
+    List<Auction> findActive(AuctionSortOption sort);
+
+    List<Auction> searchActive(String query, AuctionSortOption sort);
+
+    List<Auction> findActiveByTags(List<PackTag> tags, AuctionSortOption sort);
+
+    List<Auction> searchActiveWithTags(String query, List<PackTag> tags, AuctionSortOption sort);
+
     List<Auction> findByCommerceId(long commerceId);
 
     /**
      * Places a bid on an auction. Validates that:
      * <ul>
      *     <li>The auction is active and has not expired.</li>
-     *     <li>The amount is greater than the current bid (or initial price if no bids exist).</li>
+     *     <li>The amount is at least the current effective price plus a fixed minimum increment (500 ARS).</li>
      *     <li>The client is not the commerce that owns the pack.</li>
+     *     <li>The client is not already the highest bidder.</li>
      * </ul>
      *
-     * @throws IllegalArgumentException if the bid amount is too low or the client is the pack owner
+     * @throws IllegalArgumentException if the bid amount is too low, the client is the pack owner, or already leading
      * @throws IllegalStateException    if the auction is not active or has expired
      */
     Bid placeBid(long auctionId, long clientId, double amount);

@@ -17,7 +17,7 @@ This project is a web platform designed to reduce food waste in gastronomic esta
 - **Language:** Java 21
 - **Build Tool:** Maven (Multi-module project)
 - **Architecture:** MVC (Model-View-Controller)
-- **Back-end Frameworks:** Spring Framework 5.3.x (Web MVC, Context, JDBC, TX)
+- **Back-end Frameworks:** Spring Framework 5.3.x (Web MVC, Context, JDBC, TX), Spring Security (authentication and HTTP authorization in the `webapp` module).
 - **Database:** PostgreSQL with Flyway for database migrations.
 - **Testing:** JUnit 5
 
@@ -28,6 +28,10 @@ The project is strictly separated into multiple Maven modules to ensure decouple
 - **`persistence`**: Data Access Object (DAO) implementations connecting to the database using Spring JDBC / `JdbcTemplate`. Contains Flyway migration scripts.
 - **`services`**: Implementations of business logic and system operations.
 - **`webapp`**: Spring MVC Controllers, Views (JSP), custom tag components (`.tag`), and static assets (CSS, JS). Wiring of the dependency injection and configurations. Built as a `.war` and runnable via Jetty (`mvn jetty:run`).
+
+### Spring Security (webapp)
+- **Placement:** The servlet filter chain is registered in `webapp/src/main/webapp/WEB-INF/web.xml` (`DelegatingFilterProxy` → `springSecurityFilterChain`). HTTP rules, form login, logout, and remember-me are configured in `ar.edu.itba.paw.webapp.config.WebAuthConfig`. User loading and role mapping live under `ar.edu.itba.paw.webapp.auth` (e.g., `AuthUserDetailsService` implementing `UserDetailsService`; roles are exposed as `ROLE_CLIENT` and `ROLE_COMMERCE` from domain `User.Role`).
+- **Views:** Use Spring Security’s JSP tag library where UI must reflect auth state (e.g., `sec:authorize` in `navbar.tag`), in addition to server-side rules on controllers.
 
 ### Frontend Patterns
 - **Views**: Written in standard JSP (`.jsp` files).
@@ -48,3 +52,6 @@ When generating code or modifying the repository, strictly follow these instruct
 6. **Web Layer and Views:** The web layer must be implemented using the MVC and Front Controller patterns, via Spring Web MVC. Views must be composed of JSP files with JSTL (and should not contain Java code).
 7. **Internationalization (i18n):** Whenever you add or change user-visible screens, copy, labels, buttons, error messages, or other UI text, you MUST add the corresponding keys to both [`webapp/src/main/resources/i18n/messages.properties`](webapp/src/main/resources/i18n/messages.properties) (default locale) and [`webapp/src/main/resources/i18n/messages_en.properties`](webapp/src/main/resources/i18n/messages_en.properties) (English), and resolve them in JSP/tags with Spring’s `<spring:message code="..."/>` (or equivalent) instead of hardcoding strings. Keep key naming consistent with existing prefixes (e.g. `pack.*`, `layout.*`, `error.*`).
 8. **JSP Views `<head>` Boilerplate:** When creating a new JSP view, you MUST NOT repeat boilerplate `<head>...</head>` code (CSS layout, JS configs, fonts, favicons). Always use the `<paw:head>` tag (e.g., `<paw:head titleSuffixCode="..." />`, defined in `WEB-INF/tags/head.tag`) or wrap the page within an existing layout component that already encapsulates it (like `paw:reservationLayout`).
+9. **Security configuration:** When adding or changing URLs, HTTP methods, or role requirements, update `WebAuthConfig` so authorization matches the feature (do not rely on controller logic alone). Reuse existing role names (`CLIENT`, `COMMERCE` in `hasRole(...)`) and keep static assets under the paths already ignored by security. Align navigation and conditional UI with `sec:authorize` (or equivalent) so menus and actions stay consistent with server rules.
+10. **Identity and passwords:** Resolve the current user via Spring Security (`Authentication`, `SecurityContextHolder`, or `UserDetailsService` as already done in controllers)—do not bypass the stack without a strong reason. Any new password handling must go through the existing `PasswordEncoder` bean and existing user-creation flows in services; never log or persist plaintext passwords.
+11. **Manual login/session flows:** Prefer standard form login and the security filter chain. Patterns that set `SecurityContextHolder` or session attributes by hand (e.g., after email verification) are exceptional—if a feature needs similar behavior, follow existing controllers and document why the default login flow is insufficient.

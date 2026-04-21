@@ -67,6 +67,12 @@ public class PackServiceImplTest {
         }
 
         @Override
+        public void setActive(Long id, boolean active) {
+            final Pack p = store.get(id);
+            if (p != null) p.setActive(active);
+        }
+
+        @Override
         public Optional<Pack> findImageByPackId(Long id) {
             final Pack p = store.get(id);
             return Optional.ofNullable(p != null && p.getImageData() != null ? p : null);
@@ -107,6 +113,9 @@ public class PackServiceImplTest {
                 p.setImageContentType(imageContentType);
             }
         }
+
+        @Override
+        public List<Pack> filterPacks(String query, List<PackTag> tags, String city, List<String> timeRanges, PackSortOption sort) { return findActive(); }
     }
 
     @Test

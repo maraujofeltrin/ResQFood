@@ -1,23 +1,41 @@
 package ar.edu.itba.paw.webapp.controller;
 
+import ar.edu.itba.paw.models.Commerce;
+import ar.edu.itba.paw.models.Client;
 import ar.edu.itba.paw.models.Pack;
 import ar.edu.itba.paw.models.PackTag;
-import ar.edu.itba.paw.models.Commerce;
+import ar.edu.itba.paw.models.Reservation;
 import ar.edu.itba.paw.services.AuctionService;
+import ar.edu.itba.paw.services.ClientService;
 import ar.edu.itba.paw.services.CommerceService;
 import ar.edu.itba.paw.services.PackService;
+import ar.edu.itba.paw.services.ReservationService;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -29,10 +47,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
 import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.services.UserService;
@@ -49,20 +66,31 @@ public class CommerceController {
             "image/jpeg", "image/png", "image/webp", "image/gif"));
 
     private final CommerceService commerceService;
+    private final ClientService clientService;
     private final PackService packService;
+    private final ReservationService reservationService;
     private final AuctionService auctionService;
     private final MessageSource messageSource;
     private final UserService userService;
+    /** Same zone as commerce opening/closing / pack detail display ({@code app.display-zone}). */
+    private final ZoneId businessZone;
 
     @Autowired
-    public CommerceController(final CommerceService commerceService, final PackService packService,
-            final AuctionService auctionService, final MessageSource messageSource,
-            final UserService userService) {
+    public CommerceController(final CommerceService commerceService, final ClientService clientService,
+                              final PackService packService, final ReservationService reservationService,
+                              final AuctionService auctionService, final MessageSource messageSource,
+                              final UserService userService,
+                              @Value("${app.display-zone:}") final String displayZone) {
         this.commerceService = commerceService;
+        this.clientService = clientService;
         this.packService = packService;
+        this.reservationService = reservationService;
         this.auctionService = auctionService;
         this.messageSource = messageSource;
         this.userService = userService;
+        this.businessZone = (displayZone == null || displayZone.trim().isEmpty())
+                ? ZoneId.of("America/Argentina/Buenos_Aires")
+                : ZoneId.of(displayZone.trim());
     }
 
     /**
@@ -121,6 +149,75 @@ public class CommerceController {
         mav.addObject("itemsCount", itemsCount);
         mav.addObject("packsCount", packsCount);
         mav.addObject("auctionsCount", auctionsCount);
+        return mav;
+    }
+    // ── Verify Pickup ────────────────────────────────────────
+
+    @RequestMapping(value = "/verify-pickup", method = RequestMethod.GET)
+    public ModelAndView verifyPickupForm() {
+        return new ModelAndView("commerce/verify-pickup");
+    }
+
+    @RequestMapping(value = "/verify-pickup", method = RequestMethod.POST)
+    public ModelAndView verifyPickupPost(@RequestParam(value = "pickupCode", required = false) final String pickupCode) {
+        final ModelAndView mav = new ModelAndView("commerce/verify-pickup");
+
+        try {
+            final Commerce commerce = getAuthenticatedCommerce();
+            final Reservation confirmed = reservationService.confirmPickupByCode(pickupCode, commerce.getUserId());
+
+            mav.addObject("pickupSuccess", true);
+            mav.addObject("confirmedReservation", confirmed);
+
+            if (confirmed.getPackId() != null) {
+                packService.findById(confirmed.getPackId())
+                        .ifPresent(pack -> mav.addObject("confirmedPack", pack));
+            }
+
+            if (confirmed.getCustomerId() != null) {
+                clientService.findByUserId(confirmed.getCustomerId())
+                        .ifPresent(client -> {
+                            final String firstName = client.getName() == null ? "" : client.getName().trim();
+                            final String lastName = client.getLastName() == null ? "" : client.getLastName().trim();
+                            final String fullName = (firstName + " " + lastName).trim();
+                            mav.addObject("confirmedClientName", fullName.isEmpty() ? "-" : fullName);
+                        });
+            }
+
+        } catch (final IllegalArgumentException ex) {
+            final String key;
+            switch (ex.getMessage()) {
+                case "EMPTY":
+                    key = "commerce.verifyPickup.error.empty";
+                    break;
+                case "NOT_FOUND":
+                    key = "commerce.verifyPickup.error.notFound";
+                    break;
+                case "WRONG_COMMERCE":
+                    key = "commerce.verifyPickup.error.wrongCommerce";
+                    break;
+                default:
+                    key = "commerce.verifyPickup.error.notFound";
+                    break;
+            }
+            mav.addObject("pickupError", key);
+        } catch (final IllegalStateException ex) {
+            final String key;
+            switch (ex.getMessage()) {
+                case "ALREADY_COMPLETED":
+                    key = "commerce.verifyPickup.error.alreadyCompleted";
+                    break;
+                case "ALREADY_CANCELED":
+                    key = "commerce.verifyPickup.error.alreadyCanceled";
+                    break;
+                default:
+                    key = "commerce.verifyPickup.error.notFound";
+                    break;
+            }
+            mav.addObject("pickupError", key);
+        }
+
+        mav.addObject("submittedCode", pickupCode);
         return mav;
     }
 
@@ -182,11 +279,11 @@ public class CommerceController {
                         form.getTags() != null ? form.getTags() : Collections.emptyList(),
                         imageData, imageContentType);
 
-                // Parse auction end date/time (already validated)
-                LocalDateTime endDateTime = LocalDateTime.parse(form.getEndDate() + "T" + form.getEndTime());
+                // Wall-clock in business zone → UTC (same convention as auction storage / display)
+                final LocalDateTime endUtc = parseAuctionEndAsUtc(form.getEndDate(), form.getEndTime());
 
                 // Create the auction wrapping the pack
-                auctionService.createAuction(pack.getId(), form.getInitialPrice(), endDateTime);
+                auctionService.createAuction(pack.getId(), form.getInitialPrice(), endUtc);
 
                 redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
                 redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource.getMessage(
@@ -421,17 +518,19 @@ public class CommerceController {
                             null, LocaleContextHolder.getLocale()));
         }
 
-        // Validate endDateTime if both date and time are present
+        // Validate end instant if both date and time are present (interpreted in business zone)
         if (form.getEndDate() != null && !form.getEndDate().isBlank()
                 && form.getEndTime() != null && !form.getEndTime().isBlank()) {
             try {
-                LocalDateTime endDateTime = LocalDateTime.parse(form.getEndDate() + "T" + form.getEndTime());
-                if (endDateTime.isBefore(LocalDateTime.now())) {
+                final LocalDate date = LocalDate.parse(form.getEndDate().trim());
+                final LocalTime time = LocalTime.parse(form.getEndTime().trim());
+                final ZonedDateTime endZoned = ZonedDateTime.of(date, time, businessZone);
+                if (!endZoned.toInstant().isAfter(Instant.now())) {
                     bindingResult.rejectValue("endDate", "error.endDate",
                             messageSource.getMessage("commerce.createAuction.validation.endDateTime.future",
                                     null, LocaleContextHolder.getLocale()));
                 }
-            } catch (Exception e) {
+            } catch (DateTimeParseException e) {
                 bindingResult.rejectValue("endDate", "error.endDate",
                         messageSource.getMessage("commerce.createAuction.validation.endDateTime.invalid",
                                 null, LocaleContextHolder.getLocale()));
@@ -439,7 +538,21 @@ public class CommerceController {
         }
     }
 
-    // server-side image type validation
+    /**
+     * HTML {@code date}/{@code time} fields are wall-clock in the business display zone (see
+     * {@link #businessZone}), matching commerce opening/closing semantics; persisted end is UTC.
+     */
+    private LocalDateTime parseAuctionEndAsUtc(final String endDate, final String endTime) {
+        final LocalDate date = LocalDate.parse(endDate.trim());
+        final LocalTime time = LocalTime.parse(endTime.trim());
+        return ZonedDateTime.of(date, time, businessZone)
+                .withZoneSameInstant(ZoneOffset.UTC)
+                .toLocalDateTime();
+    }
+
+    /**
+     * Server-side image type validation.
+     */
     private void validateImage(final MultipartFile image, final BindingResult bindingResult) {
         if (image != null && !image.isEmpty()) {
             final String contentType = image.getContentType();
@@ -458,6 +571,17 @@ public class CommerceController {
         }
         return userService.findByEmail(principal.getUsername())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+    }
+
+    private Commerce getAuthenticatedCommerce() {
+        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof AuthUser)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        }
+        final AuthUser principal = (AuthUser) authentication.getPrincipal();
+        final long userId = getAuthenticatedUser(principal).getId();
+        return commerceService.findByUserId(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     // returns the pack if it is valid and manageable, otherwise throws 404 or 403

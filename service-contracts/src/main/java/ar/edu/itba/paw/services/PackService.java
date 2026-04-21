@@ -25,4 +25,7 @@ public interface PackService {
     void deletePack(Long id);
     Optional<Pack> findImageByPackId(Long id);
     void updateImage(Long packId, byte[] imageData, String imageContentType);
+
+    List<Pack> filterPacks(String query, List<PackTag> tags, String city,
+                           List<String> timeRanges, PackSortOption sort);
 }

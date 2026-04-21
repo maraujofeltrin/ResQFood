@@ -11,6 +11,9 @@ import java.util.Optional;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import org.springframework.jdbc.core.RowMapper;
 
 import ar.edu.itba.paw.models.Pack;
@@ -134,8 +137,16 @@ public class PackJdbcDao implements PackDao {
     @Override
     public List<Pack> findActive(PackSortOption sort) {
         return jdbcTemplate.query(
-                "SELECT " + PACK_COLS_NO_IMAGE + " FROM packs WHERE active = true AND deleted = false ORDER BY " + sort.getOrderByClause(),
-                packRowMapperNoTags
+            "SELECT " + PACK_COLS_NO_IMAGE +
+                " FROM packs" +
+                " WHERE active = true AND deleted = false" +
+                " AND NOT EXISTS (" +
+                "   SELECT 1 FROM auctions a" +
+                "   WHERE a.pack_id = packs.id AND a.status = 'ACTIVE' AND a.end_time > ?" +
+                " )" +
+                " ORDER BY " + sort.getOrderByClause(),
+            packRowMapperNoTags,
+            Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC))
         );
     }
 
@@ -150,10 +161,16 @@ public class PackJdbcDao implements PackDao {
         return jdbcTemplate.query(
             "SELECT packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active, packs.deleted " +
             "FROM packs JOIN commerces ON packs.commerce_id = commerces.user_id " +
-            "WHERE packs.active = true AND packs.deleted = false AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?) ORDER BY " + sort.getOrderByClause(),
+            "WHERE packs.active = true AND packs.deleted = false " +
+            "AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?) " +
+            "AND NOT EXISTS (" +
+            "   SELECT 1 FROM auctions a" +
+            "   WHERE a.pack_id = packs.id AND a.status = 'ACTIVE' AND a.end_time > ?" +
+            ") ORDER BY " + sort.getOrderByClause(),
             packRowMapperNoTags,
             pattern,
-            pattern
+            pattern,
+            Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC))
         );
     }
 
@@ -172,6 +189,7 @@ public class PackJdbcDao implements PackDao {
         for (final PackTag tag : tags) {
             params.add(tag.name());
         }
+        params.add(Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));
         params.add(tags.size());
         
         // Since we are grouping, we must alias in order by. PackSortOption uses 'packs.' alias. Let's make sure alias matches.
@@ -183,6 +201,10 @@ public class PackJdbcDao implements PackDao {
             "SELECT p.id, p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active, p.deleted " +
             "FROM packs p JOIN pack_tags pt ON p.id = pt.pack_id " +
             "WHERE p.active = true AND p.deleted = false AND pt.tag IN (" + inClause + ") " +
+            "AND NOT EXISTS (" +
+            "   SELECT 1 FROM auctions a" +
+            "   WHERE a.pack_id = p.id AND a.status = 'ACTIVE' AND a.end_time > ?" +
+            ") " +
             "GROUP BY p.id, p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active, p.deleted " +
             "HAVING COUNT(DISTINCT pt.tag) = ? ORDER BY " + orderBy,
             packRowMapperNoTags,
@@ -208,6 +230,7 @@ public class PackJdbcDao implements PackDao {
         for (final PackTag tag : tags) {
             params.add(tag.name());
         }
+        params.add(Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));
         params.add(tags.size());
         return jdbcTemplate.query(
             "SELECT packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active, packs.deleted " +
@@ -215,6 +238,10 @@ public class PackJdbcDao implements PackDao {
             "JOIN commerces ON packs.commerce_id = commerces.user_id " +
             "JOIN pack_tags pt ON packs.id = pt.pack_id " +
             "WHERE packs.active = true AND packs.deleted = false AND (packs.title ILIKE ? OR commerces.commercial_name ILIKE ?) AND pt.tag IN (" + inClause + ") " +
+            "AND NOT EXISTS (" +
+            "   SELECT 1 FROM auctions a" +
+            "   WHERE a.pack_id = packs.id AND a.status = 'ACTIVE' AND a.end_time > ?" +
+            ") " +
             "GROUP BY packs.id, packs.commerce_id, packs.title, packs.description, packs.original_price, packs.final_price, packs.stock, packs.active, packs.deleted " +
             "HAVING COUNT(DISTINCT pt.tag) = ? ORDER BY " + sort.getOrderByClause(),
             packRowMapperNoTags,
@@ -249,6 +276,11 @@ public class PackJdbcDao implements PackDao {
     @Override
     public void softDelete(final Long id) {
         jdbcTemplate.update("UPDATE packs SET deleted = true WHERE id = ?", id);
+    }
+
+    @Override
+    public void setActive(final Long id, final boolean active) {
+        jdbcTemplate.update("UPDATE packs SET active = ? WHERE id = ?", active, id);
     }
 
     @Override
@@ -292,5 +324,111 @@ public class PackJdbcDao implements PackDao {
     public void updateImage(Long packId, byte[] imageData, String imageContentType) {
         jdbcTemplate.update("UPDATE packs SET image_data = ?, image_content_type = ? WHERE id = ?",
                 imageData, imageContentType, packId);
+    }
+
+    @Override
+    public List<Pack> filterPacks(final String query, final List<PackTag> tags,
+                                  final String city, final List<String> timeRanges,
+                                  final PackSortOption sort) {
+
+        final boolean hasQuery = query != null && !query.isBlank();
+        final boolean hasTags = tags != null && !tags.isEmpty();
+        final boolean hasCity = city != null && !city.isBlank();
+        final boolean hasTime = timeRanges != null && !timeRanges.isEmpty();
+
+        /*
+         * Build a dynamic query.  We always JOIN commerces (needed for city,
+         * time, and text-search on commercial_name).  When tags are requested
+         * we also JOIN pack_tags and use GROUP BY + HAVING.
+         */
+        final StringBuilder sql = new StringBuilder();
+        sql.append("SELECT p.id, p.commerce_id, p.title, p.description, ")
+           .append("p.original_price, p.final_price, p.stock, p.active, p.deleted ")
+           .append("FROM packs p ")
+           .append("JOIN commerces c ON p.commerce_id = c.user_id ");
+
+        if (hasTags) {
+            sql.append("JOIN pack_tags pt ON p.id = pt.pack_id ");
+        }
+
+        sql.append("WHERE p.active = true ")
+           .append("AND p.deleted = false ")
+           .append("AND NOT EXISTS (")
+           .append("SELECT 1 FROM auctions a ")
+           .append("WHERE a.pack_id = p.id AND a.status = 'ACTIVE' AND a.end_time > ?) ");
+
+        final List<Object> params = new ArrayList<>();
+        params.add(Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));
+
+        // --- text search ---
+        if (hasQuery) {
+            final String pattern = "%" + query.trim() + "%";
+            sql.append("AND (p.title ILIKE ? OR c.commercial_name ILIKE ?) ");
+            params.add(pattern);
+            params.add(pattern);
+        }
+
+        // --- city ---
+        if (hasCity) {
+            sql.append("AND c.city = ? ");
+            params.add(city);
+        }
+
+        // --- time ranges (safe cast + integer comparison) ---
+        if (hasTime) {
+            /*
+             * Time format in DB: "HH:mm" or "H:mm".
+             * We cast the hour portion to integer for safe comparison.
+             * morning   = hour in [0, 12)
+             * afternoon = hour in [12, 17)
+             * evening   = hour in [17, 24)
+             */
+            final List<String> timeConditions = new ArrayList<>();
+            for (final String range : timeRanges) {
+                switch (range) {
+                    case "morning":
+                        timeConditions.add(
+                            "CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) < 12");
+                        break;
+                    case "afternoon":
+                        timeConditions.add(
+                            "CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) >= 12 "
+                          + "AND CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) < 17");
+                        break;
+                    case "evening":
+                        timeConditions.add(
+                            "CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) >= 17");
+                        break;
+                    default:
+                        // unknown range value — silently ignore (whitelist approach)
+                        break;
+                }
+            }
+            if (!timeConditions.isEmpty()) {
+                sql.append("AND (")
+                   .append(String.join(" OR ", timeConditions))
+                   .append(") ");
+            }
+        }
+
+        // --- tags ---
+        if (hasTags) {
+            final String inClause = String.join(", ", Collections.nCopies(tags.size(), "?"));
+            sql.append("AND pt.tag IN (").append(inClause).append(") ");
+            for (final PackTag tag : tags) {
+                params.add(tag.name());
+            }
+            sql.append("GROUP BY p.id, p.commerce_id, p.title, p.description, ")
+               .append("p.original_price, p.final_price, p.stock, p.active, p.deleted ")
+               .append("HAVING COUNT(DISTINCT pt.tag) = ? ");
+            params.add(tags.size());
+        }
+
+        // --- ordering ---
+        final PackSortOption safeSortOption = sort != null ? sort : PackSortOption.DATE_DESC;
+        final String orderBy = safeSortOption.getOrderByClause().replace("packs.", "p.");
+        sql.append("ORDER BY ").append(orderBy);
+
+        return jdbcTemplate.query(sql.toString(), packRowMapperNoTags, params.toArray());
     }
 }

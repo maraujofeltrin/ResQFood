@@ -102,6 +102,14 @@ public class ReservationJdbcDao implements ReservationDao {
     }
 
     @Override
+    public List<Reservation> findByCommerceId(final Long commerceId) {
+        return jdbcTemplate.query(
+                "SELECT r.* FROM reservations r JOIN packs p ON r.pack_id = p.id WHERE p.commerce_id = ?",
+                RESERVATION_ROW_MAPPER,
+                commerceId);
+    }
+
+    @Override
     public List<Reservation> findByPackId(final Long packId) {
         return jdbcTemplate.query("SELECT * FROM reservations WHERE pack_id = ?", RESERVATION_ROW_MAPPER, packId);
     }

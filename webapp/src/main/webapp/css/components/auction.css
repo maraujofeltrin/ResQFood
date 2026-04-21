@@ -109,10 +109,8 @@
 /* ── Offer Form Layout ────────────────────────────── */
 
 .commerce-create-offer-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  max-width: 560px;
+  width: 100%;
+  max-width: 1000px;
 }
 
 .offer-form-section {

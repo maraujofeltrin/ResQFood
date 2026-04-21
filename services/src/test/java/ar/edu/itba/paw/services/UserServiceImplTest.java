@@ -37,7 +37,7 @@ public class UserServiceImplTest {
 
         @Override
         public User createUser(final String email, final String password, final String name, final String phone, final User.Role role) {
-            final User u = new User(nextId++, email, password, name, phone, role);
+            final User u = new User(nextId++, email, password, name, phone, role, false);
             byId.put(u.getId(), u);
             byEmail.put(email, u);
             return u;
@@ -49,7 +49,7 @@ public class UserServiceImplTest {
             if (current == null) {
                 throw new IllegalStateException("User not found: " + id);
             }
-            final User updated = new User(id, current.getEmail(), password, name, phone, role);
+            final User updated = new User(id, current.getEmail(), password, name, phone, role, current.isVerified());
             byId.put(id, updated);
             byEmail.put(updated.getEmail(), updated);
             return updated;
@@ -71,9 +71,22 @@ public class UserServiceImplTest {
             if (current == null) {
                 throw new IllegalStateException("User not found: " + id);
             }
-            final User updated = new User(id, current.getEmail(), password, current.getName(), current.getPhone(), current.getRole());
+            final User updated = new User(id, current.getEmail(), password, current.getName(), current.getPhone(),
+                    current.getRole(), current.isVerified());
             byId.put(id, updated);
             byEmail.put(updated.getEmail(), updated);
+        }
+
+        @Override
+        public void markVerified(final Long userId) {
+            final User current = byId.get(userId);
+            if (current == null) {
+                throw new IllegalStateException("User not found: " + userId);
+            }
+            final User verifiedUser = new User(current.getId(), current.getEmail(), current.getPassword(),
+                    current.getName(), current.getPhone(), current.getRole(), true);
+            byId.put(userId, verifiedUser);
+            byEmail.put(verifiedUser.getEmail(), verifiedUser);
         }
     }
 
@@ -131,7 +144,7 @@ public class UserServiceImplTest {
         final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
             new NoOpPasswordEncoder());
 
-        final User u = svc.createUser(new User(null, "a@b.com", "pw", "Name", null, null), null, null);
+        final User u = svc.createUser(new User(null, "a@b.com", "pw", "Name", null, null, false), null, null);
         assertNotNull(u.getId());
         final Optional<User> byEmail = svc.findByEmail("a@b.com");
         assertTrue(byEmail.isPresent());
@@ -148,7 +161,7 @@ public class UserServiceImplTest {
         final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
             new NoOpPasswordEncoder());
 
-        final User userToCreate = new User(null, "c@d.com", "pw", "N", "123", User.Role.COMMERCE);
+        final User userToCreate = new User(null, "c@d.com", "pw", "N", "123", User.Role.COMMERCE, false);
         final Commerce commerceProfile = new Commerce(null, "Shop", Commerce.Category.OTHER, "st", 1, "city", "prov", "pc", "09:00", "18:00");
         svc.createUser(userToCreate, null, commerceProfile);
         final Optional<User> maybe = svc.findByEmail("c@d.com");
@@ -163,11 +176,13 @@ public class UserServiceImplTest {
         final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
             new NoOpPasswordEncoder());
 
-        final User provisional = new User(null, "pending@ex.com", "__RESERVATION_PENDING_PASSWORD__", "Pending", "123", User.Role.CLIENT);
+        final User provisional = new User(null, "pending@ex.com", "__RESERVATION_PENDING_PASSWORD__", "Pending",
+            "123", User.Role.CLIENT, false);
         final Client provisionalClient = new Client(null, "Pending", "User", true);
         svc.createUser(provisional, provisionalClient, null);
 
-        final User upgradeData = new User(null, "pending@ex.com", "real-pass", "Real Name", "123", User.Role.COMMERCE);
+        final User upgradeData = new User(null, "pending@ex.com", "real-pass", "Real Name", "123",
+            User.Role.COMMERCE, false);
         final Commerce upgradeCommerce = new Commerce(null, "Shop", Commerce.Category.OTHER, "st", 1, "city", "prov", "pc", "09:00", "18:00");
         final Optional<User> upgraded = svc.upgradeProvisionalUser(upgradeData, null, upgradeCommerce);
         assertTrue(upgraded.isPresent());
