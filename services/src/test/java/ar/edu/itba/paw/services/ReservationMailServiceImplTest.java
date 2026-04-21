@@ -225,4 +225,48 @@ public class ReservationMailServiceImplTest {
         assertTrue(body.contains("PICKUPCODE"));
         assertTrue(body.contains("Morning Bread"));
     }
+
+    @Test
+    public void sendAuctionWinnerCodeToClient_sendsMail_withAuctionWinnerTextAndCode() throws Exception {
+        final Reservation reservation = new Reservation(8L, 2L, 12L, LocalDateTime.now(), 14.5,
+                Reservation.Status.RESERVED, "WIN123", null, 1, "pw");
+        final Pack pack = new Pack(12L, 2L, "Evening Combo", "desc", 20.0, 14.5, 1, true, List.of());
+        final PackDao packDao = new InMemoryPackDao(pack);
+        svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
+                "noreply@example.org", "ResQFood", "America/Argentina/Buenos_Aires");
+
+        svc.sendAuctionWinnerCodeToClient(reservation, "winner@example.org", "11/04/2026");
+
+        assertEquals(1, mailSender.sent.size());
+        final MimeMessage msg = mailSender.sent.get(0);
+        assertEquals("winner@example.org", msg.getAllRecipients()[0].toString());
+        assertTrue(msg.getSubject().contains("Ganaste la subasta"));
+        final String body = extractTextFromMime(msg);
+        assertTrue(body.contains("SUBASTA GANADA"));
+        assertTrue(body.contains("WIN123"));
+        assertTrue(body.contains("Evening Combo"));
+    }
+
+    @Test
+    public void sendAuctionWinnerCodeToCommerce_sendsMail_withWinnerAndCode() throws Exception {
+        final Reservation reservation = new Reservation(9L, 2L, 13L, LocalDateTime.now(), 18.0,
+                Reservation.Status.RESERVED, "C0DE9", null, 1, "pw");
+        final Pack pack = new Pack(13L, 2L, "Late Night Pack", "desc", 25.0, 18.0, 1, true, List.of());
+        final PackDao packDao = new InMemoryPackDao(pack);
+        svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
+                "noreply@example.org", "ResQFood", "America/Argentina/Buenos_Aires");
+
+        svc.sendAuctionWinnerCodeToCommerce(reservation, "commerce@example.org", "12/04/2026");
+
+        assertEquals(1, mailSender.sent.size());
+        final MimeMessage msg = mailSender.sent.get(0);
+        assertEquals("commerce@example.org", msg.getAllRecipients()[0].toString());
+        assertTrue(msg.getSubject().contains("ya tiene ganador"));
+        final String body = extractTextFromMime(msg);
+        assertTrue(body.contains("SUBASTA FINALIZADA"));
+        assertTrue(body.contains("C0DE9"));
+        assertTrue(body.contains("Ganador"));
+        assertTrue(body.contains("ClientName Surname"));
+        assertTrue(body.contains("Late Night Pack"));
+    }
 }

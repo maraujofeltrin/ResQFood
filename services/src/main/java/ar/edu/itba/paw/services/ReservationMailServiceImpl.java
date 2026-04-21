@@ -17,6 +17,7 @@ import javax.mail.internet.MimeMessage;
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.UUID;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -117,27 +118,37 @@ public class ReservationMailServiceImpl implements ReservationMailService {
 
     @Async("mailTaskExecutor")
     @Override
-        public void sendReservationCodeToClient(final Reservation reservation, final String clientEmail,
+    public void sendReservationCodeToClient(final Reservation reservation, final String clientEmail,
             final String pickupDateStr) {
-        final Pack pack = packDao.findById(reservation.getPackId()).orElse(null);
-        final String localName = pack != null ? pack.getTitle() : ("Pack #" + reservation.getPackId());
-        final String packLabel = pack != null
-            ? (pack.getTitle() + " (#" + pack.getId() + ")")
-            : ("Pack #" + reservation.getPackId());
+        final PackMailInfo packMailInfo = getPackMailInfo(reservation);
 
-        final String subject = "¡Tu reserva de " + localName + " te espera!";
-        final String html = buildClientHtml(reservation, packLabel, pickupDateStr);
-        try {
-            final MimeMessage message = mailSender.createMimeMessage();
-            final MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(mailFrom, mailFromName);
-            helper.setTo(clientEmail);
-            helper.setSubject(subject);
-            helper.setText(html, true);
-            mailSender.send(message);
-        } catch (final MessagingException | UnsupportedEncodingException e) {
-            throw new IllegalStateException("Could not send client pickup code mail", e);
-        }
+        final String subject = "¡Tu reserva de " + packMailInfo.localName() + " te espera!";
+        final String html = buildClientHtml(reservation, packMailInfo.packLabel(), pickupDateStr);
+        sendHtmlMail(clientEmail, subject, html, "Could not send client pickup code mail");
+    }
+
+    @Async("mailTaskExecutor")
+    @Override
+    public void sendAuctionWinnerCodeToClient(final Reservation reservation, final String clientEmail,
+            final String pickupDateStr) {
+        final PackMailInfo packMailInfo = getPackMailInfo(reservation);
+
+        final String subject = "¡Ganaste la subasta de " + packMailInfo.localName() + "! Tu código de retiro";
+        final String html = buildAuctionWinnerHtml(reservation, packMailInfo.packLabel(), pickupDateStr, false, null);
+        sendHtmlMail(clientEmail, subject, html, "Could not send auction winner pickup code mail to client");
+    }
+
+    @Async("mailTaskExecutor")
+    @Override
+    public void sendAuctionWinnerCodeToCommerce(final Reservation reservation, final String commerceEmail,
+            final String pickupDateStr) {
+        final PackMailInfo packMailInfo = getPackMailInfo(reservation);
+
+        final String subject = "La subasta de " + packMailInfo.localName() + " ya tiene ganador";
+        final String winnerName = resolveClientName(reservation.getCustomerId());
+        final String html = buildAuctionWinnerHtml(reservation, packMailInfo.packLabel(), pickupDateStr, true,
+                winnerName);
+        sendHtmlMail(commerceEmail, subject, html, "Could not send auction winner pickup code mail to commerce");
     }
 
     @Async("mailTaskExecutor")
@@ -151,23 +162,13 @@ public class ReservationMailServiceImpl implements ReservationMailService {
 
         final String subject = "Tu reserva de " + localName + " fue rechazada";
         final String html = buildClientRejectedHtml(reservation, packLabel);
-        try {
-            final MimeMessage message = mailSender.createMimeMessage();
-            final MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(mailFrom, mailFromName);
-            helper.setTo(clientEmail);
-            helper.setSubject(subject);
-            helper.setText(html, true);
-            mailSender.send(message);
-        } catch (final MessagingException | UnsupportedEncodingException e) {
-            throw new IllegalStateException("Could not send rejection mail", e);
-        }
+        sendHtmlMail(clientEmail, subject, html, "Could not send rejection mail");
     }
 
-        private String buildClientHtml(final Reservation reservation, final String packLabel, final String pickupDateStr) {
-            final String reservationDateStr = reservation.getReservationDate() != null
-                    ? formatToLocal(reservation.getReservationDate())
-                    : "-";
+    private String buildClientHtml(final Reservation reservation, final String packLabel, final String pickupDateStr) {
+        final String reservationDateStr = reservation.getReservationDate() != null
+                ? formatToLocal(reservation.getReservationDate())
+                : "-";
         final String priceStr = reservation.getFinalPrice() != null ? reservation.getFinalPrice().toString() : "-";
         final String code = reservation.getPickupCode() == null ? "" : reservation.getPickupCode();
 
@@ -180,6 +181,31 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         context.setVariable("priceStr", priceStr);
 
         return templateEngine.process("client-pickup-code", context);
+    }
+
+    private String buildAuctionWinnerHtml(final Reservation reservation, final String packLabel,
+            final String pickupDateStr, final boolean forCommerce, final String winnerName) {
+        final String reservationDateStr = reservation.getReservationDate() != null
+                ? formatToLocal(reservation.getReservationDate())
+                : "-";
+        final String priceStr = reservation.getFinalPrice() != null ? reservation.getFinalPrice().toString() : "-";
+        final String code = reservation.getPickupCode() == null ? "" : reservation.getPickupCode();
+
+        final Context context = new Context();
+        context.setVariable("code", code);
+        context.setVariable("reservationId", reservation.getId());
+        context.setVariable("packLabel", packLabel);
+        context.setVariable("reservationDateStr", reservationDateStr);
+        context.setVariable("pickupDateStr", pickupDateStr);
+        context.setVariable("priceStr", priceStr);
+        context.setVariable("badgeText", forCommerce ? "SUBASTA FINALIZADA" : "SUBASTA GANADA");
+        context.setVariable("titleText", forCommerce ? "Código de retiro del ganador" : "Ganaste la subasta");
+        context.setVariable("introText", forCommerce
+                ? "La subasta finalizó con un ganador. Usá este código para validar la entrega del pack."
+                : "Presentá este código en el comercio para retirar el pack que ganaste en la subasta.");
+        context.setVariable("winnerName", forCommerce ? winnerName : null);
+
+        return templateEngine.process("auction-winner-pickup-code", context);
     }
 
     private String buildClientRejectedHtml(final Reservation reservation, final String packLabel) {
@@ -209,6 +235,49 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         context.setVariable("rejectUrl", rejectUrl);
 
         return templateEngine.process("commerce-reservation", context);
+    }
+
+    private PackMailInfo getPackMailInfo(final Reservation reservation) {
+        final Pack pack = packDao.findById(reservation.getPackId()).orElse(null);
+        final String localName = pack != null ? pack.getTitle() : ("Pack #" + reservation.getPackId());
+        final String packLabel = pack != null
+                ? (pack.getTitle() + " (#" + pack.getId() + ")")
+                : ("Pack #" + reservation.getPackId());
+        return new PackMailInfo(localName, packLabel);
+    }
+
+    private String resolveClientName(final Long customerId) {
+        if (customerId == null) {
+            return "Cliente";
+        }
+
+        final Optional<Client> maybeClient = clientService.findByUserId(customerId);
+        if (maybeClient.isEmpty()) {
+            return "Cliente";
+        }
+
+        final Client client = maybeClient.get();
+        final String fullName = (client.getName() == null ? "" : client.getName())
+                + (client.getLastName() == null ? "" : (" " + client.getLastName()));
+        return fullName.trim().isEmpty() ? "Cliente" : fullName.trim();
+    }
+
+    private void sendHtmlMail(final String toEmail, final String subject, final String html,
+            final String errorMessage) {
+        try {
+            final MimeMessage message = mailSender.createMimeMessage();
+            final MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(mailFrom, mailFromName);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(html, true);
+            mailSender.send(message);
+        } catch (final MessagingException | UnsupportedEncodingException e) {
+            throw new IllegalStateException(errorMessage, e);
+        }
+    }
+
+    private record PackMailInfo(String localName, String packLabel) {
     }
 
     private String formatToLocal(final java.time.LocalDateTime dt) {
