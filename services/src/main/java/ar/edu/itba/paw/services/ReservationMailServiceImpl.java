@@ -198,10 +198,11 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         context.setVariable("reservationDateStr", reservationDateStr);
         context.setVariable("pickupDateStr", pickupDateStr);
         context.setVariable("priceStr", priceStr);
+        context.setVariable("showCode", !forCommerce);
         context.setVariable("badgeText", forCommerce ? "SUBASTA FINALIZADA" : "SUBASTA GANADA");
-        context.setVariable("titleText", forCommerce ? "Código de retiro del ganador" : "Ganaste la subasta");
+        context.setVariable("titleText", forCommerce ? "Subasta finalizada con ganador" : "Ganaste la subasta");
         context.setVariable("introText", forCommerce
-                ? "La subasta finalizó con un ganador. Usá este código para validar la entrega del pack."
+            ? "La subasta finalizó con un ganador. Revisá los datos de la reserva para gestionar la entrega."
                 : "Presentá este código en el comercio para retirar el pack que ganaste en la subasta.");
         context.setVariable("winnerName", forCommerce ? winnerName : null);
 

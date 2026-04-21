@@ -248,7 +248,7 @@ public class ReservationMailServiceImplTest {
     }
 
     @Test
-    public void sendAuctionWinnerCodeToCommerce_sendsMail_withWinnerAndCode() throws Exception {
+    public void sendAuctionWinnerCodeToCommerce_sendsMail_withWinnerAndWithoutCode() throws Exception {
         final Reservation reservation = new Reservation(9L, 2L, 13L, LocalDateTime.now(), 18.0,
                 Reservation.Status.RESERVED, "C0DE9", null, 1, "pw");
         final Pack pack = new Pack(13L, 2L, "Late Night Pack", "desc", 25.0, 18.0, 1, true, List.of());
@@ -264,7 +264,9 @@ public class ReservationMailServiceImplTest {
         assertTrue(msg.getSubject().contains("ya tiene ganador"));
         final String body = extractTextFromMime(msg);
         assertTrue(body.contains("SUBASTA FINALIZADA"));
-        assertTrue(body.contains("C0DE9"));
+        assertTrue(body.contains("Subasta finalizada con ganador"));
+        assertTrue(body.contains("Revisá los datos de la reserva"));
+        assertTrue(!body.contains("C0DE9"));
         assertTrue(body.contains("Ganador"));
         assertTrue(body.contains("ClientName Surname"));
         assertTrue(body.contains("Late Night Pack"));
