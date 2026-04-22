@@ -3,6 +3,7 @@ package ar.edu.itba.paw.services;
 import ar.edu.itba.paw.models.Reservation;
 import ar.edu.itba.paw.models.ReservationToken;
 import ar.edu.itba.paw.models.User;
+import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,16 +18,19 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
 
     private final ReservationTokenDao reservationTokenDao;
     private final ReservationDao reservationDao;
+    private final PackDao packDao;
     private final UserService userService;
     private final ReservationMailService reservationMailService;
 
     @Autowired
     public ReservationTokenServiceImpl(final ReservationTokenDao reservationTokenDao,
             final ReservationDao reservationDao,
+            final PackDao packDao,
             final UserService userService,
             final ReservationMailService reservationMailService) {
         this.reservationTokenDao = reservationTokenDao;
         this.reservationDao = reservationDao;
+        this.packDao = packDao;
         this.userService = userService;
         this.reservationMailService = reservationMailService;
     }
@@ -54,6 +58,19 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
         // verify pickup code and call reservationService.confirmPickup, so here we only
         // mark token as used for ACCEPT.
         if (action == ReservationToken.Action.REJECT) {
+            final Reservation currentReservation = reservationDao.findById(reservationToken.getReservationId())
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Reservation expected after validation: " + reservationToken.getReservationId()));
+
+            if (currentReservation.getPackId() == null) {
+                throw new IllegalStateException("PACK_NOT_FOUND");
+            }
+
+            final int quantity = currentReservation.getQuantity() == null ? 1 : currentReservation.getQuantity();
+            if (!packDao.incrementStock(currentReservation.getPackId(), quantity)) {
+                throw new IllegalStateException("STOCK_RESTORE_FAILED");
+            }
+
             final Reservation reservation = reservationDao.updateStatus(reservationToken.getReservationId(), Reservation.Status.CANCELED);
             final String clientEmail = userService.findById(reservation.getCustomerId())
                     .map(User::getEmail)

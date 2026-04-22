@@ -245,6 +245,44 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Transactional
     @Override
+    public Reservation rejectReservationForCommerce(final Long reservationId, final Long commerceUserId) {
+        validateReservationBelongsToCommerce(reservationId, commerceUserId);
+
+        final Reservation reservation = reservationDao.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("RESERVATION_NOT_FOUND"));
+
+        final Reservation.Status status = reservation.getStatus();
+        if (status == Reservation.Status.CANCELED) {
+            throw new IllegalStateException("ALREADY_CANCELED");
+        }
+        if (status == Reservation.Status.PAID) {
+            throw new IllegalStateException("ALREADY_COMPLETED");
+        }
+        if (status != Reservation.Status.RESERVED) {
+            throw new IllegalStateException("INVALID_STATUS");
+        }
+
+        if (reservation.getPackId() == null) {
+            throw new IllegalStateException("PACK_NOT_FOUND");
+        }
+
+        final int quantity = reservation.getQuantity() == null ? 1 : reservation.getQuantity();
+        if (!packDao.incrementStock(reservation.getPackId(), quantity)) {
+            throw new IllegalStateException("STOCK_RESTORE_FAILED");
+        }
+
+        final Reservation canceledReservation = reservationDao.updateStatus(reservation.getId(), Reservation.Status.CANCELED);
+        final String clientEmail = userService.findById(canceledReservation.getCustomerId())
+                .map(User::getEmail)
+                .orElseThrow(() -> new IllegalStateException("Customer user not found for reservation id: "
+                        + canceledReservation.getId()));
+
+        reservationMailService.sendReservationRejectedToClient(canceledReservation, clientEmail);
+        return canceledReservation;
+    }
+
+    @Transactional
+    @Override
     public Reservation confirmPickupByCode(final String pickupCode, final Long commerceUserId) {
         if (pickupCode == null || pickupCode.isBlank()) {
             throw new IllegalArgumentException("EMPTY");

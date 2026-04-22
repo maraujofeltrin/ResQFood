@@ -67,6 +67,7 @@ public class ReservationMailServiceImplTest {
         @Override public void setActive(Long id, boolean active) { }
         @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
         @Override public boolean decrementStock(long packId, int quantity) { return true; }
+        @Override public boolean incrementStock(long packId, int quantity) { return true; }
         @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
         @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
         @Override public java.util.List<Pack> findActive(PackSortOption sort) { return findActive(); }

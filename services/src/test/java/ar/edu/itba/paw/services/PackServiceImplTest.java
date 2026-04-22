@@ -71,6 +71,11 @@ public class PackServiceImplTest {
         }
 
         @Override
+        public boolean incrementStock(long packId, int quantity) {
+            return true;
+        }
+
+        @Override
         public List<Pack> findActiveByTags(List<PackTag> tags) {
             return Collections.emptyList();
         }

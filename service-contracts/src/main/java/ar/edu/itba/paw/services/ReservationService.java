@@ -23,6 +23,18 @@ public interface ReservationService {
     Reservation confirmPickup(final Long id);
 
     /**
+     * Rejects a RESERVED reservation for a commerce-owned pack.
+     * Changes status to CANCELED, restores pack stock and notifies the client.
+     *
+     * @param reservationId  reservation id to reject
+     * @param commerceUserId authenticated commerce user id
+     * @return the updated Reservation in CANCELED status
+     * @throws IllegalArgumentException if ids are invalid or reservation doesn't belong to commerce
+     * @throws IllegalStateException    if reservation cannot be rejected in its current state
+     */
+    Reservation rejectReservationForCommerce(Long reservationId, Long commerceUserId);
+
+    /**
      * Validates a pickup code belongs to a RESERVED reservation owned by the given commerce,
      * then confirms pickup (status → PAID, sets pickupConfirmationDate).
      *
