@@ -25,7 +25,7 @@ tagdir="/WEB-INF/tags" %>
         <form:form
           modelAttribute="passwordResetChangeForm"
           method="post"
-          action="/password-reset/change"
+          action="${pageContext.request.contextPath}/password-reset/change"
           class="space-y-5"
         >
           <form:hidden path="token" value="${token}" />

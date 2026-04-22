@@ -37,7 +37,7 @@ tagdir="/WEB-INF/tags" %>
         <form:form
           modelAttribute="passwordResetRequestForm"
           method="post"
-          action="/password-reset/request"
+          action="${pageContext.request.contextPath}/password-reset/request"
           class="space-y-5"
         >
           <div>
