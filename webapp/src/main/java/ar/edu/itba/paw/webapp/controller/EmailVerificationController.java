@@ -3,7 +3,6 @@ package ar.edu.itba.paw.webapp.controller;
 import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.services.EmailVerificationTokenService;
 import ar.edu.itba.paw.webapp.form.EmailVerificationResendForm;
-import ar.edu.itba.paw.webapp.util.RequestUrlUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -66,13 +66,15 @@ public class EmailVerificationController {
 
     @PostMapping("/resend")
     public String resend(@Valid @ModelAttribute("resendForm") final EmailVerificationResendForm form,
-            final BindingResult errors,
-            final HttpServletRequest request) {
+            final BindingResult errors) {
         if (errors.hasErrors()) {
             return "verify-email/expired";
         }
 
-        emailVerificationTokenService.resendVerificationMail(form.getEmail(), RequestUrlUtils.buildBaseUrl(request));
+        final String appBaseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .build()
+                .toUriString();
+        emailVerificationTokenService.resendVerificationMail(form.getEmail(), appBaseUrl);
 
         return "redirect:/login?pendingVerification=true";
     }

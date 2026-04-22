@@ -3,7 +3,6 @@ package ar.edu.itba.paw.webapp.controller;
 import ar.edu.itba.paw.services.PasswordResetTokenService;
 import ar.edu.itba.paw.webapp.form.PasswordResetChangeForm;
 import ar.edu.itba.paw.webapp.form.PasswordResetRequestForm;
-import ar.edu.itba.paw.webapp.util.RequestUrlUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
@@ -13,9 +12,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.validation.Valid;
-import javax.servlet.http.HttpServletRequest;
 
 @Controller
 @RequestMapping("/password-reset")
@@ -36,13 +35,15 @@ public class PasswordResetController {
 
     @PostMapping("/request")
     public String submitRequest(@Valid @ModelAttribute("passwordResetRequestForm") final PasswordResetRequestForm form,
-            final BindingResult errors,
-            final HttpServletRequest request) {
+            final BindingResult errors) {
         if (errors.hasErrors()) {
             return "password-reset/request";
         }
 
-        passwordResetTokenService.requestPasswordReset(form.getEmail(), RequestUrlUtils.buildBaseUrl(request));
+        final String appBaseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .build()
+                .toUriString();
+        passwordResetTokenService.requestPasswordReset(form.getEmail(), appBaseUrl);
         return "redirect:/password-reset/request?sent=true";
     }
 

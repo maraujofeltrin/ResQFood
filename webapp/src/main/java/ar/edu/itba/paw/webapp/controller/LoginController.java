@@ -5,12 +5,12 @@ import ar.edu.itba.paw.models.Commerce;
 import ar.edu.itba.paw.webapp.form.RegisterForm;
 import ar.edu.itba.paw.webapp.form.UserCredentialsForm;
 import ar.edu.itba.paw.services.EmailVerificationTokenService;
-import ar.edu.itba.paw.webapp.util.RequestUrlUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -23,7 +23,6 @@ import ar.edu.itba.paw.services.UserService;
 import javax.validation.Valid;
 import javax.validation.Validator;
 import javax.validation.ConstraintViolation;
-import javax.servlet.http.HttpServletRequest;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -59,8 +58,7 @@ public class LoginController {
 
     @PostMapping("/register")
     public ModelAndView create(@Valid @ModelAttribute("registerForm") final RegisterForm registerForm,
-                               final BindingResult bindingResult,
-                               final HttpServletRequest request) {
+                               final BindingResult bindingResult) {
         final String rawRole = registerForm.getRole();
         final UserCredentialsForm credentials = registerForm.getCredentials();
 
@@ -134,8 +132,11 @@ public class LoginController {
             }
         } else {
             user = userService.createUser(userToCreate, clientProfile, commerceProfile);
+            final String appBaseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .build()
+                .toUriString();
             emailVerificationTokenService.sendVerificationMail(user.getId(), user.getEmail(),
-                    RequestUrlUtils.buildBaseUrl(request));
+                appBaseUrl);
             return new ModelAndView("redirect:/login?pendingVerification=true");
         }
 
