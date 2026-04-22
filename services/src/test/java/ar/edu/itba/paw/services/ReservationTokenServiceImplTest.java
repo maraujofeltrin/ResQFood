@@ -141,6 +141,9 @@ public class ReservationTokenServiceImplTest {
         @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
         @Override public boolean decrementStock(long packId, int quantity) { return true; }
         @Override public boolean incrementStock(long packId, int quantity) { incrementCalls++; return true; }
+        @Override public void updateImage(Long packId, byte[] imageData, String imageContentType) { }
+        @Override public void softDelete(Long id) { }
+        @Override public List<Pack> findByCommerceId(Long commerceId) { return List.of(); }
         @Override public List<Pack> filterPacks(String query, List<ar.edu.itba.paw.models.PackTag> tags, String city, List<String> timeRanges, PackSortOption sort) { return List.of(); }
     }
 

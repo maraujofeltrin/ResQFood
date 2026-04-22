@@ -336,6 +336,9 @@ public class ReservationServiceImplTest {
                     @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption sort) { return findActiveByTags(tags); }
                     @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption sort) { return searchPacksWithTags(query, tags); }
                     @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort) { return Collections.emptyList(); }
+                    @Override public java.util.List<Pack> findByCommerceId(Long commerceId) { return Collections.emptyList(); }
+                    @Override public void softDelete(Long id) { }
+                    @Override public void updateImage(Long packId, byte[] imageData, String imageContentType) { }
                 },
                 mailService,
                 new TestCommerceService(),
