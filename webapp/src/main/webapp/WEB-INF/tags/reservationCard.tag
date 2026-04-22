@@ -31,7 +31,7 @@
                     class="absolute top-4 right-4 z-10 h-10 w-10 rounded-full border-0 bg-white/85 text-error shadow-sm backdrop-blur-sm transition hover:bg-error hover:text-on-error flex items-center justify-center"
                     title="${rejectButtonLabel}"
                     aria-label="${rejectButtonLabel}"
-                    onclick="document.getElementById('rejectModal-${reservation.id}').style.display='block'">
+                    onclick="document.getElementById('rejectModal-${reservation.id}').style.display='flex'">
                 <span class="material-symbols-outlined text-lg leading-none">close</span>
             </button>
 
