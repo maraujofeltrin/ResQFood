@@ -295,6 +295,17 @@ public class PackJdbcDao implements PackDao {
     }
 
     @Override
+    public boolean incrementStock(final long packId, final int quantity) {
+        if (quantity < 1) {
+            return false;
+        }
+        final int updated = jdbcTemplate.update(
+                "UPDATE packs SET stock = stock + ? WHERE id = ?",
+                quantity, packId);
+        return updated == 1;
+    }
+
+    @Override
     public Optional<Pack> findImageByPackId(Long id) {
         return jdbcTemplate.query(
                 "SELECT id, commerce_id, title, description, original_price, final_price, stock, active, deleted, image_data, image_content_type FROM packs WHERE id = ?",

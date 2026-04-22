@@ -87,6 +87,7 @@ public class ReservationServiceImplTest {
 
     static class InMemoryPackDao implements PackDao {
         private final Pack pack;
+        int incrementCalls = 0;
 
         InMemoryPackDao(Pack pack) { this.pack = pack; }
 
@@ -106,6 +107,7 @@ public class ReservationServiceImplTest {
         @Override public void setActive(Long id, boolean active) { }
         @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
         @Override public boolean decrementStock(long packId, int quantity) { return true; }
+        @Override public boolean incrementStock(long packId, int quantity) { incrementCalls++; return true; }
         @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
         @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
         @Override public java.util.List<Pack> findActive(PackSortOption sort) { return findActive(); }
@@ -130,9 +132,13 @@ public class ReservationServiceImplTest {
     static class InMemoryMailService implements ReservationMailService {
         int sentToCommerce = 0;
         int sentToClient = 0;
+        int sentAuctionToCommerce = 0;
+        int sentAuctionToClient = 0;
         int sentRejected = 0;
         @Override public void sendReservationRequestToCommerce(Reservation reservation, String commerceEmail, String baseUrl, String pickupDateStr) { sentToCommerce++; }
         @Override public void sendReservationCodeToClient(Reservation reservation, String clientEmail, String pickupDateStr) { sentToClient++; }
+        @Override public void sendAuctionWinnerCodeToClient(Reservation reservation, String clientEmail, String pickupDateStr) { sentAuctionToClient++; }
+        @Override public void sendAuctionWinnerCodeToCommerce(Reservation reservation, String commerceEmail, String pickupDateStr) { sentAuctionToCommerce++; }
         @Override public void sendReservationRejectedToClient(Reservation reservation, String clientEmail) { sentRejected++; }
     }
 
@@ -178,6 +184,32 @@ public class ReservationServiceImplTest {
         assertEquals(packId, created.getPackId());
         assertEquals(1, mailService.sentToCommerce);
         assertEquals(1, mailService.sentToClient);
+    }
+
+    @Test
+    public void createReservation_emptyBaseUrl_createsDbEntry_and_sendsWinnerEmails() {
+        final long packId = 15L;
+        final long commerceUserId = 150L;
+        final String email = "winner@example.org";
+
+        final User user = new User(7L, email, "pwd", "Winning User", null, User.Role.CLIENT, false);
+        final Pack pack = new Pack(packId, commerceUserId, "auction-pack", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
+
+        final UserService userService = new TestUserService(user);
+        final PackDao packDao = new InMemoryPackDao(pack);
+
+        final ReservationServiceImpl svc = new ReservationServiceImpl(userService, new TestClientService(), reservationDao,
+                packDao, mailService, new TestCommerceService(), "America/Argentina/Buenos_Aires");
+
+        assertDoesNotThrow(() -> svc.createReservation(packId, user.getId(), 1, 7.5, null, ""));
+
+        assertEquals(1, reservationDao.store.size(), "Reservation should be stored in DAO");
+        final Reservation created = reservationDao.store.get(0);
+        assertEquals(packId, created.getPackId());
+        assertEquals(0, mailService.sentToCommerce);
+        assertEquals(0, mailService.sentToClient);
+        assertEquals(1, mailService.sentAuctionToClient);
+        assertEquals(1, mailService.sentAuctionToCommerce);
     }
 
     @Test
@@ -273,4 +305,117 @@ public class ReservationServiceImplTest {
         assertEquals(2, reservations.size());
         assertTrue(reservations.stream().allMatch(r -> r.getPackId().equals(100L)));
     }
+
+    @Test
+    public void validateReservationBelongsToCommerce_validatesOwnershipAndThrowsOnMismatch() {
+        final long reservationId = reservationDao.createReservation(1L, 10L, LocalDateTime.now(), 10.0,
+                Reservation.Status.RESERVED, "GGGGG", null, 1, null).getId();
+
+        final Pack ownedPack = new Pack(10L, 77L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
+        final Pack otherPack = new Pack(11L, 88L, "title2", "desc2", 10.0, 5.0, 5, true, Collections.emptyList());
+
+        final ReservationServiceImpl svc = new ReservationServiceImpl(
+                new TestUserService(new User(1L, "user@example.org", "pwd", "Test User")),
+                new TestClientService(),
+                reservationDao,
+                new PackDao() {
+                    @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, java.util.List<ar.edu.itba.paw.models.PackTag> tags, byte[] imageData, String imageContentType) { throw new UnsupportedOperationException(); }
+                    @Override public Optional<Pack> findById(Long id) { return id.equals(ownedPack.getId()) ? Optional.of(ownedPack) : id.equals(otherPack.getId()) ? Optional.of(otherPack) : Optional.empty(); }
+                    @Override public java.util.List<Pack> findAll() { return Collections.emptyList(); }
+                    @Override public java.util.List<Pack> findActive() { return Collections.emptyList(); }
+                    @Override public java.util.List<Pack> searchPacks(String query) { return Collections.emptyList(); }
+                    @Override public Pack update(Pack pack) { throw new UnsupportedOperationException(); }
+                    @Override public void setActive(Long id, boolean active) { }
+                    @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
+                    @Override public boolean decrementStock(long packId, int quantity) { return true; }
+                    @Override public boolean incrementStock(long packId, int quantity) { return true; }
+                    @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
+                    @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags) { return Collections.emptyList(); }
+                    @Override public java.util.List<Pack> findActive(PackSortOption sort) { return findActive(); }
+                    @Override public java.util.List<Pack> searchPacks(String query, PackSortOption sort) { return searchPacks(query); }
+                    @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption sort) { return findActiveByTags(tags); }
+                    @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption sort) { return searchPacksWithTags(query, tags); }
+                    @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort) { return Collections.emptyList(); }
+                },
+                mailService,
+                new TestCommerceService(),
+                "America/Argentina/Buenos_Aires");
+
+        assertDoesNotThrow(() -> svc.validateReservationBelongsToCommerce(reservationId, 77L));
+        assertThrows(IllegalArgumentException.class, () -> svc.validateReservationBelongsToCommerce(reservationId, 88L));
+        assertThrows(IllegalArgumentException.class, () -> svc.validateReservationBelongsToCommerce(null, 77L));
+        assertThrows(IllegalArgumentException.class, () -> svc.validateReservationBelongsToCommerce(reservationId, null));
+    }
+
+        @Test
+        public void rejectReservationForCommerce_reserved_rejectsRestoresStockAndNotifiesClient() {
+        final long packId = 500L;
+        final long commerceId = 999L;
+        final long reservationId = reservationDao.createReservation(101L, packId, LocalDateTime.now(), 25.0,
+            Reservation.Status.RESERVED, "HHHHH", null, 3, null).getId();
+
+        final InMemoryPackDao packDao = new InMemoryPackDao(
+            new Pack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList()));
+
+        final ReservationServiceImpl svc = new ReservationServiceImpl(
+            new TestUserService(new User(101L, "client@example.org", "pwd", "Client", null, User.Role.CLIENT, false)),
+            new TestClientService(),
+            reservationDao,
+            packDao,
+            mailService,
+            new TestCommerceService(),
+            "America/Argentina/Buenos_Aires");
+
+        final Reservation rejected = svc.rejectReservationForCommerce(reservationId, commerceId);
+        assertEquals(Reservation.Status.CANCELED, rejected.getStatus());
+        assertEquals(1, packDao.incrementCalls);
+        assertEquals(1, mailService.sentRejected);
+        }
+
+        @Test
+        public void rejectReservationForCommerce_paid_throwsAndDoesNotRestoreStock() {
+        final long packId = 600L;
+        final long commerceId = 111L;
+        final long reservationId = reservationDao.createReservation(102L, packId, LocalDateTime.now(), 25.0,
+            Reservation.Status.PAID, "IIIII", null, 1, null).getId();
+
+        final InMemoryPackDao packDao = new InMemoryPackDao(
+            new Pack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList()));
+
+        final ReservationServiceImpl svc = new ReservationServiceImpl(
+            new TestUserService(new User(102L, "client2@example.org", "pwd", "Client2", null, User.Role.CLIENT, false)),
+            new TestClientService(),
+            reservationDao,
+            packDao,
+            mailService,
+            new TestCommerceService(),
+            "America/Argentina/Buenos_Aires");
+
+        assertThrows(IllegalStateException.class, () -> svc.rejectReservationForCommerce(reservationId, commerceId));
+        assertEquals(0, packDao.incrementCalls);
+        }
+
+        @Test
+        public void rejectReservationForCommerce_wrongCommerce_throws() {
+        final long packId = 700L;
+        final long ownerCommerceId = 222L;
+        final long otherCommerceId = 333L;
+        final long reservationId = reservationDao.createReservation(103L, packId, LocalDateTime.now(), 25.0,
+            Reservation.Status.RESERVED, "JJJJJ", null, 1, null).getId();
+
+        final InMemoryPackDao packDao = new InMemoryPackDao(
+            new Pack(packId, ownerCommerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList()));
+
+        final ReservationServiceImpl svc = new ReservationServiceImpl(
+            new TestUserService(new User(103L, "client3@example.org", "pwd", "Client3", null, User.Role.CLIENT, false)),
+            new TestClientService(),
+            reservationDao,
+            packDao,
+            mailService,
+            new TestCommerceService(),
+            "America/Argentina/Buenos_Aires");
+
+        assertThrows(IllegalArgumentException.class,
+            () -> svc.rejectReservationForCommerce(reservationId, otherCommerceId));
+        }
 }

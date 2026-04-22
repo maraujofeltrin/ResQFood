@@ -103,16 +103,22 @@ public class ReservationServiceImpl implements ReservationService {
                 pickupWindow);
 
         final Long commerceId = packDao.findById(packId)
-            .orElseThrow(() -> new IllegalStateException("Pack not found after stock update: " + packId))
-            .getCommerceId();
+                .orElseThrow(() -> new IllegalStateException("Pack not found after stock update: " + packId))
+                .getCommerceId();
         final String commerceEmail = userService.findById(commerceId)
-            .map(User::getEmail)
-            .orElseThrow(() -> new IllegalStateException("Commerce user not found for id: " + commerceId));
+                .map(User::getEmail)
+                .orElseThrow(() -> new IllegalStateException("Commerce user not found for id: " + commerceId));
 
         final String pickupDateStr = computePickupDateStr(reservation);
+        final boolean auctionReservation = baseUrl == null || baseUrl.trim().isEmpty();
 
-        reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail, baseUrl, pickupDateStr);
-        reservationMailService.sendReservationCodeToClient(reservation, user.getEmail(), pickupDateStr);
+        if (auctionReservation) {
+            reservationMailService.sendAuctionWinnerCodeToClient(reservation, user.getEmail(), pickupDateStr);
+            reservationMailService.sendAuctionWinnerCodeToCommerce(reservation, commerceEmail, pickupDateStr);
+        } else {
+            reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail, baseUrl, pickupDateStr);
+            reservationMailService.sendReservationCodeToClient(reservation, user.getEmail(), pickupDateStr);
+        }
 
         return reservation;
     }
@@ -155,6 +161,28 @@ public class ReservationServiceImpl implements ReservationService {
             return Collections.emptyList();
         }
         return reservationDao.findByCommerceId(commerceId);
+    }
+
+    @Override
+    public void validateReservationBelongsToCommerce(final Long reservationId, final Long commerceUserId) {
+        if (reservationId == null || commerceUserId == null) {
+            throw new IllegalArgumentException("INVALID_PARAMS");
+        }
+
+        final Reservation reservation = reservationDao.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("RESERVATION_NOT_FOUND"));
+        
+        if (reservation.getPackId() == null) {
+            throw new IllegalArgumentException("PACK_NOT_FOUND");
+        }
+
+        final boolean isOwned = packDao.findById(reservation.getPackId())
+                .map(pack -> commerceUserId.equals(pack.getCommerceId()))
+                .orElse(false);
+        
+        if (!isOwned) {
+            throw new IllegalArgumentException("WRONG_COMMERCE");
+        }
     }
 
     @Override
@@ -213,6 +241,44 @@ public class ReservationServiceImpl implements ReservationService {
             throw new IllegalStateException("Cannot confirm pickup: reservation status is " + reservation.getStatus());
         }
         return reservationDao.confirmPickup(id, LocalDateTime.now(ZoneOffset.UTC));
+    }
+
+    @Transactional
+    @Override
+    public Reservation rejectReservationForCommerce(final Long reservationId, final Long commerceUserId) {
+        validateReservationBelongsToCommerce(reservationId, commerceUserId);
+
+        final Reservation reservation = reservationDao.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("RESERVATION_NOT_FOUND"));
+
+        final Reservation.Status status = reservation.getStatus();
+        if (status == Reservation.Status.CANCELED) {
+            throw new IllegalStateException("ALREADY_CANCELED");
+        }
+        if (status == Reservation.Status.PAID) {
+            throw new IllegalStateException("ALREADY_COMPLETED");
+        }
+        if (status != Reservation.Status.RESERVED) {
+            throw new IllegalStateException("INVALID_STATUS");
+        }
+
+        if (reservation.getPackId() == null) {
+            throw new IllegalStateException("PACK_NOT_FOUND");
+        }
+
+        final int quantity = reservation.getQuantity() == null ? 1 : reservation.getQuantity();
+        if (!packDao.incrementStock(reservation.getPackId(), quantity)) {
+            throw new IllegalStateException("STOCK_RESTORE_FAILED");
+        }
+
+        final Reservation canceledReservation = reservationDao.updateStatus(reservation.getId(), Reservation.Status.CANCELED);
+        final String clientEmail = userService.findById(canceledReservation.getCustomerId())
+                .map(User::getEmail)
+                .orElseThrow(() -> new IllegalStateException("Customer user not found for reservation id: "
+                        + canceledReservation.getId()));
+
+        reservationMailService.sendReservationRejectedToClient(canceledReservation, clientEmail);
+        return canceledReservation;
     }
 
     @Transactional

@@ -35,6 +35,13 @@ public interface PackDao {
     boolean decrementStock(long packId, int quantity);
 
     /**
+     * Suma {@code quantity} al stock del pack.
+     *
+     * @return {@code true} si se actualizó exactamente una fila
+     */
+    boolean incrementStock(long packId, int quantity);
+
+    /**
      * Unified filter: searches active packs applying all optional criteria at once.
      *
      * @param query     free-text search on title/commerce name (nullable = skip)

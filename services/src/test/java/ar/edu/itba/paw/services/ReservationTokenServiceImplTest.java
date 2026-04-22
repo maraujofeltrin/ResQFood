@@ -2,8 +2,11 @@ package ar.edu.itba.paw.services;
 
 import ar.edu.itba.paw.models.Client;
 import ar.edu.itba.paw.models.Commerce;
+import ar.edu.itba.paw.models.Pack;
+import ar.edu.itba.paw.models.PackSortOption;
 import ar.edu.itba.paw.models.Reservation;
 import ar.edu.itba.paw.models.ReservationToken;
+import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -113,11 +117,36 @@ public class ReservationTokenServiceImplTest {
         int sentRejected = 0;
         @Override public void sendReservationRequestToCommerce(Reservation reservation, String commerceEmail, String baseUrl, String pickupDateStr) { }
         @Override public void sendReservationCodeToClient(Reservation reservation, String clientEmail, String pickupDateStr) { }
+        @Override public void sendAuctionWinnerCodeToClient(Reservation reservation, String clientEmail, String pickupDateStr) { }
+        @Override public void sendAuctionWinnerCodeToCommerce(Reservation reservation, String commerceEmail, String pickupDateStr) { }
         @Override public void sendReservationRejectedToClient(Reservation reservation, String clientEmail) { sentRejected++; }
+    }
+
+    static class InMemoryPackDao implements PackDao {
+        int incrementCalls = 0;
+
+        @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<ar.edu.itba.paw.models.PackTag> tags, byte[] imageData, String imageContentType) { throw new UnsupportedOperationException(); }
+        @Override public Optional<Pack> findById(Long id) { return Optional.empty(); }
+        @Override public List<Pack> findAll() { return List.of(); }
+        @Override public List<Pack> findActive() { return List.of(); }
+        @Override public List<Pack> searchPacks(String query) { return List.of(); }
+        @Override public List<Pack> findActiveByTags(List<ar.edu.itba.paw.models.PackTag> tags) { return List.of(); }
+        @Override public List<Pack> searchPacksWithTags(String query, List<ar.edu.itba.paw.models.PackTag> tags) { return List.of(); }
+        @Override public List<Pack> findActive(PackSortOption sort) { return List.of(); }
+        @Override public List<Pack> searchPacks(String query, PackSortOption sort) { return List.of(); }
+        @Override public List<Pack> findActiveByTags(List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption sort) { return List.of(); }
+        @Override public List<Pack> searchPacksWithTags(String query, List<ar.edu.itba.paw.models.PackTag> tags, PackSortOption sort) { return List.of(); }
+        @Override public Pack update(Pack pack) { throw new UnsupportedOperationException(); }
+        @Override public void setActive(Long id, boolean active) { }
+        @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
+        @Override public boolean decrementStock(long packId, int quantity) { return true; }
+        @Override public boolean incrementStock(long packId, int quantity) { incrementCalls++; return true; }
+        @Override public List<Pack> filterPacks(String query, List<ar.edu.itba.paw.models.PackTag> tags, String city, List<String> timeRanges, PackSortOption sort) { return List.of(); }
     }
 
     private InMemoryReservationTokenDao tokenDao;
     private InMemoryReservationDao reservationDao;
+    private InMemoryPackDao packDao;
     private TestUserService userService;
     private InMemoryMailService mailService;
     private ReservationTokenServiceImpl svc;
@@ -126,9 +155,10 @@ public class ReservationTokenServiceImplTest {
     public void setUp() {
         tokenDao = new InMemoryReservationTokenDao();
         reservationDao = new InMemoryReservationDao();
+        packDao = new InMemoryPackDao();
         userService = new TestUserService(new ar.edu.itba.paw.models.User(1L, "user@test.com", "pwd", "Test User"));
         mailService = new InMemoryMailService();
-        svc = new ReservationTokenServiceImpl(tokenDao, reservationDao, userService, mailService);
+        svc = new ReservationTokenServiceImpl(tokenDao, reservationDao, packDao, userService, mailService);
     }
 
     // Helper to create a reservation and token
@@ -186,7 +216,7 @@ public class ReservationTokenServiceImplTest {
 
     @Test
     public void validateAndConsume_reject_success_marksUsed_and_cancelsReservation() {
-        final Reservation r = reservationDao.createReservation(1L, 1L, LocalDateTime.now(), 5.0, Reservation.Status.RESERVED, "c", null, 1, "pw");
+        final Reservation r = reservationDao.createReservation(1L, 1L, LocalDateTime.now(), 5.0, Reservation.Status.RESERVED, "c", null, 2, "pw");
         final String t = createToken(r.getId(), ReservationToken.Action.REJECT, LocalDateTime.now().plusHours(1), "t5");
 
         final var res = svc.validateAndConsume(t, ReservationToken.Action.REJECT);
@@ -196,6 +226,8 @@ public class ReservationTokenServiceImplTest {
         assertEquals(true, tokenOpt.isPresent() && tokenOpt.get().isUsed());
         final var resOpt = reservationDao.findById(r.getId());
         assertEquals(Reservation.Status.CANCELED, resOpt.get().getStatus());
+        assertEquals(1, packDao.incrementCalls);
+        assertEquals(1, mailService.sentRejected);
     }
 
     @Test
