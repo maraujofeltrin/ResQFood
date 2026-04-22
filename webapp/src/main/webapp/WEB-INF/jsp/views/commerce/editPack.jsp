@@ -3,149 +3,140 @@
         <%@ taglib prefix="paw" tagdir="/WEB-INF/tags" %>
         <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
         <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
-            <!DOCTYPE html>
-            <html class="light" lang="${pageContext.response.locale.language}">
 
-            <paw:head titleSuffixCode="commerce.editPack.pageTitle" />
+            <paw:commerceFormLayout pageTitleCode="commerce.editPack.pageTitle"
+                titleCode="commerce.editPack.title" subtitleCode="commerce.editPack.subtitle">
 
-            <body class="bg-surface font-body text-on-surface antialiased flex flex-col min-h-screen">
+                <c:url value="/commerce/edit-pack/${packId}" var="editPackAction" />
 
-                <paw:navbar />
+                <form:form modelAttribute="createOfferForm" action="${editPackAction}" method="post"
+                    enctype="multipart/form-data" cssClass="w-full max-w-5xl mx-auto js-create-offer-form commerce-create-offer-form" novalidate="novalidate">
+                    <form:hidden path="isAuction" id="isAuctionInput" />
 
-                <main class="pack-detail-main">
-                    <div class="flex items-center gap-2 mb-8 text-secondary">
-                        <a href="${pageContext.request.contextPath}/commerce"
-                            class="group flex items-center font-bold">
-                            <span class="material-symbols-outlined text-xl mr-1">arrow_back</span>
-                            <span class="group-hover:underline"><spring:message code="commerce.createPack.backToDashboard"/></span>
-                        </a>
-                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-2">
+                        <div class="flex flex-col gap-6">
 
-                    <header class="mb-10 text-center md:text-left">
-                        <h1 class="pack-detail-title mb-3"><spring:message code="commerce.editPack.title"/></h1>
-                        <p class="text-secondary text-lg"><spring:message code="commerce.editPack.subtitle"/></p>
-                    </header>
+                    <!-- ── Pack Details Section ── -->
+                    <section class="pack-aside-card bg-surface-container-lowest shadow-soft offer-form-section">
+                        <h2 class="pack-aside-heading mb-2"><spring:message code="commerce.createPack.packDetails.title"/></h2>
 
-                    <c:if test="${not empty errorMessage}">
-                        <div class="pack-feedback pack-feedback--error mb-8 flex items-center gap-2">
-                            <span class="material-symbols-outlined">error</span>
-                            <c:out value="${errorMessage}" />
+                        <div class="pack-reservation-form mt-2">
+                            <div class="pack-form-field">
+                                <label class="pack-form-label"><spring:message code="commerce.createPack.form.packTitle.label"/></label>
+                                <spring:message code="commerce.createPack.form.packTitle.placeholder" var="packTitlePlch"/>
+                                <form:input type="text" path="title" class="pack-form-control" cssErrorClass="pack-form-control is-invalid"
+                                    placeholder="${packTitlePlch}" required="required" />
+                                <form:errors path="title" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
+                            </div>
+                            <div class="pack-form-field">
+                                <label class="pack-form-label"><spring:message code="commerce.createPack.form.description.label"/></label>
+                                <spring:message code="commerce.createPack.form.description.placeholder" var="descPlch"/>
+                                <form:textarea path="description" class="pack-form-control resize-none overflow-y-auto" cssErrorClass="pack-form-control resize-none overflow-y-auto is-invalid" rows="3"
+                                    placeholder="${descPlch}" required="required"></form:textarea>
+                                <form:errors path="description" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
+                            </div>
+
+                            <!-- Tags selection -->
+                            <div class="pack-form-field">
+                                <label class="pack-form-label mb-2 block"><spring:message code="commerce.createPack.form.tags.label"/></label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <c:forEach var="tag" items="${availableTags}">
+                                        <label
+                                            class="flex items-center gap-2 text-sm text-secondary cursor-pointer hover:bg-surface-container-high bg-surface-container-low p-2 rounded-md transition-colors">
+                                            <form:checkbox path="tags" value="${tag.name()}"
+                                                class="rounded text-primary focus:ring-primary h-4 w-4" />
+                                            <span><spring:message code="pack.tag.${tag.name()}"/></span>
+                                        </label>
+                                    </c:forEach>
+                                </div>
+                            </div>
+
                         </div>
-                    </c:if>
+                    </section>
+                        </div>
 
-                    <c:url value="/commerce/edit-pack/${packId}" var="editPackAction" />
+                        <div class="flex flex-col gap-6">
 
-                    <form:form modelAttribute="editPackForm" action="${editPackAction}" method="post"
-                        enctype="multipart/form-data" cssClass="commerce-create-pack-form max-w-2xl mx-auto w-full" novalidate="novalidate">
-                            <section class="pack-aside-card bg-surface-container-lowest shadow-soft">
-                                <h2 class="pack-aside-heading mb-2"><spring:message code="commerce.createPack.packDetails.title"/></h2>
+                            <!-- ── Image Upload Section ── -->
+                            <paw:offerImageUpload path="image" />
 
-                                <div class="pack-reservation-form mt-2">
-                                    <div class="pack-form-field">
-                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.packTitle.label"/></label>
-                                        <spring:message code="commerce.createPack.form.packTitle.placeholder" var="packTitlePlch"/>
-                                        <form:input type="text" path="title" class="pack-form-control" cssErrorClass="pack-form-control is-invalid"
-                                            placeholder="${packTitlePlch}" required="required" />
-                                        <form:errors path="title" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
+                            <!-- ── Pricing & Settings (Pack-only, no toggle) ── -->
+                            <section class="pack-aside-card bg-surface-container-lowest shadow-soft offer-form-section relative">
+                                <header class="flex items-start justify-between gap-4 mb-4">
+                                    <div class="flex-1">
+                                        <h2 class="pack-aside-heading flex items-center gap-2 m-0">
+                                            <span class="material-symbols-outlined text-primary">sell</span>
+                                            <spring:message code="commerce.createPack.form.finalPrice.label"/>
+                                        </h2>
                                     </div>
-                                    <div class="pack-form-field">
-                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.description.label"/></label>
-                                        <spring:message code="commerce.createPack.form.description.placeholder" var="descPlch"/>
-                                        <form:textarea path="description" class="pack-form-control" cssErrorClass="pack-form-control is-invalid" rows="3"
-                                            placeholder="${descPlch}"
-                                            required="required"></form:textarea>
-                                        <form:errors path="description" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
-                                    </div>
+                                </header>
 
-                                    <!-- Tags selection -->
-                                    <div class="pack-form-field">
-                                        <label class="pack-form-label mb-2 block"><spring:message code="commerce.createPack.form.tags.label"/></label>
-                                        <div class="grid grid-cols-2 gap-2">
-                                            <c:forEach var="tag" items="${availableTags}">
-                                                <label
-                                                    class="flex items-center gap-2 text-sm text-secondary cursor-pointer hover:bg-surface-container-high bg-surface-container-low p-2 rounded-md transition-colors">
-                                                    <form:checkbox path="tags" value="${tag.name()}"
-                                                        class="rounded text-primary focus:ring-primary h-4 w-4" />
-                                                    <span><spring:message code="pack.tag.${tag.name()}"/></span>
-                                                </label>
-                                            </c:forEach>
-                                        </div>
-                                    </div>
-
+                                <div class="pack-reservation-form">
+                                    <!-- Grid for Prices -->
                                     <div class="grid grid-cols-2 gap-4">
+                                        <!-- Common: Original Price -->
                                         <div class="pack-form-field">
                                             <label class="pack-form-label text-secondary"><spring:message code="commerce.createPack.form.originalPrice.label"/></label>
                                             <div class="relative">
-                                                <span
-                                                    class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary font-bold">$</span>
+                                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary font-bold">$</span>
                                                 <form:input type="number" step="0.01" path="originalPrice"
                                                     class="pack-form-control pack-form-control--tabular pl-8" cssErrorClass="pack-form-control pack-form-control--tabular pl-8 is-invalid"
                                                     placeholder="0.00" required="required" maxlength="10" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
                                             </div>
                                             <form:errors path="originalPrice" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                         </div>
+
+                                        <!-- Pack: Final Price -->
                                         <div class="pack-form-field">
                                             <label class="pack-form-label text-primary"><spring:message code="commerce.createPack.form.finalPrice.label"/></label>
                                             <div class="relative">
-                                                <span
-                                                    class="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold">$</span>
+                                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold">$</span>
                                                 <form:input type="number" step="0.01" path="finalPrice"
                                                     class="pack-form-control pack-form-control--tabular pl-8 font-bold" cssErrorClass="pack-form-control pack-form-control--tabular pl-8 font-bold is-invalid"
-                                                    placeholder="0.00" required="required" maxlength="10" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
+                                                    placeholder="0.00" maxlength="10" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
                                             </div>
                                             <form:errors path="finalPrice" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                         </div>
                                     </div>
 
-                                    <div class="pack-form-field mt-2">
-                                        <label class="pack-form-label flex justify-between">
-                                            <spring:message code="commerce.createPack.form.quantity.label"/>
-                                            <span class="text-xs text-secondary font-normal"><spring:message code="commerce.createPack.form.quantity.hint"/></span>
+                                    <!-- Pack: Stock -->
+                                    <div class="pack-form-field mt-4">
+                                        <label class="pack-form-label flex flex-col">
+                                            <span><spring:message code="commerce.createPack.form.quantity.label"/></span>
+                                            <span class="text-xs text-secondary font-normal mt-1"><spring:message code="commerce.createPack.form.quantity.hint"/></span>
                                         </label>
                                         <spring:message code="commerce.createPack.form.quantity.placeholder" var="qtyPlch"/>
                                         <form:input type="number" path="stock"
-                                            class="pack-form-control pack-form-control--tabular" cssErrorClass="pack-form-control pack-form-control--tabular is-invalid" placeholder="${qtyPlch}"
-                                            required="required" maxlength="3" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
+                                            class="pack-form-control pack-form-control--tabular w-1/2" cssErrorClass="pack-form-control pack-form-control--tabular w-1/2 is-invalid" placeholder="${qtyPlch}"
+                                            maxlength="3" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
                                         <form:errors path="stock" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
                                     </div>
 
-                                    <div class="pack-form-field mt-2">
-                                        <label class="pack-form-label"><spring:message code="commerce.createPack.form.image.label"/></label>
-                                        <input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif"
-                                            class="pack-form-control file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-fixed file:text-on-primary-fixed hover:file:bg-primary-fixed-dim cursor-pointer" />
-                                        <form:errors path="image" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
-                                        <p class="text-xs text-secondary mt-1"><spring:message code="commerce.editPack.form.image.hint"/></p>
-                                    </div>
-
-                                    <spring:message code="commerce.createPack.form.submitting" var="createPackSubmittingText"/>
-                                    <button type="submit" class="pack-submit-btn font-headline mt-4"
-                                            id="create-pack-submit-btn"
-                                            data-submitting-text="${createPackSubmittingText}">
-                                        <span class="pack-submit-btn__label"><spring:message code="commerce.editPack.form.submit"/></span>
-                                        <span class="material-symbols-outlined pack-submit-btn__icon">save</span>
-                                    </button>
+                                    <p class="text-xs text-secondary mt-3"><spring:message code="commerce.editPack.form.image.hint"/></p>
                                 </div>
                             </section>
-                        
 
-                    </form:form>
-                </main>
+                    <!-- ── Submit Button ── -->
+                    <spring:message code="commerce.editPack.form.submitting" var="submittingText"/>
+                    <button type="submit" class="pack-submit-btn font-headline mt-2" id="create-offer-submit-btn"
+                            data-submitting-text="${submittingText}">
+                        <span class="pack-submit-btn__label"><spring:message code="commerce.editPack.form.submit"/></span>
+                        <span class="material-symbols-outlined pack-submit-btn__icon">save</span>
+                    </button>
+                        </div>
+                    </div>
 
-                <paw:footer />
+                </form:form>
 
                 <script>
+                    // ── Prevent double-submit ──
                     (function () {
-                        var form = document.querySelector('.commerce-create-pack-form');
-                        var btn = document.getElementById('create-pack-submit-btn');
-                        if (!form || !btn) {
-                            return;
-                        }
+                        var form = document.querySelector('.js-create-offer-form');
+                        var btn = document.getElementById('create-offer-submit-btn');
+                        if (!form || !btn) return;
                         var submitted = false;
                         form.addEventListener('submit', function (e) {
-                            if (submitted) {
-                                e.preventDefault();
-                                return;
-                            }
+                            if (submitted) { e.preventDefault(); return; }
                             submitted = true;
                             btn.disabled = true;
                             btn.setAttribute('aria-disabled', 'true');
@@ -156,44 +147,6 @@
                             }
                         });
                     })();
-
-                    document.addEventListener("DOMContentLoaded", function () {
-                        const imageInput = document.querySelector('input[name="image"]');
-                        const maxFileSize = 5 * 1024 * 1024; // 5MB
-                        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-
-                        imageInput.addEventListener('change', function (event) {
-                            const file = event.target.files[0];
-                            const errorContainer = event.target.parentNode;
-
-                            // Remove existing client-side errors
-                            const existingErrors = errorContainer.querySelectorAll('.image-js-error');
-                            existingErrors.forEach(e => e.remove());
-
-                            if (file) {
-                                let errorMsg = '';
-
-                                if (file.size > maxFileSize) {
-                                    errorMsg = "<spring:message code='commerce.createPack.validation.image.maxSize' javaScriptEscape='true'/>";
-                                } else if (!allowedTypes.includes(file.type)) {
-                                    errorMsg = "<spring:message code='commerce.createPack.validation.image.invalidType' javaScriptEscape='true'/>";
-                                }
-
-                                if (errorMsg !== '') {
-                                    event.target.value = ''; // clear input
-
-                                    const errorElement = document.createElement('p');
-                                    errorElement.className = 'pack-feedback pack-feedback--error pack-form-errors image-js-error mt-2';
-                                    errorElement.textContent = errorMsg;
-
-                                    // Insert after the input
-                                    event.target.parentNode.insertBefore(errorElement, event.target.nextSibling);
-                                }
-                            }
-                        });
-                    });
                 </script>
 
-            </body>
-
-            </html>
+            </paw:commerceFormLayout>

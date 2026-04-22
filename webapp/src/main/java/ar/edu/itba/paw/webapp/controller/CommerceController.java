@@ -55,7 +55,7 @@ import ar.edu.itba.paw.models.User;
 import ar.edu.itba.paw.services.UserService;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
 import ar.edu.itba.paw.webapp.form.CreateOfferForm;
-import ar.edu.itba.paw.webapp.form.EditPackForm;
+
 
 @Controller
 @RequestMapping("/commerce")
@@ -318,7 +318,7 @@ public class CommerceController {
     @RequestMapping(value = "/edit-pack/{packId}", method = RequestMethod.GET)
     public ModelAndView editPackForm(@PathVariable("packId") final long packId,
             @AuthenticationPrincipal final AuthUser principal,
-            @ModelAttribute("editPackForm") final EditPackForm form,
+            @ModelAttribute("createOfferForm") final CreateOfferForm form,
             @RequestParam(value = "error", required = false) final String error) {
         final long commerceId = getAuthenticatedUser(principal).getId();
 
@@ -336,9 +336,11 @@ public class CommerceController {
             form.setOriginalPrice(pack.getOriginalPrice());
             form.setFinalPrice(pack.getFinalPrice());
             form.setStock(pack.getStock());
+            form.setIsAuction(false);
         }
 
         final ModelAndView mav = new ModelAndView("commerce/editPack");
+        mav.addObject("editMode", true);
         mav.addObject("commerceId", commerceId);
         mav.addObject("packId", packId);
         mav.addObject("availableTags", PackTag.values());
@@ -356,7 +358,7 @@ public class CommerceController {
     public ModelAndView editPack(
             @PathVariable("packId") final long packId,
             @AuthenticationPrincipal final AuthUser principal,
-            @Valid @ModelAttribute("editPackForm") final EditPackForm form,
+            @Valid @ModelAttribute("createOfferForm") final CreateOfferForm form,
             final BindingResult bindingResult,
             final RedirectAttributes redirectAttributes) {
 
@@ -369,25 +371,13 @@ public class CommerceController {
         final Pack packToUpdate = getValidManageablePack(packId, commerceId,
                 "commerce.editPack.error.auctionForbidden.editadas");
 
-        if (form.getOriginalPrice() != null && form.getFinalPrice() != null
-                && form.getFinalPrice() > form.getOriginalPrice()) {
-            bindingResult.rejectValue("finalPrice", "error.finalPrice",
-                    messageSource.getMessage("commerce.createPack.validation.finalPrice.exceedsOriginal",
-                            null, LocaleContextHolder.getLocale()));
-        }
-
-        final MultipartFile image = form.getImage();
-        if (image != null && !image.isEmpty()) {
-            final String contentType = image.getContentType();
-            if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
-                bindingResult.rejectValue("image", "error.image.invalidType",
-                        messageSource.getMessage("commerce.createPack.validation.image.invalidType",
-                                null, LocaleContextHolder.getLocale()));
-            }
-        }
+        // Reuse the same pack-field validation as create-offer
+        validatePackFields(form, bindingResult);
+        validateImage(form.getImage(), bindingResult);
 
         if (bindingResult.hasErrors()) {
             final ModelAndView mav = new ModelAndView("commerce/editPack");
+            mav.addObject("editMode", true);
             mav.addObject("commerceId", commerceId);
             mav.addObject("packId", packId);
             mav.addObject("availableTags", PackTag.values());
@@ -404,6 +394,7 @@ public class CommerceController {
 
             packService.update(packToUpdate);
 
+            final MultipartFile image = form.getImage();
             if (image != null && !image.isEmpty()) {
                 packService.updateImage(packToUpdate.getId(), image.getBytes(), image.getContentType());
             }
@@ -416,6 +407,7 @@ public class CommerceController {
 
         } catch (IllegalArgumentException e) {
             final ModelAndView mav = new ModelAndView("commerce/editPack");
+            mav.addObject("editMode", true);
             mav.addObject("commerceId", commerceId);
             mav.addObject("packId", packId);
             mav.addObject("availableTags", PackTag.values());
@@ -423,6 +415,7 @@ public class CommerceController {
             return mav;
         } catch (IOException e) {
             final ModelAndView mav = new ModelAndView("commerce/editPack");
+            mav.addObject("editMode", true);
             mav.addObject("commerceId", commerceId);
             mav.addObject("packId", packId);
             mav.addObject("availableTags", PackTag.values());
