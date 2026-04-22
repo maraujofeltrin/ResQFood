@@ -46,6 +46,13 @@
             </header>
 
             <section>
+                <c:if test="${not empty reservationActionMessageCode}">
+                    <div class="mb-6 rounded-xl px-4 py-3 text-sm font-semibold ${reservationActionKind == 'success' ? 'bg-primary-container text-on-primary-container' : 'bg-error-container text-on-error-container'}"
+                         role="alert">
+                        <spring:message code="${reservationActionMessageCode}" />
+                    </div>
+                </c:if>
+
                 <spring:message code="${messagePrefix}.filters.searchPlaceholder" var="searchPlaceholder"/>
                 <form action="${pageContext.request.contextPath}/reservations" method="get"
                       class="flex flex-col md:flex-row items-center gap-3 w-full mb-8">
@@ -108,7 +115,10 @@
                                         dateLabel="${dateLabel}"
                                         commerceName="${commerceName}"
                                         clientName="${clientName}"
-                                        messagePrefix="${messagePrefix}" />
+                                    messagePrefix="${messagePrefix}"
+                                    currentPage="${currentPage}"
+                                    searchQuery="${searchQuery}"
+                                    selectedStatus="${selectedStatus}" />
                             </c:forEach>
                         </div>
 
