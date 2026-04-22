@@ -124,7 +124,8 @@
                                                     oldPrice="${formattedOldPrice}" badgeText="Stock: ${pack.stock}"
                                                     rescueLabel="${finalPriceLabel}"
                                                     manageable="${not auctionPackIds.contains(pack.id)}"
-                                                    commerceId="${commerceId}" />
+                                                    commerceId="${commerceId}"
+                                                    auction="${auctionPackIds.contains(pack.id)}" />
                                             </c:forEach>
                                         </div>
 

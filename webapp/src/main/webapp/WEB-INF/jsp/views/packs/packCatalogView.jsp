@@ -58,6 +58,7 @@
                                     price="$${auction.effectivePrice}"
                                     oldPrice="$${auction.pack.originalPrice}"
                                     commerceName="${commerceNames[auction.pack.id]}"
+                                    auction="${true}"
                                 />
                             </div>
                         </c:forEach>
@@ -123,6 +124,7 @@
                                             price="$${auction.effectivePrice}"
                                             oldPrice="$${auction.pack.originalPrice}"
                                             commerceName="${commerceNames[auction.pack.id]}"
+                                            auction="${true}"
                                         />
                                     </c:forEach>
                                 </c:when>
