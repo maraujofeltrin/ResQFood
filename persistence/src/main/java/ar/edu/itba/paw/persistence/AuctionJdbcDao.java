@@ -213,7 +213,7 @@ public class AuctionJdbcDao implements AuctionDao {
     @Override
     public List<Auction> findByCommerceId(final long commerceId) {
         return jdbcTemplate.query(
-                AUCTION_JOIN_PACK + " WHERE p.commerce_id = ? AND p.deleted = false AND a.status != 'FINISHED' ORDER BY a.created_at DESC",
+                AUCTION_JOIN_PACK + " WHERE p.commerce_id = ? AND p.deleted = false ORDER BY a.created_at DESC",
                 auctionRowMapper, commerceId
         );
     }

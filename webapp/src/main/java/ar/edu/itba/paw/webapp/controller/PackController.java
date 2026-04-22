@@ -592,8 +592,23 @@ public class PackController {
     @GetMapping("/packs/{id}")
     public ModelAndView packDetail(@PathVariable("id") final long id) {
         final Pack pack = packService.findById(id)
-                .filter(p -> Boolean.TRUE.equals(p.getActive()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        // Inactive packs are only visible to their owning commerce
+        if (!Boolean.TRUE.equals(pack.getActive())) {
+            final org.springframework.security.core.Authentication auth =
+                    SecurityContextHolder.getContext().getAuthentication();
+            boolean isOwner = false;
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                final Optional<User> userOpt = userService.findByEmail(auth.getName());
+                if (userOpt.isPresent() && userOpt.get().getId().equals(pack.getCommerceId())) {
+                    isOwner = true;
+                }
+            }
+            if (!isOwner) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            }
+        }
 
         return buildPackDetailModel(pack, createDefaultReservationForm(), createDefaultBidForm());
     }
