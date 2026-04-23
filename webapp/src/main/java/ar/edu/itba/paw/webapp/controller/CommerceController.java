@@ -1,37 +1,24 @@
 package ar.edu.itba.paw.webapp.controller;
 
-import ar.edu.itba.paw.models.Commerce;
-import ar.edu.itba.paw.models.Client;
-import ar.edu.itba.paw.models.Pack;
-import ar.edu.itba.paw.models.PackTag;
-import ar.edu.itba.paw.models.Reservation;
-import ar.edu.itba.paw.services.AuctionService;
-import ar.edu.itba.paw.services.ClientService;
-import ar.edu.itba.paw.services.CommerceService;
-import ar.edu.itba.paw.services.PackService;
-import ar.edu.itba.paw.services.ReservationService;
-import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeParseException;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import javax.validation.Valid;
-
+import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.pack.PackTag;
+import ar.edu.itba.paw.models.reservation.PickupByCodeError;
+import ar.edu.itba.paw.models.reservation.Reservation;
+import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.services.auction.AuctionService;
+import ar.edu.itba.paw.services.user.ClientService;
+import ar.edu.itba.paw.services.commerce.CommerceOfferService;
+import ar.edu.itba.paw.services.commerce.CommercePackAccess;
+import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.services.pack.PackService;
+import ar.edu.itba.paw.services.reservation.PickupByCodeResult;
+import ar.edu.itba.paw.services.reservation.ReservationService;
+import ar.edu.itba.paw.services.user.UserService;
+import ar.edu.itba.paw.webapp.auth.AuthUser;
+import ar.edu.itba.paw.webapp.form.CreateOfferForm;
+import ar.edu.itba.paw.webapp.validation.CreateOfferFormValidator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
@@ -42,28 +29,27 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import ar.edu.itba.paw.models.User;
-import ar.edu.itba.paw.services.UserService;
-import ar.edu.itba.paw.webapp.auth.AuthUser;
-import ar.edu.itba.paw.webapp.form.CreateOfferForm;
-
+import javax.validation.Valid;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/commerce")
 public class CommerceController {
 
     private static final int PAGE_SIZE = 6;
-    private static final Set<String> ALLOWED_IMAGE_TYPES = new HashSet<>(Arrays.asList(
-            "image/jpeg", "image/png", "image/webp", "image/gif"));
 
     private final CommerceService commerceService;
     private final ClientService clientService;
@@ -72,15 +58,15 @@ public class CommerceController {
     private final AuctionService auctionService;
     private final MessageSource messageSource;
     private final UserService userService;
-    /** Same zone as commerce opening/closing / pack detail display ({@code app.display-zone}). */
-    private final ZoneId businessZone;
+    private final CommerceOfferService commerceOfferService;
+    private final CreateOfferFormValidator createOfferFormValidator;
 
     @Autowired
     public CommerceController(final CommerceService commerceService, final ClientService clientService,
                               final PackService packService, final ReservationService reservationService,
                               final AuctionService auctionService, final MessageSource messageSource,
-                              final UserService userService,
-                              @Value("${app.display-zone:}") final String displayZone) {
+                              final UserService userService, final CommerceOfferService commerceOfferService,
+                              final CreateOfferFormValidator createOfferFormValidator) {
         this.commerceService = commerceService;
         this.clientService = clientService;
         this.packService = packService;
@@ -88,14 +74,10 @@ public class CommerceController {
         this.auctionService = auctionService;
         this.messageSource = messageSource;
         this.userService = userService;
-        this.businessZone = (displayZone == null || displayZone.trim().isEmpty())
-                ? ZoneId.of("America/Argentina/Buenos_Aires")
-                : ZoneId.of(displayZone.trim());
+        this.commerceOfferService = commerceOfferService;
+        this.createOfferFormValidator = createOfferFormValidator;
     }
 
-    /**
-     * Entry point: renderiza el dashboard del commerce autenticado.
-     */
     @GetMapping(value = "")
     public ModelAndView dashboard(@AuthenticationPrincipal final AuthUser principal,
             @RequestParam(value = "page", defaultValue = "1") final int page,
@@ -111,10 +93,10 @@ public class CommerceController {
         final ModelAndView mav = new ModelAndView("commerce/dashboard");
 
         final List<Pack> allPacks = packService.findByCommerceId(id);
-        final List<ar.edu.itba.paw.models.Auction> commerceAuctions = auctionService.findByCommerceId(id);
+        final List<ar.edu.itba.paw.models.auction.Auction> commerceAuctions = auctionService.findByCommerceId(id);
         final Set<Long> auctionPackIds = commerceAuctions.stream()
                 .map(a -> a.getPack().getId())
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
 
         final List<Pack> displayedPacks;
         if ("auctions".equalsIgnoreCase(tab)) {
@@ -151,7 +133,6 @@ public class CommerceController {
         mav.addObject("auctionsCount", auctionsCount);
         return mav;
     }
-    // ── Verify Pickup ────────────────────────────────────────
 
     @RequestMapping(value = "/verify-pickup", method = RequestMethod.GET)
     public ModelAndView verifyPickupForm() {
@@ -161,11 +142,11 @@ public class CommerceController {
     @RequestMapping(value = "/verify-pickup", method = RequestMethod.POST)
     public ModelAndView verifyPickupPost(@RequestParam(value = "pickupCode", required = false) final String pickupCode) {
         final ModelAndView mav = new ModelAndView("commerce/verify-pickup");
+        final Commerce commerce = getAuthenticatedCommerce();
 
-        try {
-            final Commerce commerce = getAuthenticatedCommerce();
-            final Reservation confirmed = reservationService.confirmPickupByCode(pickupCode, commerce.getUserId());
-
+        final PickupByCodeResult result = reservationService.confirmPickupByCode(pickupCode, commerce.getUserId());
+        if (result.isSuccess()) {
+            final Reservation confirmed = result.reservation().orElseThrow(IllegalStateException::new);
             mav.addObject("pickupSuccess", true);
             mav.addObject("confirmedReservation", confirmed);
 
@@ -183,31 +164,23 @@ public class CommerceController {
                             mav.addObject("confirmedClientName", fullName.isEmpty() ? "-" : fullName);
                         });
             }
-
-        } catch (final IllegalArgumentException ex) {
+        } else {
             final String key;
-            switch (ex.getMessage()) {
-                case "EMPTY":
+            final PickupByCodeError err = result.error().orElse(PickupByCodeError.NOT_FOUND);
+            switch (err) {
+                case EMPTY:
                     key = "commerce.verifyPickup.error.empty";
                     break;
-                case "NOT_FOUND":
+                case NOT_FOUND:
                     key = "commerce.verifyPickup.error.notFound";
                     break;
-                case "WRONG_COMMERCE":
+                case WRONG_COMMERCE:
                     key = "commerce.verifyPickup.error.wrongCommerce";
                     break;
-                default:
-                    key = "commerce.verifyPickup.error.notFound";
-                    break;
-            }
-            mav.addObject("pickupError", key);
-        } catch (final IllegalStateException ex) {
-            final String key;
-            switch (ex.getMessage()) {
-                case "ALREADY_COMPLETED":
+                case ALREADY_COMPLETED:
                     key = "commerce.verifyPickup.error.alreadyCompleted";
                     break;
-                case "ALREADY_CANCELED":
+                case ALREADY_CANCELED:
                     key = "commerce.verifyPickup.error.alreadyCanceled";
                     break;
                 default:
@@ -220,8 +193,6 @@ public class CommerceController {
         mav.addObject("submittedCode", pickupCode);
         return mav;
     }
-
-    // ── Create Offer (unified pack / auction) ────────────────
 
     @RequestMapping(value = "/create-offer", method = RequestMethod.GET)
     public ModelAndView createOfferForm(@ModelAttribute("createOfferForm") final CreateOfferForm form,
@@ -243,22 +214,14 @@ public class CommerceController {
             final BindingResult bindingResult,
             final RedirectAttributes redirectAttributes) {
 
-        final boolean isAuction = form.getIsAuction();
-
-        // ── Conditional validation ──
-        if (isAuction) {
-            validateAuctionFields(form, bindingResult);
-        } else {
-            validatePackFields(form, bindingResult);
-        }
-
-        validateImage(form.getImage(), bindingResult);
-
+        createOfferFormValidator.validate(form, bindingResult);
         if (bindingResult.hasErrors()) {
             final ModelAndView mav = new ModelAndView("commerce/createOfferView");
             mav.addObject("availableTags", PackTag.values());
             return mav;
         }
+
+        final boolean isAuction = form.getIsAuction();
 
         try {
             final long commerceId = getAuthenticatedUser(principal).getId();
@@ -272,35 +235,25 @@ public class CommerceController {
             }
 
             if (isAuction) {
-                // Create the underlying pack (stock=1, finalPrice=initialPrice as floor)
-                Pack pack = packService.createPack(
-                        commerceId, form.getTitle(), form.getDescription(),
-                        form.getOriginalPrice(), form.getInitialPrice(), 1,
-                        form.getTags() != null ? form.getTags() : Collections.emptyList(),
-                        imageData, imageContentType);
-
-                // Wall-clock in business zone → UTC (same convention as auction storage / display)
-                final LocalDateTime endUtc = parseAuctionEndAsUtc(form.getEndDate(), form.getEndTime());
-
-                // Create the auction wrapping the pack
-                auctionService.createAuction(pack.getId(), form.getInitialPrice(), endUtc);
-
+                commerceOfferService.createAuctionOffer(
+                        commerceId, form.getTitle(), form.getDescription(), form.getOriginalPrice(),
+                        form.getInitialPrice(), form.getEndDate(), form.getEndTime(),
+                        form.getTags() != null ? form.getTags() : Collections.emptyList(), imageData, imageContentType);
                 redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
                 redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource.getMessage(
                         "commerce.dashboard.success.create.auction", null, LocaleContextHolder.getLocale()));
-
             } else {
-                packService.createPack(commerceId, form.getTitle(), form.getDescription(),
-                        form.getOriginalPrice(), form.getFinalPrice(), form.getStock(),
-                        form.getTags() != null ? form.getTags() : Collections.emptyList(),
-                        imageData, imageContentType);
+                commerceOfferService.createDirectPack(
+                        commerceId, form.getTitle(), form.getDescription(), form.getOriginalPrice(),
+                        form.getFinalPrice(), form.getStock(),
+                        form.getTags() != null ? form.getTags() : Collections.emptyList(), imageData, imageContentType);
                 redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
                 redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource
                         .getMessage("commerce.dashboard.success.create.pack", null, LocaleContextHolder.getLocale()));
             }
             return new ModelAndView("redirect:/commerce");
 
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             final ModelAndView mav = new ModelAndView("commerce/createOfferView");
             mav.addObject("availableTags", PackTag.values());
             mav.addObject("errorMessage", e.getMessage());
@@ -326,8 +279,7 @@ public class CommerceController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        final Pack pack = getValidManageablePack(packId, commerceId,
-                "commerce.editPack.error.auctionForbidden.editadas");
+        final Pack pack = resolveEditPack(packId, commerceId, "commerce.editPack.error.auctionForbidden.editadas");
 
         if (form.getTitle() == null) {
             form.setTitle(pack.getTitle());
@@ -362,18 +314,17 @@ public class CommerceController {
             final BindingResult bindingResult,
             final RedirectAttributes redirectAttributes) {
 
+        form.setIsAuction(false);
+        createOfferFormValidator.validatePackModeOnly(form, bindingResult);
+
         final long commerceId = getAuthenticatedUser(principal).getId();
 
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        final Pack packToUpdate = getValidManageablePack(packId, commerceId,
+        final Pack packToUpdate = resolveEditPack(packId, commerceId,
                 "commerce.editPack.error.auctionForbidden.editadas");
-
-        // Reuse the same pack-field validation as create-offer
-        validatePackFields(form, bindingResult);
-        validateImage(form.getImage(), bindingResult);
 
         if (bindingResult.hasErrors()) {
             final ModelAndView mav = new ModelAndView("commerce/editPack");
@@ -438,8 +389,7 @@ public class CommerceController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        getValidManageablePack(packId, commerceId, "commerce.editPack.error.auctionForbidden.eliminadas");
-
+        resolveEditPack(packId, commerceId, "commerce.editPack.error.auctionForbidden.eliminadas");
         packService.deletePack(packId);
 
         redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
@@ -449,115 +399,6 @@ public class CommerceController {
         return new ModelAndView("redirect:/commerce");
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
-
-    // validates pack-specific fields (finalPrice, stock) when isAuction is false
-    private void validatePackFields(final CreateOfferForm form, final BindingResult bindingResult) {
-        if (form.getFinalPrice() == null) {
-            bindingResult.rejectValue("finalPrice", "error.finalPrice",
-                    messageSource.getMessage("commerce.createPack.validation.finalPrice.notNull",
-                            null, LocaleContextHolder.getLocale()));
-        } else if (form.getFinalPrice() <= 0) {
-            bindingResult.rejectValue("finalPrice", "error.finalPrice",
-                    messageSource.getMessage("commerce.createPack.validation.finalPrice.positive",
-                            null, LocaleContextHolder.getLocale()));
-        } else if (form.getOriginalPrice() != null && form.getFinalPrice() > form.getOriginalPrice()) {
-            bindingResult.rejectValue("finalPrice", "error.finalPrice",
-                    messageSource.getMessage("commerce.createPack.validation.finalPrice.exceedsOriginal",
-                            null, LocaleContextHolder.getLocale()));
-        }
-
-        if (form.getStock() == null) {
-            bindingResult.rejectValue("stock", "error.stock",
-                    messageSource.getMessage("commerce.createPack.validation.stock.notNull",
-                            null, LocaleContextHolder.getLocale()));
-        } else if (form.getStock() <= 0) {
-            bindingResult.rejectValue("stock", "error.stock",
-                    messageSource.getMessage("commerce.createPack.validation.stock.positive",
-                            null, LocaleContextHolder.getLocale()));
-        } else if (form.getStock() > 999) {
-            bindingResult.rejectValue("stock", "error.stock",
-                    messageSource.getMessage("commerce.createPack.validation.stock.max",
-                            null, LocaleContextHolder.getLocale()));
-        }
-    }
-
-    // validates auction-specific fields (initialPrice, endDate, endTime) when isAuction is true
-    private void validateAuctionFields(final CreateOfferForm form, final BindingResult bindingResult) {
-        if (form.getInitialPrice() == null) {
-            bindingResult.rejectValue("initialPrice", "error.initialPrice",
-                    messageSource.getMessage("commerce.createAuction.validation.initialPrice.notNull",
-                            null, LocaleContextHolder.getLocale()));
-        } else if (form.getInitialPrice() <= 0) {
-            bindingResult.rejectValue("initialPrice", "error.initialPrice",
-                    messageSource.getMessage("commerce.createAuction.validation.initialPrice.positive",
-                            null, LocaleContextHolder.getLocale()));
-        } else if (form.getOriginalPrice() != null && form.getInitialPrice() > form.getOriginalPrice()) {
-            bindingResult.rejectValue("initialPrice", "error.initialPrice",
-                    messageSource.getMessage("commerce.createAuction.validation.initialPrice.exceedsOriginal",
-                            null, LocaleContextHolder.getLocale()));
-        }
-
-        if (form.getEndDate() == null || form.getEndDate().isBlank()) {
-            bindingResult.rejectValue("endDate", "error.endDate",
-                    messageSource.getMessage("commerce.createAuction.validation.endDate.notEmpty",
-                            null, LocaleContextHolder.getLocale()));
-        }
-        if (form.getEndTime() == null || form.getEndTime().isBlank()) {
-            bindingResult.rejectValue("endTime", "error.endTime",
-                    messageSource.getMessage("commerce.createAuction.validation.endTime.notEmpty",
-                            null, LocaleContextHolder.getLocale()));
-        }
-
-        // Validate end instant if both date and time are present (interpreted in business zone)
-        if (form.getEndDate() != null && !form.getEndDate().isBlank()
-                && form.getEndTime() != null && !form.getEndTime().isBlank()) {
-            try {
-                final LocalDate date = LocalDate.parse(form.getEndDate().trim());
-                final LocalTime time = LocalTime.parse(form.getEndTime().trim());
-                final ZonedDateTime endZoned = ZonedDateTime.of(date, time, businessZone);
-                if (!endZoned.toInstant().isAfter(Instant.now())) {
-                    bindingResult.rejectValue("endDate", "error.endDate",
-                            messageSource.getMessage("commerce.createAuction.validation.endDateTime.future",
-                                    null, LocaleContextHolder.getLocale()));
-                }
-            } catch (DateTimeParseException e) {
-                bindingResult.rejectValue("endDate", "error.endDate",
-                        messageSource.getMessage("commerce.createAuction.validation.endDateTime.invalid",
-                                null, LocaleContextHolder.getLocale()));
-            }
-        }
-    }
-
-    /**
-     * HTML {@code date}/{@code time} fields are wall-clock in the business display zone (see
-     * {@link #businessZone}), matching commerce opening/closing semantics; persisted end is UTC.
-     */
-    private LocalDateTime parseAuctionEndAsUtc(final String endDate, final String endTime) {
-        final LocalDate date = LocalDate.parse(endDate.trim());
-        final LocalTime time = LocalTime.parse(endTime.trim());
-        return ZonedDateTime.of(date, time, businessZone)
-                .withZoneSameInstant(ZoneOffset.UTC)
-                .toLocalDateTime();
-    }
-
-    /**
-     * Server-side image type validation.
-     */
-    private void validateImage(final MultipartFile image, final BindingResult bindingResult) {
-        if (image != null && !image.isEmpty()) {
-            final String contentType = image.getContentType();
-            if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
-                bindingResult.rejectValue("image", "error.image.invalidType",
-                        messageSource.getMessage("commerce.createPack.validation.image.invalidType",
-                                null, LocaleContextHolder.getLocale()));
-            }
-        }
-    }
-
-    // returns the user from the authenticated principal, if the principal is null throws 401
     private User getAuthenticatedUser(final AuthUser principal) {
         if (principal == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
@@ -577,18 +418,15 @@ public class CommerceController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
-    // returns the pack if it is valid and manageable, otherwise throws 404 or 403
-    private Pack getValidManageablePack(final long packId, final long commerceId, final String forbiddenActionKey) {
-        final java.util.Optional<Pack> packOpt = packService.findById(packId);
-        if (!packOpt.isPresent() || packOpt.get().getCommerceId() != commerceId
-                || Boolean.TRUE.equals(packOpt.get().getDeleted())) {
+    private Pack resolveEditPack(final long packId, final long commerceId, final String forbiddenActionKey) {
+        final CommercePackAccess access = packService.resolvePackForDirectEdit(packId, commerceId);
+        if (access instanceof CommercePackAccess.NotFound) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
-        if (auctionService.findByPackId(packId).isPresent()) {
+        if (access instanceof CommercePackAccess.ForbiddenAuction) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     messageSource.getMessage(forbiddenActionKey, null, LocaleContextHolder.getLocale()));
         }
-        return packOpt.get();
+        return ((CommercePackAccess.Granted) access).pack();
     }
-
 }

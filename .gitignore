@@ -49,6 +49,7 @@ Thumbs.db
 *.wmv
 
 .vscode
+.cursor
 
 # Environment credentials - use env.properties.example as reference
 **/env.properties

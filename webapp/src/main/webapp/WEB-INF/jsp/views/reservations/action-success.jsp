@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
-<%@ taglib prefix="paw" tagdir="/WEB-INF/tags" %>
+<%@ taglib prefix="paw" uri="http://itba.edu.ar/paw/tags" %>
 
 <spring:message var="actionLabel" code="${actionCode}" />
 <spring:message var="successTitle" code="reservation.token.success.pageTitle" arguments="${actionLabel}" />

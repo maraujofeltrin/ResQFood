@@ -1,7 +1,7 @@
 package ar.edu.itba.paw.webapp.controller;
 
-import ar.edu.itba.paw.models.User;
-import ar.edu.itba.paw.services.EmailVerificationTokenService;
+import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.services.security.EmailVerificationTokenService;
 import ar.edu.itba.paw.webapp.form.EmailVerificationResendForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

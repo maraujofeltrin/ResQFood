@@ -1,11 +1,11 @@
 package ar.edu.itba.paw.persistence;
 
-import ar.edu.itba.paw.models.Pack;
+import ar.edu.itba.paw.models.pack.Pack;
 import java.util.Optional;
 import java.util.List;
 
-import ar.edu.itba.paw.models.PackSortOption;
-import ar.edu.itba.paw.models.PackTag;
+import ar.edu.itba.paw.models.pack.PackSortOption;
+import ar.edu.itba.paw.models.pack.PackTag;
 
 public interface PackDao {
     Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<PackTag> tags, byte[] imageData, String imageContentType);

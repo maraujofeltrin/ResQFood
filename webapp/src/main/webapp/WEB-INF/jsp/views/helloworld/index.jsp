@@ -1,5 +1,5 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jstl/core_rt" %>
-    <%@ taglib prefix="paw" tagdir="/WEB-INF/tags" %>
+    <%@ taglib prefix="paw" uri="http://itba.edu.ar/paw/tags" %>
 
         <html>
 

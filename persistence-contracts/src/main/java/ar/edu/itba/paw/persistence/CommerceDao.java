@@ -1,6 +1,6 @@
 package ar.edu.itba.paw.persistence;
 
-import ar.edu.itba.paw.models.Commerce;
+import ar.edu.itba.paw.models.user.Commerce;
 import java.util.Optional;
 
 public interface CommerceDao {

@@ -10,16 +10,16 @@ import javax.validation.constraints.Size;
 
 import org.springframework.web.multipart.MultipartFile;
 
-import ar.edu.itba.paw.models.PackTag;
+import ar.edu.itba.paw.models.pack.PackTag;
 
 /**
  * Unified form for creating both Packs (direct sale) and Auctions.
  * <p>
  * When {@code isAuction == false} (default): {@code finalPrice} and {@code stock} are required
- * (validated in the controller).
+ * (see {@link ar.edu.itba.paw.webapp.validation.CreateOfferFormValidator}).
  * <p>
  * When {@code isAuction == true}: {@code initialPrice}, {@code endDate} and {@code endTime} are
- * required (validated in the controller).
+ * required (see {@link ar.edu.itba.paw.webapp.validation.CreateOfferFormValidator}).
  */
 public class CreateOfferForm {
 

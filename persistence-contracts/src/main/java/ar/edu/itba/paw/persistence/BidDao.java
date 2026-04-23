@@ -1,6 +1,6 @@
 package ar.edu.itba.paw.persistence;
 
-import ar.edu.itba.paw.models.Bid;
+import ar.edu.itba.paw.models.auction.Bid;
 
 import java.util.List;
 import java.util.Optional;

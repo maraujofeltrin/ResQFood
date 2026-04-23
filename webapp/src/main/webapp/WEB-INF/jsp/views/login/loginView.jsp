@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %> <%@ taglib prefix="c"
 uri="http://java.sun.com/jsp/jstl/core" %> <%@ taglib prefix="spring"
 uri="http://www.springframework.org/tags" %> <%@ taglib prefix="paw"
-tagdir="/WEB-INF/tags" %>
+uri="http://itba.edu.ar/paw/tags" %>
 <!DOCTYPE html>
 <html class="light" lang="${pageContext.response.locale.language}">
   <spring:message code="login.title" var="loginTitle" />

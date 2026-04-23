@@ -10,8 +10,8 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.bind.annotation.PathVariable;
 import java.util.Optional;
 
-import ar.edu.itba.paw.services.UserService;
-import ar.edu.itba.paw.models.User;
+import ar.edu.itba.paw.services.user.UserService;
+import ar.edu.itba.paw.models.user.User;
 
 @Controller
 public class HelloWorldController {

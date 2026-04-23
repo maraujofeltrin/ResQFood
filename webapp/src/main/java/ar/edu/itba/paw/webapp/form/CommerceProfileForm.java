@@ -1,6 +1,6 @@
 package ar.edu.itba.paw.webapp.form;
 
-import ar.edu.itba.paw.models.Commerce;
+import ar.edu.itba.paw.models.user.Commerce;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;

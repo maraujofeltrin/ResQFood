@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<taglib xmlns="http://java.sun.com/xml/ns/javaee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-jsptaglibrary_2_1.xsd"
+        version="2.1">
+    <description>PAW custom JSP tags (organized under WEB-INF/tags by area: feature, packs, commerce, …)</description>
+    <display-name>paw</display-name>
+    <tlib-version>1.0</tlib-version>
+    <short-name>paw</short-name>
+    <uri>http://itba.edu.ar/paw/tags</uri>
+
+    <!-- Shared across areas (layout, catalog pieces reused in several views) -->
+    <tag-file><name>head</name><path>/WEB-INF/tags/shared/head.tag</path></tag-file>
+    <tag-file><name>navbar</name><path>/WEB-INF/tags/shared/navbar.tag</path></tag-file>
+    <tag-file><name>footer</name><path>/WEB-INF/tags/shared/footer.tag</path></tag-file>
+    <tag-file><name>packEmptyState</name><path>/WEB-INF/tags/shared/packEmptyState.tag</path></tag-file>
+    <tag-file><name>packCard</name><path>/WEB-INF/tags/shared/packCard.tag</path></tag-file>
+    <tag-file><name>pagination</name><path>/WEB-INF/tags/shared/pagination.tag</path></tag-file>
+    <tag-file><name>searchBar</name><path>/WEB-INF/tags/shared/searchBar.tag</path></tag-file>
+    <tag-file><name>pickupConfirm</name><path>/WEB-INF/tags/shared/pickupConfirm.tag</path></tag-file>
+    <tag-file><name>reservationLayout</name><path>/WEB-INF/tags/shared/reservationLayout.tag</path></tag-file>
+    <tag-file><name>button</name><path>/WEB-INF/tags/shared/button.tag</path></tag-file>
+
+    <!-- Pack catalog & pack detail -->
+    <tag-file><name>catalogHeader</name><path>/WEB-INF/tags/packs/catalogHeader.tag</path></tag-file>
+    <tag-file><name>catalogFilter</name><path>/WEB-INF/tags/packs/catalogFilter.tag</path></tag-file>
+    <tag-file><name>sortDropdown</name><path>/WEB-INF/tags/packs/sortDropdown.tag</path></tag-file>
+    <tag-file><name>auctionSortDropdown</name><path>/WEB-INF/tags/packs/auctionSortDropdown.tag</path></tag-file>
+    <tag-file><name>input</name><path>/WEB-INF/tags/packs/input.tag</path></tag-file>
+
+    <!-- Commerce flows -->
+    <tag-file><name>commerceFormLayout</name><path>/WEB-INF/tags/commerce/commerceFormLayout.tag</path></tag-file>
+    <tag-file><name>offerImageUpload</name><path>/WEB-INF/tags/commerce/offerImageUpload.tag</path></tag-file>
+    <tag-file><name>offerModeToggle</name><path>/WEB-INF/tags/commerce/offerModeToggle.tag</path></tag-file>
+    <tag-file><name>commerceDataFields</name><path>/WEB-INF/tags/commerce/commerceDataFields.tag</path></tag-file>
+    <tag-file><name>userIdentityFields</name><path>/WEB-INF/tags/commerce/userIdentityFields.tag</path></tag-file>
+
+    <!-- Reservations -->
+    <tag-file><name>reservationCard</name><path>/WEB-INF/tags/reservations/reservationCard.tag</path></tag-file>
+    <tag-file><name>modal</name><path>/WEB-INF/tags/reservations/modal.tag</path></tag-file>
+    <tag-file><name>reservationFeedback</name><path>/WEB-INF/tags/reservations/reservationFeedback.tag</path></tag-file>
+
+    <!-- Landing -->
+    <tag-file><name>landingHero</name><path>/WEB-INF/tags/home/landingHero.tag</path></tag-file>
+    <tag-file><name>landingPathCard</name><path>/WEB-INF/tags/home/landingPathCard.tag</path></tag-file>
+    <tag-file><name>landingValueCard</name><path>/WEB-INF/tags/home/landingValueCard.tag</path></tag-file>
+
+    <!-- Demo view -->
+    <tag-file><name>title</name><path>/WEB-INF/tags/helloworld/title.tag</path></tag-file>
+</taglib>

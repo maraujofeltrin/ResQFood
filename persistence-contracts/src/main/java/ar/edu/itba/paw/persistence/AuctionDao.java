@@ -1,8 +1,8 @@
 package ar.edu.itba.paw.persistence;
 
-import ar.edu.itba.paw.models.Auction;
-import ar.edu.itba.paw.models.AuctionSortOption;
-import ar.edu.itba.paw.models.PackTag;
+import ar.edu.itba.paw.models.auction.Auction;
+import ar.edu.itba.paw.models.auction.AuctionSortOption;
+import ar.edu.itba.paw.models.pack.PackTag;
 
 import java.time.LocalDateTime;
 import java.util.List;

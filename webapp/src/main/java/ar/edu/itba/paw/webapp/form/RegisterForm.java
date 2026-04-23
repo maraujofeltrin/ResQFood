@@ -1,12 +1,11 @@
 package ar.edu.itba.paw.webapp.form;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 public class RegisterForm {
 
-    @NotBlank(message = "{register.validation.role.notNull}")
+    /** Validated in {@code RegisterFormValidator} (role value + not empty). */
     private String role;
 
     @Valid

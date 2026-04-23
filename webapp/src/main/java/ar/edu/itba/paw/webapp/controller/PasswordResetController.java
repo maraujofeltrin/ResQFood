@@ -1,6 +1,6 @@
 package ar.edu.itba.paw.webapp.controller;
 
-import ar.edu.itba.paw.services.PasswordResetTokenService;
+import ar.edu.itba.paw.services.security.PasswordResetTokenService;
 import ar.edu.itba.paw.webapp.form.PasswordResetChangeForm;
 import ar.edu.itba.paw.webapp.form.PasswordResetRequestForm;
 import org.springframework.beans.factory.annotation.Autowired;

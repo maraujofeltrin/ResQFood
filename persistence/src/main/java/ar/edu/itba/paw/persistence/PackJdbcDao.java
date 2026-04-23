@@ -16,9 +16,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import org.springframework.jdbc.core.RowMapper;
 
-import ar.edu.itba.paw.models.Pack;
-import ar.edu.itba.paw.models.PackTag;
-import ar.edu.itba.paw.models.PackSortOption;
+import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.pack.PackTag;
+import ar.edu.itba.paw.models.pack.PackSortOption;
 
 @Repository
 public class PackJdbcDao implements PackDao {

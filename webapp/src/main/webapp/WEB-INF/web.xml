@@ -95,4 +95,11 @@
     <location>/WEB-INF/jsp/views/errors/error.jsp</location>
   </error-page>
 
+  <jsp-config>
+    <taglib>
+      <taglib-uri>http://itba.edu.ar/paw/tags</taglib-uri>
+      <taglib-location>/WEB-INF/paw.tld</taglib-location>
+    </taglib>
+  </jsp-config>
+
 </web-app>

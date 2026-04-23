@@ -2,7 +2,7 @@
 uri="http://java.sun.com/jsp/jstl/core" %> <%@ taglib prefix="spring"
 uri="http://www.springframework.org/tags" %> <%@ taglib prefix="form"
 uri="http://www.springframework.org/tags/form" %> <%@ taglib prefix="paw"
-tagdir="/WEB-INF/tags" %>
+uri="http://itba.edu.ar/paw/tags" %>
 <!DOCTYPE html>
 <html class="light" lang="${pageContext.response.locale.language}">
   <spring:message code="emailVerification.expired.title" var="expiredTitle" />

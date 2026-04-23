@@ -36,6 +36,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 
+import java.time.ZoneId;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -47,7 +48,7 @@ import java.util.concurrent.Executor;
 @EnableTransactionManagement
 @EnableAsync
 @EnableScheduling
-@ComponentScan({ "ar.edu.itba.paw.webapp.controller", "ar.edu.itba.paw.services", "ar.edu.itba.paw.persistence", "ar.edu.itba.paw.webapp.config", "ar.edu.itba.paw.webapp.auth" })
+@ComponentScan({ "ar.edu.itba.paw.webapp.controller", "ar.edu.itba.paw.webapp.validation", "ar.edu.itba.paw.services", "ar.edu.itba.paw.persistence", "ar.edu.itba.paw.webapp.config", "ar.edu.itba.paw.webapp.auth" })
 @Configuration
 @PropertySource("classpath:/env.properties")
 public class WebConfig implements WebMvcConfigurer {
@@ -55,6 +56,16 @@ public class WebConfig implements WebMvcConfigurer {
     static {
         // pgjdbc uses JVM default TimeZone in the startup packet; must be a name PostgreSQL accepts.
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    }
+
+    /**
+     * App display / business wall-clock zone (e.g. auction end date/time, commerce hours).
+     */
+    @Bean
+    public ZoneId businessZone(@Value("${app.display-zone:}") final String displayZone) {
+        return (displayZone == null || displayZone.trim().isEmpty())
+                ? ZoneId.of("America/Argentina/Buenos_Aires")
+                : ZoneId.of(displayZone.trim());
     }
 
     @Bean

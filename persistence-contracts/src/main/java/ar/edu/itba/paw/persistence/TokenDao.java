@@ -1,7 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
-import ar.edu.itba.paw.models.Token;
-import ar.edu.itba.paw.models.TokenType;
+import ar.edu.itba.paw.models.security.Token;
+import ar.edu.itba.paw.models.security.TokenType;
 
 import java.time.LocalDateTime;
 import java.util.Optional;

@@ -1,9 +1,9 @@
 package ar.edu.itba.paw.persistence;
 
-import ar.edu.itba.paw.models.Auction;
-import ar.edu.itba.paw.models.AuctionSortOption;
-import ar.edu.itba.paw.models.Pack;
-import ar.edu.itba.paw.models.PackTag;
+import ar.edu.itba.paw.models.auction.Auction;
+import ar.edu.itba.paw.models.auction.AuctionSortOption;
+import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.pack.PackTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;

@@ -13,19 +13,14 @@ import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import javax.servlet.ServletContext;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
@@ -46,27 +41,25 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.dao.DataIntegrityViolationException;
 
-import ar.edu.itba.paw.models.Auction;
-import ar.edu.itba.paw.models.AuctionSortOption;
-import ar.edu.itba.paw.models.Commerce;
-import ar.edu.itba.paw.models.Pack;
-import ar.edu.itba.paw.models.PackTag;
-import ar.edu.itba.paw.models.PackSortOption;
-import ar.edu.itba.paw.models.Municipality;
-import ar.edu.itba.paw.models.User;
-import ar.edu.itba.paw.services.AuctionService;
-import ar.edu.itba.paw.services.CommerceService;
-import ar.edu.itba.paw.services.PackService;
-import ar.edu.itba.paw.services.ReservationService;
-import ar.edu.itba.paw.services.UserService;
+import ar.edu.itba.paw.models.auction.Auction;
+import ar.edu.itba.paw.models.auction.AuctionSortOption;
+import ar.edu.itba.paw.models.auction.BidPlacementException;
+import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.pack.PackSortOption;
+import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.services.auction.AuctionService;
+import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.services.pack.DirectReservationCheck;
+import ar.edu.itba.paw.services.pack.PackService;
+import ar.edu.itba.paw.services.reservation.ReservationService;
+import ar.edu.itba.paw.services.user.UserService;
 import ar.edu.itba.paw.webapp.form.BidForm;
 import ar.edu.itba.paw.webapp.form.ReservationForm;
+import ar.edu.itba.paw.webapp.controller.utils.PackCatalogUtils;
 
 @Controller
 public class PackController {
-
-    /** Kept in sync with {@code AuctionServiceImpl}. */
-    private static final double AUCTION_MIN_BID_INCREMENT_ARS = 500.0;
 
     private final ReservationService reservationService;
     private final PackService packService;
@@ -76,6 +69,7 @@ public class PackController {
     private final ServletContext servletContext;
     private final MessageSource messageSource;
     private final ZoneId businessZone;
+    private final PackCatalogUtils packCatalogUtils;
 
     private byte[] placeholderBytes;
     private String placeholderContentType;
@@ -86,7 +80,8 @@ public class PackController {
             final UserService userService,
             final ServletContext servletContext,
             final MessageSource messageSource,
-            @Value("${app.display-zone:}") final String displayZone) {
+            final ZoneId businessZone,
+            final PackCatalogUtils packCatalogUtils) {
         this.reservationService = reservationService;
         this.packService = packService;
         this.commerceService = commerceService;
@@ -94,9 +89,8 @@ public class PackController {
         this.userService = userService;
         this.servletContext = servletContext;
         this.messageSource = messageSource;
-        this.businessZone = (displayZone == null || displayZone.trim().isEmpty())
-                ? ZoneId.of("America/Argentina/Buenos_Aires")
-                : ZoneId.of(displayZone.trim());
+        this.businessZone = businessZone;
+        this.packCatalogUtils = packCatalogUtils;
     }
 
     private synchronized byte[] getPlaceholderBytes() {
@@ -270,7 +264,7 @@ public class PackController {
             final Auction auction = auctionOpt.get();
             mav.addObject("auction", auction);
             final double effective = auction.getEffectivePrice() != null ? auction.getEffectivePrice() : 0d;
-            final double minimumBidAmount = effective + AUCTION_MIN_BID_INCREMENT_ARS;
+            final double minimumBidAmount = effective + auctionService.getMinBidIncrementArs();
             mav.addObject("auctionEffectiveAmount", effective);
             mav.addObject("auctionEffectivePriceDisplay", formatPrice(effective));
             mav.addObject("auctionEndDisplay", formatAuctionEndForDisplay(auction.getEndTime(), locale));
@@ -345,48 +339,6 @@ public class PackController {
         return mav;
     }
 
-    private static final int PAGE_SIZE = 6;
-    private static final int AUCTION_CAROUSEL_SIZE = 6;
-    private static final String TYPE_PACKS = "packs";
-    private static final String TYPE_AUCTIONS = "auctions";
-
-    private enum CatalogMode {
-        ALL,
-        PACKS,
-        AUCTIONS
-    }
-
-    private static List<String> normalizeTypes(final List<String> rawTypes) {
-        if (rawTypes == null || rawTypes.isEmpty()) {
-            return Collections.emptyList();
-        }
-        final Set<String> values = new LinkedHashSet<>();
-        for (final String raw : rawTypes) {
-            if (raw == null) {
-                continue;
-            }
-            final String type = raw.trim().toLowerCase(Locale.ROOT);
-            if (TYPE_PACKS.equals(type) || TYPE_AUCTIONS.equals(type)) {
-                values.add(type);
-            }
-        }
-        return new ArrayList<>(values);
-    }
-
-    private List<Auction> findCatalogAuctions(final boolean hasQuery, final boolean hasTags, final String query,
-            final List<PackTag> selectedTags, final AuctionSortOption sortOption) {
-        if (hasQuery && hasTags) {
-            return auctionService.searchActiveWithTags(query, selectedTags, sortOption);
-        }
-        if (hasTags) {
-            return auctionService.findActiveByTags(selectedTags, sortOption);
-        }
-        if (hasQuery) {
-            return auctionService.searchActive(query, sortOption);
-        }
-        return auctionService.findActive(sortOption);
-    }
-
     @GetMapping("/packs")
     public ModelAndView listPacks(
             @RequestParam(value = "q", required = false) final String query,
@@ -397,196 +349,8 @@ public class PackController {
             @RequestParam(value = "location", required = false) final String locationParam,
             @RequestParam(value = "timeRange", required = false) final List<String> timeRange,
             @RequestParam(value = "page", defaultValue = "1") final int page) {
-
-        final ModelAndView mav = new ModelAndView("packs/packCatalogView");
-        final PackSortOption sortOption = PackSortOption.fromString(sort);
-        final AuctionSortOption auctionSortOption = AuctionSortOption.fromString(auctionSort);
-
-        // --- parse tags (whitelist via enum) ---
-        final List<PackTag> selectedTags = new ArrayList<>();
-        if (tagNames != null) {
-            for (final String name : tagNames) {
-                try {
-                    selectedTags.add(PackTag.valueOf(name));
-                } catch (final IllegalArgumentException ignored) {
-                }
-            }
-        }
-
-        // --- parse location (whitelist via Municipality enum) ---
-        final Municipality municipality = Municipality.fromString(locationParam);
-        final String cityFilter = municipality != null ? municipality.getCityName() : null;
-
-        // --- sanitise timeRange (DAO switch-case silently ignores unknown values) ---
-        final List<String> safeTimeRange = timeRange != null ? timeRange : new ArrayList<>();
-
-        final boolean hasQuery = query != null && !query.trim().isEmpty();
-        final String trimmedQuery = hasQuery ? query.trim() : null;
-        final boolean hasTags = !selectedTags.isEmpty();
-
-        final List<String> selectedTypes = normalizeTypes(types);
-        final boolean packsSelected = selectedTypes.contains(TYPE_PACKS);
-        final boolean auctionsSelected = selectedTypes.contains(TYPE_AUCTIONS);
-
-        final CatalogMode catalogMode;
-        if ((packsSelected && auctionsSelected) || (!packsSelected && !auctionsSelected)) {
-            catalogMode = CatalogMode.ALL;
-        } else if (packsSelected) {
-            catalogMode = CatalogMode.PACKS;
-        } else {
-            catalogMode = CatalogMode.AUCTIONS;
-        }
-
-        final boolean showPacks = catalogMode != CatalogMode.AUCTIONS;
-        final boolean showAuctionsList = catalogMode == CatalogMode.AUCTIONS;
-        final boolean showAuctionsCarousel = catalogMode == CatalogMode.ALL;
-
-        List<Pack> allPacks = Collections.emptyList();
-        if (showPacks) {
-            allPacks = packService.filterPacks(
-                    trimmedQuery,
-                    selectedTags.isEmpty() ? null : selectedTags,
-                    cityFilter,
-                    safeTimeRange.isEmpty() ? null : safeTimeRange,
-                    sortOption);
-        }
-
-        List<Auction> allAuctions = Collections.emptyList();
-        if (showAuctionsList) {
-            allAuctions = findCatalogAuctions(hasQuery, hasTags, trimmedQuery, selectedTags, auctionSortOption);
-        }
-
-        List<Auction> carouselAuctions = Collections.emptyList();
-        if (showAuctionsCarousel) {
-            final List<Auction> sortedForCarousel = findCatalogAuctions(hasQuery, hasTags, trimmedQuery,
-                    selectedTags, AuctionSortOption.TIME_REMAINING_ASC);
-            final int carouselSize = Math.min(AUCTION_CAROUSEL_SIZE, sortedForCarousel.size());
-            carouselAuctions = sortedForCarousel.subList(0, carouselSize);
-        }
-
-        final int totalItems = showAuctionsList ? allAuctions.size() : allPacks.size();
-        final int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
-        final int safePage = Math.max(1, Math.min(page, totalPages));
-        final int fromIdx = (safePage - 1) * PAGE_SIZE;
-        final int toIdx = Math.min(fromIdx + PAGE_SIZE, totalItems);
-
-        final List<Pack> packs = showAuctionsList ? Collections.emptyList() : allPacks.subList(fromIdx, toIdx);
-        final List<Auction> auctions = showAuctionsList ? allAuctions.subList(fromIdx, toIdx) : Collections.emptyList();
-
-        final Map<Long, String> commerceNames = new HashMap<>();
-        for (final Pack pack : packs) {
-            commerceNames.putIfAbsent(
-                    pack.getId(),
-                    commerceService.findByUserId(pack.getCommerceId())
-                            .map(Commerce::getCommercialName)
-                            .orElse("—"));
-        }
-        for (final Auction auctionEntity : auctions) {
-            if (auctionEntity.getPack() == null) {
-                continue;
-            }
-            final Pack auctionPack = auctionEntity.getPack();
-            commerceNames.putIfAbsent(
-                    auctionPack.getId(),
-                    commerceService.findByUserId(auctionPack.getCommerceId())
-                            .map(Commerce::getCommercialName)
-                            .orElse("—"));
-        }
-        for (final Auction auctionEntity : carouselAuctions) {
-            if (auctionEntity.getPack() == null) {
-                continue;
-            }
-            final Pack auctionPack = auctionEntity.getPack();
-            commerceNames.putIfAbsent(
-                    auctionPack.getId(),
-                    commerceService.findByUserId(auctionPack.getCommerceId())
-                            .map(Commerce::getCommercialName)
-                            .orElse("—"));
-        }
-
-        // --- build pagination base URL preserving all current filters ---
-        final StringBuilder baseUrlBuilder = new StringBuilder("/packs");
-        boolean firstParam = true;
-        if (hasQuery) {
-            baseUrlBuilder.append(firstParam ? "?" : "&").append("q=")
-                    .append(java.net.URLEncoder.encode(trimmedQuery, java.nio.charset.StandardCharsets.UTF_8));
-            firstParam = false;
-        }
-        if (!selectedTags.isEmpty()) {
-            for (final PackTag tag : selectedTags) {
-                baseUrlBuilder.append(firstParam ? "?" : "&").append("tags=").append(tag.name());
-                firstParam = false;
-            }
-        }
-        for (final String selectedType : selectedTypes) {
-            baseUrlBuilder.append(firstParam ? "?" : "&").append("types=").append(selectedType);
-            firstParam = false;
-        }
-        if (catalogMode != CatalogMode.AUCTIONS && sort != null && !sort.isBlank()) {
-            baseUrlBuilder.append(firstParam ? "?" : "&").append("sort=").append(sortOption.name());
-            firstParam = false;
-        }
-        if (municipality != null) {
-            baseUrlBuilder.append(firstParam ? "?" : "&").append("location=").append(municipality.name());
-            firstParam = false;
-        }
-        if (!safeTimeRange.isEmpty()) {
-            for (final String tr : safeTimeRange) {
-                baseUrlBuilder.append(firstParam ? "?" : "&").append("timeRange=").append(tr);
-                firstParam = false;
-            }
-        }
-        if (catalogMode == CatalogMode.AUCTIONS) {
-            baseUrlBuilder.append(firstParam ? "?" : "&").append("auctionSort=").append(auctionSortOption.name());
-            firstParam = false;
-        }
-
-        final StringBuilder auctionsViewAllBuilder = new StringBuilder("/packs");
-        boolean viewAllFirstParam = true;
-        if (hasQuery) {
-            auctionsViewAllBuilder.append(viewAllFirstParam ? "?" : "&").append("q=")
-                    .append(java.net.URLEncoder.encode(trimmedQuery, java.nio.charset.StandardCharsets.UTF_8));
-            viewAllFirstParam = false;
-        }
-        if (hasTags) {
-            for (final PackTag tag : selectedTags) {
-                auctionsViewAllBuilder.append(viewAllFirstParam ? "?" : "&").append("tags=").append(tag.name());
-                viewAllFirstParam = false;
-            }
-        }
-        if (municipality != null) {
-            auctionsViewAllBuilder.append(viewAllFirstParam ? "?" : "&").append("location=").append(municipality.name());
-            viewAllFirstParam = false;
-        }
-        if (!safeTimeRange.isEmpty()) {
-            for (final String tr : safeTimeRange) {
-                auctionsViewAllBuilder.append(viewAllFirstParam ? "?" : "&").append("timeRange=").append(tr);
-                viewAllFirstParam = false;
-            }
-        }
-        auctionsViewAllBuilder.append(viewAllFirstParam ? "?" : "&").append("types=").append(TYPE_AUCTIONS);
-        auctionsViewAllBuilder.append("&auctionSort=").append(auctionSortOption.name());
-
-        mav.addObject("packs", packs);
-        mav.addObject("auctions", auctions);
-        mav.addObject("auctionsCarousel", carouselAuctions);
-        mav.addObject("catalogMode", catalogMode.name());
-        mav.addObject("commerceNames", commerceNames);
-        mav.addObject("availableTags", PackTag.values());
-        mav.addObject("selectedTags", selectedTags);
-        mav.addObject("selectedTypes", selectedTypes);
-        mav.addObject("availableSorts", PackSortOption.values());
-        mav.addObject("currentSort", sortOption);
-        mav.addObject("availableMunicipalities", Municipality.values());
-        mav.addObject("selectedMunicipality", municipality);
-        mav.addObject("selectedTimeRanges", safeTimeRange);
-        mav.addObject("availableAuctionSorts", AuctionSortOption.values());
-        mav.addObject("currentAuctionSort", auctionSortOption);
-        mav.addObject("currentPage", safePage);
-        mav.addObject("totalPages", totalPages);
-        mav.addObject("paginationBaseUrl", baseUrlBuilder.toString());
-        mav.addObject("auctionsViewAllUrl", auctionsViewAllBuilder.toString());
-        return mav;
+        return packCatalogUtils.buildPackCatalog(query, tagNames, sort, types, auctionSort, locationParam,
+                timeRange, page);
     }
 
     @GetMapping("/packs/{id}")
@@ -639,54 +403,52 @@ public class PackController {
             @Valid @ModelAttribute("reservationForm") final ReservationForm reservationForm,
             final BindingResult bindingResult,
             final RedirectAttributes redirectAttributes) {
-        final Optional<Pack> packOpt = packService.findById(packId)
-                .filter(p -> Boolean.TRUE.equals(p.getActive()));
-
         final ModelAndView redirectView = new ModelAndView("redirect:/packs/" + packId);
 
-        if (packOpt.isEmpty()) {
+        if (bindingResult.hasErrors()) {
+            return packService.findById(packId)
+                    .map(pack -> buildPackDetailModel(pack, reservationForm, createDefaultBidForm()))
+                    .orElse(redirectView);
+        }
+
+        final int quantity = reservationForm.getQuantity().intValue();
+        final DirectReservationCheck check = reservationService.checkDirectPackReservation(packId, quantity);
+
+        switch (check.getOutcome()) {
+        case OK:
+            break;
+        case QUANTITY_EXCEEDS_STOCK: {
+            final Pack p = check.getPack().orElse(null);
+            if (p == null) {
+                return redirectView;
+            }
+            final int stock = check.getAvailableStock().orElse(0);
+            bindingResult.rejectValue("quantity", "reservation.quantity.exceedsStock", new Object[] { stock }, null);
+            return buildPackDetailModel(p, reservationForm, createDefaultBidForm());
+        }
+        case AUCTION_ACTIVE: {
+            final Optional<Auction> auctionForReserve = auctionService.findByPackId(packId);
+            final boolean active = auctionForReserve.map(Auction::isActive).orElse(false);
+            redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
+            redirectAttributes.addFlashAttribute("reservationAlertMessage", messageSource.getMessage(
+                    active ? "reservation.alert.activeAuction" : "reservation.alert.auctionEndedNoDirectSale",
+                    null, LocaleContextHolder.getLocale()));
+            return redirectView;
+        }
+        case AUCTION_ENDED_NO_DIRECT:
             redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
                     messageSource.getMessage("reservation.alert.packUnavailable", null,
                             LocaleContextHolder.getLocale()));
             return redirectView;
-        }
-
-        final Pack pack = packOpt.get();
-        final Optional<Auction> auctionForReserve = auctionService.findByPackId(packId);
-        if (auctionForReserve.isPresent()) {
-            final Auction a = auctionForReserve.get();
-            if (a.getStatus() == Auction.Status.ACTIVE) {
-                redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
-                redirectAttributes.addFlashAttribute("reservationAlertMessage",
-                        messageSource.getMessage(
-                                a.isActive() ? "reservation.alert.activeAuction"
-                                        : "reservation.alert.auctionEndedNoDirectSale",
-                                null, LocaleContextHolder.getLocale()));
-                return redirectView;
-            }
-            if (a.getStatus() == Auction.Status.FINISHED) {
-                redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
-                redirectAttributes.addFlashAttribute("reservationAlertMessage",
-                        messageSource.getMessage("reservation.alert.packUnavailable", null,
-                                LocaleContextHolder.getLocale()));
-                return redirectView;
-            }
-        }
-
-        final Integer stock = pack.getStock();
-        if (reservationForm.getQuantity() != null && stock != null
-                && reservationForm.getQuantity().intValue() > stock.intValue()) {
-            bindingResult.rejectValue("quantity", "reservation.quantity.exceedsStock",
-                    new Object[] { stock }, null);
-        }
-        if (bindingResult.hasErrors()) {
-            final ModelAndView mav = buildPackDetailModel(pack, reservationForm, createDefaultBidForm());
-            return mav;
-        }
-
-        final Double finalPrice = pack.getFinalPrice();
-        if (finalPrice == null) {
+        case PACK_UNAVAILABLE:
+            redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
+            redirectAttributes.addFlashAttribute("reservationAlertMessage",
+                    messageSource.getMessage("reservation.alert.packUnavailable", null,
+                            LocaleContextHolder.getLocale()));
+            return redirectView;
+        case MISSING_FINAL_PRICE:
+        default:
             redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
                     messageSource.getMessage("reservation.alert.genericError", null,
@@ -694,7 +456,7 @@ public class PackController {
             return redirectView;
         }
 
-        final int quantity = reservationForm.getQuantity().intValue();
+        final double finalPrice = check.getUnitPrice();
         final String appBaseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
             .build()
             .toUriString();
@@ -771,32 +533,27 @@ public class PackController {
             redirectAttributes.addFlashAttribute("auctionAlertKind", "success");
             redirectAttributes.addFlashAttribute("auctionAlertMessage",
                     messageSource.getMessage("pack.detail.bid.alert.success", null, locale));
-        } catch (final IllegalArgumentException ex) {
+        } catch (final BidPlacementException ex) {
             redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
             final String code;
-            final String msg = ex.getMessage() != null ? ex.getMessage() : "";
-            if (msg.contains("Cannot bid on your own auction")) {
+            switch (ex.getReason()) {
+            case OWN_COMMERCE:
                 code = "pack.detail.bid.alert.ownCommerce";
-            } else if (msg.contains("Already highest bidder")) {
+                break;
+            case ALREADY_LEADING:
                 code = "pack.detail.bid.alert.alreadyLeading";
-            } else if (msg.contains("Minimum bid increment")) {
+                break;
+            case AMOUNT_BELOW_MINIMUM:
                 code = "pack.detail.bid.alert.belowIncrement";
-            } else if (msg.contains("must be greater than current price")) {
-                code = "pack.detail.bid.alert.belowMinimum";
-            } else {
-                code = "pack.detail.bid.alert.reject";
-            }
-            redirectAttributes.addFlashAttribute("auctionAlertMessage",
-                    messageSource.getMessage(code, null, locale));
-        } catch (final IllegalStateException ex) {
-            redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
-            final String code;
-            final String msg = ex.getMessage() != null ? ex.getMessage() : "";
-            if (msg.contains("expired")) {
+                break;
+            case EXPIRED:
                 code = "pack.detail.bid.alert.auctionExpired";
-            } else if (msg.contains("not active")) {
+                break;
+            case NOT_ACTIVE:
+            case AUCTION_NOT_FOUND:
                 code = "pack.detail.bid.alert.auctionNotActive";
-            } else {
+                break;
+            default:
                 code = "pack.detail.bid.alert.reject";
             }
             redirectAttributes.addFlashAttribute("auctionAlertMessage",

@@ -2,7 +2,7 @@
     <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
         <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
             <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-                <%@ taglib prefix="paw" tagdir="/WEB-INF/tags" %>
+                <%@ taglib prefix="paw" uri="http://itba.edu.ar/paw/tags" %>
                     <!DOCTYPE html>
                     <html class="light" lang="${pageContext.response.locale.language}">
 
