@@ -6,6 +6,7 @@ import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.ClientDao;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.UserDao;
+import ar.edu.itba.paw.services.security.EmailVerificationTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,14 +21,17 @@ public class UserServiceImpl implements UserService {
     private final ClientDao clientDao;
     private final CommerceDao commerceDao;
     private final PasswordEncoder passwordEncoder;
+    private final EmailVerificationTokenService emailVerificationTokenService;
 
     @Autowired
     public UserServiceImpl(final UserDao userDao, final ClientDao clientDao, final CommerceDao commerceDao,
-            final PasswordEncoder passwordEncoder) {
+            final PasswordEncoder passwordEncoder,
+            final EmailVerificationTokenService emailVerificationTokenService) {
         this.userDao = userDao;
         this.clientDao = clientDao;
         this.commerceDao = commerceDao;
         this.passwordEncoder = passwordEncoder;
+        this.emailVerificationTokenService = emailVerificationTokenService;
     }
 
     @Transactional
@@ -151,7 +155,8 @@ public class UserServiceImpl implements UserService {
 
     @Transactional
     @Override
-    public RegisterResult tryRegister(final User user, final Client clientProfile, final Commerce commerceProfile) {
+    public RegisterResult tryRegister(final User user, final Client clientProfile, final Commerce commerceProfile,
+            final String appBaseUrl) {
         final Optional<User> existingUser = findByEmail(user.getEmail());
         if (existingUser.isPresent()) {
             final Optional<User> upgraded = upgradeProvisionalUser(user, clientProfile, commerceProfile);
@@ -161,6 +166,7 @@ public class UserServiceImpl implements UserService {
             return RegisterResult.duplicateEmail();
         }
         final User created = createUser(user, clientProfile, commerceProfile);
+        emailVerificationTokenService.sendVerificationMail(created.getId(), created.getEmail(), appBaseUrl);
         return RegisterResult.createdPendingVerification(created);
     }
 }

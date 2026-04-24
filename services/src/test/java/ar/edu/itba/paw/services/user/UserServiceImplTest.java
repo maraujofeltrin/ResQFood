@@ -30,6 +30,21 @@ public class UserServiceImplTest {
         }
     }
 
+    /** No-op: tests that exercise tryRegister do not need email-sending side-effects. */
+    static class NoOpEmailVerificationTokenService
+            implements ar.edu.itba.paw.services.security.EmailVerificationTokenService {
+        @Override
+        public void sendVerificationMail(final Long userId, final String email, final String baseUrl) { }
+        @Override
+        public java.util.Optional<ar.edu.itba.paw.models.user.User> verifyEmailAndGetUser(final String token) {
+            return java.util.Optional.empty();
+        }
+        @Override
+        public boolean verifyEmail(final String token) { return false; }
+        @Override
+        public void resendVerificationMail(final String email, final String baseUrl) { }
+    }
+
     static class InMemoryUserDao implements UserDao {
         private final Map<Long, User> byId = new HashMap<>();
         private final Map<String, User> byEmail = new HashMap<>();
@@ -142,7 +157,7 @@ public class UserServiceImplTest {
     public void createUser_and_findByEmailAndId() {
         final InMemoryUserDao dao = new InMemoryUserDao();
         final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-            new NoOpPasswordEncoder());
+            new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService());
 
         final User u = svc.createUser(new User(null, "a@b.com", "pw", "Name", null, null, false), null, null);
         assertNotNull(u.getId());
@@ -159,7 +174,7 @@ public class UserServiceImplTest {
     public void createUser_withRole_storesRole() {
         final InMemoryUserDao dao = new InMemoryUserDao();
         final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-            new NoOpPasswordEncoder());
+            new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService());
 
         final User userToCreate = new User(null, "c@d.com", "pw", "N", "123", User.Role.COMMERCE, false);
         final Commerce commerceProfile = new Commerce(null, "Shop", Commerce.Category.OTHER, "st", 1, "city", "prov", "pc", "09:00", "18:00");
@@ -174,7 +189,7 @@ public class UserServiceImplTest {
     public void upgradeProvisionalUser_updatesPasswordAndProfile() {
         final InMemoryUserDao dao = new InMemoryUserDao();
         final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-            new NoOpPasswordEncoder());
+            new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService());
 
         final User provisional = new User(null, "pending@ex.com", "__RESERVATION_PENDING_PASSWORD__", "Pending",
             "123", User.Role.CLIENT, false);

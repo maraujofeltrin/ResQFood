@@ -46,13 +46,6 @@ uri="http://itba.edu.ar/paw/tags" %>
           </div>
         </c:if>
 
-        <c:if test="${not empty param.passwordReset}">
-          <div
-            class="bg-primary-container text-on-primary-container rounded-lg p-4 mb-6 text-sm"
-          >
-            <spring:message code="login.info.passwordReset" />
-          </div>
-        </c:if>
 
         <form
           action="${pageContext.request.contextPath}/login"

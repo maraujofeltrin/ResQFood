@@ -203,7 +203,7 @@ public class ReservationServiceImplTest {
         @Override public void updatePassword(final Long userId, final String encodedPassword) { }
         @Override public void markVerified(final Long userId) { }
         @Override
-        public RegisterResult tryRegister(final User u, final Client c, final Commerce com) {
+        public RegisterResult tryRegister(final User u, final Client c, final Commerce com, final String appBaseUrl) {
             return RegisterResult.duplicateEmail();
         }
     }

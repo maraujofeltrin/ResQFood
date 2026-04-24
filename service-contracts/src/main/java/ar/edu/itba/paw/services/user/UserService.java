@@ -12,10 +12,6 @@ public interface UserService {
     Optional<User> findById(final Long id);
     void updatePassword(final Long userId, final String encodedPassword);
     void markVerified(final Long userId);
-
-    /**
-     * Registers a new user or upgrades a provisional account. Never throws for duplicate email;
-     * use {@link RegisterResult#getOutcome()}.
-     */
-    RegisterResult tryRegister(final User user, final Client clientProfile, final Commerce commerceProfile);
+    RegisterResult tryRegister(final User user, final Client clientProfile, final Commerce commerceProfile,
+            final String appBaseUrl);
 }

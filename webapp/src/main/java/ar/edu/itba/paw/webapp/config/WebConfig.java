@@ -48,7 +48,7 @@ import java.util.concurrent.Executor;
 @EnableTransactionManagement
 @EnableAsync
 @EnableScheduling
-@ComponentScan({ "ar.edu.itba.paw.webapp.controller", "ar.edu.itba.paw.webapp.validation", "ar.edu.itba.paw.services", "ar.edu.itba.paw.persistence", "ar.edu.itba.paw.webapp.config", "ar.edu.itba.paw.webapp.auth" })
+@ComponentScan({ "ar.edu.itba.paw.webapp.controller", "ar.edu.itba.paw.webapp.validation", "ar.edu.itba.paw.services", "ar.edu.itba.paw.persistence", "ar.edu.itba.paw.webapp.config", "ar.edu.itba.paw.webapp.auth", "ar.edu.itba.paw.webapp.assembler" })
 @Configuration
 @PropertySource("classpath:/env.properties")
 public class WebConfig implements WebMvcConfigurer {

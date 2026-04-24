@@ -59,6 +59,13 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
         tokenDao.markAsUsed(token, TokenType.PASSWORD_RESET);
     }
 
+    @Override
+    public Optional<String> getEmailByToken(final String token) {
+        return tokenDao.findByTokenAndType(token, TokenType.PASSWORD_RESET)
+                .flatMap(t -> userDao.findById(t.getUserId()))
+                .map(User::getEmail);
+    }
+
     private static boolean isValid(final Token token) {
         return !token.isUsed() && token.getExpiresAt().isAfter(LocalDateTime.now());
     }

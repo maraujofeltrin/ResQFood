@@ -56,7 +56,8 @@ public class CommerceServiceImplTest {
         }
 
         @Override
-        public RegisterResult tryRegister(final User user, final Client clientProfile, final Commerce commerceProfile) {
+        public RegisterResult tryRegister(final User user, final Client clientProfile, final Commerce commerceProfile,
+                final String appBaseUrl) {
             return RegisterResult.duplicateEmail();
         }
     }

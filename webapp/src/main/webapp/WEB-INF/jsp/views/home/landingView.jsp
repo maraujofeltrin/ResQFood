@@ -14,6 +14,13 @@
     <paw:navbar />
 
     <main class="pt-24 flex-grow">
+        <c:if test="${passwordResetSuccess}">
+            <div class="max-w-7xl mx-auto px-6 mt-6 mb-4">
+                <div class="bg-primary-container text-on-primary-container rounded-xl p-4 text-center font-medium shadow-sm">
+                    <spring:message code="landing.passwordReset.success" />
+                </div>
+            </div>
+        </c:if>
         <paw:landingHero previewPacks="${previewPacks}" />
         <!-- Dual Path Section -->
         <section class="max-w-7xl mx-auto px-6 py-12">
