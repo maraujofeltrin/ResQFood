@@ -93,11 +93,18 @@ public class PackServiceImplTest {
         }
 
         @Override
-        public List<Pack> filterPacks(String query, List<PackTag> tags, String city, List<String> timeRanges, PackSortOption sort) {
+        public List<Pack> filterPacks(String query, List<PackTag> tags, String city, List<String> timeRanges, PackSortOption sort, int page, int pageSize) {
             //return all active non-deleted packs
             final List<Pack> r = new ArrayList<>();
             for (Pack p : store.values()) if (Boolean.TRUE.equals(p.getActive()) && !Boolean.TRUE.equals(p.getDeleted())) r.add(p);
             return r;
+        }
+
+        @Override
+        public int countFilteredPacks(String query, List<PackTag> tags, String city, List<String> timeRanges) {
+            int count = 0;
+            for (Pack p : store.values()) if (Boolean.TRUE.equals(p.getActive()) && !Boolean.TRUE.equals(p.getDeleted())) count++;
+            return count;
         }
     }
 

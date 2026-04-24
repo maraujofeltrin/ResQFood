@@ -14,7 +14,6 @@ import ar.edu.itba.paw.services.reservation.ReservationTokenService;
 import ar.edu.itba.paw.services.reservation.ReservationTokenService.TokenValidationResult;
 import ar.edu.itba.paw.services.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -68,7 +67,7 @@ public class ReservationController {
             final CommerceService commerceService,
             final ClientService clientService,
             final AuthenticatedUserResolver authResolver,
-            @Value("${app.display-zone:}") final String displayZoneStr) {
+            final ZoneId businessZone) {
         this.reservationTokenService = reservationTokenService;
         this.reservationService = reservationService;
         this.userService = userService;
@@ -76,9 +75,7 @@ public class ReservationController {
         this.commerceService = commerceService;
         this.clientService = clientService;
         this.authResolver = authResolver;
-        this.displayZone = (displayZoneStr == null || displayZoneStr.trim().isEmpty())
-                ? ZoneId.of("America/Argentina/Buenos_Aires")
-                : ZoneId.of(displayZoneStr.trim());
+        this.displayZone = businessZone;
     }
 
     private String formatUtcDateTimeForDisplay(final LocalDateTime utc) {
@@ -169,15 +166,7 @@ public class ReservationController {
         }
     }
 
-    private String formatClientName(final Client client) {
-        if (client == null) {
-            return "-";
-        }
-        final String firstName = client.getName() == null ? "" : client.getName().trim();
-        final String lastName = client.getLastName() == null ? "" : client.getLastName().trim();
-        final String fullName = (firstName + " " + lastName).trim();
-        return fullName.isEmpty() ? "-" : fullName;
-    }
+
 
     private static String buildPaginationBaseUrl(final String query, final Reservation.Status statusFilter) {
         final StringBuilder baseUrl = new StringBuilder("/reservations");
@@ -280,7 +269,7 @@ public class ReservationController {
 
             if (isCommerce && reservation.getCustomerId() != null) {
                 clientName = clientService.findByUserId(reservation.getCustomerId())
-                        .map(this::formatClientName)
+                        .map(Client::getFullName)
                         .orElse("-");
             }
 

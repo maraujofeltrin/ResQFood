@@ -179,7 +179,8 @@ public class ReservationServiceImplTest {
         @Override public boolean decrementStock(long packId, int quantity) { return true; }
         @Override public boolean incrementStock(long packId, int quantity) { incrementCalls++; return true; }
         @Override public void updateImage(Long packId, byte[] imageData, String imageContentType) { }
-        @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort) { return Collections.emptyList(); }
+        @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return Collections.emptyList(); }
+        @Override public int countFilteredPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges) { return 0; }
     }
 
     static class TestUserService implements UserService {
@@ -397,7 +398,8 @@ public class ReservationServiceImplTest {
                     @Override public java.util.List<Pack> findByCommerceId(Long commerceId) { return Collections.emptyList(); }
                     @Override public void softDelete(Long id) { }
                     @Override public void updateImage(Long packId, byte[] imageData, String imageContentType) { }
-                    @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort) { return Collections.emptyList(); }
+                    @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return Collections.emptyList(); }
+                    @Override public int countFilteredPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges) { return 0; }
                 },
                 mailService,
                 new TestCommerceService(),

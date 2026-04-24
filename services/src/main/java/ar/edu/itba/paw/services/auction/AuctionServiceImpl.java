@@ -214,4 +214,14 @@ public class AuctionServiceImpl implements AuctionService {
     public List<Bid> getBidHistory(final long auctionId) {
         return bidDao.findByAuctionId(auctionId);
     }
+
+    @Override
+    public boolean isClientLeading(final long auctionId, final long userId) {
+        final Optional<Auction> auctionOpt = auctionDao.findById(auctionId);
+        if (auctionOpt.isEmpty()) {
+            return false;
+        }
+        final Auction auction = auctionOpt.get();
+        return auction.getCurrentBidderId() != null && auction.getCurrentBidderId().equals(userId);
+    }
 }

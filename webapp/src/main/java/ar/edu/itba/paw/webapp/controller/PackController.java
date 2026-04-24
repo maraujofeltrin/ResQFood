@@ -4,14 +4,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -56,6 +53,7 @@ import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.user.UserService;
 import ar.edu.itba.paw.webapp.form.BidForm;
 import ar.edu.itba.paw.webapp.form.ReservationForm;
+import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.controller.utils.PackCatalogUtils;
 
 @Controller
@@ -70,6 +68,7 @@ public class PackController {
     private final MessageSource messageSource;
     private final ZoneId businessZone;
     private final PackCatalogUtils packCatalogUtils;
+    private final AuthenticatedUserResolver authResolver;
 
     private byte[] placeholderBytes;
     private String placeholderContentType;
@@ -81,7 +80,8 @@ public class PackController {
             final ServletContext servletContext,
             final MessageSource messageSource,
             final ZoneId businessZone,
-            final PackCatalogUtils packCatalogUtils) {
+            final PackCatalogUtils packCatalogUtils,
+            final AuthenticatedUserResolver authResolver) {
         this.reservationService = reservationService;
         this.packService = packService;
         this.commerceService = commerceService;
@@ -91,6 +91,7 @@ public class PackController {
         this.messageSource = messageSource;
         this.businessZone = businessZone;
         this.packCatalogUtils = packCatalogUtils;
+        this.authResolver = authResolver;
     }
 
     private synchronized byte[] getPlaceholderBytes() {
@@ -126,87 +127,6 @@ public class PackController {
         return value.trim();
     }
 
-    private static String formatStreetLine(final Commerce commerce) {
-        if (commerce == null) {
-            return "—";
-        }
-        final String street = commerce.getStreet();
-        final Integer number = commerce.getStreetNumber();
-        final boolean hasStreet = street != null && !street.isBlank();
-        final boolean hasNumber = number != null;
-        if (!hasStreet && !hasNumber) {
-            return "—";
-        }
-        if (hasStreet && hasNumber) {
-            return street.trim() + " " + number;
-        }
-        if (hasStreet) {
-            return street.trim();
-        }
-        return String.valueOf(number);
-    }
-
-    private static String formatCityProvincePostal(final Commerce commerce) {
-        if (commerce == null) {
-            return "—";
-        }
-        final List<String> parts = new ArrayList<>(3);
-        if (commerce.getCity() != null && !commerce.getCity().isBlank()) {
-            parts.add(commerce.getCity().trim());
-        }
-        if (commerce.getProvince() != null && !commerce.getProvince().isBlank()) {
-            parts.add(commerce.getProvince().trim());
-        }
-        if (commerce.getPostalCode() != null && !commerce.getPostalCode().isBlank()) {
-            parts.add(commerce.getPostalCode().trim());
-        }
-        return parts.isEmpty() ? "—" : String.join(", ", parts);
-    }
-
-    private static Optional<LocalTime> parseFlexibleTime(final String value) {
-        if (value == null || value.isBlank()) {
-            return Optional.empty();
-        }
-        final String v = value.trim();
-        final DateTimeFormatter[] formatters = {
-                DateTimeFormatter.ofPattern("h:mm a", Locale.US),
-                DateTimeFormatter.ofPattern("hh:mm a", Locale.US),
-                DateTimeFormatter.ofPattern("H:mm", Locale.US),
-                DateTimeFormatter.ofPattern("HH:mm", Locale.US),
-                DateTimeFormatter.ofPattern("H:mm:ss", Locale.US),
-                DateTimeFormatter.ofPattern("HH:mm:ss", Locale.US),
-        };
-        for (final DateTimeFormatter formatter : formatters) {
-            try {
-                return Optional.of(LocalTime.parse(v, formatter));
-            } catch (final DateTimeParseException ignored) {
-                // try next pattern
-            }
-        }
-        return Optional.empty();
-    }
-
-    private static boolean computeOpenNow(final Commerce commerce, final ZoneId zone) {
-        if (commerce == null) {
-            return false;
-        }
-        final Optional<LocalTime> open = parseFlexibleTime(commerce.getOpeningTime());
-        final Optional<LocalTime> close = parseFlexibleTime(commerce.getClosingTime());
-        if (open.isEmpty() || close.isEmpty()) {
-            return false;
-        }
-        final LocalTime o = open.get();
-        final LocalTime c = close.get();
-        if (o.equals(c)) {
-            return false;
-        }
-        final LocalTime now = LocalTime.now(zone);
-        if (!c.isBefore(o)) {
-            return !now.isBefore(o) && !now.isAfter(c);
-        }
-        return !now.isBefore(o) || !now.isAfter(c);
-    }
-
     private void addCommerceDetailAttributes(final ModelAndView mav, final Optional<Commerce> commerceOpt) {
         final Commerce commerce = commerceOpt.orElse(null);
 
@@ -215,11 +135,11 @@ public class PackController {
                         ? commerce.getCommercialName().trim()
                         : "—";
         mav.addObject("commerceCommercialName", commercialName);
-        mav.addObject("commerceStreetLine", formatStreetLine(commerce));
-        mav.addObject("commerceLocationLine", formatCityProvincePostal(commerce));
+        mav.addObject("commerceStreetLine", commerce != null ? commerce.getFullStreetLine() : "—");
+        mav.addObject("commerceLocationLine", commerce != null ? commerce.getCityProvincePostal() : "—");
         mav.addObject("commerceOpeningTime", commerce != null ? dashIfBlank(commerce.getOpeningTime()) : "—");
         mav.addObject("commerceClosingTime", commerce != null ? dashIfBlank(commerce.getClosingTime()) : "—");
-        mav.addObject("commerceOpenNow", Boolean.valueOf(computeOpenNow(commerce, businessZone)));
+        mav.addObject("commerceOpenNow", Boolean.valueOf(commerce != null && commerce.isOpenNow(businessZone)));
     }
 
     private ReservationForm createDefaultReservationForm() {
@@ -274,20 +194,9 @@ public class PackController {
                             locale));
             if (auctionActive) {
                 mav.addObject("bidAmountMin", String.format(Locale.US, "%.2f", minimumBidAmount));
-                if (auction.getCurrentBidderId() != null) {
-                    final org.springframework.security.core.Authentication auth =
-                            SecurityContextHolder.getContext().getAuthentication();
-                    if (auth != null && auth.isAuthenticated()) {
-                        final Object principal = auth.getPrincipal();
-                        if (principal != null && !"anonymousUser".equals(principal)) {
-                            final Optional<User> bidderUserOpt = userService.findByEmail(auth.getName());
-                            if (bidderUserOpt.isPresent() && bidderUserOpt.get().getRole() == User.Role.CLIENT
-                                    && bidderUserOpt.get().getId().equals(auction.getCurrentBidderId())) {
-                                auctionClientIsLeading = true;
-                            }
-                        }
-                    }
-                }
+                auctionClientIsLeading = authResolver.resolveUserOrEmpty()
+                        .map(u -> u.getRole() == User.Role.CLIENT && auctionService.isClientLeading(auction.getId(), u.getId()))
+                        .orElse(false);
             }
             mav.addObject("auctionClientIsLeading", Boolean.valueOf(auctionClientIsLeading));
         } else {
@@ -360,15 +269,9 @@ public class PackController {
 
         // Inactive packs are only visible to their owning commerce
         if (!Boolean.TRUE.equals(pack.getActive())) {
-            final org.springframework.security.core.Authentication auth =
-                    SecurityContextHolder.getContext().getAuthentication();
-            boolean isOwner = false;
-            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
-                final Optional<User> userOpt = userService.findByEmail(auth.getName());
-                if (userOpt.isPresent() && userOpt.get().getId().equals(pack.getCommerceId())) {
-                    isOwner = true;
-                }
-            }
+            boolean isOwner = authResolver.resolveUserOrEmpty()
+                    .map(u -> u.getId().equals(pack.getCommerceId()))
+                    .orElse(false);
             if (!isOwner) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND);
             }
@@ -460,9 +363,7 @@ public class PackController {
         final String appBaseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
             .build()
             .toUriString();
-        final String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        final User authenticatedUser = userService.findByEmail(username)
-                .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
+        final User authenticatedUser = authResolver.resolveUser();
 
         try {
             reservationService.createReservation(
@@ -517,15 +418,13 @@ public class PackController {
             return buildPackDetailModel(pack, createDefaultReservationForm(), bidForm);
         }
 
-        final String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        final Optional<User> userOpt = userService.findByEmail(email);
-        if (userOpt.isEmpty() || userOpt.get().getRole() != User.Role.CLIENT) {
+        final User user = authResolver.resolveUser();
+        if (user.getRole() != User.Role.CLIENT) {
             redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
             redirectAttributes.addFlashAttribute("auctionAlertMessage",
                     messageSource.getMessage("pack.detail.bid.alert.roleNotClient", null, locale));
             return redirectView;
         }
-        final User user = userOpt.get();
 
         final double amount = bidForm.getAmount().doubleValue();
         try {

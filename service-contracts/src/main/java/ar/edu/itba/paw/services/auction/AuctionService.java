@@ -72,4 +72,9 @@ public interface AuctionService {
      * Returns the bid history for an auction, ordered by amount descending.
      */
     List<Bid> getBidHistory(long auctionId);
+
+    /**
+     * Checks if the given user is currently leading the given auction.
+     */
+    boolean isClientLeading(long auctionId, long userId);
 }

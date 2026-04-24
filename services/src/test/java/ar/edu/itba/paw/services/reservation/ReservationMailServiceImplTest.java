@@ -72,7 +72,8 @@ public class ReservationMailServiceImplTest {
         @Override public void updateImage(Long pId, byte[] id, String ic) { }
         @Override public boolean decrementStock(long packId, int quantity) { return true; }
         @Override public boolean incrementStock(long packId, int quantity) { return true; }
-        @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort) { return Collections.emptyList(); }
+        @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return Collections.emptyList(); }
+        @Override public int countFilteredPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges) { return 0; }
     }
 
     static class FakeMailSender implements JavaMailSender {

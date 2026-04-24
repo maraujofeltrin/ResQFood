@@ -69,10 +69,40 @@ public class PackServiceImpl implements PackService {
     }
 
     @Override
+    public Pack updatePack(long packId, String title, String description, Double originalPrice,
+                           Double finalPrice, Integer stock, List<PackTag> tags,
+                           byte[] imageData, String imageContentType) {
+        final Pack packToUpdate = packDao.findById(packId)
+                .orElseThrow(() -> new IllegalArgumentException("Pack not found"));
+
+        packToUpdate.setTitle(title);
+        packToUpdate.setDescription(description);
+        packToUpdate.setOriginalPrice(originalPrice);
+        packToUpdate.setFinalPrice(finalPrice);
+        packToUpdate.setStock(stock);
+        packToUpdate.setTags(tags != null ? tags : java.util.Collections.emptyList());
+
+        final Pack updatedPack = packDao.update(packToUpdate);
+
+        if (imageData != null && imageData.length > 0) {
+            packDao.updateImage(packId, imageData, imageContentType);
+        }
+
+        return updatedPack;
+    }
+
+    @Override
     public List<Pack> filterPacks(final String query, final List<PackTag> tags,
                                   final String city, final List<String> timeRanges,
-                                  final PackSortOption sort) {
-        return packDao.filterPacks(query, tags, city, timeRanges, sort);
+                                  final PackSortOption sort,
+                                  final int page, final int pageSize) {
+        return packDao.filterPacks(query, tags, city, timeRanges, sort, page, pageSize);
+    }
+
+    @Override
+    public int countFilteredPacks(final String query, final List<PackTag> tags,
+                                  final String city, final List<String> timeRanges) {
+        return packDao.countFilteredPacks(query, tags, city, timeRanges);
     }
 
     @Override

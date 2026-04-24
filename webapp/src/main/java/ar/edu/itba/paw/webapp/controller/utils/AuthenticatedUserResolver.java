@@ -70,6 +70,22 @@ public class AuthenticatedUserResolver {
     }
 
     /**
+     * Safely resolves the current user, returning Optional.empty() if not authenticated
+     * or anonymous, without throwing exceptions.
+     */
+    public java.util.Optional<User> resolveUserOrEmpty() {
+        final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return java.util.Optional.empty();
+        }
+        final String email = auth.getName();
+        if (email == null || email.isBlank() || "anonymousUser".equalsIgnoreCase(email)) {
+            return java.util.Optional.empty();
+        }
+        return userService.findByEmail(email);
+    }
+
+    /**
      * Resolves the authenticated user's {@link Commerce} profile.
      *
      * @throws ResponseStatusException 401 if not authenticated, 404 if no commerce profile

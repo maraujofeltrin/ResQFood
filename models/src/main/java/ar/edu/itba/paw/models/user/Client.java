@@ -41,6 +41,17 @@ public class Client {
         this.notificationsVisibilityPreferences = notificationsVisibilityPreferences;
     }
 
+    /**
+     * Returns the client's full name as "firstName lastName", trimmed.
+     * If both name and lastName are blank, returns "-".
+     */
+    public String getFullName() {
+        final String first = name == null ? "" : name.trim();
+        final String last = lastName == null ? "" : lastName.trim();
+        final String full = (first + " " + last).trim();
+        return full.isEmpty() ? "-" : full;
+    }
+
     @Override
     public String toString() {
         return "Client [userId=" + userId + ", name=" + name + ", lastName=" + lastName

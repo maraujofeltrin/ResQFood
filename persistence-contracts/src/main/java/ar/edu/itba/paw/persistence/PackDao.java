@@ -43,5 +43,11 @@ public interface PackDao {
      * @param sort      ordering criterion
      */
     List<Pack> filterPacks(String query, List<PackTag> tags, String city,
-                           List<String> timeRanges, PackSortOption sort);
+                           List<String> timeRanges, PackSortOption sort,
+                           int page, int pageSize);
+
+    /**
+     * Returns the total number of active packs matching the filters (ignoring sort/pagination).
+     */
+    int countFilteredPacks(String query, List<PackTag> tags, String city, List<String> timeRanges);
 }

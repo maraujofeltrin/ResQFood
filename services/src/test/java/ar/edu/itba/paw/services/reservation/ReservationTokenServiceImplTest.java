@@ -150,7 +150,8 @@ public class ReservationTokenServiceImplTest {
         @Override public void updateImage(Long packId, byte[] imageData, String imageContentType) { }
         @Override public void softDelete(Long id) { }
         @Override public List<Pack> findByCommerceId(Long commerceId) { return List.of(); }
-        @Override public List<Pack> filterPacks(String query, List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, List<String> timeRanges, PackSortOption sort) { return List.of(); }
+        @Override public List<Pack> filterPacks(String query, List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return List.of(); }
+        @Override public int countFilteredPacks(String query, List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, List<String> timeRanges) { return 0; }
     }
 
     private InMemoryReservationTokenDao tokenDao;

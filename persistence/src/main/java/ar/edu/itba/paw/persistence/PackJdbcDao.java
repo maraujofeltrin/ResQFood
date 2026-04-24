@@ -219,25 +219,15 @@ public class PackJdbcDao implements PackDao {
                 imageData, imageContentType, packId);
     }
 
-    @Override
-    public List<Pack> filterPacks(final String query, final List<PackTag> tags,
-                                  final String city, final List<String> timeRanges,
-                                  final PackSortOption sort) {
-
+    private void appendFilterJoinsAndConditions(final StringBuilder sql, final List<Object> params,
+                                                final String query, final List<PackTag> tags,
+                                                final String city, final List<String> timeRanges) {
         final boolean hasQuery = query != null && !query.isBlank();
         final boolean hasTags = tags != null && !tags.isEmpty();
         final boolean hasCity = city != null && !city.isBlank();
         final boolean hasTime = timeRanges != null && !timeRanges.isEmpty();
 
-        /*
-         * Build a dynamic query.  We always JOIN commerces (needed for city,
-         * time, and text-search on commercial_name).  When tags are requested
-         * we also JOIN pack_tags and use GROUP BY + HAVING.
-         */
-        final StringBuilder sql = new StringBuilder();
-        sql.append("SELECT p.id, p.commerce_id, p.title, p.description, ")
-           .append("p.original_price, p.final_price, p.stock, p.active, p.deleted ")
-           .append("FROM packs p ")
+        sql.append("FROM packs p ")
            .append("JOIN commerces c ON p.commerce_id = c.user_id ");
 
         if (hasTags) {
@@ -250,10 +240,8 @@ public class PackJdbcDao implements PackDao {
            .append("SELECT 1 FROM auctions a ")
            .append("WHERE a.pack_id = p.id AND a.status = 'ACTIVE' AND a.end_time > ?) ");
 
-        final List<Object> params = new ArrayList<>();
         params.add(Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));
 
-        // --- text search ---
         if (hasQuery) {
             final String pattern = "%" + query.trim() + "%";
             sql.append("AND (p.title ILIKE ? OR c.commercial_name ILIKE ?) ");
@@ -261,39 +249,26 @@ public class PackJdbcDao implements PackDao {
             params.add(pattern);
         }
 
-        // --- city ---
         if (hasCity) {
             sql.append("AND c.city = ? ");
             params.add(city);
         }
 
-        // --- time ranges (safe cast + integer comparison) ---
         if (hasTime) {
-            /*
-             * Time format in DB: "HH:mm" or "H:mm".
-             * We cast the hour portion to integer for safe comparison.
-             * morning   = hour in [0, 12)
-             * afternoon = hour in [12, 17)
-             * evening   = hour in [17, 24)
-             */
             final List<String> timeConditions = new ArrayList<>();
             for (final String range : timeRanges) {
                 switch (range) {
                     case "morning":
-                        timeConditions.add(
-                            "CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) < 12");
+                        timeConditions.add("CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) < 12");
                         break;
                     case "afternoon":
-                        timeConditions.add(
-                            "CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) >= 12 "
-                          + "AND CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) < 17");
+                        timeConditions.add("CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) >= 12 "
+                                + "AND CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) < 17");
                         break;
                     case "evening":
-                        timeConditions.add(
-                            "CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) >= 17");
+                        timeConditions.add("CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) >= 17");
                         break;
                     default:
-                        // unknown range value — silently ignore (whitelist approach)
                         break;
                 }
             }
@@ -304,24 +279,69 @@ public class PackJdbcDao implements PackDao {
             }
         }
 
-        // --- tags ---
         if (hasTags) {
             final String inClause = String.join(", ", Collections.nCopies(tags.size(), "?"));
             sql.append("AND pt.tag IN (").append(inClause).append(") ");
             for (final PackTag tag : tags) {
                 params.add(tag.name());
             }
+        }
+    }
+
+    @Override
+    public List<Pack> filterPacks(final String query, final List<PackTag> tags,
+                                  final String city, final List<String> timeRanges,
+                                  final PackSortOption sort,
+                                  final int page, final int pageSize) {
+
+        final StringBuilder sql = new StringBuilder();
+        sql.append("SELECT p.id, p.commerce_id, p.title, p.description, ")
+           .append("p.original_price, p.final_price, p.stock, p.active, p.deleted ");
+
+        final List<Object> params = new ArrayList<>();
+        appendFilterJoinsAndConditions(sql, params, query, tags, city, timeRanges);
+
+        if (tags != null && !tags.isEmpty()) {
             sql.append("GROUP BY p.id, p.commerce_id, p.title, p.description, ")
-               .append("p.original_price, p.final_price, p.stock, p.active, p.deleted ")
+               .append("p.original_price, p.final_price, p.stock, p.active, p.deleted, c.commercial_name ")
                .append("HAVING COUNT(DISTINCT pt.tag) = ? ");
             params.add(tags.size());
         }
 
-        // --- ordering ---
         final PackSortOption safeSortOption = sort != null ? sort : PackSortOption.DATE_DESC;
         final String orderBy = safeSortOption.getOrderByClause().replace("packs.", "p.");
-        sql.append("ORDER BY ").append(orderBy);
+        sql.append("ORDER BY ").append(orderBy).append(" ");
+
+        sql.append("LIMIT ? OFFSET ?");
+        params.add(pageSize);
+        params.add((page - 1) * pageSize);
 
         return jdbcTemplate.query(sql.toString(), packRowMapperNoTags, params.toArray());
+    }
+
+    @Override
+    public int countFilteredPacks(final String query, final List<PackTag> tags,
+                                  final String city, final List<String> timeRanges) {
+
+        final StringBuilder sqlJoinsAndConditions = new StringBuilder();
+        final List<Object> params = new ArrayList<>();
+        appendFilterJoinsAndConditions(sqlJoinsAndConditions, params, query, tags, city, timeRanges);
+
+        if (tags != null && !tags.isEmpty()) {
+            // Because we only want the total count of valid packs, we use a subquery to apply HAVING safely
+            final StringBuilder wrapperSql = new StringBuilder();
+            wrapperSql.append("SELECT COUNT(*) FROM (SELECT p.id ");
+            wrapperSql.append(sqlJoinsAndConditions);
+            wrapperSql.append("GROUP BY p.id HAVING COUNT(DISTINCT pt.tag) = ?) AS subquery");
+            params.add(tags.size());
+            Integer count = jdbcTemplate.queryForObject(wrapperSql.toString(), Integer.class, params.toArray());
+            return count != null ? count : 0;
+        } else {
+            final StringBuilder sql = new StringBuilder();
+            sql.append("SELECT COUNT(DISTINCT p.id) ");
+            sql.append(sqlJoinsAndConditions);
+            Integer count = jdbcTemplate.queryForObject(sql.toString(), Integer.class, params.toArray());
+            return count != null ? count : 0;
+        }
     }
 }

@@ -162,12 +162,7 @@ public class CommerceController {
 
             if (confirmed.getCustomerId() != null) {
                 clientService.findByUserId(confirmed.getCustomerId())
-                        .ifPresent(client -> {
-                            final String firstName = client.getName() == null ? "" : client.getName().trim();
-                            final String lastName = client.getLastName() == null ? "" : client.getLastName().trim();
-                            final String fullName = (firstName + " " + lastName).trim();
-                            mav.addObject("confirmedClientName", fullName.isEmpty() ? "-" : fullName);
-                        });
+                        .ifPresent(client -> mav.addObject("confirmedClientName", client.getFullName()));
             }
         } else {
             final String key;
@@ -341,19 +336,25 @@ public class CommerceController {
         }
 
         try {
-            packToUpdate.setTitle(form.getTitle());
-            packToUpdate.setDescription(form.getDescription());
-            packToUpdate.setOriginalPrice(form.getOriginalPrice());
-            packToUpdate.setFinalPrice(form.getFinalPrice());
-            packToUpdate.setStock(form.getStock());
-            packToUpdate.setTags(form.getTags() != null ? form.getTags() : Collections.emptyList());
-
-            packService.update(packToUpdate);
-
             final MultipartFile image = form.getImage();
+            byte[] imgData = null;
+            String imgType = null;
             if (image != null && !image.isEmpty()) {
-                packService.updateImage(packToUpdate.getId(), image.getBytes(), image.getContentType());
+                imgData = image.getBytes();
+                imgType = image.getContentType();
             }
+
+            packService.updatePack(
+                    packToUpdate.getId(),
+                    form.getTitle(),
+                    form.getDescription(),
+                    form.getOriginalPrice(),
+                    form.getFinalPrice(),
+                    form.getStock(),
+                    form.getTags(),
+                    imgData,
+                    imgType
+            );
 
             redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
             redirectAttributes.addFlashAttribute("dashboardAlertMessage",

@@ -103,19 +103,35 @@ public class PackCatalogUtils {
         final boolean showAuctionsList = catalogMode == CatalogMode.AUCTIONS;
         final boolean showAuctionsCarousel = catalogMode == CatalogMode.ALL;
 
-        List<Pack> allPacks = Collections.emptyList();
-        if (showPacks) {
-            allPacks = packService.filterPacks(
+        int totalItems = 0;
+        List<Pack> packs = Collections.emptyList();
+        List<Auction> auctions = Collections.emptyList();
+
+        if (showAuctionsList) {
+            List<Auction> allAuctions = findCatalogAuctions(hasQuery, hasTags, trimmedQuery, selectedTags, auctionSortOption);
+            totalItems = allAuctions.size();
+            int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
+            int safePage = Math.max(1, Math.min(page, totalPages));
+            int fromIdx = (safePage - 1) * PAGE_SIZE;
+            int toIdx = Math.min(fromIdx + PAGE_SIZE, totalItems);
+            auctions = allAuctions.subList(fromIdx, toIdx);
+        } else {
+            totalItems = packService.countFilteredPacks(
+                    trimmedQuery,
+                    selectedTags.isEmpty() ? null : selectedTags,
+                    cityFilter,
+                    safeTimeRange.isEmpty() ? null : safeTimeRange);
+            int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
+            int safePage = Math.max(1, Math.min(page, totalPages));
+
+            packs = packService.filterPacks(
                     trimmedQuery,
                     selectedTags.isEmpty() ? null : selectedTags,
                     cityFilter,
                     safeTimeRange.isEmpty() ? null : safeTimeRange,
-                    sortOption);
-        }
-
-        List<Auction> allAuctions = Collections.emptyList();
-        if (showAuctionsList) {
-            allAuctions = findCatalogAuctions(hasQuery, hasTags, trimmedQuery, selectedTags, auctionSortOption);
+                    sortOption,
+                    safePage,
+                    PAGE_SIZE);
         }
 
         List<Auction> carouselAuctions = Collections.emptyList();
@@ -126,14 +142,8 @@ public class PackCatalogUtils {
             carouselAuctions = sortedForCarousel.subList(0, carouselSize);
         }
 
-        final int totalItems = showAuctionsList ? allAuctions.size() : allPacks.size();
         final int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
         final int safePage = Math.max(1, Math.min(page, totalPages));
-        final int fromIdx = (safePage - 1) * PAGE_SIZE;
-        final int toIdx = Math.min(fromIdx + PAGE_SIZE, totalItems);
-
-        final List<Pack> packs = showAuctionsList ? Collections.emptyList() : allPacks.subList(fromIdx, toIdx);
-        final List<Auction> auctions = showAuctionsList ? allAuctions.subList(fromIdx, toIdx) : Collections.emptyList();
 
         final Map<Long, String> commerceNames = new HashMap<>();
         for (final Pack pack : packs) {

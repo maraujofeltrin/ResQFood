@@ -20,9 +20,7 @@ public class HomeController {
     @GetMapping("/")
     public ModelAndView home() {
         ModelAndView mav = new ModelAndView("home/landingView");
-        List<Pack> previewPacks = packService.filterPacks(null, null, null, null, PackSortOption.DATE_DESC).stream()
-                .limit(6)
-                .collect(Collectors.toList());
+        List<Pack> previewPacks = packService.filterPacks(null, null, null, null, PackSortOption.DATE_DESC, 1, 6);
         mav.addObject("previewPacks", previewPacks);
         return mav;
     }
