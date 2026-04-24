@@ -1,4 +1,4 @@
-package ar.edu.itba.paw.webapp.controller;
+package ar.edu.itba.paw.webapp.controller.auth;
 
 import ar.edu.itba.paw.services.security.PasswordResetTokenService;
 import ar.edu.itba.paw.webapp.auth.AuthenticationHelper;

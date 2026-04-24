@@ -1,4 +1,4 @@
-package ar.edu.itba.paw.webapp.controller;
+package ar.edu.itba.paw.webapp.controller.auth;
 
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.security.EmailVerificationTokenService;

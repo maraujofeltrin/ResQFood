@@ -1,4 +1,4 @@
-package ar.edu.itba.paw.webapp.controller;
+package ar.edu.itba.paw.webapp.controller.error;
 
 import java.io.IOException;
 

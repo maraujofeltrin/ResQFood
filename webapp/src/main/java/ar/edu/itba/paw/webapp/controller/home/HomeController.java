@@ -1,4 +1,4 @@
-package ar.edu.itba.paw.webapp.controller;
+package ar.edu.itba.paw.webapp.controller.home;
 
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackSortOption;
