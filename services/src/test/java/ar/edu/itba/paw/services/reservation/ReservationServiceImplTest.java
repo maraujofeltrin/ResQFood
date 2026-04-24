@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ReservationServiceImplTest {
 
     private static final String APP_URL = "http://app";
+    private static final ZoneId TEST_ZONE = ZoneId.of("America/Argentina/Buenos_Aires");
 
     private static final class NoopAuctionDao implements AuctionDao {
         @Override
@@ -169,26 +171,13 @@ public class ReservationServiceImplTest {
         @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, byte[] imageData, String imageContentType) { throw new UnsupportedOperationException(); }
         @Override public Optional<Pack> findById(Long id) { return id.equals(pack.getId()) ? Optional.of(pack) : Optional.empty(); }
         @Override public java.util.List<Pack> findAll() { return Collections.emptyList(); }
-
-        @Override
-        public List<Pack> findByCommerceId(Long commerceId) {
-            return pack.getCommerceId().equals(commerceId) ? List.of(pack) : Collections.emptyList();
-        }
-
-        @Override public java.util.List<Pack> findActive() { return Collections.emptyList(); }
-        @Override public java.util.List<Pack> searchPacks(String query) { return Collections.emptyList(); }
+        @Override public List<Pack> findByCommerceId(Long commerceId) { return pack.getCommerceId().equals(commerceId) ? List.of(pack) : Collections.emptyList(); }
         @Override public Pack update(Pack pack) { throw new UnsupportedOperationException(); }
         @Override public void softDelete(Long id) { }
         @Override public void setActive(Long id, boolean active) { }
         @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
         @Override public boolean decrementStock(long packId, int quantity) { return true; }
         @Override public boolean incrementStock(long packId, int quantity) { incrementCalls++; return true; }
-        @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags) { return Collections.emptyList(); }
-        @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags) { return Collections.emptyList(); }
-        @Override public java.util.List<Pack> findActive(PackSortOption sort) { return findActive(); }
-        @Override public java.util.List<Pack> searchPacks(String query, PackSortOption sort) { return searchPacks(query); }
-        @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, PackSortOption sort) { return findActiveByTags(tags); }
-        @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, PackSortOption sort) { return searchPacksWithTags(query, tags); }
         @Override public void updateImage(Long packId, byte[] imageData, String imageContentType) { }
         @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort) { return Collections.emptyList(); }
     }
@@ -222,7 +211,6 @@ public class ReservationServiceImplTest {
     }
 
     static class TestCommerceService implements CommerceService {
-        @Override public ar.edu.itba.paw.models.user.Commerce getOrCreateCommerce(String email, String password, String name, String commercialName, ar.edu.itba.paw.models.user.Commerce.Category category, String street, Integer streetNumber, String city, String province, String postalCode, String openingTime, String closingTime) { throw new UnsupportedOperationException(); }
         @Override public Optional<ar.edu.itba.paw.models.user.Commerce> findByUserId(Long userId) { return Optional.empty(); }
     }
 
@@ -254,7 +242,7 @@ public class ReservationServiceImplTest {
         final PackDao packDao = new InMemoryPackDao(pack);
 
         final ReservationServiceImpl svc = new ReservationServiceImpl(userService, new TestClientService(), reservationDao,
-            packDao, mailService, new TestCommerceService(), NO_AUCTIONS, "America/Argentina/Buenos_Aires");
+            packDao, mailService, new TestCommerceService(), NO_AUCTIONS, TEST_ZONE);
 
         assertDoesNotThrow(() -> svc.createReservation(packId, user.getId(), 1, 5.0, "pw", APP_URL));
 
@@ -278,7 +266,7 @@ public class ReservationServiceImplTest {
         final PackDao packDao = new InMemoryPackDao(pack);
 
         final ReservationServiceImpl svc = new ReservationServiceImpl(userService, new TestClientService(), reservationDao,
-                packDao, mailService, new TestCommerceService(), NO_AUCTIONS, "America/Argentina/Buenos_Aires");
+                packDao, mailService, new TestCommerceService(), NO_AUCTIONS, TEST_ZONE);
 
         assertDoesNotThrow(() -> svc.createReservation(packId, user.getId(), 1, 7.5, null, ""));
 
@@ -304,7 +292,7 @@ public class ReservationServiceImplTest {
         final PackDao packDao = new InMemoryPackDao(pack);
 
         final ReservationServiceImpl svc = new ReservationServiceImpl(userService, new TestClientService(), reservationDao,
-            packDao, mailService, new TestCommerceService(), NO_AUCTIONS, "America/Argentina/Buenos_Aires");
+            packDao, mailService, new TestCommerceService(), NO_AUCTIONS, TEST_ZONE);
 
         assertThrows(IllegalArgumentException.class, () -> svc.createReservation(packId, user.getId(), 0, 5.0, "pw", APP_URL));
         assertEquals(0, reservationDao.store.size(), "No reservation should be created");
@@ -325,7 +313,7 @@ public class ReservationServiceImplTest {
         final PackDao packDao = new InMemoryPackDao(pack);
 
         final ReservationServiceImpl svc = new ReservationServiceImpl(userService, new TestClientService(), reservationDao,
-            packDao, mailService, new TestCommerceService(), NO_AUCTIONS, "America/Argentina/Buenos_Aires");
+            packDao, mailService, new TestCommerceService(), NO_AUCTIONS, TEST_ZONE);
 
         final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 600; i++) sb.append('x');
@@ -345,7 +333,6 @@ public class ReservationServiceImplTest {
 
         final User user = new User(1L, "user@example.org", "pwd", "Test User");
         final Pack pack = new Pack(10L, 100L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
-        final Client client = new Client(user.getId(), "Test", "User", true);
 
         final ReservationServiceImpl svc = new ReservationServiceImpl(
                 new TestUserService(user),
@@ -355,7 +342,7 @@ public class ReservationServiceImplTest {
                 mailService,
                 new TestCommerceService(),
                 NO_AUCTIONS,
-                "America/Argentina/Buenos_Aires");
+                TEST_ZONE);
 
         final List<Reservation> reservations = svc.findByCustomerId(1L);
         assertEquals(2, reservations.size());
@@ -370,7 +357,6 @@ public class ReservationServiceImplTest {
 
         final User user = new User(1L, "user@example.org", "pwd", "Test User");
         final Pack pack = new Pack(100L, 100L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList());
-        final Client client = new Client(user.getId(), "Test", "User", true);
 
         final ReservationServiceImpl svc = new ReservationServiceImpl(
                 new TestUserService(user),
@@ -380,7 +366,7 @@ public class ReservationServiceImplTest {
                 mailService,
                 new TestCommerceService(),
                 NO_AUCTIONS,
-                "America/Argentina/Buenos_Aires");
+                TEST_ZONE);
 
         final List<Reservation> reservations = svc.findByCommerceId(100L);
         assertEquals(2, reservations.size());
@@ -403,28 +389,20 @@ public class ReservationServiceImplTest {
                     @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, byte[] imageData, String imageContentType) { throw new UnsupportedOperationException(); }
                     @Override public Optional<Pack> findById(Long id) { return id.equals(ownedPack.getId()) ? Optional.of(ownedPack) : id.equals(otherPack.getId()) ? Optional.of(otherPack) : Optional.empty(); }
                     @Override public java.util.List<Pack> findAll() { return Collections.emptyList(); }
-                    @Override public java.util.List<Pack> findActive() { return Collections.emptyList(); }
-                    @Override public java.util.List<Pack> searchPacks(String query) { return Collections.emptyList(); }
                     @Override public Pack update(Pack pack) { throw new UnsupportedOperationException(); }
                     @Override public void setActive(Long id, boolean active) { }
                     @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
                     @Override public boolean decrementStock(long packId, int quantity) { return true; }
                     @Override public boolean incrementStock(long packId, int quantity) { return true; }
-                    @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags) { return Collections.emptyList(); }
-                    @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags) { return Collections.emptyList(); }
-                    @Override public java.util.List<Pack> findActive(PackSortOption sort) { return findActive(); }
-                    @Override public java.util.List<Pack> searchPacks(String query, PackSortOption sort) { return searchPacks(query); }
-                    @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, PackSortOption sort) { return findActiveByTags(tags); }
-                    @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, PackSortOption sort) { return searchPacksWithTags(query, tags); }
-                    @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort) { return Collections.emptyList(); }
                     @Override public java.util.List<Pack> findByCommerceId(Long commerceId) { return Collections.emptyList(); }
                     @Override public void softDelete(Long id) { }
                     @Override public void updateImage(Long packId, byte[] imageData, String imageContentType) { }
+                    @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort) { return Collections.emptyList(); }
                 },
                 mailService,
                 new TestCommerceService(),
                 NO_AUCTIONS,
-                "America/Argentina/Buenos_Aires");
+                TEST_ZONE);
 
         assertDoesNotThrow(() -> svc.validateReservationBelongsToCommerce(reservationId, 77L));
         assertThrows(IllegalArgumentException.class, () -> svc.validateReservationBelongsToCommerce(reservationId, 88L));
@@ -450,7 +428,7 @@ public class ReservationServiceImplTest {
             mailService,
             new TestCommerceService(),
             NO_AUCTIONS,
-            "America/Argentina/Buenos_Aires");
+            TEST_ZONE);
 
         final Reservation rejected = svc.rejectReservationForCommerce(reservationId, commerceId);
         assertEquals(Reservation.Status.CANCELED, rejected.getStatus());
@@ -476,7 +454,7 @@ public class ReservationServiceImplTest {
             mailService,
             new TestCommerceService(),
             NO_AUCTIONS,
-            "America/Argentina/Buenos_Aires");
+            TEST_ZONE);
 
         assertThrows(IllegalStateException.class, () -> svc.rejectReservationForCommerce(reservationId, commerceId));
         assertEquals(0, packDao.incrementCalls);
@@ -501,7 +479,7 @@ public class ReservationServiceImplTest {
             mailService,
             new TestCommerceService(),
             NO_AUCTIONS,
-            "America/Argentina/Buenos_Aires");
+            TEST_ZONE);
 
         assertThrows(IllegalArgumentException.class,
             () -> svc.rejectReservationForCommerce(reservationId, otherCommerceId));

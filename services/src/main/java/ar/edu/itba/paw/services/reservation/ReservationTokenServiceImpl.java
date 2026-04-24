@@ -2,11 +2,8 @@ package ar.edu.itba.paw.services.reservation;
 
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
-import ar.edu.itba.paw.models.user.User;
-import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
-import ar.edu.itba.paw.services.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,21 +16,15 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
 
     private final ReservationTokenDao reservationTokenDao;
     private final ReservationDao reservationDao;
-    private final PackDao packDao;
-    private final UserService userService;
-    private final ReservationMailService reservationMailService;
+    private final ReservationService reservationService;
 
     @Autowired
     public ReservationTokenServiceImpl(final ReservationTokenDao reservationTokenDao,
             final ReservationDao reservationDao,
-            final PackDao packDao,
-            final UserService userService,
-            final ReservationMailService reservationMailService) {
+            final ReservationService reservationService) {
         this.reservationTokenDao = reservationTokenDao;
         this.reservationDao = reservationDao;
-        this.packDao = packDao;
-        this.userService = userService;
-        this.reservationMailService = reservationMailService;
+        this.reservationService = reservationService;
     }
 
     @Override
@@ -55,28 +46,10 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
 
         reservationTokenDao.markAsUsed(token);
 
-        // For REJECT, update reservation status immediately. For ACCEPT, controller will
-        // verify pickup code and call reservationService.confirmPickup, so here we only
-        // mark token as used for ACCEPT.
+        // For REJECT, delegate to ReservationService which handles stock restore + status + email.
+        // For ACCEPT, the controller will verify pickup code and call reservationService.confirmPickup.
         if (action == ReservationToken.Action.REJECT) {
-            final Reservation currentReservation = reservationDao.findById(reservationToken.getReservationId())
-                    .orElseThrow(() -> new IllegalStateException(
-                            "Reservation expected after validation: " + reservationToken.getReservationId()));
-
-            if (currentReservation.getPackId() == null) {
-                throw new IllegalStateException("PACK_NOT_FOUND");
-            }
-
-            final int quantity = currentReservation.getQuantity() == null ? 1 : currentReservation.getQuantity();
-            if (!packDao.incrementStock(currentReservation.getPackId(), quantity)) {
-                throw new IllegalStateException("STOCK_RESTORE_FAILED");
-            }
-
-            final Reservation reservation = reservationDao.updateStatus(reservationToken.getReservationId(), Reservation.Status.CANCELED);
-            final String clientEmail = userService.findById(reservation.getCustomerId())
-                    .map(User::getEmail)
-                    .orElseThrow(() -> new IllegalStateException("Customer user not found for reservation id: " + reservation.getId()));
-            reservationMailService.sendReservationRejectedToClient(reservation, clientEmail);
+            reservationService.rejectReservation(reservationToken.getReservationId());
         }
 
         return TokenValidationResult.SUCCESS;

@@ -1,11 +1,7 @@
 package ar.edu.itba.paw.services.commerce;
 
 import ar.edu.itba.paw.models.user.Commerce;
-import ar.edu.itba.paw.models.user.Client;
-import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.CommerceDao;
-import ar.edu.itba.paw.services.user.RegisterResult;
-import ar.edu.itba.paw.services.user.UserService;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -13,48 +9,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CommerceServiceImplTest {
-
-    static class InMemoryUserService implements UserService {
-        private final Map<String, User> byEmail = new HashMap<>();
-        private long nextId = 1;
-
-        void seed(User u) { byEmail.put(u.getEmail(), u); }
-
-        @Override
-        public User createUser(final User user, final Client clientProfile, final Commerce commerceProfile) {
-            final User u = new User(nextId++, user.getEmail(), user.getPassword(), user.getName(), user.getPhone(),
-                    user.getRole(), user.isVerified());
-            byEmail.put(u.getEmail(), u);
-            return u;
-        }
-
-        @Override
-        public Optional<User> findByEmail(String email) {
-            return Optional.ofNullable(byEmail.get(email));
-        }
-
-        @Override
-        public Optional<User> findById(Long id) {
-            return byEmail.values().stream().filter(u -> u.getId().equals(id)).findFirst();
-        }
-
-        @Override
-        public void updatePassword(final Long userId, final String encodedPassword) {
-        }
-
-        @Override
-        public void markVerified(final Long userId) {
-        }
-
-        @Override
-        public RegisterResult tryRegister(final User user, final Client clientProfile, final Commerce commerceProfile,
-                final String appBaseUrl) {
-            return RegisterResult.duplicateEmail();
-        }
-    }
 
     static class InMemoryCommerceDao implements CommerceDao {
         private final Map<Long, Commerce> store = new HashMap<>();
@@ -79,45 +36,25 @@ public class CommerceServiceImplTest {
     }
 
     @Test
-    public void getOrCreateCommerce_userExistsWithDifferentRole_throws() {
-        final InMemoryUserService userService = new InMemoryUserService();
+    public void findByUserId_existing_returnsCommerce() {
         final InMemoryCommerceDao commerceDao = new InMemoryCommerceDao();
+        final Commerce stored = commerceDao.createCommerce(2L, "ShopName", Commerce.Category.BAKERY, "s", 1, "city", "prov", "pc", "09:00", "18:00");
 
-        final User existing = new User(1L, "u@ex.com", "pwd", "Name", null, User.Role.CLIENT, false);
-        userService.seed(existing);
+        final CommerceServiceImpl svc = new CommerceServiceImpl(commerceDao);
+        final Optional<Commerce> result = svc.findByUserId(2L);
 
-        final CommerceServiceImpl svc = new CommerceServiceImpl(userService, commerceDao);
-
-        assertThrows(IllegalArgumentException.class, () -> svc.getOrCreateCommerce(existing.getEmail(), "p", "n", "cname", Commerce.Category.OTHER, null, (Integer) null, null, null, null, null, null));
+        assertTrue(result.isPresent());
+        assertEquals(stored.getCommercialName(), result.get().getCommercialName());
+        assertEquals(stored.getUserId(), result.get().getUserId());
     }
 
     @Test
-    public void getOrCreateCommerce_userExistsAndCommerceExists_returnsExisting() {
-        final InMemoryUserService userService = new InMemoryUserService();
+    public void findByUserId_nonExistent_returnsEmpty() {
         final InMemoryCommerceDao commerceDao = new InMemoryCommerceDao();
+        final CommerceServiceImpl svc = new CommerceServiceImpl(commerceDao);
 
-        final User existing = new User(2L, "shop@ex.com", "pwd", "Shop", null, User.Role.COMMERCE, false);
-        userService.seed(existing);
-        final Commerce stored = commerceDao.createCommerce(existing.getId(), "ShopName", Commerce.Category.BAKERY, "s", 1, "city", "prov", "pc", "09:00", "18:00");
+        final Optional<Commerce> result = svc.findByUserId(999L);
 
-        final CommerceServiceImpl svc = new CommerceServiceImpl(userService, commerceDao);
-        final Commerce result = svc.getOrCreateCommerce(existing.getEmail(), "p", "n", "ShopName", Commerce.Category.BAKERY, null, (Integer) null, null, null, null, "09:00", "18:00");
-
-        assertEquals(stored.getCommercialName(), result.getCommercialName());
-        assertEquals(stored.getUserId(), result.getUserId());
-    }
-
-    @Test
-    public void getOrCreateCommerce_userNotExists_createsUserAndCommerce() {
-        final InMemoryUserService userService = new InMemoryUserService();
-        final InMemoryCommerceDao commerceDao = new InMemoryCommerceDao();
-
-        final CommerceServiceImpl svc = new CommerceServiceImpl(userService, commerceDao);
-        svc.getOrCreateCommerce("new@ex.com", "pw", "Name", "NewShop", Commerce.Category.RESTAURANT, "st", 10, "city", "prov", "pc", "08:00", "20:00");
-
-        // user created and commerce stored
-        final var maybeUser = userService.findByEmail("new@ex.com");
-        assertEquals(true, maybeUser.isPresent());
-        assertEquals(User.Role.COMMERCE, maybeUser.get().getRole());
+        assertTrue(result.isEmpty());
     }
 }

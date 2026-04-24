@@ -8,6 +8,8 @@ import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.time.ZoneId;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import javax.mail.BodyPart;
@@ -63,8 +65,6 @@ public class ReservationMailServiceImplTest {
         @Override public Optional<Pack> findById(Long id) { return id.equals(pack.getId()) ? Optional.of(pack) : Optional.empty(); }
         @Override public List<Pack> findAll() { return List.of(pack); }
         @Override public List<Pack> findByCommerceId(Long commerceId) { return pack.getCommerceId().equals(commerceId) ? List.of(pack) : Collections.emptyList(); }
-        @Override public List<Pack> findActive() { return List.of(pack); }
-        @Override public List<Pack> searchPacks(String q) { return List.of(pack); }
         @Override public Pack update(Pack p) { throw new UnsupportedOperationException(); }
         @Override public void softDelete(Long id) { }
         @Override public void setActive(Long id, boolean active) { }
@@ -72,12 +72,6 @@ public class ReservationMailServiceImplTest {
         @Override public void updateImage(Long pId, byte[] id, String ic) { }
         @Override public boolean decrementStock(long packId, int quantity) { return true; }
         @Override public boolean incrementStock(long packId, int quantity) { return true; }
-        @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags) { return Collections.emptyList(); }
-        @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags) { return Collections.emptyList(); }
-        @Override public java.util.List<Pack> findActive(PackSortOption sort) { return findActive(); }
-        @Override public java.util.List<Pack> searchPacks(String query, PackSortOption sort) { return searchPacks(query); }
-        @Override public java.util.List<Pack> findActiveByTags(java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, PackSortOption sort) { return findActiveByTags(tags); }
-        @Override public java.util.List<Pack> searchPacksWithTags(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, PackSortOption sort) { return searchPacksWithTags(query, tags); }
         @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort) { return Collections.emptyList(); }
     }
 
@@ -162,7 +156,7 @@ public class ReservationMailServiceImplTest {
 
         final PackDao packDao = new InMemoryPackDao(pack);
         svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
-                "noreply@example.org", "ResQFood", "America/Argentina/Buenos_Aires");
+                "noreply@example.org", "ResQFood", ZoneId.of("America/Argentina/Buenos_Aires"));
 
         svc.sendReservationRequestToCommerce(reservation, "commerce@example.org", "http://app/", "10/04/2026");
 
@@ -203,7 +197,7 @@ public class ReservationMailServiceImplTest {
         final Pack pack = new Pack(11L, 2L, "Morning Bread", "desc", 10.0, 5.0, 1, true, false, List.of(), null, null);
         final PackDao packDao = new InMemoryPackDao(pack);
         svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
-                "noreply@example.org", "ResQFood", "America/Argentina/Buenos_Aires");
+                "noreply@example.org", "ResQFood", ZoneId.of("America/Argentina/Buenos_Aires"));
 
         svc.sendReservationCodeToClient(reservation, "client@example.org", "10/04/2026");
 
@@ -225,7 +219,7 @@ public class ReservationMailServiceImplTest {
         final Pack pack = new Pack(12L, 2L, "Evening Combo", "desc", 20.0, 14.5, 1, true, List.of());
         final PackDao packDao = new InMemoryPackDao(pack);
         svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
-                "noreply@example.org", "ResQFood", "America/Argentina/Buenos_Aires");
+                "noreply@example.org", "ResQFood", ZoneId.of("America/Argentina/Buenos_Aires"));
 
         svc.sendAuctionWinnerCodeToClient(reservation, "winner@example.org", "11/04/2026");
 
@@ -246,7 +240,7 @@ public class ReservationMailServiceImplTest {
         final Pack pack = new Pack(13L, 2L, "Late Night Pack", "desc", 25.0, 18.0, 1, true, List.of());
         final PackDao packDao = new InMemoryPackDao(pack);
         svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
-                "noreply@example.org", "ResQFood", "America/Argentina/Buenos_Aires");
+                "noreply@example.org", "ResQFood", ZoneId.of("America/Argentina/Buenos_Aires"));
 
         svc.sendAuctionWinnerCodeToCommerce(reservation, "commerce@example.org", "12/04/2026");
 

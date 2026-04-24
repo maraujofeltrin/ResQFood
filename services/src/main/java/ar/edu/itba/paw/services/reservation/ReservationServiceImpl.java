@@ -14,7 +14,6 @@ import ar.edu.itba.paw.services.pack.DirectReservationCheck;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.services.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,7 +61,7 @@ public class ReservationServiceImpl implements ReservationService {
             final ReservationMailService reservationMailService,
             final CommerceService commerceService,
             final AuctionDao auctionDao,
-            @Value("${app.display-zone:}") final String displayZone) {
+            final ZoneId displayZone) {
         this.userService = userService;
         this.clientService = clientService;
         this.reservationDao = reservationDao;
@@ -70,9 +69,7 @@ public class ReservationServiceImpl implements ReservationService {
         this.reservationMailService = reservationMailService;
         this.commerceService = commerceService;
         this.auctionDao = auctionDao;
-        this.displayZone = (displayZone == null || displayZone.trim().isEmpty())
-                ? ZoneId.of("America/Argentina/Buenos_Aires")
-                : ZoneId.of(displayZone.trim());
+        this.displayZone = displayZone;
     }
 
     @Transactional
@@ -258,7 +255,12 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public Reservation rejectReservationForCommerce(final Long reservationId, final Long commerceUserId) {
         validateReservationBelongsToCommerce(reservationId, commerceUserId);
+        return rejectReservation(reservationId);
+    }
 
+    @Transactional
+    @Override
+    public Reservation rejectReservation(final Long reservationId) {
         final Reservation reservation = reservationDao.findById(reservationId)
                 .orElseThrow(() -> new IllegalArgumentException("RESERVATION_NOT_FOUND"));
 

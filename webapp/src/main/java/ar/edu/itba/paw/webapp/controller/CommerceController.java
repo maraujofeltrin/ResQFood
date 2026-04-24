@@ -16,6 +16,7 @@ import ar.edu.itba.paw.services.reservation.PickupByCodeResult;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.user.UserService;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
+import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.form.CreateOfferForm;
 import ar.edu.itba.paw.webapp.validation.CreateOfferFormValidator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,13 +61,15 @@ public class CommerceController {
     private final UserService userService;
     private final CommerceOfferService commerceOfferService;
     private final CreateOfferFormValidator createOfferFormValidator;
+    private final AuthenticatedUserResolver authResolver;
 
     @Autowired
     public CommerceController(final CommerceService commerceService, final ClientService clientService,
                               final PackService packService, final ReservationService reservationService,
                               final AuctionService auctionService, final MessageSource messageSource,
                               final UserService userService, final CommerceOfferService commerceOfferService,
-                              final CreateOfferFormValidator createOfferFormValidator) {
+                              final CreateOfferFormValidator createOfferFormValidator,
+                              final AuthenticatedUserResolver authResolver) {
         this.commerceService = commerceService;
         this.clientService = clientService;
         this.packService = packService;
@@ -76,13 +79,14 @@ public class CommerceController {
         this.userService = userService;
         this.commerceOfferService = commerceOfferService;
         this.createOfferFormValidator = createOfferFormValidator;
+        this.authResolver = authResolver;
     }
 
     @GetMapping(value = "")
     public ModelAndView dashboard(@AuthenticationPrincipal final AuthUser principal,
             @RequestParam(value = "page", defaultValue = "1") final int page,
             @RequestParam(value = "tab", defaultValue = "items") final String tab) {
-        final long id = getAuthenticatedUser(principal).getId();
+        final long id = authResolver.resolveUser(principal).getId();
 
         final java.util.Optional<Commerce> commerceOpt = commerceService.findByUserId(id);
         if (!commerceOpt.isPresent()) {
@@ -140,9 +144,10 @@ public class CommerceController {
     }
 
     @RequestMapping(value = "/verify-pickup", method = RequestMethod.POST)
-    public ModelAndView verifyPickupPost(@RequestParam(value = "pickupCode", required = false) final String pickupCode) {
+    public ModelAndView verifyPickupPost(@AuthenticationPrincipal final AuthUser principal,
+            @RequestParam(value = "pickupCode", required = false) final String pickupCode) {
         final ModelAndView mav = new ModelAndView("commerce/verify-pickup");
-        final Commerce commerce = getAuthenticatedCommerce();
+        final Commerce commerce = authResolver.resolveCommerce(principal);
 
         final PickupByCodeResult result = reservationService.confirmPickupByCode(pickupCode, commerce.getUserId());
         if (result.isSuccess()) {
@@ -224,7 +229,7 @@ public class CommerceController {
         final boolean isAuction = form.getIsAuction();
 
         try {
-            final long commerceId = getAuthenticatedUser(principal).getId();
+            final long commerceId = authResolver.resolveUser(principal).getId();
 
             byte[] imageData = null;
             String imageContentType = null;
@@ -273,7 +278,7 @@ public class CommerceController {
             @AuthenticationPrincipal final AuthUser principal,
             @ModelAttribute("createOfferForm") final CreateOfferForm form,
             @RequestParam(value = "error", required = false) final String error) {
-        final long commerceId = getAuthenticatedUser(principal).getId();
+        final long commerceId = authResolver.resolveUser(principal).getId();
 
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -317,7 +322,7 @@ public class CommerceController {
         form.setIsAuction(false);
         createOfferFormValidator.validatePackModeOnly(form, bindingResult);
 
-        final long commerceId = getAuthenticatedUser(principal).getId();
+        final long commerceId = authResolver.resolveUser(principal).getId();
 
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -383,7 +388,7 @@ public class CommerceController {
             @AuthenticationPrincipal final AuthUser principal,
             final RedirectAttributes redirectAttributes) {
 
-        final long commerceId = getAuthenticatedUser(principal).getId();
+        final long commerceId = authResolver.resolveUser(principal).getId();
 
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -399,24 +404,7 @@ public class CommerceController {
         return new ModelAndView("redirect:/commerce");
     }
 
-    private User getAuthenticatedUser(final AuthUser principal) {
-        if (principal == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        }
-        return userService.findByEmail(principal.getUsername())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-    }
 
-    private Commerce getAuthenticatedCommerce() {
-        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof AuthUser)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        }
-        final AuthUser principal = (AuthUser) authentication.getPrincipal();
-        final long userId = getAuthenticatedUser(principal).getId();
-        return commerceService.findByUserId(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-    }
 
     private Pack resolveEditPack(final long packId, final long commerceId, final String forbiddenActionKey) {
         final CommercePackAccess access = packService.resolvePackForDirectEdit(packId, commerceId);

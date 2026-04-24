@@ -104,28 +104,36 @@ public class ReservationTokenServiceImplTest {
         }
     }
 
-    static class TestUserService implements UserService {
-        private final ar.edu.itba.paw.models.user.User user;
-        TestUserService(ar.edu.itba.paw.models.user.User user) { this.user = user; }
-        @Override public ar.edu.itba.paw.models.user.User createUser(ar.edu.itba.paw.models.user.User user, Client clientProfile, Commerce commerceProfile) { return this.user; }
-        @Override public Optional<ar.edu.itba.paw.models.user.User> findByEmail(String email) { return Optional.of(user); }
-        @Override public Optional<ar.edu.itba.paw.models.user.User> findById(Long id) { return Optional.of(user); }
-        @Override public void updatePassword(final Long userId, final String encodedPassword) { }
-        @Override public void markVerified(final Long userId) { }
-        @Override
-        public RegisterResult tryRegister(final ar.edu.itba.paw.models.user.User u, final Client c, final Commerce com,
-                final String appBaseUrl) {
-            return RegisterResult.duplicateEmail();
-        }
-    }
+    static class StubReservationService implements ReservationService {
+        int rejectCalls = 0;
+        private final ReservationDao reservationDao;
+        private final PackDao packDao;
 
-    static class InMemoryMailService implements ReservationMailService {
-        int sentRejected = 0;
-        @Override public void sendReservationRequestToCommerce(Reservation reservation, String commerceEmail, String baseUrl, String pickupDateStr) { }
-        @Override public void sendReservationCodeToClient(Reservation reservation, String clientEmail, String pickupDateStr) { }
-        @Override public void sendAuctionWinnerCodeToClient(Reservation reservation, String clientEmail, String pickupDateStr) { }
-        @Override public void sendAuctionWinnerCodeToCommerce(Reservation reservation, String commerceEmail, String pickupDateStr) { }
-        @Override public void sendReservationRejectedToClient(Reservation reservation, String clientEmail) { sentRejected++; }
+        StubReservationService(ReservationDao reservationDao, PackDao packDao) {
+            this.reservationDao = reservationDao;
+            this.packDao = packDao;
+        }
+
+        @Override
+        public Reservation rejectReservation(Long reservationId) {
+            rejectCalls++;
+            final Reservation r = reservationDao.findById(reservationId)
+                    .orElseThrow(() -> new IllegalArgumentException("not found"));
+            final int qty = r.getQuantity() == null ? 1 : r.getQuantity();
+            packDao.incrementStock(r.getPackId(), qty);
+            return reservationDao.updateStatus(reservationId, Reservation.Status.CANCELED);
+        }
+
+        @Override public Reservation createReservation(long packId, long userId, int quantity, double unitPrice, String pickupWindow, String baseUrl) { throw new UnsupportedOperationException(); }
+        @Override public Optional<Reservation> findById(Long id) { return reservationDao.findById(id); }
+        @Override public java.util.List<Reservation> findByCustomerId(Long customerId) { throw new UnsupportedOperationException(); }
+        @Override public java.util.List<Reservation> findByCommerceId(Long commerceId) { throw new UnsupportedOperationException(); }
+        @Override public String computePickupDateStr(Reservation reservation) { throw new UnsupportedOperationException(); }
+        @Override public void validateReservationBelongsToCommerce(Long reservationId, Long commerceUserId) { throw new UnsupportedOperationException(); }
+        @Override public ar.edu.itba.paw.services.pack.DirectReservationCheck checkDirectPackReservation(long packId, int quantity) { throw new UnsupportedOperationException(); }
+        @Override public Reservation confirmPickup(Long id) { throw new UnsupportedOperationException(); }
+        @Override public Reservation rejectReservationForCommerce(Long reservationId, Long commerceUserId) { throw new UnsupportedOperationException(); }
+        @Override public PickupByCodeResult confirmPickupByCode(String pickupCode, Long commerceUserId) { throw new UnsupportedOperationException(); }
     }
 
     static class InMemoryPackDao implements PackDao {
@@ -134,14 +142,6 @@ public class ReservationTokenServiceImplTest {
         @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<ar.edu.itba.paw.models.pack.PackTag> tags, byte[] imageData, String imageContentType) { throw new UnsupportedOperationException(); }
         @Override public Optional<Pack> findById(Long id) { return Optional.empty(); }
         @Override public List<Pack> findAll() { return List.of(); }
-        @Override public List<Pack> findActive() { return List.of(); }
-        @Override public List<Pack> searchPacks(String query) { return List.of(); }
-        @Override public List<Pack> findActiveByTags(List<ar.edu.itba.paw.models.pack.PackTag> tags) { return List.of(); }
-        @Override public List<Pack> searchPacksWithTags(String query, List<ar.edu.itba.paw.models.pack.PackTag> tags) { return List.of(); }
-        @Override public List<Pack> findActive(PackSortOption sort) { return List.of(); }
-        @Override public List<Pack> searchPacks(String query, PackSortOption sort) { return List.of(); }
-        @Override public List<Pack> findActiveByTags(List<ar.edu.itba.paw.models.pack.PackTag> tags, PackSortOption sort) { return List.of(); }
-        @Override public List<Pack> searchPacksWithTags(String query, List<ar.edu.itba.paw.models.pack.PackTag> tags, PackSortOption sort) { return List.of(); }
         @Override public Pack update(Pack pack) { throw new UnsupportedOperationException(); }
         @Override public void setActive(Long id, boolean active) { }
         @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
@@ -156,8 +156,7 @@ public class ReservationTokenServiceImplTest {
     private InMemoryReservationTokenDao tokenDao;
     private InMemoryReservationDao reservationDao;
     private InMemoryPackDao packDao;
-    private TestUserService userService;
-    private InMemoryMailService mailService;
+    private StubReservationService reservationService;
     private ReservationTokenServiceImpl svc;
 
     @BeforeEach
@@ -165,9 +164,8 @@ public class ReservationTokenServiceImplTest {
         tokenDao = new InMemoryReservationTokenDao();
         reservationDao = new InMemoryReservationDao();
         packDao = new InMemoryPackDao();
-        userService = new TestUserService(new ar.edu.itba.paw.models.user.User(1L, "user@test.com", "pwd", "Test User"));
-        mailService = new InMemoryMailService();
-        svc = new ReservationTokenServiceImpl(tokenDao, reservationDao, packDao, userService, mailService);
+        reservationService = new StubReservationService(reservationDao, packDao);
+        svc = new ReservationTokenServiceImpl(tokenDao, reservationDao, reservationService);
     }
 
     // Helper to create a reservation and token
@@ -236,7 +234,7 @@ public class ReservationTokenServiceImplTest {
         final var resOpt = reservationDao.findById(r.getId());
         assertEquals(Reservation.Status.CANCELED, resOpt.get().getStatus());
         assertEquals(1, packDao.incrementCalls);
-        assertEquals(1, mailService.sentRejected);
+        assertEquals(1, reservationService.rejectCalls);
     }
 
     @Test

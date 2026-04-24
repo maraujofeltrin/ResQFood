@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 
 import java.nio.charset.StandardCharsets;
 import java.net.URLEncoder;
@@ -57,6 +58,7 @@ public class ReservationController {
     private final CommerceService commerceService;
     private final ClientService clientService;
     private final ZoneId displayZone;
+    private final AuthenticatedUserResolver authResolver;
 
     @Autowired
     public ReservationController(final ReservationTokenService reservationTokenService,
@@ -65,6 +67,7 @@ public class ReservationController {
             final PackService packService,
             final CommerceService commerceService,
             final ClientService clientService,
+            final AuthenticatedUserResolver authResolver,
             @Value("${app.display-zone:}") final String displayZoneStr) {
         this.reservationTokenService = reservationTokenService;
         this.reservationService = reservationService;
@@ -72,6 +75,7 @@ public class ReservationController {
         this.packService = packService;
         this.commerceService = commerceService;
         this.clientService = clientService;
+        this.authResolver = authResolver;
         this.displayZone = (displayZoneStr == null || displayZoneStr.trim().isEmpty())
                 ? ZoneId.of("America/Argentina/Buenos_Aires")
                 : ZoneId.of(displayZoneStr.trim());
@@ -117,7 +121,7 @@ public class ReservationController {
             @RequestParam(value = "status", required = false) final String status,
             final Authentication authentication,
             final RedirectAttributes redirectAttributes) {
-        final User currentUser = resolveCurrentUser(authentication);
+        final User currentUser = authResolver.resolveUser(authentication);
         if (currentUser.getRole() != User.Role.COMMERCE) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
@@ -228,7 +232,7 @@ public class ReservationController {
             @RequestParam(value = "q", required = false) final String query,
             @RequestParam(value = "status", required = false) final String status,
             final Authentication authentication) {
-        final User currentUser = resolveCurrentUser(authentication);
+        final User currentUser = authResolver.resolveUser(authentication);
         final boolean isCommerce = currentUser.getRole() == User.Role.COMMERCE;
         final boolean isClient = currentUser.getRole() == User.Role.CLIENT;
 
@@ -351,19 +355,7 @@ public class ReservationController {
         return mav;
     }
 
-    private User resolveCurrentUser(final Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        }
 
-        final String email = authentication.getName();
-        if (email == null || email.isBlank() || "anonymousUser".equalsIgnoreCase(email)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        }
-
-        return userService.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-    }
 
     private String handleConfirmGet(final String token, final Model model, final Authentication authentication,
             final ReservationToken.Action action,
@@ -533,7 +525,7 @@ public class ReservationController {
     }
 
     private void verifyReservationOwnership(final String token, final Authentication authentication) {
-        final User currentUser = resolveCurrentUser(authentication);
+        final User currentUser = authResolver.resolveUser(authentication);
         if (currentUser.getRole() != User.Role.COMMERCE) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }

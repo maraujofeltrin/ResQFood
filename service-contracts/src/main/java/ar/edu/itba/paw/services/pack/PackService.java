@@ -13,15 +13,6 @@ public interface PackService {
     Optional<Pack> findById(Long id);
     List<Pack> findAll();
     List<Pack> findByCommerceId(Long commerceId);
-    List<Pack> findActive();
-    List<Pack> searchPacks(String query);
-    List<Pack> findActiveByTags(List<PackTag> tags);
-    List<Pack> searchPacksWithTags(String query, List<PackTag> tags);
-
-    List<Pack> findActive(PackSortOption sort);
-    List<Pack> searchPacks(String query, PackSortOption sort);
-    List<Pack> findActiveByTags(List<PackTag> tags, PackSortOption sort);
-    List<Pack> searchPacksWithTags(String query, List<PackTag> tags, PackSortOption sort);
     Pack update(Pack pack);
     void deletePack(Long id);
     Optional<Pack> findImageByPackId(Long id);

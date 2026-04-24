@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.webapp.controller;
 
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.services.pack.PackService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -19,7 +20,7 @@ public class HomeController {
     @GetMapping("/")
     public ModelAndView home() {
         ModelAndView mav = new ModelAndView("home/landingView");
-        List<Pack> previewPacks = packService.findActive().stream()
+        List<Pack> previewPacks = packService.filterPacks(null, null, null, null, PackSortOption.DATE_DESC).stream()
                 .limit(6)
                 .collect(Collectors.toList());
         mav.addObject("previewPacks", previewPacks);

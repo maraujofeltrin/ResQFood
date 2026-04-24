@@ -41,6 +41,16 @@ public interface ReservationService {
     Reservation rejectReservationForCommerce(Long reservationId, Long commerceUserId);
 
     /**
+     * Core rejection: validates state, restores stock, marks CANCELED, notifies client.
+     * Does NOT check commerce ownership — caller must verify beforehand.
+     *
+     * @param reservationId reservation to reject
+     * @return the updated Reservation in CANCELED status
+     * @throws IllegalStateException if reservation cannot be rejected in its current state
+     */
+    Reservation rejectReservation(Long reservationId);
+
+    /**
      * Validates a pickup code belongs to a RESERVED reservation owned by the given commerce,
      * then confirms pickup (status → PAID, sets pickupConfirmationDate).
      *

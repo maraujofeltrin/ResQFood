@@ -5,7 +5,6 @@ import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.pack.PackService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,12 +26,10 @@ public class CommerceOfferServiceImpl implements CommerceOfferService {
 
     @Autowired
     public CommerceOfferServiceImpl(final PackService packService, final AuctionService auctionService,
-            @Value("${app.display-zone:}") final String displayZone) {
+            final ZoneId businessZone) {
         this.packService = packService;
         this.auctionService = auctionService;
-        this.businessZone = (displayZone == null || displayZone.trim().isEmpty())
-                ? ZoneId.of("America/Argentina/Buenos_Aires")
-                : ZoneId.of(displayZone.trim());
+        this.businessZone = businessZone;
     }
 
     @Transactional

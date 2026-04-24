@@ -62,14 +62,14 @@ public class ReservationMailServiceImpl implements ReservationMailService {
             final ClientService clientService,
             @Value("${mail.username}") final String mailFrom,
             @Value("${mail.from-name:ResQFood}") final String mailFromName,
-            @Value("${app.display-zone:}") final String displayZone) {
+            final ZoneId displayZone) {
         this.mailSender = mailSender;
         this.reservationTokenDao = reservationTokenDao;
         this.packDao = packDao;
         this.clientService = clientService;
         this.mailFrom = mailFrom;
         this.mailFromName = mailFromName;
-        this.displayZone = (displayZone == null || displayZone.trim().isEmpty()) ? ZoneId.of("America/Argentina/Buenos_Aires") : ZoneId.of(displayZone.trim());
+        this.displayZone = displayZone;
     }
 
     @Async("mailTaskExecutor")

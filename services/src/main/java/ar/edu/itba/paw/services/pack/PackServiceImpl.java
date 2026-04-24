@@ -49,46 +49,6 @@ public class PackServiceImpl implements PackService {
     }
 
     @Override
-    public List<Pack> findActive() {
-        return packDao.findActive();
-    }
-
-    @Override
-    public List<Pack> searchPacks(String query) {
-        return packDao.searchPacks(query);
-    }
-
-    @Override
-    public List<Pack> findActiveByTags(final List<PackTag> tags) {
-        return packDao.findActiveByTags(tags);
-    }
-
-    @Override
-    public List<Pack> searchPacksWithTags(final String query, final List<PackTag> tags) {
-        return packDao.searchPacksWithTags(query, tags);
-    }
-
-    @Override
-    public List<Pack> findActive(PackSortOption sort) {
-        return packDao.findActive(sort);
-    }
-
-    @Override
-    public List<Pack> searchPacks(String query, PackSortOption sort) {
-        return packDao.searchPacks(query, sort);
-    }
-
-    @Override
-    public List<Pack> findActiveByTags(List<PackTag> tags, PackSortOption sort) {
-        return packDao.findActiveByTags(tags, sort);
-    }
-
-    @Override
-    public List<Pack> searchPacksWithTags(String query, List<PackTag> tags, PackSortOption sort) {
-        return packDao.searchPacksWithTags(query, tags, sort);
-    }
-
-    @Override
     public Pack update(Pack pack) {
         return packDao.update(pack);
     }

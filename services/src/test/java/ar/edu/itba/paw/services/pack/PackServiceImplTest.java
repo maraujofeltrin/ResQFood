@@ -50,20 +50,6 @@ public class PackServiceImplTest {
         }
 
         @Override
-        public List<Pack> findActive() {
-            final List<Pack> r = new ArrayList<>();
-            for (Pack p : store.values()) if (Boolean.TRUE.equals(p.getActive()) && !Boolean.TRUE.equals(p.getDeleted())) r.add(p);
-            return r;
-        }
-
-        @Override
-        public List<Pack> searchPacks(String query) {
-            final List<Pack> r = new ArrayList<>();
-            for (Pack p : store.values()) if (p.getTitle().contains(query) || p.getDescription().contains(query)) r.add(p);
-            return r;
-        }
-
-        @Override
         public Pack update(Pack pack) {
             store.put(pack.getId(), pack);
             return pack;
@@ -98,28 +84,6 @@ public class PackServiceImplTest {
         }
 
         @Override
-        public List<Pack> findActiveByTags(List<PackTag> tags) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Pack> searchPacksWithTags(String query, List<PackTag> tags) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Pack> findActive(PackSortOption sort) { return findActive(); }
-
-        @Override
-        public List<Pack> searchPacks(String query, PackSortOption sort) { return searchPacks(query); }
-
-        @Override
-        public List<Pack> findActiveByTags(List<PackTag> tags, PackSortOption sort) { return findActiveByTags(tags); }
-
-        @Override
-        public List<Pack> searchPacksWithTags(String query, List<PackTag> tags, PackSortOption sort) { return searchPacksWithTags(query, tags); }
-
-        @Override
         public void updateImage(Long packId, byte[] imageData, String imageContentType) {
             final Pack p = store.get(packId);
             if (p != null) {
@@ -129,7 +93,12 @@ public class PackServiceImplTest {
         }
 
         @Override
-        public List<Pack> filterPacks(String query, List<PackTag> tags, String city, List<String> timeRanges, PackSortOption sort) { return findActive(); }
+        public List<Pack> filterPacks(String query, List<PackTag> tags, String city, List<String> timeRanges, PackSortOption sort) {
+            //return all active non-deleted packs
+            final List<Pack> r = new ArrayList<>();
+            for (Pack p : store.values()) if (Boolean.TRUE.equals(p.getActive()) && !Boolean.TRUE.equals(p.getDeleted())) r.add(p);
+            return r;
+        }
     }
 
     @Test
