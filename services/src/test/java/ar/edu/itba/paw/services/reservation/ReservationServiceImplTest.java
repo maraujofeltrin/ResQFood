@@ -197,7 +197,7 @@ public class ReservationServiceImplTest {
         private final User user;
         TestUserService(User user) { this.user = user; }
         @Override public User createUser(User user, Client clientProfile, Commerce commerceProfile) { return this.user; }
-        @Override public Optional<User> upgradeProvisionalUser(User user, Client clientProfile, Commerce commerceProfile) { return Optional.empty(); }
+
         @Override public Optional<User> findByEmail(String email) { return Optional.of(user); }
         @Override public Optional<User> findById(Long id) { return Optional.of(user); }
         @Override public void updatePassword(final Long userId, final String encodedPassword) { }

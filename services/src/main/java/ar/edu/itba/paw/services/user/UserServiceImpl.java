@@ -48,33 +48,7 @@ public class UserServiceImpl implements UserService {
         return createdUser;
     }
 
-    @Transactional
-    @Override
-    public Optional<User> upgradeProvisionalUser(final User user, final Client clientProfile,
-            final Commerce commerceProfile) {
-        final Optional<User> maybeUser = userDao.findByEmail(user.getEmail());
-        if (!maybeUser.isPresent()) {
-            return Optional.empty();
-        }
 
-        final User existing = maybeUser.get();
-        final String storedPassword = existing.getPassword();
-        final boolean isProvisional = UserPasswordConstants.RESERVATION_PENDING_PASSWORD.equals(storedPassword)
-            || passwordEncoder.matches(UserPasswordConstants.RESERVATION_PENDING_PASSWORD, storedPassword);
-        if (!isProvisional) {
-            return Optional.empty();
-        }
-
-        final User upgraded = userDao.updateUser(
-                existing.getId(),
-                passwordEncoder.encode(user.getPassword()),
-                user.getName(),
-                hasText(user.getPhone()) ? user.getPhone() : existing.getPhone(),
-                user.getRole());
-
-        persistProfileByRole(upgraded, clientProfile, commerceProfile);
-        return Optional.of(upgraded);
-    }
 
     private void persistProfileByRole(final User user, final Client clientProfile, final Commerce commerceProfile) {
         if (user.getRole() == User.Role.CLIENT) {
@@ -129,10 +103,6 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private static boolean hasText(final String value) {
-        return value != null && !value.trim().isEmpty();
-    }
-
     @Override
     public Optional<User> findByEmail(final String email) {
         return userDao.findByEmail(email);
@@ -159,10 +129,6 @@ public class UserServiceImpl implements UserService {
             final String appBaseUrl) {
         final Optional<User> existingUser = findByEmail(user.getEmail());
         if (existingUser.isPresent()) {
-            final Optional<User> upgraded = upgradeProvisionalUser(user, clientProfile, commerceProfile);
-            if (upgraded.isPresent()) {
-                return RegisterResult.upgraded(upgraded.get());
-            }
             return RegisterResult.duplicateEmail();
         }
         final User created = createUser(user, clientProfile, commerceProfile);

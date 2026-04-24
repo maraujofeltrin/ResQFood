@@ -12,8 +12,6 @@ public final class RegisterResult {
     public enum Outcome {
         /** New account: caller should send verification email and redirect to login. */
         CREATED_PENDING_VERIFICATION,
-        /** Provisional account upgraded: caller can auto-login. */
-        UPGRADED,
         /** Email already registered and not provisional. */
         DUPLICATE_EMAIL
     }
@@ -28,10 +26,6 @@ public final class RegisterResult {
 
     public static RegisterResult createdPendingVerification(final User user) {
         return new RegisterResult(Outcome.CREATED_PENDING_VERIFICATION, user);
-    }
-
-    public static RegisterResult upgraded(final User user) {
-        return new RegisterResult(Outcome.UPGRADED, user);
     }
 
     public static RegisterResult duplicateEmail() {

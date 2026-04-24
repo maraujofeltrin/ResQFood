@@ -1,7 +1,6 @@
 package ar.edu.itba.paw.webapp.auth;
 
 import ar.edu.itba.paw.models.user.User;
-import ar.edu.itba.paw.services.user.UserPasswordConstants;
 import ar.edu.itba.paw.services.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -37,14 +36,10 @@ public class AuthUserDetailsService implements UserDetailsService {
         final Collection<? extends GrantedAuthority> authorities =
                 Collections.singleton(new SimpleGrantedAuthority(roleName));
 
-        final String password = UserPasswordConstants.RESERVATION_PENDING_PASSWORD.equals(user.getPassword())
-            ? "$2a$10$00000000000000000000000000000000000000000000000000000"
-            : user.getPassword();
-
         return new AuthUser(
                 user.getEmail(),
-                password,
-            user.isVerified(),
+                user.getPassword(),
+                user.isVerified(),
                 authorities);
     }
 }

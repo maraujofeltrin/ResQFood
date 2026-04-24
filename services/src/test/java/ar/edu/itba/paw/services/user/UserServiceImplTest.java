@@ -185,25 +185,4 @@ public class UserServiceImplTest {
         assertEquals("123", maybe.get().getPhone());
     }
 
-    @Test
-    public void upgradeProvisionalUser_updatesPasswordAndProfile() {
-        final InMemoryUserDao dao = new InMemoryUserDao();
-        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-            new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService());
-
-        final User provisional = new User(null, "pending@ex.com", "__RESERVATION_PENDING_PASSWORD__", "Pending",
-            "123", User.Role.CLIENT, false);
-        final Client provisionalClient = new Client(null, "Pending", "User", true);
-        svc.createUser(provisional, provisionalClient, null);
-
-        final User upgradeData = new User(null, "pending@ex.com", "real-pass", "Real Name", "123",
-            User.Role.COMMERCE, false);
-        final Commerce upgradeCommerce = new Commerce(null, "Shop", Commerce.Category.OTHER, "st", 1, "city", "prov", "pc", "09:00", "18:00");
-        final Optional<User> upgraded = svc.upgradeProvisionalUser(upgradeData, null, upgradeCommerce);
-        assertTrue(upgraded.isPresent());
-        assertEquals("real-pass", upgraded.get().getPassword());
-        assertEquals("Real Name", upgraded.get().getName());
-        assertEquals(User.Role.COMMERCE, upgraded.get().getRole());
-        assertEquals("123", upgraded.get().getPhone());
-    }
 }

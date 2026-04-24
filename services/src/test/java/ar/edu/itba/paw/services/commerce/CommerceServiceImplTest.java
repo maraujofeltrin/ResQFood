@@ -32,12 +32,6 @@ public class CommerceServiceImplTest {
         }
 
         @Override
-        public Optional<User> upgradeProvisionalUser(final User user, final Client clientProfile,
-                final Commerce commerceProfile) {
-            return Optional.empty();
-        }
-
-        @Override
         public Optional<User> findByEmail(String email) {
             return Optional.ofNullable(byEmail.get(email));
         }

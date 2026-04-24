@@ -108,7 +108,6 @@ public class ReservationTokenServiceImplTest {
         private final ar.edu.itba.paw.models.user.User user;
         TestUserService(ar.edu.itba.paw.models.user.User user) { this.user = user; }
         @Override public ar.edu.itba.paw.models.user.User createUser(ar.edu.itba.paw.models.user.User user, Client clientProfile, Commerce commerceProfile) { return this.user; }
-        @Override public Optional<ar.edu.itba.paw.models.user.User> upgradeProvisionalUser(ar.edu.itba.paw.models.user.User user, Client clientProfile, Commerce commerceProfile) { return Optional.empty(); }
         @Override public Optional<ar.edu.itba.paw.models.user.User> findByEmail(String email) { return Optional.of(user); }
         @Override public Optional<ar.edu.itba.paw.models.user.User> findById(Long id) { return Optional.of(user); }
         @Override public void updatePassword(final Long userId, final String encodedPassword) { }
