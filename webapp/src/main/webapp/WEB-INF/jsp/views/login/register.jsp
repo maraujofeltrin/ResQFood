@@ -37,6 +37,27 @@ uri="http://itba.edu.ar/paw/tags" %>
           method="post"
           class="space-y-5"
         >
+          <c:set
+            var="registerBinding"
+            value="${requestScope['org.springframework.validation.BindingResult.registerForm']}"
+          />
+          <c:if
+            test="${registerBinding != null and not empty registerBinding.globalErrors}"
+          >
+            <div
+              class="bg-error-container text-on-error-container rounded-lg p-4 mb-6 text-sm"
+            >
+              <c:forEach var="error" items="${registerBinding.globalErrors}">
+                <p>
+                  <spring:message
+                    code="${error.code}"
+                    text="${error.defaultMessage}"
+                  />
+                </p>
+              </c:forEach>
+            </div>
+          </c:if>
+
           <div>
             <form:label
               path="credentials.email"

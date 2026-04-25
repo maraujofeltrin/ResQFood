@@ -72,7 +72,7 @@ public class RegisterController {
         final RegisterResult result = userService.tryRegister(user, clientProfile, commerceProfile, appBaseUrl);
         switch (result.getOutcome()) {
             case DUPLICATE_EMAIL:
-                bindingResult.rejectValue("credentials.email", "user.email.duplicate");
+                bindingResult.reject("user.email.duplicate");
                 return registerView(registerForm);
             case CREATED_PENDING_VERIFICATION:
                 return new ModelAndView("redirect:/login?pendingVerification=true");
