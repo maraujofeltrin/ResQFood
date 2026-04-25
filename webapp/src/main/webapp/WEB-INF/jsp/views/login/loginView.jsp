@@ -46,10 +46,10 @@ uri="http://itba.edu.ar/paw/tags" %>
           </div>
         </c:if>
 
-
         <form
           action="${pageContext.request.contextPath}/login"
           method="post"
+          id="loginForm"
           class="space-y-5"
         >
           <div>
@@ -134,5 +134,28 @@ uri="http://itba.edu.ar/paw/tags" %>
       </div>
     </main>
     <paw:footer />
+    <script>
+      (function () {
+        var emailInput = document.getElementById("email");
+        var forgotLink = document.querySelector('a[href*="password-reset"]');
+        var forgotBase =
+          "${pageContext.request.contextPath}/password-reset/request";
+
+        if (!emailInput || !forgotLink) {
+          return;
+        }
+
+        emailInput.addEventListener("input", function () {
+          if (emailInput.value) {
+            forgotLink.href =
+              forgotBase + "?email=" + encodeURIComponent(emailInput.value);
+          } else {
+            forgotLink.href = forgotBase;
+          }
+        });
+
+        emailInput.dispatchEvent(new Event("input"));
+      })();
+    </script>
   </body>
 </html>

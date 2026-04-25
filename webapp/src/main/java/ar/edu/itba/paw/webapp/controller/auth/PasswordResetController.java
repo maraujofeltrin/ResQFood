@@ -34,8 +34,12 @@ public class PasswordResetController {
     }
 
     @GetMapping("/request")
-    public String requestForm(final Model model) {
-        model.addAttribute("passwordResetRequestForm", new PasswordResetRequestForm());
+    public String requestForm(@RequestParam(value = "email", required = false) final String email, final Model model) {
+        final PasswordResetRequestForm form = new PasswordResetRequestForm();
+        if (email != null && !email.isEmpty()) {
+            form.setEmail(email);
+        }
+        model.addAttribute("passwordResetRequestForm", form);
         return "password-reset/request";
     }
 
