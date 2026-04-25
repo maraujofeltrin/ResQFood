@@ -44,7 +44,7 @@ public class EmailVerificationMailServiceImpl implements EmailVerificationMailSe
         this.mailFromName = mailFromName;
     }
 
-    @Async("mailTaskExecutor")
+    @Async
     @Override
     public void sendVerificationMail(final String toEmail, final String verificationUrl) {
         final Context context = new Context();

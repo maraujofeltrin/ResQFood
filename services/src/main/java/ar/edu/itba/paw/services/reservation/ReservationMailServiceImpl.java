@@ -72,7 +72,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         this.displayZone = displayZone;
     }
 
-    @Async("mailTaskExecutor")
+    @Async
     @Override
     public void sendReservationRequestToCommerce(final Reservation reservation, final String commerceEmail,
             final String baseUrl, final String pickupDateStr) {
@@ -117,7 +117,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         }
     }
 
-    @Async("mailTaskExecutor")
+    @Async
     @Override
     public void sendReservationCodeToClient(final Reservation reservation, final String clientEmail,
             final String pickupDateStr) {
@@ -128,7 +128,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         sendHtmlMail(clientEmail, subject, html, "Could not send client pickup code mail");
     }
 
-    @Async("mailTaskExecutor")
+    @Async
     @Override
     public void sendAuctionWinnerCodeToClient(final Reservation reservation, final String clientEmail,
             final String pickupDateStr) {
@@ -139,7 +139,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         sendHtmlMail(clientEmail, subject, html, "Could not send auction winner pickup code mail to client");
     }
 
-    @Async("mailTaskExecutor")
+    @Async
     @Override
     public void sendAuctionWinnerCodeToCommerce(final Reservation reservation, final String commerceEmail,
             final String pickupDateStr) {
@@ -152,7 +152,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         sendHtmlMail(commerceEmail, subject, html, "Could not send auction winner pickup code mail to commerce");
     }
 
-    @Async("mailTaskExecutor")
+    @Async
     @Override
     public void sendReservationRejectedToClient(final Reservation reservation, final String clientEmail) {
         final Pack pack = packDao.findById(reservation.getPackId()).orElse(null);

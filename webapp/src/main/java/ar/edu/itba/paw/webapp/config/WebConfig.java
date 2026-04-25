@@ -39,10 +39,8 @@ import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 import java.time.ZoneId;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import java.util.concurrent.Executor;
 
 @EnableWebMvc
 @EnableTransactionManagement
@@ -181,17 +179,6 @@ public class WebConfig implements WebMvcConfigurer {
         messageSource.setCacheSeconds(5);
         messageSource.setFallbackToSystemLocale(false);
         return messageSource;
-    }
-
-    @Bean(name = "mailTaskExecutor")
-    public Executor taskExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(2);
-        executor.setMaxPoolSize(5);
-        executor.setQueueCapacity(50);
-        executor.setThreadNamePrefix("MailSenderThread-");
-        executor.initialize();
-        return executor;
     }
 
 }

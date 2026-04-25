@@ -44,7 +44,7 @@ public class PasswordResetMailServiceImpl implements PasswordResetMailService {
         this.mailFromName = mailFromName;
     }
 
-    @Async("mailTaskExecutor")
+    @Async
     @Override
     public void sendPasswordResetMail(final String toEmail, final String resetUrl) {
         final Context context = new Context();
