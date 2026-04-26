@@ -118,4 +118,14 @@ public class PackServiceImpl implements PackService {
         }
         return new CommercePackAccess.Granted(packOpt.get());
     }
+
+    @Override
+    public List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize) {
+        return packDao.filterCommercePacks(commerceId, hasAuction, page, pageSize);
+    }
+
+    @Override
+    public int countCommercePacks(Long commerceId, Boolean hasAuction) {
+        return packDao.countCommercePacks(commerceId, hasAuction);
+    }
 }

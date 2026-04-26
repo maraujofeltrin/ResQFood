@@ -386,4 +386,14 @@ public class ReservationServiceImpl implements ReservationService {
                 LocalDateTime.now(ZoneOffset.UTC));
         return PickupByCodeResult.success(confirmed);
     }
+
+    @Override
+    public List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize) {
+        return reservationDao.filterReservations(commerceId, customerId, query, status, page, pageSize);
+    }
+
+    @Override
+    public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status) {
+        return reservationDao.countFilteredReservations(commerceId, customerId, query, status);
+    }
 }

@@ -344,4 +344,48 @@ public class PackJdbcDao implements PackDao {
             return count != null ? count : 0;
         }
     }
+
+    @Override
+    public List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT id, commerce_id, title, description, original_price, final_price, stock, active, deleted ");
+        sql.append("FROM packs p WHERE p.commerce_id = ? AND p.deleted = false ");
+        
+        List<Object> params = new ArrayList<>();
+        params.add(commerceId);
+        
+        if (hasAuction != null) {
+            if (hasAuction) {
+                sql.append("AND EXISTS (SELECT 1 FROM auctions a WHERE a.pack_id = p.id) ");
+            } else {
+                sql.append("AND NOT EXISTS (SELECT 1 FROM auctions a WHERE a.pack_id = p.id) ");
+            }
+        }
+        
+        sql.append("ORDER BY p.id DESC LIMIT ? OFFSET ?");
+        params.add(pageSize);
+        params.add((page - 1) * pageSize);
+        
+        return jdbcTemplate.query(sql.toString(), packRowMapperNoTags, params.toArray());
+    }
+
+    @Override
+    public int countCommercePacks(Long commerceId, Boolean hasAuction) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT COUNT(p.id) FROM packs p WHERE p.commerce_id = ? AND p.deleted = false ");
+        
+        List<Object> params = new ArrayList<>();
+        params.add(commerceId);
+        
+        if (hasAuction != null) {
+            if (hasAuction) {
+                sql.append("AND EXISTS (SELECT 1 FROM auctions a WHERE a.pack_id = p.id) ");
+            } else {
+                sql.append("AND NOT EXISTS (SELECT 1 FROM auctions a WHERE a.pack_id = p.id) ");
+            }
+        }
+        
+        Integer count = jdbcTemplate.queryForObject(sql.toString(), Integer.class, params.toArray());
+        return count != null ? count : 0;
+    }
 }

@@ -59,4 +59,8 @@ public interface ReservationService {
      * @return success with confirmation, or a typed failure
      */
     PickupByCodeResult confirmPickupByCode(String pickupCode, Long commerceUserId);
+
+    List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize);
+
+    int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status);
 }

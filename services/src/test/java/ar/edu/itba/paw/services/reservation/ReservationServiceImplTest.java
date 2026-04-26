@@ -54,30 +54,13 @@ public class ReservationServiceImplTest {
         }
 
         @Override
-        public List<Auction> findActive() {
+        public List<Auction> filterAuctions(String query, List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, List<String> timeRanges, ar.edu.itba.paw.models.auction.AuctionSortOption sort, int page, int pageSize) {
             return Collections.emptyList();
         }
 
         @Override
-        public List<Auction> findActive(final ar.edu.itba.paw.models.auction.AuctionSortOption sort) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Auction> searchActive(final String query, final ar.edu.itba.paw.models.auction.AuctionSortOption sort) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Auction> findActiveByTags(final List<ar.edu.itba.paw.models.pack.PackTag> tags,
-                final ar.edu.itba.paw.models.auction.AuctionSortOption sort) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Auction> searchActiveWithTags(final String query, final List<ar.edu.itba.paw.models.pack.PackTag> tags,
-                final ar.edu.itba.paw.models.auction.AuctionSortOption sort) {
-            return Collections.emptyList();
+        public int countFilteredAuctions(String query, List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, List<String> timeRanges) {
+            return 0;
         }
 
         @Override
@@ -163,6 +146,16 @@ public class ReservationServiceImplTest {
             store.add(updated);
             return updated;
         }
+
+        @Override
+        public List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status) {
+            return 0;
+        }
     }
 
     static class InMemoryPackDao implements PackDao {
@@ -184,6 +177,8 @@ public class ReservationServiceImplTest {
         @Override public void updateImage(Long packId, byte[] imageData, String imageContentType) { }
         @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return Collections.emptyList(); }
         @Override public int countFilteredPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges) { return 0; }
+        @Override public java.util.List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize) { return Collections.emptyList(); }
+        @Override public int countCommercePacks(Long commerceId, Boolean hasAuction) { return 0; }
     }
 
     static class TestUserService implements UserService {
@@ -429,6 +424,8 @@ public class ReservationServiceImplTest {
                     @Override public void updateImage(Long packId, byte[] imageData, String imageContentType) { }
                     @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return Collections.emptyList(); }
                     @Override public int countFilteredPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges) { return 0; }
+                    @Override public java.util.List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize) { return Collections.emptyList(); }
+                    @Override public int countCommercePacks(Long commerceId, Boolean hasAuction) { return 0; }
                 },
                 mailService,
                 new TestCommerceService(),

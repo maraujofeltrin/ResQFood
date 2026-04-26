@@ -44,6 +44,8 @@ public class ReservationMailServiceImplTest {
         @Override public boolean incrementStock(long packId, int quantity) { return true; }
         @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return Collections.emptyList(); }
         @Override public int countFilteredPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges) { return 0; }
+        @Override public java.util.List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize) { return Collections.emptyList(); }
+        @Override public int countCommercePacks(Long commerceId, Boolean hasAuction) { return 0; }
     }
 
     static class FakeMailSender implements JavaMailSender {

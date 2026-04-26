@@ -50,4 +50,16 @@ public interface PackDao {
      * Returns the total number of active packs matching the filters (ignoring sort/pagination).
      */
     int countFilteredPacks(String query, List<PackTag> tags, String city, List<String> timeRanges);
+
+    /**
+     * Filters packs belonging to a specific commerce, optionally filtering by whether they have an associated auction.
+     * @param commerceId the commerce ID
+     * @param hasAuction if true, returns only packs with an auction; if false, packs without; if null, all packs
+     */
+    List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize);
+
+    /**
+     * Counts packs belonging to a specific commerce, optionally filtering by whether they have an associated auction.
+     */
+    int countCommercePacks(Long commerceId, Boolean hasAuction);
 }

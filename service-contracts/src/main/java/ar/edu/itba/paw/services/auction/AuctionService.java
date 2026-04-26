@@ -27,15 +27,9 @@ public interface AuctionService {
 
     Optional<Auction> findByPackId(long packId);
 
-    List<Auction> findActive();
+    List<Auction> filterAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges, AuctionSortOption sort, int page, int pageSize);
 
-    List<Auction> findActive(AuctionSortOption sort);
-
-    List<Auction> searchActive(String query, AuctionSortOption sort);
-
-    List<Auction> findActiveByTags(List<PackTag> tags, AuctionSortOption sort);
-
-    List<Auction> searchActiveWithTags(String query, List<PackTag> tags, AuctionSortOption sort);
+    int countFilteredAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges);
 
     List<Auction> findByCommerceId(long commerceId);
 

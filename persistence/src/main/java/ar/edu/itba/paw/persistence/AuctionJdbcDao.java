@@ -117,99 +117,125 @@ public class AuctionJdbcDao implements AuctionDao {
         ).stream().findFirst();
     }
 
-    @Override
-    public List<Auction> findActive() {
-        return findActive(AuctionSortOption.TIME_REMAINING_ASC);
-    }
+    private void appendFilterJoinsAndConditions(final StringBuilder sql, final List<Object> params,
+                                                final String query, final List<PackTag> tags,
+                                                final String city, final List<String> timeRanges) {
+        final boolean hasQuery = query != null && !query.isBlank();
+        final boolean hasTags = tags != null && !tags.isEmpty();
+        final boolean hasCity = city != null && !city.isBlank();
+        final boolean hasTime = timeRanges != null && !timeRanges.isEmpty();
 
-    @Override
-    public List<Auction> findActive(final AuctionSortOption sort) {
-        return jdbcTemplate.query(
-                AUCTION_JOIN_PACK + " WHERE a.status = 'ACTIVE' AND a.end_time > ? AND p.active = true "
-                        + "AND p.deleted = false ORDER BY " + sort.getOrderByClause(),
-                auctionRowMapper,
-                Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC))
-        );
-    }
+        sql.append("FROM auctions a JOIN packs p ON a.pack_id = p.id ")
+           .append("JOIN commerces c ON p.commerce_id = c.user_id ");
 
-    @Override
-    public List<Auction> searchActive(final String query, final AuctionSortOption sort) {
-        final String pattern = "%" + query + "%";
-        return jdbcTemplate.query(
-                AUCTION_JOIN_PACK +
-                        " JOIN commerces c ON p.commerce_id = c.user_id" +
-                        " WHERE a.status = 'ACTIVE' AND a.end_time > ? AND p.active = true" +
-                        " AND (p.title ILIKE ? OR c.commercial_name ILIKE ?)" +
-                        " ORDER BY " + sort.getOrderByClause(),
-                auctionRowMapper,
-                Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)),
-                pattern,
-                pattern
-        );
-    }
-
-    @Override
-    public List<Auction> findActiveByTags(final List<PackTag> tags, final AuctionSortOption sort) {
-        if (tags == null || tags.isEmpty()) {
-            return findActive(sort);
+        if (hasTags) {
+            sql.append("JOIN pack_tags pt ON p.id = pt.pack_id ");
         }
-        final String inClause = String.join(", ", Collections.nCopies(tags.size(), "?"));
-        final List<Object> params = new ArrayList<>();
+
+        sql.append("WHERE a.status = 'ACTIVE' AND a.end_time > ? ")
+           .append("AND p.active = true AND p.deleted = false ");
+           
         params.add(Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));
-        for (final PackTag tag : tags) {
-            params.add(tag.name());
-        }
-        params.add(tags.size());
 
-        return jdbcTemplate.query(
-                AUCTION_JOIN_PACK +
-                        " WHERE a.status = 'ACTIVE' AND a.end_time > ? AND p.active = true" +
-                        " AND p.id IN (" +
-                        "     SELECT pt.pack_id" +
-                        "     FROM pack_tags pt" +
-                        "     WHERE pt.tag IN (" + inClause + ")" +
-                        "     GROUP BY pt.pack_id" +
-                        "     HAVING COUNT(DISTINCT pt.tag) = ?" +
-                        " )" +
-                        " ORDER BY " + sort.getOrderByClause(),
-                auctionRowMapper,
-                params.toArray()
-        );
+        if (hasQuery) {
+            final String pattern = "%" + query.trim() + "%";
+            sql.append("AND (p.title ILIKE ? OR c.commercial_name ILIKE ?) ");
+            params.add(pattern);
+            params.add(pattern);
+        }
+
+        if (hasCity) {
+            sql.append("AND c.city = ? ");
+            params.add(city);
+        }
+
+        if (hasTime) {
+            final List<String> timeConditions = new ArrayList<>();
+            for (final String range : timeRanges) {
+                switch (range) {
+                    case "morning":
+                        timeConditions.add("CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) < 12");
+                        break;
+                    case "afternoon":
+                        timeConditions.add("CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) >= 12 "
+                                + "AND CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) < 17");
+                        break;
+                    case "evening":
+                        timeConditions.add("CAST(SPLIT_PART(c.opening_time, ':', 1) AS INTEGER) >= 17");
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if (!timeConditions.isEmpty()) {
+                sql.append("AND (")
+                   .append(String.join(" OR ", timeConditions))
+                   .append(") ");
+            }
+        }
+
+        if (hasTags) {
+            final String inClause = String.join(", ", Collections.nCopies(tags.size(), "?"));
+            sql.append("AND pt.tag IN (").append(inClause).append(") ");
+            for (final PackTag tag : tags) {
+                params.add(tag.name());
+            }
+        }
     }
 
     @Override
-    public List<Auction> searchActiveWithTags(final String query, final List<PackTag> tags,
-            final AuctionSortOption sort) {
-        if (tags == null || tags.isEmpty()) {
-            return searchActive(query, sort);
-        }
-        final String pattern = "%" + query + "%";
-        final String inClause = String.join(", ", Collections.nCopies(tags.size(), "?"));
-        final List<Object> params = new ArrayList<>();
-        params.add(Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));
-        params.add(pattern);
-        params.add(pattern);
-        for (final PackTag tag : tags) {
-            params.add(tag.name());
-        }
-        params.add(tags.size());
+    public List<Auction> filterAuctions(final String query, final List<PackTag> tags,
+                                        final String city, final List<String> timeRanges,
+                                        final AuctionSortOption sort,
+                                        final int page, final int pageSize) {
+        final StringBuilder sql = new StringBuilder();
+        sql.append("SELECT a.id AS auction_id, a.pack_id, a.initial_price, a.min_bid_increment, a.current_bid, a.current_bidder_id, ")
+           .append("a.end_time, a.status, a.created_at, ")
+           .append("p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active, p.deleted ");
 
-        return jdbcTemplate.query(
-                AUCTION_JOIN_PACK +
-                        " JOIN commerces c ON p.commerce_id = c.user_id" +
-                        " WHERE a.status = 'ACTIVE' AND a.end_time > ? AND p.active = true" +
-                        " AND (p.title ILIKE ? OR c.commercial_name ILIKE ?)" +
-                        " AND p.id IN (" +
-                        "     SELECT pt.pack_id" +
-                        "     FROM pack_tags pt" +
-                        "     WHERE pt.tag IN (" + inClause + ")" +
-                        "     GROUP BY pt.pack_id" +
-                        "     HAVING COUNT(DISTINCT pt.tag) = ?" +
-                        " )" +
-                        " ORDER BY " + sort.getOrderByClause(),
-                auctionRowMapper,
-                params.toArray()
-        );
+        final List<Object> params = new ArrayList<>();
+        appendFilterJoinsAndConditions(sql, params, query, tags, city, timeRanges);
+
+        if (tags != null && !tags.isEmpty()) {
+            sql.append("GROUP BY a.id, a.pack_id, a.initial_price, a.min_bid_increment, a.current_bid, a.current_bidder_id, ")
+               .append("a.end_time, a.status, a.created_at, ")
+               .append("p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active, p.deleted, c.commercial_name ")
+               .append("HAVING COUNT(DISTINCT pt.tag) = ? ");
+            params.add(tags.size());
+        }
+
+        final AuctionSortOption safeSortOption = sort != null ? sort : AuctionSortOption.TIME_REMAINING_ASC;
+        sql.append("ORDER BY ").append(safeSortOption.getOrderByClause()).append(" ");
+
+        sql.append("LIMIT ? OFFSET ?");
+        params.add(pageSize);
+        params.add((page - 1) * pageSize);
+
+        return jdbcTemplate.query(sql.toString(), auctionRowMapper, params.toArray());
+    }
+
+    @Override
+    public int countFilteredAuctions(final String query, final List<PackTag> tags,
+                                     final String city, final List<String> timeRanges) {
+        final StringBuilder sqlJoinsAndConditions = new StringBuilder();
+        final List<Object> params = new ArrayList<>();
+        appendFilterJoinsAndConditions(sqlJoinsAndConditions, params, query, tags, city, timeRanges);
+
+        if (tags != null && !tags.isEmpty()) {
+            final StringBuilder wrapperSql = new StringBuilder();
+            wrapperSql.append("SELECT COUNT(*) FROM (SELECT a.id ");
+            wrapperSql.append(sqlJoinsAndConditions);
+            wrapperSql.append("GROUP BY a.id HAVING COUNT(DISTINCT pt.tag) = ?) AS subquery");
+            params.add(tags.size());
+            Integer count = jdbcTemplate.queryForObject(wrapperSql.toString(), Integer.class, params.toArray());
+            return count != null ? count : 0;
+        } else {
+            final StringBuilder sql = new StringBuilder();
+            sql.append("SELECT COUNT(DISTINCT a.id) ");
+            sql.append(sqlJoinsAndConditions);
+            Integer count = jdbcTemplate.queryForObject(sql.toString(), Integer.class, params.toArray());
+            return count != null ? count : 0;
+        }
     }
 
     @Override

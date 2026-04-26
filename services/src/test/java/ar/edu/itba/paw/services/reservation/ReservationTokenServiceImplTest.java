@@ -102,6 +102,16 @@ public class ReservationTokenServiceImplTest {
             store.put(id, updated);
             return updated;
         }
+
+        @Override
+        public java.util.List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize) {
+            return java.util.Collections.emptyList();
+        }
+
+        @Override
+        public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status) {
+            return 0;
+        }
     }
 
     static class StubReservationService implements ReservationService {
@@ -134,6 +144,8 @@ public class ReservationTokenServiceImplTest {
         @Override public Reservation confirmPickup(Long id) { throw new UnsupportedOperationException(); }
         @Override public Reservation rejectReservationForCommerce(Long reservationId, Long commerceUserId) { throw new UnsupportedOperationException(); }
         @Override public PickupByCodeResult confirmPickupByCode(String pickupCode, Long commerceUserId) { throw new UnsupportedOperationException(); }
+        @Override public java.util.List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize) { throw new UnsupportedOperationException(); }
+        @Override public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status) { throw new UnsupportedOperationException(); }
     }
 
     static class InMemoryPackDao implements PackDao {
@@ -152,6 +164,8 @@ public class ReservationTokenServiceImplTest {
         @Override public List<Pack> findByCommerceId(Long commerceId) { return List.of(); }
         @Override public List<Pack> filterPacks(String query, List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return List.of(); }
         @Override public int countFilteredPacks(String query, List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, List<String> timeRanges) { return 0; }
+        @Override public List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize) { return List.of(); }
+        @Override public int countCommercePacks(Long commerceId, Boolean hasAuction) { return 0; }
     }
 
     private InMemoryReservationTokenDao tokenDao;

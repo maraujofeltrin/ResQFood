@@ -57,36 +57,30 @@ public class CommerceDashboardController {
         final Commerce commerce = commerceOpt.get();
         final ModelAndView mav = new ModelAndView("commerce/dashboard");
 
-        final List<Pack> allPacks = packService.findByCommerceId(id);
+        Boolean hasAuction = null;
+        if ("auctions".equalsIgnoreCase(tab)) {
+            hasAuction = true;
+        } else if ("packs".equalsIgnoreCase(tab)) {
+            hasAuction = false;
+        }
+
+        final int totalItems = packService.countCommercePacks(id, hasAuction);
+        final int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
+        final int safePage = Math.max(1, Math.min(page, totalPages));
+
+        final List<Pack> displayedPacks = packService.filterCommercePacks(id, hasAuction, safePage, PAGE_SIZE);
+
+        final int itemsCount = packService.countCommercePacks(id, null);
+        final int auctionsCount = packService.countCommercePacks(id, true);
+        final int packsCount = packService.countCommercePacks(id, false);
+
         final List<ar.edu.itba.paw.models.auction.Auction> commerceAuctions = auctionService.findByCommerceId(id);
         final Set<Long> auctionPackIds = commerceAuctions.stream()
                 .map(a -> a.getPack().getId())
                 .collect(Collectors.toSet());
 
-        final List<Pack> displayedPacks;
-        if ("auctions".equalsIgnoreCase(tab)) {
-            displayedPacks = allPacks.stream()
-                    .filter(p -> auctionPackIds.contains(p.getId()))
-                    .toList();
-        } else if ("packs".equalsIgnoreCase(tab)) {
-            displayedPacks = allPacks.stream()
-                    .filter(p -> !auctionPackIds.contains(p.getId()))
-                    .toList();
-        } else {
-            displayedPacks = allPacks;
-        }
-
-        final int totalPages = Math.max(1, (int) Math.ceil((double) displayedPacks.size() / PAGE_SIZE));
-        final int safePage = Math.max(1, Math.min(page, totalPages));
-        final int fromIdx = (safePage - 1) * PAGE_SIZE;
-        final int toIdx = Math.min(fromIdx + PAGE_SIZE, displayedPacks.size());
-
-        final int itemsCount = allPacks.size();
-        final int auctionsCount = (int) allPacks.stream().filter(p -> auctionPackIds.contains(p.getId())).count();
-        final int packsCount = itemsCount - auctionsCount;
-
         mav.addObject("commerce", commerce);
-        mav.addObject("packs", displayedPacks.subList(fromIdx, toIdx));
+        mav.addObject("packs", displayedPacks);
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
         mav.addObject("commerceId", id);

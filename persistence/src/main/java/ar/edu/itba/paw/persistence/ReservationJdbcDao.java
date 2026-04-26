@@ -14,6 +14,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 
@@ -134,5 +135,70 @@ public class ReservationJdbcDao implements ReservationDao {
     public Optional<Reservation> findByPickupCode(final String pickupCode) {
         return jdbcTemplate.query("SELECT * FROM reservations WHERE pickup_code = ?", RESERVATION_ROW_MAPPER,
                 pickupCode).stream().findAny();
+    }
+
+    private void appendReservationFilters(StringBuilder sql, List<Object> params, Long commerceId, Long customerId, String query, Reservation.Status status) {
+        sql.append("FROM reservations r ");
+        sql.append("LEFT JOIN packs p ON r.pack_id = p.id ");
+        sql.append("LEFT JOIN commerces c ON p.commerce_id = c.user_id ");
+        sql.append("LEFT JOIN clients cl ON r.customer_id = cl.user_id ");
+        sql.append("WHERE 1=1 ");
+
+        if (commerceId != null) {
+            sql.append("AND p.commerce_id = ? ");
+            params.add(commerceId);
+        }
+        if (customerId != null) {
+            sql.append("AND r.customer_id = ? ");
+            params.add(customerId);
+        }
+        if (status != null) {
+            sql.append("AND r.status = ? ");
+            params.add(status.name());
+        }
+
+        if (query != null && !query.isBlank()) {
+            String pattern = "%" + query.trim() + "%";
+            sql.append("AND (p.title ILIKE ? OR p.description ILIKE ? ");
+            params.add(pattern);
+            params.add(pattern);
+            
+            if (commerceId != null) {
+                sql.append("OR (cl.name || ' ' || cl.last_name) ILIKE ? ");
+                params.add(pattern);
+            } else if (customerId != null) {
+                sql.append("OR c.commercial_name ILIKE ? ");
+                params.add(pattern);
+            }
+            sql.append(") ");
+        }
+    }
+
+    @Override
+    public List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT r.id, r.customer_id, r.pack_id, r.reservation_date, r.final_price, r.status, r.pickup_code, r.pickup_confirmation_date, r.quantity, r.pickup_window ");
+        
+        List<Object> params = new ArrayList<>();
+        appendReservationFilters(sql, params, commerceId, customerId, query, status);
+
+        sql.append("ORDER BY r.reservation_date DESC ");
+        sql.append("LIMIT ? OFFSET ?");
+        params.add(pageSize);
+        params.add((page - 1) * pageSize);
+
+        return jdbcTemplate.query(sql.toString(), RESERVATION_ROW_MAPPER, params.toArray());
+    }
+
+    @Override
+    public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT COUNT(r.id) ");
+        
+        List<Object> params = new ArrayList<>();
+        appendReservationFilters(sql, params, commerceId, customerId, query, status);
+
+        Integer count = jdbcTemplate.queryForObject(sql.toString(), Integer.class, params.toArray());
+        return count != null ? count : 0;
     }
 }

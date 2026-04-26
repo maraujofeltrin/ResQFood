@@ -35,4 +35,8 @@ public interface PackService {
                            int page, int pageSize);
 
     int countFilteredPacks(String query, List<PackTag> tags, String city, List<String> timeRanges);
+
+    List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize);
+
+    int countCommercePacks(Long commerceId, Boolean hasAuction);
 }

@@ -105,6 +105,16 @@ public class PackServiceImplTest {
             for (Pack p : store.values()) if (Boolean.TRUE.equals(p.getActive()) && !Boolean.TRUE.equals(p.getDeleted())) count++;
             return count;
         }
+
+        @Override
+        public List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public int countCommercePacks(Long commerceId, Boolean hasAuction) {
+            return 0;
+        }
     }
 
     @Test
