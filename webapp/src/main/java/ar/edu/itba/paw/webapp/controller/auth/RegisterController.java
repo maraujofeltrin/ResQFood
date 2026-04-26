@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.webapp.controller.auth;
 
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
@@ -31,6 +32,7 @@ import java.util.Locale;
 public class RegisterController {
 
     private static final String REGISTER_VIEW = "login/register";
+    private static final String FIXED_PROVINCE = "Buenos Aires";
 
     private final UserService userService;
     private final AuthenticationHelper authenticationHelper;
@@ -52,13 +54,21 @@ public class RegisterController {
     @InitBinder("registerForm")
     public void registerFormBinder(final WebDataBinder binder) {
         binder.addValidators(registerFormValidator);
+        binder.setDisallowedFields("commerceProfile.province");
+    }
+
+    @ModelAttribute("registerForm")
+    public RegisterForm registerForm() {
+        final RegisterForm registerForm = new RegisterForm();
+        registerForm.getCommerceProfile().setProvince(FIXED_PROVINCE);
+        return registerForm;
     }
 
     @GetMapping
     public ModelAndView showForm() {
-        final ModelAndView mav = new ModelAndView(REGISTER_VIEW);
-        mav.addObject("registerForm", new RegisterForm());
-        return mav;
+        final RegisterForm registerForm = new RegisterForm();
+        registerForm.getCommerceProfile().setProvince(FIXED_PROVINCE);
+        return registerView(registerForm);
     }
 
     @PostMapping
@@ -91,6 +101,7 @@ public class RegisterController {
     private ModelAndView registerView(final RegisterForm form) {
         final ModelAndView mav = new ModelAndView(REGISTER_VIEW);
         mav.addObject("registerForm", form);
+        mav.addObject("availableMunicipalities", Municipality.values());
         return mav;
     }
 }
