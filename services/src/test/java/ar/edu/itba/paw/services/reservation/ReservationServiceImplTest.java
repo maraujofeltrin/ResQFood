@@ -5,11 +5,13 @@ import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.reservation.Reservation;
+import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
+import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.services.user.RegisterResult;
@@ -205,11 +207,28 @@ public class ReservationServiceImplTest {
         int sentAuctionToCommerce = 0;
         int sentAuctionToClient = 0;
         int sentRejected = 0;
-        @Override public void sendReservationRequestToCommerce(Reservation reservation, String commerceEmail, String baseUrl, String pickupDateStr, Locale locale) { sentToCommerce++; }
+        @Override public void sendReservationRequestToCommerce(Reservation reservation, String commerceEmail, String baseUrl, String acceptToken, String rejectToken, String pickupDateStr, Locale locale) { sentToCommerce++; }
         @Override public void sendReservationCodeToClient(Reservation reservation, String clientEmail, String pickupDateStr, Locale locale) { sentToClient++; }
         @Override public void sendAuctionWinnerCodeToClient(Reservation reservation, String clientEmail, String pickupDateStr, Locale locale) { sentAuctionToClient++; }
         @Override public void sendAuctionWinnerCodeToCommerce(Reservation reservation, String commerceEmail, String pickupDateStr, Locale locale) { sentAuctionToCommerce++; }
         @Override public void sendReservationRejectedToClient(Reservation reservation, String clientEmail, Locale locale) { sentRejected++; }
+    }
+
+    static class InMemoryReservationTokenDao implements ReservationTokenDao {
+        @Override
+        public ReservationToken create(final String token, final Long reservationId, final ReservationToken.Action action,
+                final LocalDateTime createdAt, final LocalDateTime expiresAt) {
+            return new ReservationToken(token, reservationId, action, false, createdAt, expiresAt);
+        }
+
+        @Override
+        public Optional<ReservationToken> findByToken(final String token) {
+            return Optional.empty();
+        }
+
+        @Override
+        public void markAsUsed(final String token) {
+        }
     }
 
     static class TestCommerceService implements CommerceService {
@@ -224,11 +243,13 @@ public class ReservationServiceImplTest {
 
     private InMemoryReservationDao reservationDao;
     private InMemoryMailService mailService;
+    private InMemoryReservationTokenDao tokenDao;
 
     @BeforeEach
     public void setUp() {
         reservationDao = new InMemoryReservationDao();
         mailService = new InMemoryMailService();
+        tokenDao = new InMemoryReservationTokenDao();
     }
 
     @Test
@@ -244,6 +265,7 @@ public class ReservationServiceImplTest {
         final PackDao packDao = new InMemoryPackDao(pack);
 
         final ReservationServiceImpl svc = new ReservationServiceImpl(userService, new TestClientService(), reservationDao,
+            tokenDao,
             packDao, mailService, new TestCommerceService(), NO_AUCTIONS, TEST_ZONE);
 
         assertDoesNotThrow(() -> svc.createReservation(packId, user.getId(), 1, 5.0, "pw", APP_URL));
@@ -268,6 +290,7 @@ public class ReservationServiceImplTest {
         final PackDao packDao = new InMemoryPackDao(pack);
 
         final ReservationServiceImpl svc = new ReservationServiceImpl(userService, new TestClientService(), reservationDao,
+            tokenDao,
                 packDao, mailService, new TestCommerceService(), NO_AUCTIONS, TEST_ZONE);
 
         assertDoesNotThrow(() -> svc.createReservation(packId, user.getId(), 1, 7.5, null, ""));
@@ -294,6 +317,7 @@ public class ReservationServiceImplTest {
         final PackDao packDao = new InMemoryPackDao(pack);
 
         final ReservationServiceImpl svc = new ReservationServiceImpl(userService, new TestClientService(), reservationDao,
+            tokenDao,
             packDao, mailService, new TestCommerceService(), NO_AUCTIONS, TEST_ZONE);
 
         assertThrows(IllegalArgumentException.class, () -> svc.createReservation(packId, user.getId(), 0, 5.0, "pw", APP_URL));
@@ -315,6 +339,7 @@ public class ReservationServiceImplTest {
         final PackDao packDao = new InMemoryPackDao(pack);
 
         final ReservationServiceImpl svc = new ReservationServiceImpl(userService, new TestClientService(), reservationDao,
+            tokenDao,
             packDao, mailService, new TestCommerceService(), NO_AUCTIONS, TEST_ZONE);
 
         final StringBuilder sb = new StringBuilder();
@@ -340,6 +365,7 @@ public class ReservationServiceImplTest {
                 new TestUserService(user),
                 new TestClientService(),
                 reservationDao,
+                tokenDao,
                 new InMemoryPackDao(pack),
                 mailService,
                 new TestCommerceService(),
@@ -364,6 +390,7 @@ public class ReservationServiceImplTest {
                 new TestUserService(user),
                 new TestClientService(),
                 reservationDao,
+                tokenDao,
                 new InMemoryPackDao(pack),
                 mailService,
                 new TestCommerceService(),
@@ -387,6 +414,7 @@ public class ReservationServiceImplTest {
                 new TestUserService(new User(1L, "user@example.org", "pwd", "Test User")),
                 new TestClientService(),
                 reservationDao,
+                tokenDao,
                 new PackDao() {
                     @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, byte[] imageData, String imageContentType) { throw new UnsupportedOperationException(); }
                     @Override public Optional<Pack> findById(Long id) { return id.equals(ownedPack.getId()) ? Optional.of(ownedPack) : id.equals(otherPack.getId()) ? Optional.of(otherPack) : Optional.empty(); }
@@ -427,6 +455,7 @@ public class ReservationServiceImplTest {
             new TestUserService(new User(101L, "client@example.org", "pwd", "Client", null, User.Role.CLIENT, false)),
             new TestClientService(),
             reservationDao,
+            tokenDao,
             packDao,
             mailService,
             new TestCommerceService(),
@@ -453,6 +482,7 @@ public class ReservationServiceImplTest {
             new TestUserService(new User(102L, "client2@example.org", "pwd", "Client2", null, User.Role.CLIENT, false)),
             new TestClientService(),
             reservationDao,
+            tokenDao,
             packDao,
             mailService,
             new TestCommerceService(),
@@ -478,6 +508,7 @@ public class ReservationServiceImplTest {
             new TestUserService(new User(103L, "client3@example.org", "pwd", "Client3", null, User.Role.CLIENT, false)),
             new TestClientService(),
             reservationDao,
+            tokenDao,
             packDao,
             mailService,
             new TestCommerceService(),

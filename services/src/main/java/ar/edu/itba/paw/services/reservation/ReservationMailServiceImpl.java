@@ -2,10 +2,8 @@ package ar.edu.itba.paw.services.reservation;
 
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
-import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.persistence.PackDao;
-import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import ar.edu.itba.paw.services.user.ClientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,7 +28,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class ReservationMailServiceImpl implements ReservationMailService {
@@ -60,7 +57,6 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     }
 
     private final JavaMailSender mailSender;
-    private final ReservationTokenDao reservationTokenDao;
     private final PackDao packDao;
     private final ClientService clientService;
     private final ZoneId displayZone;
@@ -69,14 +65,12 @@ public class ReservationMailServiceImpl implements ReservationMailService {
 
     @Autowired
     public ReservationMailServiceImpl(final JavaMailSender mailSender,
-            final ReservationTokenDao reservationTokenDao,
             final PackDao packDao,
             final ClientService clientService,
             @Value("${mail.username}") final String mailFrom,
             @Value("${mail.from-name:ResQFood}") final String mailFromName,
             final ZoneId displayZone) {
         this.mailSender = mailSender;
-        this.reservationTokenDao = reservationTokenDao;
         this.packDao = packDao;
         this.clientService = clientService;
         this.mailFrom = mailFrom;
@@ -87,14 +81,8 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     @Async
     @Override
     public void sendReservationRequestToCommerce(final Reservation reservation, final String commerceEmail,
-            final String baseUrl, final String pickupDateStr, final Locale locale) {
-        final String acceptToken = UUID.randomUUID().toString();
-        final String rejectToken = UUID.randomUUID().toString();
-        final LocalDateTime now = LocalDateTime.now();
-        final LocalDateTime expiresAt = now.plusHours(48);
-
-        reservationTokenDao.create(acceptToken, reservation.getId(), ReservationToken.Action.ACCEPT, now, expiresAt);
-        reservationTokenDao.create(rejectToken, reservation.getId(), ReservationToken.Action.REJECT, now, expiresAt);
+            final String baseUrl, final String acceptToken, final String rejectToken, final String pickupDateStr,
+            final Locale locale) {
 
         final String normalizedBase = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
         final String acceptUrl = normalizedBase + "/reservations/accept?token=" + acceptToken;
