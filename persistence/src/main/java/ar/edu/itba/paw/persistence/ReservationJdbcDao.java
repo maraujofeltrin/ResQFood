@@ -158,16 +158,20 @@ public class ReservationJdbcDao implements ReservationDao {
         }
 
         if (query != null && !query.isBlank()) {
-            String pattern = "%" + query.trim() + "%";
-            sql.append("AND (p.title ILIKE ? OR p.description ILIKE ? ");
+            final String escapedQuery = query.trim()
+                    .replace("\\", "\\\\")
+                    .replace("%", "\\%")
+                    .replace("_", "\\_");
+            final String pattern = "%" + escapedQuery + "%";
+            sql.append("AND (p.title ILIKE ? ESCAPE '\\' OR p.description ILIKE ? ESCAPE '\\' ");
             params.add(pattern);
             params.add(pattern);
             
             if (commerceId != null) {
-                sql.append("OR (cl.name || ' ' || cl.last_name) ILIKE ? ");
+                sql.append("OR (cl.name || ' ' || cl.last_name) ILIKE ? ESCAPE '\\' ");
                 params.add(pattern);
             } else if (customerId != null) {
-                sql.append("OR c.commercial_name ILIKE ? ");
+                sql.append("OR c.commercial_name ILIKE ? ESCAPE '\\' ");
                 params.add(pattern);
             }
             sql.append(") ");

@@ -10,24 +10,7 @@
 <%@ attribute name="currentAuctionSort" required="false" type="ar.edu.itba.paw.models.auction.AuctionSortOption" %>
 <%@ attribute name="classes" required="false" type="java.lang.String" %>
 
-<form action="<c:url value='${baseUrl}'/>" method="GET" class="${classes != null ? classes : 'relative inline-flex items-center max-w-full'}">
-    <c:if test="${not empty searchQuery}">
-        <input type="hidden" name="q" value="<c:out value='${searchQuery}'/>"/>
-    </c:if>
-    <c:if test="${not empty selectedTags}">
-        <c:forEach var="tag" items="${selectedTags}">
-            <input type="hidden" name="tags" value="<c:out value='${tag.name()}'/>"/>
-        </c:forEach>
-    </c:if>
-    <c:if test="${not empty selectedTypes}">
-        <c:forEach var="type" items="${selectedTypes}">
-            <input type="hidden" name="types" value="<c:out value='${type}'/>"/>
-        </c:forEach>
-    </c:if>
-    <c:if test="${not empty currentAuctionSort}">
-        <input type="hidden" name="auctionSort" value="<c:out value='${currentAuctionSort.name()}'/>"/>
-    </c:if>
-
+<div class="${classes != null ? classes : 'relative inline-flex items-center max-w-full'}">
     <div class="inline-flex items-center rounded-full py-1.5 px-3 text-sm font-semibold transition-colors duration-200 bg-surface-container-low text-on-surface hover:bg-surface-container-high relative w-full overflow-hidden shrink-0 lg:shrink w-full">
         <span class="material-symbols-outlined text-base mr-1 pointer-events-none shrink-0">swap_vert</span>
         
@@ -41,4 +24,4 @@
             </c:forEach>
         </select>
     </div>
-</form>
+</div>

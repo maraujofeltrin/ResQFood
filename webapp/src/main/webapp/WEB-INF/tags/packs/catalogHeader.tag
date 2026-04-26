@@ -22,24 +22,19 @@
         <p class="text-secondary font-body"><spring:message code="pack.catalog.subtitle"/></p>
     </div>
     
-    <div class="flex flex-col md:flex-row items-center gap-3 w-full xl:w-auto mt-4 xl:mt-0">
+    <form id="catalogForm" action="${pageContext.request.contextPath}/packs" method="GET" class="flex flex-col md:flex-row items-center gap-3 w-full xl:w-auto mt-4 xl:mt-0">
         <spring:message code="pack.catalog.search.placeholder" var="packCatalogSearchPlaceholder"/>
         
-        <form action="${pageContext.request.contextPath}/packs" method="GET" class="w-full md:w-56 max-w-full">
-            <c:if test="${catalogMode ne 'AUCTIONS' && currentSort != null && currentSort.name() != 'DATE_DESC'}">
-                <input type="hidden" name="sort" value="${currentSort.name()}"/>
-            </c:if>
-            <c:if test="${catalogMode eq 'AUCTIONS' && currentAuctionSort != null}">
-                <input type="hidden" name="auctionSort" value="${currentAuctionSort.name()}"/>
-            </c:if>
-            <c:forEach var="tag" items="${selectedTags}">
-                <input type="hidden" name="tags" value="${tag.name()}"/>
-            </c:forEach>
-            <c:forEach var="type" items="${selectedTypes}">
-                <input type="hidden" name="types" value="${type}"/>
-            </c:forEach>
+        <c:if test="${catalogMode ne 'AUCTIONS' && currentAuctionSort != null}">
+            <input type="hidden" name="auctionSort" value="${currentAuctionSort.name()}"/>
+        </c:if>
+        <c:if test="${catalogMode eq 'AUCTIONS' && currentSort != null && currentSort.name() != 'DATE_DESC'}">
+            <input type="hidden" name="sort" value="${currentSort.name()}"/>
+        </c:if>
+
+        <div class="w-full md:w-56 max-w-full">
             <paw:searchBar value="${searchQuery}" placeholder="${packCatalogSearchPlaceholder}" classes="relative w-full" />
-        </form>
+        </div>
 
         <div class="w-full md:w-56 max-w-full">
             <c:choose>
@@ -84,5 +79,5 @@
                 catalogMode="${catalogMode}"
             />
         </div>
-    </div>
+    </form>
 </header>

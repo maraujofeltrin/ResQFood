@@ -138,8 +138,12 @@ public class AuctionJdbcDao implements AuctionDao {
         params.add(Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));
 
         if (hasQuery) {
-            final String pattern = "%" + query.trim() + "%";
-            sql.append("AND (p.title ILIKE ? OR c.commercial_name ILIKE ?) ");
+            final String escapedQuery = query.trim()
+                    .replace("\\", "\\\\")
+                    .replace("%", "\\%")
+                    .replace("_", "\\_");
+            final String pattern = "%" + escapedQuery + "%";
+            sql.append("AND (p.title ILIKE ? ESCAPE '\\' OR c.commercial_name ILIKE ? ESCAPE '\\') ");
             params.add(pattern);
             params.add(pattern);
         }

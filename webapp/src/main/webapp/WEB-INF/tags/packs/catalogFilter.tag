@@ -27,17 +27,7 @@
 <c:set var="selectionCount" value="${tagSelectionCount + (typeFilterApplied ? 1 : 0) + locationCount + timeRangeCount}"/>
 <c:set var="hasSelection" value="${selectionCount gt 0}"/>
 
-<form id="tagFilterForm" action="<c:url value='${baseUrl}'/>" method="GET">
-
-    <c:if test="${not empty searchQuery}">
-        <input type="hidden" name="q" value="<c:out value='${searchQuery}'/>"/>
-    </c:if>
-    <c:if test="${not empty currentSort}">
-        <input type="hidden" name="sort" value="<c:out value='${currentSort.name()}'/>"/>
-    </c:if>
-    <c:if test="${not empty currentAuctionSort}">
-        <input type="hidden" name="auctionSort" value="<c:out value='${currentAuctionSort.name()}'/>"/>
-    </c:if>
+    <%-- Filter configuration without form tags --%>
 
     <%-- MOBILE TRIGGER BUTTON (hidden on desktop) --%>
     <div class="lg:hidden flex items-center gap-3">
@@ -216,5 +206,4 @@
             </c:if>
         </div>
     </aside>
-</form>
 
