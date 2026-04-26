@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -27,10 +28,11 @@ public class EmailVerificationTokenServiceImpl implements EmailVerificationToken
     }
 
     @Override
-    public void sendVerificationMail(final Long userId, final String email, final String baseUrl) {
+    public void sendVerificationMail(final Long userId, final String email, final String baseUrl,
+            final Locale locale) {
         final Token token = TokenUtils.createToken(tokenDao, userId, TokenType.EMAIL_VERIFICATION, 24L);
         final String verificationUrl = baseUrl + "/verify-email?token=" + token.getToken();
-        emailVerificationMailService.sendVerificationMail(email, verificationUrl);
+        emailVerificationMailService.sendVerificationMail(email, verificationUrl, locale);
     }
 
     @Override
@@ -56,7 +58,8 @@ public class EmailVerificationTokenServiceImpl implements EmailVerificationToken
     public void resendVerificationMail(final String email, final String baseUrl) {
         final Optional<User> maybeUser = userDao.findByEmail(email);
         if (maybeUser.isPresent() && !maybeUser.get().isVerified()) {
-            sendVerificationMail(maybeUser.get().getId(), maybeUser.get().getEmail(), baseUrl);
+            final User user = maybeUser.get();
+            sendVerificationMail(user.getId(), user.getEmail(), baseUrl, user.getLocale());
         }
     }
 

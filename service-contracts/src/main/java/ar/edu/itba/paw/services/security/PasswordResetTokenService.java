@@ -1,4 +1,5 @@
 package ar.edu.itba.paw.services.security;
+
 import java.util.Optional;
 
 public interface PasswordResetTokenService {

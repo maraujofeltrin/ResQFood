@@ -1,41 +1,158 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-    <body style="margin:0; padding:40px; background:#F3F5F3; font-family:Arial, Helvetica, sans-serif; color:#1f2440;">
-        <div style="max-width:600px; margin:0 auto; background:#ffffff; border:1px solid #C2C9C2; border-radius:24px; padding:40px;">
-            <span style="display:inline-block; background:#D1FAE5; color:#022C22; border-radius:999px; padding:6px 12px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:16px;">
-                NUEVA RESERVA
-            </span>
-            <h1 style="margin:0 0 16px; color:#059669; font-size:34px; line-height:1.2; font-weight:800;">
-                Tenés una nueva reserva
-            </h1>
-            <p style="margin:0 0 32px; color:#527A61; font-size:15px; line-height:1.6;">
-                Revisá los datos y decidí si aceptás o rechazás la solicitud.
-            </p>
-            <div style="background:#F3F5F3; border:1px solid #C2C9C2; border-radius:16px; padding:20px; margin-bottom:32px;">
-                <p style="margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;">
-                    <strong style="color:#065f46;">Pack:</strong> <span th:text="${packTitle}"></span>
-                </p>
-                <p style="margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;">
-                    <strong style="color:#065f46;">Fecha de reserva:</strong> <span th:text="${dateStr}"></span>
-                </p>
-                <p style="margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;">
-                    <strong style="color:#065f46;">Precio final:</strong> $<span th:text="${priceStr}"></span>
-                </p>
-                <p style="margin:0; color:#1f2440; font-size:14px; line-height:1.6;">
-                    <strong style="color:#065f46;">Fecha de retiro:</strong> <span th:text="${pickupDateStr}"></span>
-                </p>
-            </div>
-            <div>
-                <a th:href="${acceptUrl}" style="display:inline-block; text-decoration:none; margin-right:12px; border-radius:999px; padding:12px 24px; font-weight:700; font-size:14px; line-height:1; color:#ffffff; background:#059669;">
-                    Aceptar reserva
-                </a>
-                <a th:href="${rejectUrl}" style="display:inline-block; text-decoration:none; border-radius:999px; padding:12px 24px; font-weight:700; font-size:14px; line-height:1; color:#ffffff; background:#9f1239;">
-                    Rechazar reserva
-                </a>
-            </div>
-            <p style="margin:32px 0 0; padding-top:24px; border-top:1px solid #C2C9C2; color:#527A61; font-size:12px; line-height:1.6;">
-                Este mail fue enviado automáticamente. Los enlaces son de uso único y expiran en 48 horas.
-            </p>
-        </div>
-    </body>
+  <body
+    style="
+      margin: 0;
+      padding: 40px;
+      background: #f3f5f3;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #1f2440;
+    "
+  >
+    <div
+      style="
+        max-width: 600px;
+        margin: 0 auto;
+        background: #ffffff;
+        border: 1px solid #c2c9c2;
+        border-radius: 24px;
+        padding: 40px;
+      "
+    >
+      <span
+        style="
+          display: inline-block;
+          background: #d1fae5;
+          color: #022c22;
+          border-radius: 999px;
+          padding: 6px 12px;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          margin-bottom: 16px;
+        "
+        th:text="#{mail.badge.newReservation}"
+      ></span>
+      <h1
+        style="
+          margin: 0 0 16px;
+          color: #059669;
+          font-size: 34px;
+          line-height: 1.2;
+          font-weight: 800;
+        "
+        th:text="#{mail.title.newReservation}"
+      ></h1>
+      <p
+        style="
+          margin: 0 0 32px;
+          color: #527a61;
+          font-size: 15px;
+          line-height: 1.6;
+        "
+        th:text="#{mail.subtitle.newReservation}"
+      ></p>
+      <div
+        style="
+          background: #f3f5f3;
+          border: 1px solid #c2c9c2;
+          border-radius: 16px;
+          padding: 20px;
+          margin-bottom: 32px;
+        "
+      >
+        <p
+          style="
+            margin: 0 0 8px;
+            color: #1f2440;
+            font-size: 14px;
+            line-height: 1.6;
+          "
+        >
+          <strong style="color: #065f46" th:text="#{mail.label.pack}"></strong>:
+          <span th:text="${packTitle}"></span>
+        </p>
+        <p
+          style="
+            margin: 0 0 8px;
+            color: #1f2440;
+            font-size: 14px;
+            line-height: 1.6;
+          "
+        >
+          <strong
+            style="color: #065f46"
+            th:text="#{mail.label.reservationDate}"
+          ></strong
+          >: <span th:text="${dateStr}"></span>
+        </p>
+        <p
+          style="
+            margin: 0 0 8px;
+            color: #1f2440;
+            font-size: 14px;
+            line-height: 1.6;
+          "
+        >
+          <strong
+            style="color: #065f46"
+            th:text="#{mail.label.finalPrice}"
+          ></strong
+          >: $<span th:text="${priceStr}"></span>
+        </p>
+        <p style="margin: 0; color: #1f2440; font-size: 14px; line-height: 1.6">
+          <strong
+            style="color: #065f46"
+            th:text="#{mail.label.pickupDate}"
+          ></strong
+          >: <span th:text="${pickupDateStr}"></span>
+        </p>
+      </div>
+      <div>
+        <a
+          th:href="${acceptUrl}"
+          style="
+            display: inline-block;
+            text-decoration: none;
+            margin-right: 12px;
+            border-radius: 999px;
+            padding: 12px 24px;
+            font-weight: 700;
+            font-size: 14px;
+            line-height: 1;
+            color: #ffffff;
+            background: #059669;
+          "
+          th:text="#{mail.button.accept}"
+        ></a>
+        <a
+          th:href="${rejectUrl}"
+          style="
+            display: inline-block;
+            text-decoration: none;
+            border-radius: 999px;
+            padding: 12px 24px;
+            font-weight: 700;
+            font-size: 14px;
+            line-height: 1;
+            color: #ffffff;
+            background: #9f1239;
+          "
+          th:text="#{mail.button.reject}"
+        ></a>
+      </div>
+      <p
+        style="
+          margin: 32px 0 0;
+          padding-top: 24px;
+          border-top: 1px solid #c2c9c2;
+          color: #527a61;
+          font-size: 12px;
+          line-height: 1.6;
+        "
+        th:text="#{mail.footer.reservationLinks}"
+      ></p>
+    </div>
+  </body>
 </html>

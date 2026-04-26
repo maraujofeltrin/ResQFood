@@ -20,8 +20,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.servlet.support.RequestContextUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.Locale;
 
 @Controller
 @RequestMapping("/register")
@@ -61,12 +64,14 @@ public class RegisterController {
     @PostMapping
     public ModelAndView create(
             @Valid @ModelAttribute("registerForm") final RegisterForm registerForm,
-            final BindingResult bindingResult) {
+            final BindingResult bindingResult,
+            final HttpServletRequest request) {
         if (bindingResult.hasErrors()) {
             return registerView(registerForm);
         }
         final String appBaseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
-        final User user = assembler.toUser(registerForm);
+        final Locale locale = RequestContextUtils.getLocale(request);
+        final User user = assembler.toUser(registerForm, locale);
         final Client clientProfile = assembler.toClientProfile(registerForm);
         final Commerce commerceProfile = assembler.toCommerceProfile(registerForm);
         final RegisterResult result = userService.tryRegister(user, clientProfile, commerceProfile, appBaseUrl);

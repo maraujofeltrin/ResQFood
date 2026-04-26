@@ -27,6 +27,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -113,19 +114,24 @@ public class ReservationServiceImpl implements ReservationService {
         final Long commerceId = packDao.findById(packId)
                 .orElseThrow(() -> new IllegalStateException("Pack not found after stock update: " + packId))
                 .getCommerceId();
-        final String commerceEmail = userService.findById(commerceId)
-                .map(User::getEmail)
+        final User commerceUser = userService.findById(commerceId)
                 .orElseThrow(() -> new IllegalStateException("Commerce user not found for id: " + commerceId));
+        final String commerceEmail = commerceUser.getEmail();
+        final Locale commerceLocale = commerceUser.getLocale();
 
         final String pickupDateStr = computePickupDateStr(reservation);
         final boolean auctionReservation = baseUrl == null || baseUrl.trim().isEmpty();
 
         if (auctionReservation) {
-            reservationMailService.sendAuctionWinnerCodeToClient(reservation, user.getEmail(), pickupDateStr);
-            reservationMailService.sendAuctionWinnerCodeToCommerce(reservation, commerceEmail, pickupDateStr);
+            reservationMailService.sendAuctionWinnerCodeToClient(reservation, user.getEmail(), pickupDateStr,
+                user.getLocale());
+            reservationMailService.sendAuctionWinnerCodeToCommerce(reservation, commerceEmail, pickupDateStr,
+                commerceLocale);
         } else {
-            reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail, baseUrl, pickupDateStr);
-            reservationMailService.sendReservationCodeToClient(reservation, user.getEmail(), pickupDateStr);
+            reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail, baseUrl,
+                pickupDateStr, commerceLocale);
+            reservationMailService.sendReservationCodeToClient(reservation, user.getEmail(), pickupDateStr,
+                user.getLocale());
         }
 
         return reservation;
@@ -285,12 +291,13 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         final Reservation canceledReservation = reservationDao.updateStatus(reservation.getId(), Reservation.Status.CANCELED);
-        final String clientEmail = userService.findById(canceledReservation.getCustomerId())
-                .map(User::getEmail)
+        final User clientUser = userService.findById(canceledReservation.getCustomerId())
                 .orElseThrow(() -> new IllegalStateException("Customer user not found for reservation id: "
                         + canceledReservation.getId()));
+        final String clientEmail = clientUser.getEmail();
 
-        reservationMailService.sendReservationRejectedToClient(canceledReservation, clientEmail);
+        reservationMailService.sendReservationRejectedToClient(canceledReservation, clientEmail,
+            clientUser.getLocale());
         return canceledReservation;
     }
 

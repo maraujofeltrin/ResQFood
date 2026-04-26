@@ -18,6 +18,7 @@ import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -159,7 +160,8 @@ public class ReservationMailServiceImplTest {
         svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
                 "noreply@example.org", "ResQFood", ZoneId.of("America/Argentina/Buenos_Aires"));
 
-        svc.sendReservationRequestToCommerce(reservation, "commerce@example.org", "http://app/", "10/04/2026");
+        svc.sendReservationRequestToCommerce(reservation, "commerce@example.org", "http://app/", "10/04/2026",
+            Locale.forLanguageTag("es"));
 
         // two tokens created (accept + reject)
         assertEquals(2, tokenDao.store.size());
@@ -200,7 +202,8 @@ public class ReservationMailServiceImplTest {
         svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
                 "noreply@example.org", "ResQFood", ZoneId.of("America/Argentina/Buenos_Aires"));
 
-        svc.sendReservationCodeToClient(reservation, "client@example.org", "10/04/2026");
+        svc.sendReservationCodeToClient(reservation, "client@example.org", "10/04/2026",
+            Locale.forLanguageTag("es"));
 
         assertEquals(1, mailSender.sent.size());
         final MimeMessage msg = mailSender.sent.get(0);
@@ -222,7 +225,8 @@ public class ReservationMailServiceImplTest {
         svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
                 "noreply@example.org", "ResQFood", ZoneId.of("America/Argentina/Buenos_Aires"));
 
-        svc.sendAuctionWinnerCodeToClient(reservation, "winner@example.org", "11/04/2026");
+        svc.sendAuctionWinnerCodeToClient(reservation, "winner@example.org", "11/04/2026",
+            Locale.forLanguageTag("es"));
 
         assertEquals(1, mailSender.sent.size());
         final MimeMessage msg = mailSender.sent.get(0);
@@ -243,7 +247,8 @@ public class ReservationMailServiceImplTest {
         svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
                 "noreply@example.org", "ResQFood", ZoneId.of("America/Argentina/Buenos_Aires"));
 
-        svc.sendAuctionWinnerCodeToCommerce(reservation, "commerce@example.org", "12/04/2026");
+        svc.sendAuctionWinnerCodeToCommerce(reservation, "commerce@example.org", "12/04/2026",
+            Locale.forLanguageTag("es"));
 
         assertEquals(1, mailSender.sent.size());
         final MimeMessage msg = mailSender.sent.get(0);

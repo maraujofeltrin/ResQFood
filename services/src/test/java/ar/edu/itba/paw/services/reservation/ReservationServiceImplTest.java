@@ -22,6 +22,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -204,11 +205,11 @@ public class ReservationServiceImplTest {
         int sentAuctionToCommerce = 0;
         int sentAuctionToClient = 0;
         int sentRejected = 0;
-        @Override public void sendReservationRequestToCommerce(Reservation reservation, String commerceEmail, String baseUrl, String pickupDateStr) { sentToCommerce++; }
-        @Override public void sendReservationCodeToClient(Reservation reservation, String clientEmail, String pickupDateStr) { sentToClient++; }
-        @Override public void sendAuctionWinnerCodeToClient(Reservation reservation, String clientEmail, String pickupDateStr) { sentAuctionToClient++; }
-        @Override public void sendAuctionWinnerCodeToCommerce(Reservation reservation, String commerceEmail, String pickupDateStr) { sentAuctionToCommerce++; }
-        @Override public void sendReservationRejectedToClient(Reservation reservation, String clientEmail) { sentRejected++; }
+        @Override public void sendReservationRequestToCommerce(Reservation reservation, String commerceEmail, String baseUrl, String pickupDateStr, Locale locale) { sentToCommerce++; }
+        @Override public void sendReservationCodeToClient(Reservation reservation, String clientEmail, String pickupDateStr, Locale locale) { sentToClient++; }
+        @Override public void sendAuctionWinnerCodeToClient(Reservation reservation, String clientEmail, String pickupDateStr, Locale locale) { sentAuctionToClient++; }
+        @Override public void sendAuctionWinnerCodeToCommerce(Reservation reservation, String commerceEmail, String pickupDateStr, Locale locale) { sentAuctionToCommerce++; }
+        @Override public void sendReservationRejectedToClient(Reservation reservation, String clientEmail, Locale locale) { sentRejected++; }
     }
 
     static class TestCommerceService implements CommerceService {
