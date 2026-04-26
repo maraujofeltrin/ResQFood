@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -34,7 +35,8 @@ public class UserServiceImplTest {
     static class NoOpEmailVerificationTokenService
             implements ar.edu.itba.paw.services.security.EmailVerificationTokenService {
         @Override
-        public void sendVerificationMail(final Long userId, final String email, final String baseUrl) { }
+        public void sendVerificationMail(final Long userId, final String email, final String baseUrl,
+            final Locale locale) { }
         @Override
         public java.util.Optional<ar.edu.itba.paw.models.user.User> verifyEmailAndGetUser(final String token) {
             return java.util.Optional.empty();
@@ -51,8 +53,9 @@ public class UserServiceImplTest {
         private long nextId = 1L;
 
         @Override
-        public User createUser(final String email, final String password, final String name, final String phone, final User.Role role) {
-            final User u = new User(nextId++, email, password, name, phone, role, false);
+        public User createUser(final String email, final String password, final String name, final String phone,
+                final User.Role role, final Locale locale) {
+            final User u = new User(nextId++, email, password, name, phone, role, false, locale);
             byId.put(u.getId(), u);
             byEmail.put(email, u);
             return u;
@@ -64,7 +67,8 @@ public class UserServiceImplTest {
             if (current == null) {
                 throw new IllegalStateException("User not found: " + id);
             }
-            final User updated = new User(id, current.getEmail(), password, name, phone, role, current.isVerified());
+            final User updated = new User(id, current.getEmail(), password, name, phone, role, current.isVerified(),
+                    current.getLocale());
             byId.put(id, updated);
             byEmail.put(updated.getEmail(), updated);
             return updated;
@@ -87,7 +91,7 @@ public class UserServiceImplTest {
                 throw new IllegalStateException("User not found: " + id);
             }
             final User updated = new User(id, current.getEmail(), password, current.getName(), current.getPhone(),
-                    current.getRole(), current.isVerified());
+                    current.getRole(), current.isVerified(), current.getLocale());
             byId.put(id, updated);
             byEmail.put(updated.getEmail(), updated);
         }
@@ -99,7 +103,7 @@ public class UserServiceImplTest {
                 throw new IllegalStateException("User not found: " + userId);
             }
             final User verifiedUser = new User(current.getId(), current.getEmail(), current.getPassword(),
-                    current.getName(), current.getPhone(), current.getRole(), true);
+                    current.getName(), current.getPhone(), current.getRole(), true, current.getLocale());
             byId.put(userId, verifiedUser);
             byEmail.put(verifiedUser.getEmail(), verifiedUser);
         }

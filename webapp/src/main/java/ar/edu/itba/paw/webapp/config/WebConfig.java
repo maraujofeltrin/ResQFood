@@ -17,10 +17,9 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.LocaleResolver;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.web.servlet.view.JstlView;
 
@@ -34,15 +33,12 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.TimeZone;
-import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 
 import java.time.ZoneId;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import java.util.concurrent.Executor;
 
 @EnableWebMvc
 @EnableTransactionManagement
@@ -70,21 +66,13 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Bean
     public LocaleResolver localeResolver() {
-        SessionLocaleResolver localeResolver = new SessionLocaleResolver();
-        localeResolver.setDefaultLocale(Locale.forLanguageTag("es"));
-        return localeResolver;
-    }
-
-    @Bean
-    public LocaleChangeInterceptor localeChangeInterceptor() {
-        final LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
-        interceptor.setParamName("lang");
-        return interceptor;
-    }
-
-    @Override
-    public void addInterceptors(final InterceptorRegistry registry) {
-        registry.addInterceptor(localeChangeInterceptor());
+        final AcceptHeaderLocaleResolver resolver = new AcceptHeaderLocaleResolver();
+        resolver.setDefaultLocale(Locale.forLanguageTag("es"));
+        resolver.setSupportedLocales(java.util.Arrays.asList(
+                Locale.forLanguageTag("es"),
+                Locale.ENGLISH
+        ));
+        return resolver;
     }
 
     @Override
@@ -181,17 +169,6 @@ public class WebConfig implements WebMvcConfigurer {
         messageSource.setCacheSeconds(5);
         messageSource.setFallbackToSystemLocale(false);
         return messageSource;
-    }
-
-    @Bean(name = "mailTaskExecutor")
-    public Executor taskExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(2);
-        executor.setMaxPoolSize(5);
-        executor.setQueueCapacity(50);
-        executor.setThreadNamePrefix("MailSenderThread-");
-        executor.initialize();
-        return executor;
     }
 
 }

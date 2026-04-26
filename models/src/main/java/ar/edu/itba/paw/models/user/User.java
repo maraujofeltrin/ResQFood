@@ -1,5 +1,7 @@
 package ar.edu.itba.paw.models.user;
 
+import java.util.Locale;
+
 public class User {
     public enum Role {
         CLIENT,
@@ -12,15 +14,21 @@ public class User {
     private String phone;
     private Role role;
     private final boolean verified;
+    private final Locale locale;
 
     private final Long id;
 
     public User(final Long id, final String email, final String password, final String name) {
-        this(id, email, password, name, null, null, false);
+        this(id, email, password, name, null, null, false, Locale.forLanguageTag("es"));
     }
 
     public User(final Long id, final String email, final String password, final String name, final String phone,
             final Role role, final boolean verified) {
+        this(id, email, password, name, phone, role, verified, Locale.forLanguageTag("es"));
+    }
+
+    public User(final Long id, final String email, final String password, final String name, final String phone,
+            final Role role, final boolean verified, final Locale locale) {
         this.id = id;
         this.email = email;
         this.password = password;
@@ -28,6 +36,7 @@ public class User {
         this.phone = phone;
         this.role = role;
         this.verified = verified;
+        this.locale = locale;
     }
 
     public String getEmail() {
@@ -58,9 +67,13 @@ public class User {
         return verified;
     }
 
+    public Locale getLocale() {
+        return locale;
+    }
+
     @Override
     public String toString() {
         return "User [id=" + id + ", email=" + email + ", password=" + password + ", name=" + name
-                + ", phone=" + phone + ", role=" + role + ", verified=" + verified + "]";
+                + ", phone=" + phone + ", role=" + role + ", verified=" + verified + ", locale=" + locale + "]";
     }
 }

@@ -7,16 +7,19 @@ import ar.edu.itba.paw.webapp.form.RegisterForm;
 import ar.edu.itba.paw.webapp.form.UserCredentialsForm;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
+
 @Component
 public class RegisterFormAssembler {
 
-    public User toUser(final RegisterForm form) {
+    public User toUser(final RegisterForm form, final Locale locale) {
         final UserCredentialsForm credentials = form.getCredentials();
         final User.Role role = resolveRole(form);
         final String name = role == User.Role.CLIENT
                 ? form.getClientProfile().getFirstName() + " " + form.getClientProfile().getLastName()
                 : form.getCommerceProfile().getCommercialName();
-        return new User(null, credentials.getEmail(), credentials.getPassword(), name, credentials.getPhone(), role, false);
+        return new User(null, credentials.getEmail(), credentials.getPassword(), name, credentials.getPhone(), role,
+                false, locale);
     }
 
     public Client toClientProfile(final RegisterForm form) {

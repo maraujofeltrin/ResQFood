@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Locale;
 
 @Repository
 public class UserJdbcDao implements UserDao {
@@ -25,7 +26,8 @@ public class UserJdbcDao implements UserDao {
             rs.getString("name"),
             rs.getString("phone"),
             rs.getString("role") == null ? null : User.Role.valueOf(rs.getString("role")),
-            rs.getBoolean("verified"));
+            rs.getBoolean("verified"),
+            Locale.forLanguageTag(rs.getString("locale")));
 
     @Autowired
     public UserJdbcDao(final DataSource dataSource) {
@@ -37,16 +39,17 @@ public class UserJdbcDao implements UserDao {
 
     @Override
     public User createUser(final String email, final String password, final String name, final String phone,
-            final User.Role role) {
+            final User.Role role, final Locale locale) {
         final Map<String, Object> parameters = new HashMap<>();
         parameters.put("email", email);
         parameters.put("password", password);
         parameters.put("name", name);
         parameters.put("phone", phone);
         parameters.put("role", role == null ? null : role.name());
+        parameters.put("locale", locale.toLanguageTag());
         parameters.put("verified", false);
         final Number id = simpleJdbcInsert.executeAndReturnKey(parameters);
-        return new User(id.longValue(), email, password, name, phone, role, false);
+        return new User(id.longValue(), email, password, name, phone, role, false, locale);
     }
 
     @Override

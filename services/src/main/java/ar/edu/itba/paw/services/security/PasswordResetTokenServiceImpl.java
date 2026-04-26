@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -33,9 +34,13 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
     public void requestPasswordReset(final String email, final String baseUrl) {
         final Optional<User> user = userDao.findByEmail(email);
         if (user.isPresent()) {
-            final Token token = TokenUtils.createToken(tokenDao, user.get().getId(), TokenType.PASSWORD_RESET, 1L);
+            final User requestUser = user.get();
+            final Locale locale = requestUser.getLocale() == null
+                    ? Locale.forLanguageTag("es")
+                    : requestUser.getLocale();
+            final Token token = TokenUtils.createToken(tokenDao, requestUser.getId(), TokenType.PASSWORD_RESET, 1L);
             final String resetUrl = baseUrl + "/password-reset/change?token=" + token.getToken();
-            passwordResetMailService.sendPasswordResetMail(user.get().getEmail(), resetUrl);
+            passwordResetMailService.sendPasswordResetMail(requestUser.getEmail(), resetUrl, locale);
         }
     }
 

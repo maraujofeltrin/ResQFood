@@ -4,11 +4,13 @@ import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.PickupByCodeError;
 import ar.edu.itba.paw.models.reservation.Reservation;
+import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
+import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.pack.DirectReservationCheck;
 import ar.edu.itba.paw.services.user.ClientService;
@@ -27,7 +29,9 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class ReservationServiceImpl implements ReservationService {
@@ -47,6 +51,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final UserService userService;
     private final ClientService clientService;
     private final ReservationDao reservationDao;
+    private final ReservationTokenDao reservationTokenDao;
     private final PackDao packDao;
     private final CommerceService commerceService;
     private final ReservationMailService reservationMailService;
@@ -57,6 +62,7 @@ public class ReservationServiceImpl implements ReservationService {
     public ReservationServiceImpl(final UserService userService,
             final ClientService clientService,
             final ReservationDao reservationDao,
+            final ReservationTokenDao reservationTokenDao,
             final PackDao packDao,
             final ReservationMailService reservationMailService,
             final CommerceService commerceService,
@@ -65,6 +71,7 @@ public class ReservationServiceImpl implements ReservationService {
         this.userService = userService;
         this.clientService = clientService;
         this.reservationDao = reservationDao;
+        this.reservationTokenDao = reservationTokenDao;
         this.packDao = packDao;
         this.reservationMailService = reservationMailService;
         this.commerceService = commerceService;
@@ -113,19 +120,34 @@ public class ReservationServiceImpl implements ReservationService {
         final Long commerceId = packDao.findById(packId)
                 .orElseThrow(() -> new IllegalStateException("Pack not found after stock update: " + packId))
                 .getCommerceId();
-        final String commerceEmail = userService.findById(commerceId)
-                .map(User::getEmail)
+        final User commerceUser = userService.findById(commerceId)
                 .orElseThrow(() -> new IllegalStateException("Commerce user not found for id: " + commerceId));
+        final String commerceEmail = commerceUser.getEmail();
+        final Locale commerceLocale = commerceUser.getLocale();
 
         final String pickupDateStr = computePickupDateStr(reservation);
         final boolean auctionReservation = baseUrl == null || baseUrl.trim().isEmpty();
 
         if (auctionReservation) {
-            reservationMailService.sendAuctionWinnerCodeToClient(reservation, user.getEmail(), pickupDateStr);
-            reservationMailService.sendAuctionWinnerCodeToCommerce(reservation, commerceEmail, pickupDateStr);
+            reservationMailService.sendAuctionWinnerCodeToClient(reservation, user.getEmail(), pickupDateStr,
+                user.getLocale());
+            reservationMailService.sendAuctionWinnerCodeToCommerce(reservation, commerceEmail, pickupDateStr,
+                commerceLocale);
         } else {
-            reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail, baseUrl, pickupDateStr);
-            reservationMailService.sendReservationCodeToClient(reservation, user.getEmail(), pickupDateStr);
+            final String acceptToken = UUID.randomUUID().toString();
+            final String rejectToken = UUID.randomUUID().toString();
+            final LocalDateTime tokenCreatedAt = LocalDateTime.now(ZoneOffset.UTC);
+            final LocalDateTime tokenExpiresAt = tokenCreatedAt.plusHours(48);
+
+            reservationTokenDao.create(acceptToken, reservation.getId(), ReservationToken.Action.ACCEPT,
+                    tokenCreatedAt, tokenExpiresAt);
+            reservationTokenDao.create(rejectToken, reservation.getId(), ReservationToken.Action.REJECT,
+                    tokenCreatedAt, tokenExpiresAt);
+
+            reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail, baseUrl,
+                acceptToken, rejectToken, pickupDateStr, commerceLocale);
+            reservationMailService.sendReservationCodeToClient(reservation, user.getEmail(), pickupDateStr,
+                user.getLocale());
         }
 
         return reservation;
@@ -285,12 +307,13 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         final Reservation canceledReservation = reservationDao.updateStatus(reservation.getId(), Reservation.Status.CANCELED);
-        final String clientEmail = userService.findById(canceledReservation.getCustomerId())
-                .map(User::getEmail)
+        final User clientUser = userService.findById(canceledReservation.getCustomerId())
                 .orElseThrow(() -> new IllegalStateException("Customer user not found for reservation id: "
                         + canceledReservation.getId()));
+        final String clientEmail = clientUser.getEmail();
 
-        reservationMailService.sendReservationRejectedToClient(canceledReservation, clientEmail);
+        reservationMailService.sendReservationRejectedToClient(canceledReservation, clientEmail,
+            clientUser.getLocale());
         return canceledReservation;
     }
 

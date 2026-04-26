@@ -1,43 +1,206 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-    <body style="margin:0; padding:40px; background:#F3F5F3; font-family:Arial, Helvetica, sans-serif; color:#1f2440;">
-        <div style="max-width:600px; margin:0 auto; background:#ffffff; border:1px solid #C2C9C2; border-radius:24px; padding:40px;">
-            <span style="display:inline-block; background:#D1FAE5; color:#022C22; border-radius:999px; padding:6px 12px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:16px;" th:text="${badgeText}">
-                SUBASTA GANADA
-            </span>
-            <h1 style="margin:0 0 16px; color:#059669; font-size:32px; line-height:1.2; font-weight:800;" th:text="${titleText}">
-                Ganaste la subasta
-            </h1>
-            <p style="margin:0 0 24px; color:#527A61; font-size:15px; line-height:1.6;" th:text="${introText}">
-                Presentá este código en el comercio para retirar tu pedido.
-            </p>
-            <div style="text-align:center; margin:0 0 28px;" th:if="${showCode}">
-                <div style="display:inline-block; border:2px dashed #059669; background:#F3F5F3; color:#059669; border-radius:16px; padding:14px 26px; font-size:42px; letter-spacing:0.12em; font-weight:800;" th:text="${code}">
-                </div>
-            </div>
-            <div style="background:#F3F5F3; border:1px solid #C2C9C2; border-radius:16px; padding:20px;">
-                <p style="margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;">
-                    <strong style="color:#065f46;">Número de reserva:</strong> #<span th:text="${reservationId}"></span>
-                </p>
-                <p style="margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;" th:if="${winnerName != null and !winnerName.isEmpty()}">
-                    <strong style="color:#065f46;">Ganador:</strong> <span th:text="${winnerName}"></span>
-                </p>
-                <p style="margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;">
-                    <strong style="color:#065f46;">Pack:</strong> <span th:text="${packLabel}"></span>
-                </p>
-                <p style="margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;">
-                    <strong style="color:#065f46;">Fecha de reserva:</strong> <span th:text="${reservationDateStr}"></span>
-                </p>
-                <p style="margin:0 0 8px; color:#1f2440; font-size:14px; line-height:1.6;">
-                    <strong style="color:#065f46;">Fecha de retiro:</strong> <span th:text="${pickupDateStr}"></span>
-                </p>
-                <p style="margin:0; color:#1f2440; font-size:14px; line-height:1.6;">
-                    <strong style="color:#065f46;">Precio final de subasta:</strong> $<span th:text="${priceStr}"></span>
-                </p>
-            </div>
-            <p style="margin:28px 0 0; padding-top:20px; border-top:1px solid #C2C9C2; color:#527A61; font-size:12px; line-height:1.6;">
-                Este correo fue enviado automáticamente.
-            </p>
-        </div>
-    </body>
+  <body
+    style="
+      margin: 0;
+      padding: 40px;
+      background: #f3f5f3;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #1f2440;
+    "
+  >
+    <div
+      style="
+        max-width: 600px;
+        margin: 0 auto;
+        background: #ffffff;
+        border: 1px solid #c2c9c2;
+        border-radius: 24px;
+        padding: 40px;
+      "
+    >
+      <span
+        th:if="${showCode}"
+        style="
+          display: inline-block;
+          background: #d1fae5;
+          color: #022c22;
+          border-radius: 999px;
+          padding: 6px 12px;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          margin-bottom: 16px;
+        "
+        th:text="#{mail.badge.auctionWon}"
+      ></span>
+      <span
+        th:unless="${showCode}"
+        style="
+          display: inline-block;
+          background: #d1fae5;
+          color: #022c22;
+          border-radius: 999px;
+          padding: 6px 12px;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          margin-bottom: 16px;
+        "
+        th:text="#{mail.badge.auctionFinished}"
+      ></span>
+      <h1
+        th:if="${showCode}"
+        style="
+          margin: 0 0 16px;
+          color: #059669;
+          font-size: 32px;
+          line-height: 1.2;
+          font-weight: 800;
+        "
+        th:text="#{mail.title.auctionWonClient}"
+      ></h1>
+      <h1
+        th:unless="${showCode}"
+        style="
+          margin: 0 0 16px;
+          color: #059669;
+          font-size: 32px;
+          line-height: 1.2;
+          font-weight: 800;
+        "
+        th:text="#{mail.title.auctionWonCommerce}"
+      ></h1>
+      <p
+        th:if="${showCode}"
+        style="
+          margin: 0 0 24px;
+          color: #527a61;
+          font-size: 15px;
+          line-height: 1.6;
+        "
+        th:text="#{mail.subtitle.auctionWonClient}"
+      ></p>
+      <p
+        th:unless="${showCode}"
+        style="
+          margin: 0 0 24px;
+          color: #527a61;
+          font-size: 15px;
+          line-height: 1.6;
+        "
+        th:text="#{mail.subtitle.auctionWonCommerce}"
+      ></p>
+      <div style="text-align: center; margin: 0 0 28px" th:if="${showCode}">
+        <div
+          style="
+            display: inline-block;
+            border: 2px dashed #059669;
+            background: #f3f5f3;
+            color: #059669;
+            border-radius: 16px;
+            padding: 14px 26px;
+            font-size: 42px;
+            letter-spacing: 0.12em;
+            font-weight: 800;
+          "
+          th:text="${code}"
+        ></div>
+      </div>
+      <div
+        style="
+          background: #f3f5f3;
+          border: 1px solid #c2c9c2;
+          border-radius: 16px;
+          padding: 20px;
+        "
+      >
+        <p
+          style="
+            margin: 0 0 8px;
+            color: #1f2440;
+            font-size: 14px;
+            line-height: 1.6;
+          "
+        >
+          <strong
+            style="color: #065f46"
+            th:text="#{mail.label.reservationNumber}"
+          ></strong
+          >: #<span th:text="${reservationId}"></span>
+        </p>
+        <p
+          style="
+            margin: 0 0 8px;
+            color: #1f2440;
+            font-size: 14px;
+            line-height: 1.6;
+          "
+          th:if="${winnerName != null and !winnerName.isEmpty()}"
+        >
+          <strong style="color: #065f46" th:text="#{mail.label.winner}"></strong
+          >: <span th:text="${winnerName}"></span>
+        </p>
+        <p
+          style="
+            margin: 0 0 8px;
+            color: #1f2440;
+            font-size: 14px;
+            line-height: 1.6;
+          "
+        >
+          <strong style="color: #065f46" th:text="#{mail.label.pack}"></strong>:
+          <span th:text="${packLabel}"></span>
+        </p>
+        <p
+          style="
+            margin: 0 0 8px;
+            color: #1f2440;
+            font-size: 14px;
+            line-height: 1.6;
+          "
+        >
+          <strong
+            style="color: #065f46"
+            th:text="#{mail.label.reservationDate}"
+          ></strong
+          >: <span th:text="${reservationDateStr}"></span>
+        </p>
+        <p
+          style="
+            margin: 0 0 8px;
+            color: #1f2440;
+            font-size: 14px;
+            line-height: 1.6;
+          "
+        >
+          <strong
+            style="color: #065f46"
+            th:text="#{mail.label.pickupDate}"
+          ></strong
+          >: <span th:text="${pickupDateStr}"></span>
+        </p>
+        <p style="margin: 0; color: #1f2440; font-size: 14px; line-height: 1.6">
+          <strong
+            style="color: #065f46"
+            th:text="#{mail.label.auctionFinalPrice}"
+          ></strong
+          >: $<span th:text="${priceStr}"></span>
+        </p>
+      </div>
+      <p
+        style="
+          margin: 28px 0 0;
+          padding-top: 20px;
+          border-top: 1px solid #c2c9c2;
+          color: #527a61;
+          font-size: 12px;
+          line-height: 1.6;
+        "
+        th:text="#{mail.footer.autoSent}"
+      ></p>
+    </div>
+  </body>
 </html>

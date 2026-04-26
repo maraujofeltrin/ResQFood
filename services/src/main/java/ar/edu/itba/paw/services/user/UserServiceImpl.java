@@ -42,7 +42,8 @@ public class UserServiceImpl implements UserService {
                 passwordEncoder.encode(user.getPassword()),
                 user.getName(),
                 user.getPhone(),
-                user.getRole());
+                user.getRole(),
+                user.getLocale());
 
         persistProfileByRole(createdUser, clientProfile, commerceProfile);
         return createdUser;
@@ -132,7 +133,8 @@ public class UserServiceImpl implements UserService {
             return RegisterResult.duplicateEmail();
         }
         final User created = createUser(user, clientProfile, commerceProfile);
-        emailVerificationTokenService.sendVerificationMail(created.getId(), created.getEmail(), appBaseUrl);
+        emailVerificationTokenService.sendVerificationMail(created.getId(), created.getEmail(), appBaseUrl,
+                created.getLocale());
         return RegisterResult.createdPendingVerification(created);
     }
 }

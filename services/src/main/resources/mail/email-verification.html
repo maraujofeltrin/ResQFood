@@ -32,9 +32,8 @@
           letter-spacing: 0.06em;
           margin-bottom: 16px;
         "
-      >
-        VERIFICÁ TU CUENTA
-      </span>
+        th:text="#{mail.badge.emailVerification}"
+      ></span>
       <h1
         style="
           margin: 0 0 16px;
@@ -43,9 +42,8 @@
           line-height: 1.2;
           font-weight: 800;
         "
-      >
-        Confirmá tu dirección de mail
-      </h1>
+        th:text="#{mail.title.emailVerification}"
+      ></h1>
       <p
         style="
           margin: 0 0 32px;
@@ -53,10 +51,8 @@
           font-size: 15px;
           line-height: 1.6;
         "
-      >
-        Hacé click en el botón para activar tu cuenta. El enlace expira en 24
-        horas.
-      </p>
+        th:text="#{mail.subtitle.emailVerification}"
+      ></p>
       <div>
         <a
           th:href="${verificationUrl}"
@@ -71,9 +67,8 @@
             color: #ffffff;
             background: #059669;
           "
-        >
-          Activar cuenta
-        </a>
+          th:text="#{mail.button.emailVerification}"
+        ></a>
       </div>
       <p
         style="
@@ -84,10 +79,8 @@
           font-size: 12px;
           line-height: 1.6;
         "
-      >
-        Si no creaste una cuenta en ResQFood, ignorá este mail. El enlace es de
-        uso único y expira en 24 horas.
-      </p>
+        th:text="#{mail.footer.emailVerification}"
+      ></p>
     </div>
   </body>
 </html>

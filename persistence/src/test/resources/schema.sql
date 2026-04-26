@@ -16,8 +16,11 @@ CREATE TABLE users (
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(50),
     role VARCHAR(50),
-    verified BOOLEAN DEFAULT FALSE NOT NULL
+    verified BOOLEAN DEFAULT FALSE NOT NULL,
+    locale VARCHAR(10) NOT NULL
 );
+
+ALTER TABLE users ALTER COLUMN locale SET DEFAULT 'es';
 
 CREATE TABLE clients (
     user_id BIGINT PRIMARY KEY,

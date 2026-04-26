@@ -3,9 +3,7 @@ package ar.edu.itba.paw.services.reservation;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.reservation.Reservation;
-import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.persistence.PackDao;
-import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,44 +16,16 @@ import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ReservationMailServiceImplTest {
-
-    static class InMemoryReservationTokenDao implements ReservationTokenDao {
-        final Map<String, ReservationToken> store = new HashMap<>();
-
-        @Override
-        public ReservationToken create(String token, Long reservationId, ReservationToken.Action action,
-                LocalDateTime createdAt, LocalDateTime expiresAt) {
-            final ReservationToken rt = new ReservationToken(token, reservationId, action, false, createdAt, expiresAt);
-            store.put(token, rt);
-            return rt;
-        }
-
-        @Override
-        public Optional<ReservationToken> findByToken(String token) {
-            return Optional.ofNullable(store.get(token));
-        }
-
-        @Override
-        public void markAsUsed(String token) {
-            final ReservationToken old = store.get(token);
-            if (old != null) {
-                final ReservationToken nw = new ReservationToken(old.getToken(), old.getReservationId(),
-                        old.getAction(), true, old.getCreatedAt(), old.getExpiresAt());
-                store.put(token, nw);
-            }
-        }
-    }
 
     static class InMemoryPackDao implements PackDao {
         private final Pack pack;
@@ -90,14 +60,12 @@ public class ReservationMailServiceImplTest {
         @Override public void send(org.springframework.mail.javamail.MimeMessagePreparator... ps) throws org.springframework.mail.MailException { for (var p : ps) send(p); }
     }
 
-    private InMemoryReservationTokenDao tokenDao;
     private FakeMailSender mailSender;
     private ReservationMailServiceImpl svc;
     private InMemoryClientService clientService;
 
     @BeforeEach
     public void setUp() {
-        tokenDao = new InMemoryReservationTokenDao();
         mailSender = new FakeMailSender();
         clientService = new InMemoryClientService();
     }
@@ -150,19 +118,20 @@ public class ReservationMailServiceImplTest {
     }
 
     @Test
-    public void sendReservationRequestToCommerce_createsTokens_and_sendsMail() throws Exception {
+    public void sendReservationRequestToCommerce_sendsMail_withProvidedTokens() throws Exception {
         final Reservation reservation = new Reservation(1L, 2L, 3L, LocalDateTime.now(), 5.0,
                 Reservation.Status.RESERVED, "code123", null, 1, "pw");
         final Pack pack = new Pack(3L, 2L, "Delicious", "desc", 10.0, 5.0, 1, true, false, List.of(), null, null);
+        final String acceptToken = "accept-token-123";
+        final String rejectToken = "reject-token-456";
 
         final PackDao packDao = new InMemoryPackDao(pack);
-        svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
+        svc = new ReservationMailServiceImpl(mailSender, packDao, clientService,
                 "noreply@example.org", "ResQFood", ZoneId.of("America/Argentina/Buenos_Aires"));
 
-        svc.sendReservationRequestToCommerce(reservation, "commerce@example.org", "http://app/", "10/04/2026");
+        svc.sendReservationRequestToCommerce(reservation, "commerce@example.org", "http://app/",
+            acceptToken, rejectToken, "10/04/2026", Locale.forLanguageTag("es"));
 
-        // two tokens created (accept + reject)
-        assertEquals(2, tokenDao.store.size());
         // one mail sent
         assertEquals(1, mailSender.sent.size());
 
@@ -172,23 +141,9 @@ public class ReservationMailServiceImplTest {
         assertEquals("ResQFood <noreply@example.org>", msg.getFrom()[0].toString());
         assertEquals("Solicitud de reserva #" + reservation.getId() + " de ClientName Surname", msg.getSubject());
         final String body = extractTextFromMime(msg);
-        assertTrue(body.contains("reservations/accept?token="));
-        assertTrue(body.contains("reservations/reject?token="));
+        assertTrue(body.contains("reservations/accept?token=" + acceptToken));
+        assertTrue(body.contains("reservations/reject?token=" + rejectToken));
         assertTrue(body.contains("Delicious"));
-
-        // extract tokens from URLs and ensure they were stored in tokenDao
-        final java.util.regex.Pattern p = java.util.regex.Pattern
-                .compile("reservations/(?:accept|reject)\\?token=([a-zA-Z0-9\\-]+)");
-        final java.util.regex.Matcher m = p.matcher(body);
-        final java.util.Set<String> found = new java.util.HashSet<>();
-        while (m.find()) {
-            found.add(m.group(1));
-        }
-        // we expect two tokens
-        assertEquals(2, found.size());
-        for (final String t : found) {
-            assertTrue(tokenDao.store.containsKey(t));
-        }
     }
 
     @Test
@@ -197,10 +152,11 @@ public class ReservationMailServiceImplTest {
                 Reservation.Status.RESERVED, "PICKUPCODE", null, 1, "pw");
         final Pack pack = new Pack(11L, 2L, "Morning Bread", "desc", 10.0, 5.0, 1, true, false, List.of(), null, null);
         final PackDao packDao = new InMemoryPackDao(pack);
-        svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
+        svc = new ReservationMailServiceImpl(mailSender, packDao, clientService,
                 "noreply@example.org", "ResQFood", ZoneId.of("America/Argentina/Buenos_Aires"));
 
-        svc.sendReservationCodeToClient(reservation, "client@example.org", "10/04/2026");
+        svc.sendReservationCodeToClient(reservation, "client@example.org", "10/04/2026",
+            Locale.forLanguageTag("es"));
 
         assertEquals(1, mailSender.sent.size());
         final MimeMessage msg = mailSender.sent.get(0);
@@ -219,10 +175,11 @@ public class ReservationMailServiceImplTest {
                 Reservation.Status.RESERVED, "WIN123", null, 1, "pw");
         final Pack pack = new Pack(12L, 2L, "Evening Combo", "desc", 20.0, 14.5, 1, true, List.of());
         final PackDao packDao = new InMemoryPackDao(pack);
-        svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
+        svc = new ReservationMailServiceImpl(mailSender, packDao, clientService,
                 "noreply@example.org", "ResQFood", ZoneId.of("America/Argentina/Buenos_Aires"));
 
-        svc.sendAuctionWinnerCodeToClient(reservation, "winner@example.org", "11/04/2026");
+        svc.sendAuctionWinnerCodeToClient(reservation, "winner@example.org", "11/04/2026",
+            Locale.forLanguageTag("es"));
 
         assertEquals(1, mailSender.sent.size());
         final MimeMessage msg = mailSender.sent.get(0);
@@ -240,10 +197,11 @@ public class ReservationMailServiceImplTest {
                 Reservation.Status.RESERVED, "C0DE9", null, 1, "pw");
         final Pack pack = new Pack(13L, 2L, "Late Night Pack", "desc", 25.0, 18.0, 1, true, List.of());
         final PackDao packDao = new InMemoryPackDao(pack);
-        svc = new ReservationMailServiceImpl(mailSender, tokenDao, packDao, clientService,
+        svc = new ReservationMailServiceImpl(mailSender, packDao, clientService,
                 "noreply@example.org", "ResQFood", ZoneId.of("America/Argentina/Buenos_Aires"));
 
-        svc.sendAuctionWinnerCodeToCommerce(reservation, "commerce@example.org", "12/04/2026");
+        svc.sendAuctionWinnerCodeToCommerce(reservation, "commerce@example.org", "12/04/2026",
+            Locale.forLanguageTag("es"));
 
         assertEquals(1, mailSender.sent.size());
         final MimeMessage msg = mailSender.sent.get(0);

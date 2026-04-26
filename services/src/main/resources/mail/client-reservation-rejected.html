@@ -33,9 +33,8 @@
           letter-spacing: 0.06em;
           margin-bottom: 16px;
         "
-      >
-        RESERVA RECHAZADA
-      </span>
+        th:text="#{mail.badge.rejected}"
+      ></span>
       <h1
         style="
           margin: 0 0 16px;
@@ -45,9 +44,8 @@
           font-weight: 800;
           letter-spacing: -0.02em;
         "
-      >
-        Tu reserva fue rechazada
-      </h1>
+        th:text="#{mail.title.rejected}"
+      ></h1>
       <p
         style="
           margin: 0 0 28px;
@@ -55,10 +53,8 @@
           font-size: 15px;
           line-height: 1.6;
         "
-      >
-        Lo sentimos, el comercio no pudo aceptar tu reserva en esta ocasión. A
-        continuación, te mostramos los detalles de la solicitud cancelada.
-      </p>
+        th:text="#{mail.text.rejectedExplanation}"
+      ></p>
       <div
         style="
           background: #f3f5f3;
@@ -75,9 +71,11 @@
             line-height: 1.6;
           "
         >
-          <strong style="color: #9f1239">Número de reserva:</strong> #<span
-            th:text="${reservationId}"
-          ></span>
+          <strong
+            style="color: #9f1239"
+            th:text="#{mail.label.reservationNumber}"
+          ></strong
+          >: #<span th:text="${reservationId}"></span>
         </p>
         <p
           style="
@@ -87,12 +85,15 @@
             line-height: 1.6;
           "
         >
-          <strong style="color: #9f1239">Pack:</strong>
+          <strong style="color: #9f1239" th:text="#{mail.label.pack}"></strong>:
           <span th:text="${packLabel}"></span>
         </p>
         <p style="margin: 0; color: #1f2440; font-size: 14px; line-height: 1.6">
-          <strong style="color: #9f1239">Fecha de reserva:</strong>
-          <span th:text="${reservationDateStr}"></span>
+          <strong
+            style="color: #9f1239"
+            th:text="#{mail.label.reservationDate}"
+          ></strong
+          >: <span th:text="${reservationDateStr}"></span>
         </p>
       </div>
       <p
@@ -104,9 +105,8 @@
           font-size: 12px;
           line-height: 1.6;
         "
-      >
-        Este correo fue enviado automáticamente.
-      </p>
+        th:text="#{mail.footer.autoSent}"
+      ></p>
     </div>
   </body>
 </html>
