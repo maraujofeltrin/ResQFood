@@ -115,7 +115,7 @@
                 </div>
             </div>
 
-            <aside class="pack-detail-aside">
+            <aside class="pack-detail-aside flex flex-col gap-4">
                 <div class="pack-aside-card">
                     <c:if test="${auctionAlertKind eq 'success'}">
                         <p class="pack-feedback pack-feedback--success" role="alert"><c:out value="${auctionAlertMessage}"/></p>
@@ -272,6 +272,9 @@
                         </c:otherwise>
                     </c:choose>
                 </div>
+                <c:if test="${auctionPresent}">
+                    <paw:bidHistoryCard packId="${packId}" items="${auctionBidHistoryItems}"/>
+                </c:if>
             </aside>
         </div>
     </main>
@@ -360,6 +363,29 @@
                 if (label && btn.getAttribute('data-submitting-text')) {
                     label.textContent = btn.getAttribute('data-submitting-text');
                 }
+            });
+        })();
+
+        (function () {
+            document.querySelectorAll('[data-bid-history-target]').forEach(function (btn) {
+                var targetId = btn.getAttribute('data-bid-history-target');
+                if (!targetId) {
+                    return;
+                }
+                var target = document.getElementById(targetId);
+                if (!target) {
+                    return;
+                }
+                btn.addEventListener('click', function () {
+                    var hidden = target.classList.contains('hidden');
+                    if (hidden) {
+                        target.classList.remove('hidden');
+                    } else {
+                        target.classList.add('hidden');
+                    }
+                    var expanded = !target.classList.contains('hidden');
+                    btn.setAttribute('aria-expanded', String(expanded));
+                });
             });
         })();
 

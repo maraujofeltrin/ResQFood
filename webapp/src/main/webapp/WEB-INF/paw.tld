@@ -27,6 +27,7 @@
     <tag-file><name>sortDropdown</name><path>/WEB-INF/tags/packs/sortDropdown.tag</path></tag-file>
     <tag-file><name>auctionSortDropdown</name><path>/WEB-INF/tags/packs/auctionSortDropdown.tag</path></tag-file>
     <tag-file><name>input</name><path>/WEB-INF/tags/packs/input.tag</path></tag-file>
+    <tag-file><name>bidHistoryCard</name><path>/WEB-INF/tags/packs/bidHistoryCard.tag</path></tag-file>
 
     <!-- Commerce flows -->
     <tag-file><name>commerceFormLayout</name><path>/WEB-INF/tags/commerce/commerceFormLayout.tag</path></tag-file>

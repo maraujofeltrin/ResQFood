@@ -6,11 +6,13 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.ModelAndView;
 import ar.edu.itba.paw.models.auction.Auction;
+import ar.edu.itba.paw.models.auction.Bid;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.webapp.form.BidForm;
 import ar.edu.itba.paw.webapp.form.ReservationForm;
 
@@ -21,6 +23,8 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -29,6 +33,7 @@ public class PackDetailModelBuilder {
 
     private final CommerceService commerceService;
     private final AuctionService auctionService;
+    private final ClientService clientService;
     private final MessageSource messageSource;
     private final ZoneId businessZone;
     private final AuthenticatedUserResolver authResolver;
@@ -36,9 +41,11 @@ public class PackDetailModelBuilder {
 
     @Autowired
     public PackDetailModelBuilder(final CommerceService commerceService, final AuctionService auctionService,
-            final MessageSource messageSource, final ZoneId businessZone, final AuthenticatedUserResolver authResolver) {
+            final ClientService clientService, final MessageSource messageSource, final ZoneId businessZone,
+            final AuthenticatedUserResolver authResolver) {
         this.commerceService = commerceService;
         this.auctionService = auctionService;
+        this.clientService = clientService;
         this.messageSource = messageSource;
         this.businessZone = businessZone;
         this.authResolver = authResolver;
@@ -85,6 +92,15 @@ public class PackDetailModelBuilder {
         final boolean auctionActive = auctionOpt.map(Auction::isActive).orElse(false);
         mav.addObject("auctionPresent", Boolean.valueOf(auctionPresent));
         mav.addObject("auctionActive", Boolean.valueOf(auctionActive));
+        if (auctionPresent) {
+            final long auctionId = auctionOpt.get().getId();
+            final List<Bid> bidHistory = auctionService.getBidHistory(auctionId);
+            final List<BidHistoryViewHelper.BidHistoryRow> bidHistoryItems = BidHistoryViewHelper.buildRows(
+                    bidHistory, clientService, messageSource, locale);
+            mav.addObject("auctionBidHistoryItems", bidHistoryItems);
+        } else {
+            mav.addObject("auctionBidHistoryItems", Collections.emptyList());
+        }
 
         boolean auctionClientIsLeading = false;
         if (auctionOpt.isPresent()) {
