@@ -15,8 +15,10 @@
     <tag-file><name>footer</name><path>/WEB-INF/tags/shared/footer.tag</path></tag-file>
     <tag-file><name>packEmptyState</name><path>/WEB-INF/tags/shared/packEmptyState.tag</path></tag-file>
     <tag-file><name>packCard</name><path>/WEB-INF/tags/shared/packCard.tag</path></tag-file>
+    <tag-file><name>packCardShell</name><path>/WEB-INF/tags/shared/packCardShell.tag</path></tag-file>
     <tag-file><name>pagination</name><path>/WEB-INF/tags/shared/pagination.tag</path></tag-file>
     <tag-file><name>searchBar</name><path>/WEB-INF/tags/shared/searchBar.tag</path></tag-file>
+    <tag-file><name>segmentedTripleTabs</name><path>/WEB-INF/tags/shared/segmentedTripleTabs.tag</path></tag-file>
     <tag-file><name>pickupConfirm</name><path>/WEB-INF/tags/shared/pickupConfirm.tag</path></tag-file>
     <tag-file><name>reservationLayout</name><path>/WEB-INF/tags/shared/reservationLayout.tag</path></tag-file>
     <tag-file><name>button</name><path>/WEB-INF/tags/shared/button.tag</path></tag-file>
@@ -38,6 +40,7 @@
 
     <!-- Reservations -->
     <tag-file><name>reservationCard</name><path>/WEB-INF/tags/reservations/reservationCard.tag</path></tag-file>
+    <tag-file><name>clientAuctionParticipationCard</name><path>/WEB-INF/tags/reservations/clientAuctionParticipationCard.tag</path></tag-file>
     <tag-file><name>modal</name><path>/WEB-INF/tags/reservations/modal.tag</path></tag-file>
     <tag-file><name>reservationFeedback</name><path>/WEB-INF/tags/reservations/reservationFeedback.tag</path></tag-file>
 

@@ -43,24 +43,14 @@
                             </c:if>
 
                             <section>
-                                <div
-                                    class="inline-flex items-center bg-surface-variant p-1.5 rounded-full mb-8 overflow-x-auto">
-                                    <a href="${pageContext.request.contextPath}/commerce?tab=items"
-                                        class="px-6 py-2.5 text-base font-bold transition-all whitespace-nowrap rounded-full
-                                       ${currentTab == 'items' ? 'bg-surface text-primary shadow-sm' : 'text-secondary hover:text-primary'}">
-                                        <spring:message code="commerce.dashboard.tab.items" /> (${itemsCount})
-                                    </a>
-                                    <a href="${pageContext.request.contextPath}/commerce?tab=packs"
-                                        class="px-6 py-2.5 text-base font-bold transition-all whitespace-nowrap rounded-full
-                                       ${currentTab == 'packs' ? 'bg-surface text-primary shadow-sm' : 'text-secondary hover:text-primary'}">
-                                        <spring:message code="commerce.dashboard.tab.packs" /> (${packsCount})
-                                    </a>
-                                    <a href="${pageContext.request.contextPath}/commerce?tab=auctions"
-                                        class="px-6 py-2.5 text-base font-bold transition-all whitespace-nowrap rounded-full
-                                       ${currentTab == 'auctions' ? 'bg-surface text-primary shadow-sm' : 'text-secondary hover:text-primary'}">
-                                        <spring:message code="commerce.dashboard.tab.auctions" /> (${auctionsCount})
-                                    </a>
-                                </div>
+                                <paw:segmentedTripleTabs basePath="/commerce"
+                                    currentTab="${currentTab}"
+                                    itemsMessageCode="commerce.dashboard.tab.items"
+                                    packsMessageCode="commerce.dashboard.tab.packs"
+                                    auctionsMessageCode="commerce.dashboard.tab.auctions"
+                                    itemsCount="${itemsCount}"
+                                    packsCount="${packsCount}"
+                                    auctionsCount="${auctionsCount}" />
 
                                 <c:choose>
                                     <c:when test="${empty packs}">

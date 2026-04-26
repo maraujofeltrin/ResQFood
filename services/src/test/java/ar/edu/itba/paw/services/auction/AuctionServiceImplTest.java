@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -158,5 +159,32 @@ public class AuctionServiceImplTest {
         });
         
         assertEquals(BidFailureReason.OWN_COMMERCE, exception.getReason());
+    }
+
+    @Test
+    public void testFindParticipatedAuctionsByClientId_MostRecentAuctionFirstAndDistinct() {
+        // 1. Setup
+        final long auctionB = 201L;
+        final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        when(bidDao.findByClientId(CLIENT_ID)).thenReturn(List.of(
+                new Bid(3L, auctionB, CLIENT_ID, 300.0, now),
+                new Bid(2L, AUCTION_ID, CLIENT_ID, 200.0, now.minusMinutes(1)),
+                new Bid(1L, AUCTION_ID, CLIENT_ID, 100.0, now.minusHours(1))
+        ));
+        final Pack packA = new Pack(PACK_ID, COMMERCE_ID, "P1", "D", 1.0, 1.0, 1, true, null);
+        final Pack packB = new Pack(2L, COMMERCE_ID, "P2", "D", 1.0, 1.0, 1, true, null);
+        final LocalDateTime end = now.plusDays(1);
+        final Auction aA = new Auction(AUCTION_ID, packA, 10.0, 1.0, null, null, end, Auction.Status.ACTIVE, now);
+        final Auction aB = new Auction(auctionB, packB, 10.0, 1.0, null, null, end, Auction.Status.ACTIVE, now);
+        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(aA));
+        when(auctionDao.findById(auctionB)).thenReturn(Optional.of(aB));
+
+        // 2. Ejercicio
+        final List<Auction> result = auctionService.findParticipatedAuctionsByClientId(CLIENT_ID);
+
+        // 3. Asserts
+        assertEquals(2, result.size());
+        assertEquals(auctionB, result.get(0).getId().longValue());
+        assertEquals(AUCTION_ID, result.get(1).getId().longValue());
     }
 }

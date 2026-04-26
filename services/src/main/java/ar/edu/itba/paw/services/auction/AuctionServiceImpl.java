@@ -17,8 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class AuctionServiceImpl implements AuctionService {
@@ -221,5 +224,25 @@ public class AuctionServiceImpl implements AuctionService {
         }
         final Auction auction = auctionOpt.get();
         return auction.getCurrentBidderId() != null && auction.getCurrentBidderId().equals(userId);
+    }
+
+    @Override
+    public List<Auction> findParticipatedAuctionsByClientId(final long clientId) {
+        final List<Bid> bids = bidDao.findByClientId(clientId);
+        if (bids.isEmpty()) {
+            return List.of();
+        }
+        final Set<Long> seenAuction = new HashSet<>();
+        final List<Long> orderedAuctionIds = new ArrayList<>();
+        for (final Bid bid : bids) {
+            if (seenAuction.add(bid.getAuctionId())) {
+                orderedAuctionIds.add(bid.getAuctionId());
+            }
+        }
+        final List<Auction> result = new ArrayList<>();
+        for (final Long auctionId : orderedAuctionIds) {
+            auctionDao.findById(auctionId).ifPresent(result::add);
+        }
+        return result;
     }
 }

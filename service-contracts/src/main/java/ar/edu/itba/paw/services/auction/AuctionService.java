@@ -75,4 +75,10 @@ public interface AuctionService {
      * Checks if the given user is currently leading the given auction.
      */
     boolean isClientLeading(long auctionId, long userId);
+
+    /**
+     * Auctions in which the client has placed at least one bid, most recently active first
+     * (by the client's latest bid timestamp per auction).
+     */
+    List<Auction> findParticipatedAuctionsByClientId(long clientId);
 }
