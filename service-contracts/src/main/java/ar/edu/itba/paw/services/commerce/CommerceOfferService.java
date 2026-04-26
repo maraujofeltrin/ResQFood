@@ -17,6 +17,6 @@ public interface CommerceOfferService {
      * Creates a pack (stock 1) and an auction for it. {@code endDate}/{@code endTime} are wall-clock in the app display zone.
      */
     Pack createAuctionOffer(long commerceId, String title, String description, double originalPrice,
-            double initialPrice, String endDate, String endTime, List<PackTag> tags, byte[] imageData,
+            double initialPrice, double minBidIncrement, String endDate, String endTime, List<PackTag> tags, byte[] imageData,
             String imageContentType);
 }

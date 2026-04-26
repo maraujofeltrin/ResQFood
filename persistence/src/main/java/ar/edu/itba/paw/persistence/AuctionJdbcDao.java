@@ -27,7 +27,7 @@ import java.util.Optional;
 public class AuctionJdbcDao implements AuctionDao {
 
     private static final String AUCTION_JOIN_PACK =
-            "SELECT a.id AS auction_id, a.pack_id, a.initial_price, a.current_bid, a.current_bidder_id, " +
+            "SELECT a.id AS auction_id, a.pack_id, a.initial_price, a.min_bid_increment, a.current_bid, a.current_bidder_id, " +
             "a.end_time, a.status, a.created_at, " +
             "p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active, p.deleted " +
             "FROM auctions a JOIN packs p ON a.pack_id = p.id";
@@ -76,6 +76,7 @@ public class AuctionJdbcDao implements AuctionDao {
                 rs.getLong("auction_id"),
                 pack,
                 rs.getDouble("initial_price"),
+                rs.getDouble("min_bid_increment"),
                 currentBid,
                 currentBidderId,
                 endTimeTs != null ? endTimeTs.toLocalDateTime() : null,
@@ -85,10 +86,11 @@ public class AuctionJdbcDao implements AuctionDao {
     }
 
     @Override
-    public Auction createAuction(final long packId, final double initialPrice, final LocalDateTime endTime) {
+    public Auction createAuction(final long packId, final double initialPrice, final double minBidIncrement, final LocalDateTime endTime) {
         final Map<String, Object> params = new HashMap<>();
         params.put("pack_id", packId);
         params.put("initial_price", initialPrice);
+        params.put("min_bid_increment", minBidIncrement);
         params.put("end_time", Timestamp.valueOf(endTime));
         params.put("status", Auction.Status.ACTIVE.name());
         params.put("created_at", Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));

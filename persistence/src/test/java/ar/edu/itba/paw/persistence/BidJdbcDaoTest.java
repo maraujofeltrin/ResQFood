@@ -72,7 +72,7 @@ public class BidJdbcDaoTest {
         packId = pack.getId();
 
         LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
-        Auction auction = auctionDao.createAuction(packId, 500.0, endTime);
+        Auction auction = auctionDao.createAuction(packId, 500.0, 500.0, endTime);
         auctionId = auction.getId();
     }
 

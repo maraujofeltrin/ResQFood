@@ -124,6 +124,20 @@
                                         </div>
                                     </div>
 
+                                    <div class="pack-form-field mt-2" data-mode-group="auction" style="display:none;">
+                                        <label class="pack-form-label text-auction flex flex-col">
+                                            <span><spring:message code="commerce.createAuction.form.minBidIncrement.label"/></span>
+                                            <span class="text-xs text-secondary font-normal mt-1"><spring:message code="commerce.createAuction.form.minBidIncrement.hint"/></span>
+                                        </label>
+                                        <div class="relative max-w-md">
+                                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-auction font-bold">$</span>
+                                            <form:input type="number" step="0.01" path="minBidIncrement"
+                                                class="pack-form-control pack-form-control--tabular pl-8 font-bold" cssErrorClass="pack-form-control pack-form-control--tabular pl-8 font-bold is-invalid"
+                                                placeholder="0.00" maxlength="10" oninput="if(this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" />
+                                        </div>
+                                        <form:errors path="minBidIncrement" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p" />
+                                    </div>
+
                                     <!-- Pack: Stock -->
                                     <div class="pack-form-field mt-4" data-mode-group="pack">
                                         <label class="pack-form-label flex flex-col">

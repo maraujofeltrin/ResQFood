@@ -87,7 +87,7 @@ public class CommerceOfferController {
             if (isAuction) {
                 commerceOfferService.createAuctionOffer(
                         commerceId, form.getTitle(), form.getDescription(), form.getOriginalPrice(),
-                        form.getInitialPrice(), form.getEndDate(), form.getEndTime(),
+                        form.getInitialPrice(), form.getMinBidIncrement(), form.getEndDate(), form.getEndTime(),
                         form.getTags() != null ? form.getTags() : Collections.emptyList(), imageData, imageContentType);
                 redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
                 redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource.getMessage(

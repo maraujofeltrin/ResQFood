@@ -16,17 +16,19 @@ public class Auction {
     private final Long id;
     private final Pack pack;
     private final Double initialPrice;
+    private final Double minBidIncrement;
     private Double currentBid;
     private Long currentBidderId;
     private final LocalDateTime endTime;
     private Status status;
     private final LocalDateTime createdAt;
 
-    public Auction(Long id, Pack pack, Double initialPrice, Double currentBid, Long currentBidderId,
+    public Auction(Long id, Pack pack, Double initialPrice, Double minBidIncrement, Double currentBid, Long currentBidderId,
                    LocalDateTime endTime, Status status, LocalDateTime createdAt) {
         this.id = id;
         this.pack = pack;
         this.initialPrice = initialPrice;
+        this.minBidIncrement = minBidIncrement;
         this.currentBid = currentBid;
         this.currentBidderId = currentBidderId;
         this.endTime = endTime;
@@ -58,6 +60,13 @@ public class Auction {
 
     public Double getInitialPrice() {
         return initialPrice;
+    }
+
+    /**
+     * Minimum amount by which a new bid must exceed the current effective (standing) price.
+     */
+    public Double getMinBidIncrement() {
+        return minBidIncrement;
     }
 
     public Double getCurrentBid() {
@@ -95,7 +104,8 @@ public class Auction {
     @Override
     public String toString() {
         return "Auction [id=" + id + ", packId=" + (pack != null ? pack.getId() : null)
-                + ", initialPrice=" + initialPrice + ", currentBid=" + currentBid
+                + ", initialPrice=" + initialPrice + ", minBidIncrement=" + minBidIncrement
+                + ", currentBid=" + currentBid
                 + ", currentBidderId=" + currentBidderId + ", endTime=" + endTime
                 + ", status=" + status + ", createdAt=" + createdAt + "]";
     }

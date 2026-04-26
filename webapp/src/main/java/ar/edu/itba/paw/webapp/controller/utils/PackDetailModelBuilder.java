@@ -91,11 +91,13 @@ public class PackDetailModelBuilder {
             final Auction auction = auctionOpt.get();
             mav.addObject("auction", auction);
             final double effective = auction.getEffectivePrice() != null ? auction.getEffectivePrice() : 0d;
-            final double minimumBidAmount = effective + auctionService.getMinBidIncrementArs();
+            final double increment = auction.getMinBidIncrement() != null ? auction.getMinBidIncrement() : 0d;
+            final double minimumBidAmount = effective + increment;
             mav.addObject("auctionEffectiveAmount", effective);
             mav.addObject("auctionEffectivePriceDisplay", formatPrice(effective));
             mav.addObject("auctionEndDisplay", formatAuctionEndForDisplay(auction.getEndTime(), locale));
-            mav.addObject("auctionMinBidHint", messageSource.getMessage("pack.detail.bid.minHint", new Object[] { formatPrice(effective), formatPrice(minimumBidAmount) }, locale));
+            mav.addObject("auctionMinBidHint", messageSource.getMessage("pack.detail.bid.minHint",
+                    new Object[] { formatPrice(effective), formatPrice(minimumBidAmount), formatPrice(increment) }, locale));
             if (auctionActive) {
                 mav.addObject("bidAmountMin", String.format(Locale.US, "%.2f", minimumBidAmount));
                 auctionClientIsLeading = authResolver.resolveUserOrEmpty().map(u -> u.getRole() == User.Role.CLIENT && auctionService.isClientLeading(auction.getId(), u.getId())).orElse(false);

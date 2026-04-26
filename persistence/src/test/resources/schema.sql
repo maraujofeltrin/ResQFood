@@ -92,6 +92,7 @@ CREATE TABLE auctions (
     id INTEGER IDENTITY PRIMARY KEY,
     pack_id BIGINT NOT NULL UNIQUE,
     initial_price DOUBLE PRECISION NOT NULL,
+    min_bid_increment DOUBLE PRECISION NOT NULL,
     current_bid DOUBLE PRECISION,
     current_bidder_id BIGINT,
     end_time TIMESTAMP NOT NULL,

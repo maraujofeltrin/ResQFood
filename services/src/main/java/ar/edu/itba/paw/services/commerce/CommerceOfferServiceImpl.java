@@ -44,13 +44,13 @@ public class CommerceOfferServiceImpl implements CommerceOfferService {
     @Transactional
     @Override
     public Pack createAuctionOffer(final long commerceId, final String title, final String description,
-            final double originalPrice, final double initialPrice, final String endDate, final String endTime,
+            final double originalPrice, final double initialPrice, final double minBidIncrement, final String endDate, final String endTime,
             final List<PackTag> tags, final byte[] imageData, final String imageContentType) {
         final Pack pack = packService.createPack(
                 commerceId, title, description, originalPrice, initialPrice, 1,
                 tags != null ? tags : Collections.emptyList(), imageData, imageContentType);
         final LocalDateTime endUtc = parseAuctionEndAsUtc(endDate, endTime);
-        auctionService.createAuction(pack.getId(), initialPrice, endUtc);
+        auctionService.createAuction(pack.getId(), initialPrice, minBidIncrement, endUtc);
         return pack;
     }
 

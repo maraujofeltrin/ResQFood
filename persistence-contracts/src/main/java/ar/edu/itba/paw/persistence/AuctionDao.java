@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public interface AuctionDao {
 
-    Auction createAuction(long packId, double initialPrice, LocalDateTime endTime);
+    Auction createAuction(long packId, double initialPrice, double minBidIncrement, LocalDateTime endTime);
 
     Optional<Auction> findById(long id);
 

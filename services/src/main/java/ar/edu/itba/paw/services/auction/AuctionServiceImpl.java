@@ -23,8 +23,6 @@ import java.util.Optional;
 @Service
 public class AuctionServiceImpl implements AuctionService {
 
-    private static final double MIN_BID_INCREMENT_ARS = 500.0;
-
     private final AuctionDao auctionDao;
     private final BidDao bidDao;
     private final PackDao packDao;
@@ -40,7 +38,7 @@ public class AuctionServiceImpl implements AuctionService {
 
     @Transactional
     @Override
-    public Auction createAuction(final long packId, final double initialPrice, final LocalDateTime endTime) {
+    public Auction createAuction(final long packId, final double initialPrice, final double minBidIncrement, final LocalDateTime endTime) {
         final Pack pack = packDao.findById(packId)
                 .orElseThrow(() -> new IllegalArgumentException("Pack not found: " + packId));
 
@@ -56,12 +54,16 @@ public class AuctionServiceImpl implements AuctionService {
             throw new IllegalArgumentException("Initial price must be positive");
         }
 
+        if (minBidIncrement <= 0) {
+            throw new IllegalArgumentException("Minimum bid increment must be positive");
+        }
+
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         if (endTime.isBefore(now)) {
             throw new IllegalArgumentException("End time must be in the future");
         }
 
-        return auctionDao.createAuction(packId, initialPrice, endTime);
+        return auctionDao.createAuction(packId, initialPrice, minBidIncrement, endTime);
     }
 
     @Override
@@ -105,11 +107,6 @@ public class AuctionServiceImpl implements AuctionService {
         return auctionDao.findByCommerceId(commerceId);
     }
 
-    @Override
-    public double getMinBidIncrementArs() {
-        return MIN_BID_INCREMENT_ARS;
-    }
-
     @Transactional
     @Override
     public Bid placeBid(final long auctionId, final long clientId, final double amount) {
@@ -136,7 +133,8 @@ public class AuctionServiceImpl implements AuctionService {
         }
 
         final double base = auction.getEffectivePrice();
-        final double minimumRequired = base + MIN_BID_INCREMENT_ARS;
+        final double inc = auction.getMinBidIncrement() != null ? auction.getMinBidIncrement() : 0d;
+        final double minimumRequired = base + inc;
         if (amount < minimumRequired) {
             throw new BidPlacementException(BidFailureReason.AMOUNT_BELOW_MINIMUM);
         }

@@ -18,7 +18,7 @@ import ar.edu.itba.paw.models.pack.PackTag;
  * When {@code isAuction == false} (default): {@code finalPrice} and {@code stock} are required
  * (see {@link ar.edu.itba.paw.webapp.validation.CreateOfferFormValidator}).
  * <p>
- * When {@code isAuction == true}: {@code initialPrice}, {@code endDate} and {@code endTime} are
+ * When {@code isAuction == true}: {@code initialPrice}, {@code minBidIncrement}, {@code endDate} and {@code endTime} are
  * required (see {@link ar.edu.itba.paw.webapp.validation.CreateOfferFormValidator}).
  */
 public class CreateOfferForm {
@@ -55,6 +55,8 @@ public class CreateOfferForm {
     // ── Auction-only Fields (validated when isAuction == true) ─
 
     private Double initialPrice;
+
+    private Double minBidIncrement;
 
     private String endDate;
 
@@ -132,6 +134,14 @@ public class CreateOfferForm {
 
     public void setInitialPrice(Double initialPrice) {
         this.initialPrice = initialPrice;
+    }
+
+    public Double getMinBidIncrement() {
+        return minBidIncrement;
+    }
+
+    public void setMinBidIncrement(Double minBidIncrement) {
+        this.minBidIncrement = minBidIncrement;
     }
 
     public String getEndDate() {

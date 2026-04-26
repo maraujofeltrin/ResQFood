@@ -1,6 +1,8 @@
 package ar.edu.itba.paw.webapp.controller.reservation;
 
 import javax.validation.Valid;
+import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import ar.edu.itba.paw.models.auction.Auction;
+import ar.edu.itba.paw.models.auction.BidFailureReason;
 import ar.edu.itba.paw.models.auction.BidPlacementException;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.User;
@@ -28,10 +31,11 @@ import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.controller.utils.PackDetailModelBuilder;
 import ar.edu.itba.paw.webapp.form.BidForm;
 import ar.edu.itba.paw.webapp.form.ReservationForm;
-import java.util.Locale;
 
 @Controller
 public class ReservationActionController {
+
+    private static final Locale LOCALE_AR = new Locale("es", "AR");
 
     private final ReservationService reservationService;
     private final PackService packService;
@@ -196,29 +200,35 @@ public class ReservationActionController {
                     messageSource.getMessage("pack.detail.bid.alert.success", null, locale));
         } catch (final BidPlacementException ex) {
             redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
-            final String code;
-            switch (ex.getReason()) {
-            case OWN_COMMERCE:
-                code = "pack.detail.bid.alert.ownCommerce";
-                break;
-            case ALREADY_LEADING:
-                code = "pack.detail.bid.alert.alreadyLeading";
-                break;
-            case AMOUNT_BELOW_MINIMUM:
-                code = "pack.detail.bid.alert.belowIncrement";
-                break;
-            case EXPIRED:
-                code = "pack.detail.bid.alert.auctionExpired";
-                break;
-            case NOT_ACTIVE:
-            case AUCTION_NOT_FOUND:
-                code = "pack.detail.bid.alert.auctionNotActive";
-                break;
-            default:
-                code = "pack.detail.bid.alert.reject";
+            final String alertMessage;
+            if (ex.getReason() == BidFailureReason.AMOUNT_BELOW_MINIMUM) {
+                final NumberFormat priceFormat = NumberFormat.getCurrencyInstance(LOCALE_AR);
+                final double inc = auction.getMinBidIncrement() != null ? auction.getMinBidIncrement() : 0d;
+                final String incFormatted = priceFormat.format(inc);
+                alertMessage = messageSource.getMessage("pack.detail.bid.alert.belowIncrement",
+                        new Object[] { incFormatted }, locale);
+            } else {
+                final String code;
+                switch (ex.getReason()) {
+                case OWN_COMMERCE:
+                    code = "pack.detail.bid.alert.ownCommerce";
+                    break;
+                case ALREADY_LEADING:
+                    code = "pack.detail.bid.alert.alreadyLeading";
+                    break;
+                case EXPIRED:
+                    code = "pack.detail.bid.alert.auctionExpired";
+                    break;
+                case NOT_ACTIVE:
+                case AUCTION_NOT_FOUND:
+                    code = "pack.detail.bid.alert.auctionNotActive";
+                    break;
+                default:
+                    code = "pack.detail.bid.alert.reject";
+                }
+                alertMessage = messageSource.getMessage(code, null, locale);
             }
-            redirectAttributes.addFlashAttribute("auctionAlertMessage",
-                    messageSource.getMessage(code, null, locale));
+            redirectAttributes.addFlashAttribute("auctionAlertMessage", alertMessage);
         } catch (final DataIntegrityViolationException ex) {
             redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
             redirectAttributes.addFlashAttribute("auctionAlertMessage",

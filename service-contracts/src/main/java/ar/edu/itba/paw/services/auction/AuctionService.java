@@ -14,13 +14,14 @@ public interface AuctionService {
     /**
      * Creates an auction for an existing pack.
      *
-     * @param packId       the pack to auction
-     * @param initialPrice the starting price
-     * @param endTime      when the auction closes (UTC)
+     * @param packId            the pack to auction
+     * @param initialPrice      the starting price
+     * @param minBidIncrement   minimum amount each new bid must exceed the current effective price
+     * @param endTime           when the auction closes (UTC)
      * @return the created auction
      * @throws IllegalArgumentException if the pack does not exist or already has an active auction
      */
-    Auction createAuction(long packId, double initialPrice, LocalDateTime endTime);
+    Auction createAuction(long packId, double initialPrice, double minBidIncrement, LocalDateTime endTime);
 
     Optional<Auction> findById(long id);
 
@@ -42,7 +43,7 @@ public interface AuctionService {
      * Places a bid on an auction. Validates that:
      * <ul>
      *     <li>The auction is active and has not expired.</li>
-     *     <li>The amount is at least the current effective price plus a fixed minimum increment (500 ARS).</li>
+     *     <li>The amount is at least the current effective price plus the auction's minimum bid increment.</li>
      *     <li>The client is not the commerce that owns the pack.</li>
      *     <li>The client is not already the highest bidder.</li>
      * </ul>
@@ -51,9 +52,6 @@ public interface AuctionService {
      * @throws IllegalArgumentException for unexpected data (e.g. missing auction) — prefer {@link BidPlacementException} for known cases
      */
     Bid placeBid(long auctionId, long clientId, double amount);
-
-    /** Minimum bid increment in ARS; single source of truth for UI and validation. */
-    double getMinBidIncrementArs();
 
     /**
      * Closes all auctions whose end time has passed but are still marked as ACTIVE.

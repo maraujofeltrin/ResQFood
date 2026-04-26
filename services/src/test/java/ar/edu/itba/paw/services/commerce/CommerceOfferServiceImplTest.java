@@ -101,12 +101,13 @@ public class CommerceOfferServiceImplTest {
                 .toLocalDateTime();
 
         // 2. Ejercicio
-        Pack pack = commerceOfferService.createAuctionOffer(COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0, endDate, endTime, tags, null, null);
+        final double minBidInc = 500.0;
+        Pack pack = commerceOfferService.createAuctionOffer(COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0, minBidInc, endDate, endTime, tags, null, null);
 
         // 3. Asserts
         assertNotNull(pack);
         assertEquals(PACK_ID, pack.getId());
         verify(packService).createPack(COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0, 1, tags, null, null);
-        verify(auctionService).createAuction(PACK_ID, 1000.0, expectedUtc);
+        verify(auctionService).createAuction(PACK_ID, 1000.0, minBidInc, expectedUtc);
     }
 }

@@ -53,16 +53,17 @@ public class AuctionServiceImplTest {
         when(auctionDao.findByPackId(PACK_ID)).thenReturn(Optional.empty());
         
         LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
-        Auction createdAuction = new Auction(AUCTION_ID, pack, 100.0, null, null, endTime, Auction.Status.ACTIVE, LocalDateTime.now());
-        when(auctionDao.createAuction(PACK_ID, 100.0, endTime)).thenReturn(createdAuction);
+        final double minInc = 50.0;
+        Auction createdAuction = new Auction(AUCTION_ID, pack, 100.0, minInc, null, null, endTime, Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.createAuction(PACK_ID, 100.0, minInc, endTime)).thenReturn(createdAuction);
 
         // 2. Ejercicio
-        Auction auction = auctionService.createAuction(PACK_ID, 100.0, endTime);
+        Auction auction = auctionService.createAuction(PACK_ID, 100.0, minInc, endTime);
 
         // 3. Asserts
         assertNotNull(auction);
         assertEquals(AUCTION_ID, auction.getId());
-        verify(auctionDao).createAuction(PACK_ID, 100.0, endTime);
+        verify(auctionDao).createAuction(PACK_ID, 100.0, minInc, endTime);
     }
 
     @Test
@@ -74,11 +75,11 @@ public class AuctionServiceImplTest {
         // 2. Ejercicio & 3. Asserts
         LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            auctionService.createAuction(PACK_ID, 100.0, endTime);
+            auctionService.createAuction(PACK_ID, 100.0, 10.0, endTime);
         });
         
         assertTrue(exception.getMessage().contains("inactive pack"));
-        verify(auctionDao, never()).createAuction(anyLong(), anyDouble(), any(LocalDateTime.class));
+        verify(auctionDao, never()).createAuction(anyLong(), anyDouble(), anyDouble(), any(LocalDateTime.class));
     }
 
     @Test
@@ -86,7 +87,8 @@ public class AuctionServiceImplTest {
         // 1. Setup
         Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
         LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
-        Auction auction = new Auction(AUCTION_ID, pack, 1000.0, null, null, endTime, Auction.Status.ACTIVE, LocalDateTime.now());
+        final double minInc = 500.0;
+        Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime, Auction.Status.ACTIVE, LocalDateTime.now());
         
         when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
         
@@ -108,7 +110,8 @@ public class AuctionServiceImplTest {
         // 1. Setup
         Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
         LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
-        Auction auction = new Auction(AUCTION_ID, pack, 1000.0, null, null, endTime, Auction.Status.ACTIVE, LocalDateTime.now());
+        final double minInc = 500.0;
+        Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime, Auction.Status.ACTIVE, LocalDateTime.now());
         
         when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
 
@@ -126,7 +129,8 @@ public class AuctionServiceImplTest {
         // 1. Setup
         Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
         LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).minusHours(1); // Expired
-        Auction auction = new Auction(AUCTION_ID, pack, 1000.0, null, null, endTime, Auction.Status.ACTIVE, LocalDateTime.now());
+        final double minInc = 1.0;
+        Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime, Auction.Status.ACTIVE, LocalDateTime.now());
         
         when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
 
@@ -143,7 +147,8 @@ public class AuctionServiceImplTest {
         // 1. Setup
         Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
         LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
-        Auction auction = new Auction(AUCTION_ID, pack, 1000.0, null, null, endTime, Auction.Status.ACTIVE, LocalDateTime.now());
+        final double minInc = 1.0;
+        Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime, Auction.Status.ACTIVE, LocalDateTime.now());
         
         when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
 

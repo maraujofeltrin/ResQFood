@@ -73,12 +73,14 @@ public class AuctionJdbcDaoTest {
         LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
 
         // 2. Ejercicio
-        Auction auction = auctionDao.createAuction(packId, 500.0, endTime);
+        final double minInc = 500.0;
+        Auction auction = auctionDao.createAuction(packId, 500.0, minInc, endTime);
 
         // 3. Asserts
         assertNotNull(auction);
         assertEquals(packId, auction.getPack().getId());
         assertEquals(500.0, auction.getInitialPrice());
+        assertEquals(minInc, auction.getMinBidIncrement());
         assertEquals(Auction.Status.ACTIVE, auction.getStatus());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
     }
@@ -87,7 +89,7 @@ public class AuctionJdbcDaoTest {
     public void testFindById() {
         // 1. Setup
         LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
-        Auction created = auctionDao.createAuction(packId, 500.0, endTime);
+        Auction created = auctionDao.createAuction(packId, 500.0, 500.0, endTime);
 
         // 2. Ejercicio
         Optional<Auction> found = auctionDao.findById(created.getId());
@@ -101,7 +103,7 @@ public class AuctionJdbcDaoTest {
     public void testFindActive() {
         // 1. Setup
         LocalDateTime future = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
-        auctionDao.createAuction(packId, 500.0, future);
+        auctionDao.createAuction(packId, 500.0, 500.0, future);
 
         // 2. Ejercicio
         List<Auction> activeAuctions = auctionDao.findActive();
@@ -114,7 +116,7 @@ public class AuctionJdbcDaoTest {
     public void testUpdateCurrentBid() {
         // 1. Setup
         LocalDateTime future = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
-        Auction created = auctionDao.createAuction(packId, 500.0, future);
+        Auction created = auctionDao.createAuction(packId, 500.0, 500.0, future);
 
         // 2. Ejercicio
         auctionDao.updateCurrentBid(created.getId(), 700.0, clientId);
@@ -130,7 +132,7 @@ public class AuctionJdbcDaoTest {
     public void testUpdateStatus() {
         // 1. Setup
         LocalDateTime future = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
-        Auction created = auctionDao.createAuction(packId, 500.0, future);
+        Auction created = auctionDao.createAuction(packId, 500.0, 500.0, future);
 
         // 2. Ejercicio
         auctionDao.updateStatus(created.getId(), Auction.Status.FINISHED);

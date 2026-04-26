@@ -17,7 +17,6 @@ public class PackServiceImplTest {
     private static AuctionService noopAuctionService() {
         final AuctionService mock = Mockito.mock(AuctionService.class);
         Mockito.when(mock.findByPackId(org.mockito.ArgumentMatchers.anyLong())).thenReturn(Optional.empty());
-        Mockito.when(mock.getMinBidIncrementArs()).thenReturn(500.0);
         return mock;
     }
 

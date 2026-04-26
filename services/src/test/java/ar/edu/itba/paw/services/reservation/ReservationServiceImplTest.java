@@ -36,7 +36,7 @@ public class ReservationServiceImplTest {
 
     private static final class NoopAuctionDao implements AuctionDao {
         @Override
-        public Auction createAuction(final long packId, final double initialPrice, final LocalDateTime endTime) {
+        public Auction createAuction(final long packId, final double initialPrice, final double minBidIncrement, final LocalDateTime endTime) {
             throw new UnsupportedOperationException();
         }
 
