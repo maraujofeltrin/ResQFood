@@ -468,13 +468,20 @@ uri="http://itba.edu.ar/paw/tags" %>
                   var="cityPlaceholder"
                   text="Buenos Aires"
                 />
-                <form:input
-                  type="text"
+                <form:select
                   path="commerceProfile.city"
                   cssClass="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
-                  placeholder="${cityPlaceholder}"
                   data-required="true"
-                />
+                >
+                  <form:option value="" label="${cityPlaceholder}" />
+                  <c:forEach var="muni" items="${availableMunicipalities}">
+                    <form:option value="${muni.cityName}">
+                      <spring:message
+                        code="pack.catalog.filter.location.municipality.${muni.name()}"
+                      />
+                    </form:option>
+                  </c:forEach>
+                </form:select>
                 <form:errors
                   path="commerceProfile.city"
                   cssClass="text-error text-sm mt-1"
@@ -495,13 +502,14 @@ uri="http://itba.edu.ar/paw/tags" %>
                 <spring:message
                   code="register.placeholder.province"
                   var="provincePlaceholder"
-                  text="CABA"
+                  text="Buenos Aires"
                 />
                 <form:input
                   type="text"
                   path="commerceProfile.province"
                   cssClass="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
                   placeholder="${provincePlaceholder}"
+                  readonly="true"
                   data-required="true"
                 />
                 <form:errors
