@@ -91,4 +91,39 @@ public class TokenJdbcDaoTest {
         assertTrue(found.isPresent());
         assertTrue(found.get().isUsed());
     }
+
+    @Test
+    public void testFindByTokenAndType_notFound_returnsEmpty() {
+        // 1. Setup
+        // (no row inserted for this token)
+
+        // 2. Ejercicio
+        final Optional<Token> found = tokenDao.findByTokenAndType("does-not-exist", TokenType.EMAIL_VERIFICATION);
+
+        // 3. Asserts
+        assertTrue(found.isEmpty());
+    }
+
+    @Test
+    public void testFindByTokenAndType_wrongType_returnsEmpty() {
+        // 1. Setup
+        final LocalDateTime now = LocalDateTime.now();
+        tokenDao.create("same-string", userId, TokenType.EMAIL_VERIFICATION, now, now.plusDays(1));
+
+        // 2. Ejercicio
+        final Optional<Token> found = tokenDao.findByTokenAndType("same-string", TokenType.PASSWORD_RESET);
+
+        // 3. Asserts
+        assertTrue(found.isEmpty());
+    }
+
+    @Test
+    public void testMarkAsUsed_unknownToken_throws() {
+        // 1. Setup
+        // (no matching row)
+
+        // 2. Ejercicio & 3. Asserts
+        assertThrows(IllegalArgumentException.class,
+                () -> tokenDao.markAsUsed("unknown-token", TokenType.PASSWORD_RESET));
+    }
 }
