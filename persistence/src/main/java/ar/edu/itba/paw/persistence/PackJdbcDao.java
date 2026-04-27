@@ -11,9 +11,6 @@ import java.util.Optional;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import org.springframework.jdbc.core.RowMapper;
 
 import ar.edu.itba.paw.models.pack.Pack;
@@ -206,9 +203,7 @@ public class PackJdbcDao implements PackDao {
            .append("AND p.deleted = false ")
            .append("AND NOT EXISTS (")
            .append("SELECT 1 FROM auctions a ")
-           .append("WHERE a.pack_id = p.id AND a.status = 'ACTIVE' AND a.end_time > ?) ");
-
-        params.add(Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));
+           .append("WHERE a.pack_id = p.id AND a.status = 'ACTIVE') ");
 
         if (hasQuery) {
             final String escapedQuery = query.trim()

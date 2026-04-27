@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
@@ -15,6 +16,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.jdbc.JdbcTestUtils;
 
 import javax.sql.DataSource;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -169,5 +172,29 @@ public class PackJdbcDaoTest {
         Optional<Pack> updated = packDao.findById(created.getId());
         assertTrue(updated.isPresent());
         assertEquals(15, updated.get().getStock());
+    }
+
+    @Test
+    public void testFilterPacksExcludesPackWithActiveButExpiredAuction() {
+        // 1. Setup
+        final Pack auctionPack = packDao.createPack(commerceId, "AuctionPack", "Desc", 100.0, 50.0, 1, null, null);
+        jdbcTemplate.update(
+                "INSERT INTO auctions (pack_id, initial_price, min_bid_increment, end_time, status) VALUES (?, ?, ?, ?, ?)",
+                auctionPack.getId(),
+                10.0,
+                1.0,
+                Timestamp.valueOf(LocalDateTime.of(2020, 1, 1, 0, 0)),
+                "ACTIVE");
+        final Pack directPack = packDao.createPack(commerceId, "DirectPack", "Desc2", 100.0, 50.0, 1, null, null);
+
+        // 2. Ejercicio
+        final List<Pack> filtered = packDao.filterPacks(
+                null, null, null, null, PackSortOption.DATE_DESC, 1, 10);
+        final int count = packDao.countFilteredPacks(null, null, null, null);
+
+        // 3. Asserts
+        assertEquals(1, count);
+        assertEquals(1, filtered.size());
+        assertEquals(directPack.getId(), filtered.get(0).getId());
     }
 }
