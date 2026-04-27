@@ -42,6 +42,11 @@
   background-color: #FFDAD6;
 }
 
+.pack-feedback--warning {
+  color: #78350F;
+  background-color: #FEF3C7;
+}
+
 .pack-form-errors {
   margin-top: 0.5rem;
 }

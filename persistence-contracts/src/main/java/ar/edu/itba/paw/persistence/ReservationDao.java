@@ -27,4 +27,6 @@ public interface ReservationDao {
     List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize);
 
     int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status);
+
+    boolean hasActiveReservation(Long packId, Long customerId);
 }

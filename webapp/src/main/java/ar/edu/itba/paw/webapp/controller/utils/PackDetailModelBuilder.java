@@ -158,6 +158,15 @@ public class PackDetailModelBuilder {
             mav.addObject("packReservationHistoryItems", Collections.emptyList());
         }
 
+        boolean clientHasActiveReservation = false;
+        if (!isOwner) {
+            final Optional<User> userOpt = authResolver.resolveUserOrEmpty();
+            if (userOpt.isPresent() && userOpt.get().getRole() == User.Role.CLIENT) {
+                clientHasActiveReservation = reservationService.hasActiveReservation(pack.getId(), userOpt.get().getId());
+            }
+        }
+        mav.addObject("clientHasActiveReservation", clientHasActiveReservation);
+
         mav.addObject("originalPrice", formatPrice(pack.getOriginalPrice()));
         mav.addObject("finalPrice", formatPrice(pack.getFinalPrice()));
         final Integer stock = pack.getStock();

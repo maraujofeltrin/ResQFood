@@ -156,6 +156,11 @@ public class ReservationServiceImplTest {
         public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status) {
             return 0;
         }
+
+        @Override
+        public boolean hasActiveReservation(Long packId, Long customerId) {
+            return false;
+        }
     }
 
     static class InMemoryPackDao implements PackDao {

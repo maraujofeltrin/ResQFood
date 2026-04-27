@@ -205,4 +205,14 @@ public class ReservationJdbcDao implements ReservationDao {
         Integer count = jdbcTemplate.queryForObject(sql.toString(), Integer.class, params.toArray());
         return count != null ? count : 0;
     }
+
+    @Override
+    public boolean hasActiveReservation(Long packId, Long customerId) {
+        final Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(id) FROM reservations WHERE pack_id = ? AND customer_id = ? AND status = ?",
+                Integer.class,
+                packId, customerId, Reservation.Status.RESERVED.name()
+        );
+        return count != null && count > 0;
+    }
 }

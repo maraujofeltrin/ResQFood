@@ -139,6 +139,17 @@
             </div>
 
             <aside class="pack-detail-aside flex flex-col gap-4">
+                <c:if test="${clientHasActiveReservation}">
+                    <div class="pack-feedback pack-feedback--warning flex items-center justify-between shadow-sm" role="alert">
+                        <span><spring:message code="pack.detail.reserve.alreadyReserved"/></span>
+                        <a href="${pageContext.request.contextPath}/reservations" 
+                           class="flex items-center justify-center h-8 w-8 text-amber-600 bg-amber-600/10 hover:bg-amber-600 hover:text-white rounded-full transition-all hover:scale-110 shadow-sm shrink-0" 
+                           title="<spring:message code='pack.detail.reserve.goToMyReservations'/>"
+                           aria-label="<spring:message code='pack.detail.reserve.goToMyReservations'/>">
+                            <span class="material-symbols-outlined text-[1.25rem]">arrow_forward</span>
+                        </a>
+                    </div>
+                </c:if>
                 <div class="pack-aside-card">
                     <c:if test="${auctionAlertKind eq 'success'}">
                         <p class="pack-feedback pack-feedback--success" role="alert"><c:out value="${auctionAlertMessage}"/></p>

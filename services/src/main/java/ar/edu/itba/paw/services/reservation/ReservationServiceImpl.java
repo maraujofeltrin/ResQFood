@@ -404,4 +404,9 @@ public class ReservationServiceImpl implements ReservationService {
     public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status) {
         return reservationDao.countFilteredReservations(commerceId, customerId, query, status);
     }
+
+    @Override
+    public boolean hasActiveReservation(Long packId, Long customerId) {
+        return reservationDao.hasActiveReservation(packId, customerId);
+    }
 }

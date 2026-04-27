@@ -112,6 +112,11 @@ public class ReservationTokenServiceImplTest {
         public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status) {
             return 0;
         }
+
+        @Override
+        public boolean hasActiveReservation(Long packId, Long customerId) {
+            return false;
+        }
     }
 
     static class StubReservationService implements ReservationService {
@@ -147,6 +152,7 @@ public class ReservationTokenServiceImplTest {
         @Override public PickupByCodeResult confirmPickupByCode(String pickupCode, Long commerceUserId) { throw new UnsupportedOperationException(); }
         @Override public java.util.List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize) { throw new UnsupportedOperationException(); }
         @Override public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status) { throw new UnsupportedOperationException(); }
+        @Override public boolean hasActiveReservation(Long packId, Long customerId) { throw new UnsupportedOperationException(); }
     }
 
     static class InMemoryPackDao implements PackDao {
