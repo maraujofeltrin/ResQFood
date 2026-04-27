@@ -138,6 +138,10 @@ public class PackDetailModelBuilder {
         mav.addObject("packTitle", title);
         mav.addObject("packDescription", pack.getDescription() != null ? pack.getDescription() : "");
         addCommerceDetailAttributes(mav, commerceOpt);
+        final boolean isOwner = authResolver.resolveUserOrEmpty()
+                .map(u -> u.getRole() == User.Role.COMMERCE && u.getId().equals(pack.getCommerceId()))
+                .orElse(false);
+        mav.addObject("manageable", isOwner && !auctionPresent);
         mav.addObject("originalPrice", formatPrice(pack.getOriginalPrice()));
         mav.addObject("finalPrice", formatPrice(pack.getFinalPrice()));
         final Integer stock = pack.getStock();

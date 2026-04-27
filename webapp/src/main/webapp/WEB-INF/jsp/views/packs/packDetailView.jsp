@@ -23,7 +23,7 @@
         </div>
         <div class="pack-detail-grid">
             <div class="pack-detail-media-col">
-                <div class="pack-detail-hero">
+                <div class="pack-detail-hero relative">
                     <c:choose>
                         <c:when test="${not empty packImageId}">
                             <img class="pack-detail-hero-img"
@@ -36,6 +36,20 @@
                                  alt="<c:out value='${packDetailImageAlt}'/>"/>
                         </c:otherwise>
                     </c:choose>
+                    <c:if test="${manageable}">
+                      <div class="absolute top-3 right-3 flex gap-2 z-10">
+                        <button type="button"
+                                onclick="window.location.href='${pageContext.request.contextPath}/commerce/edit-pack/${packId}'"
+                                class="bg-white/90 backdrop-blur text-secondary hover:text-primary p-2 flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform">
+                            <span class="material-symbols-outlined text-[1.25rem]">edit</span>
+                        </button>
+                        <button type="button"
+                                onclick="openDeleteModal('${packId}')"
+                                class="bg-white/90 backdrop-blur text-error hover:text-on-error hover:bg-error p-2 flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform">
+                            <span class="material-symbols-outlined text-[1.25rem]">delete</span>
+                        </button>
+                      </div>
+                    </c:if>
                 </div>
 
                 <div class="pack-detail-intro">
@@ -418,5 +432,6 @@
             }
         })();
     </script>
+    <paw:deletePackModal />
 </body>
 </html>

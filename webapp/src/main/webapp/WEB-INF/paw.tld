@@ -37,6 +37,7 @@
     <tag-file><name>offerModeToggle</name><path>/WEB-INF/tags/commerce/offerModeToggle.tag</path></tag-file>
     <tag-file><name>commerceDataFields</name><path>/WEB-INF/tags/commerce/commerceDataFields.tag</path></tag-file>
     <tag-file><name>userIdentityFields</name><path>/WEB-INF/tags/commerce/userIdentityFields.tag</path></tag-file>
+    <tag-file><name>deletePackModal</name><path>/WEB-INF/tags/commerce/deletePackModal.tag</path></tag-file>
 
     <!-- Reservations -->
     <tag-file><name>reservationCard</name><path>/WEB-INF/tags/reservations/reservationCard.tag</path></tag-file>
