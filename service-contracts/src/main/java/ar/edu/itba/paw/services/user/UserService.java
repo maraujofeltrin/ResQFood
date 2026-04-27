@@ -10,6 +10,11 @@ public interface UserService {
     Optional<User> findByEmail(final String email);
     Optional<User> findById(final Long id);
     void updatePassword(final Long userId, final String encodedPassword);
+
+    /**
+     * Cambia la contraseña tras validar la actual. La nueva contraseña se persiste ya codificada.
+     */
+    ChangePasswordResult changePassword(long userId, String currentPassword, String newPassword);
     void markVerified(final Long userId);
     RegisterResult tryRegister(final User user, final Client clientProfile, final Commerce commerceProfile,
             final String appBaseUrl);

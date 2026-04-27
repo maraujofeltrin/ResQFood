@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
@@ -117,6 +118,18 @@ public class UserServiceImpl implements UserService {
     @Override
     public void updatePassword(final Long userId, final String encodedPassword) {
         userDao.updatePassword(userId, encodedPassword);
+    }
+
+    @Transactional
+    @Override
+    public ChangePasswordResult changePassword(final long userId, final String currentPassword, final String newPassword) {
+        final User user = userDao.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            return ChangePasswordResult.currentPasswordIncorrect();
+        }
+        userDao.updatePassword(userId, passwordEncoder.encode(newPassword));
+        return ChangePasswordResult.success();
     }
 
     @Override

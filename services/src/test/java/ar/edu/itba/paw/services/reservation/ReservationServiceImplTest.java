@@ -13,6 +13,7 @@ import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.services.user.ChangePasswordResult;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.services.user.RegisterResult;
 import ar.edu.itba.paw.services.user.UserService;
@@ -192,6 +193,11 @@ public class ReservationServiceImplTest {
         @Override public Optional<User> findByEmail(String email) { return Optional.of(user); }
         @Override public Optional<User> findById(Long id) { return Optional.of(user); }
         @Override public void updatePassword(final Long userId, final String encodedPassword) { }
+        @Override
+        public ChangePasswordResult changePassword(final long userId, final String currentPassword,
+                final String newPassword) {
+            return ChangePasswordResult.success();
+        }
         @Override public void markVerified(final Long userId) { }
         @Override
         public RegisterResult tryRegister(final User u, final Client c, final Commerce com, final String appBaseUrl) {

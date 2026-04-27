@@ -20,6 +20,13 @@
             </p>
         </header>
 
+        <c:if test="${not empty profilePasswordChangeSuccess}">
+            <div class="mb-8 max-w-2xl mx-auto lg:mx-0 rounded-2xl bg-primary-container/50 px-4 py-3 text-on-primary-container font-body text-sm font-medium text-center lg:text-left"
+                 role="status">
+                <spring:message code="profile.passwordChange.flashSuccess"/>
+            </div>
+        </c:if>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
             <!-- Sidebar -->
             <aside class="lg:col-span-3 w-full max-w-md mx-auto lg:max-w-none lg:mx-0">
@@ -150,7 +157,7 @@
                                     </div>
                                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4">
                                         <a class="text-primary font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all no-underline order-2 sm:order-1 justify-center sm:justify-start"
-                                           href="#">
+                                           href="${pageContext.request.contextPath}/profile/change-password">
                                             <spring:message code="profile.action.changePassword"/>
                                             <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
                                         </a>

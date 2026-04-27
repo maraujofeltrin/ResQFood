@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -187,6 +188,50 @@ public class UserServiceImplTest {
         assertTrue(maybe.isPresent());
         assertEquals(User.Role.COMMERCE, maybe.get().getRole());
         assertEquals("123", maybe.get().getPhone());
+    }
+
+    @Test
+    public void changePassword_success_updatesPassword() {
+        // 1. Setup
+        final InMemoryUserDao dao = new InMemoryUserDao();
+        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
+                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService());
+        final User created = svc.createUser(new User(null, "u@u.com", "secret1", "User", null, null, false), null,
+                null);
+
+        // 2. Ejercicio
+        final ChangePasswordResult result = svc.changePassword(created.getId(), "secret1", "secret2xx");
+
+        // 3. Asserts
+        assertTrue(result.isSuccess());
+        assertEquals("secret2xx", dao.findById(created.getId()).orElseThrow().getPassword());
+    }
+
+    @Test
+    public void changePassword_wrongCurrent_returnsIncorrect() {
+        // 1. Setup
+        final InMemoryUserDao dao = new InMemoryUserDao();
+        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
+                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService());
+        final User created = svc.createUser(new User(null, "v@v.com", "good", "V", null, null, false), null, null);
+
+        // 2. Ejercicio
+        final ChangePasswordResult result = svc.changePassword(created.getId(), "bad", "newpassxx");
+
+        // 3. Asserts
+        assertEquals(ChangePasswordResult.Status.CURRENT_PASSWORD_INCORRECT, result.getStatus());
+        assertEquals("good", dao.findById(created.getId()).orElseThrow().getPassword());
+    }
+
+    @Test
+    public void changePassword_unknownUser_throws() {
+        // 1. Setup
+        final InMemoryUserDao dao = new InMemoryUserDao();
+        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
+                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService());
+
+        // 2. Ejercicio / 3. Asserts
+        assertThrows(NoSuchElementException.class, () -> svc.changePassword(999L, "a", "bxxxxx"));
     }
 
 }

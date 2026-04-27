@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Datos mostrados en la pantalla de configuración de perfil. En esta etapa el
- * contenido es placeholder; etapas posteriores lo alimentarán desde persistencia.
+ * Datos mostrados en la pantalla de perfil, construidos desde el {@link ar.edu.itba.paw.models.user.User}
+ * persistido. El nombre de archivo de imagen sigue siendo un placeholder estático hasta avatars reales.
  */
 public final class ProfileSettingsOverview {
 
