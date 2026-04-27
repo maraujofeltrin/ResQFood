@@ -25,6 +25,7 @@
                         <fmt:formatNumber value="${pack.originalPrice}" type="currency" currencyCode="ARS" var="formattedOldPrice" />
                         <paw:packCard 
                             packId="${pack.id}" 
+                            imageId="${pack.imageId}"
                             title="${pack.title}" 
                             subtitle="${pack.description}" 
                             price="${formattedPrice}" 

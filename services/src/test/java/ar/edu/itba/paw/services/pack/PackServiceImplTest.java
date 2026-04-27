@@ -25,8 +25,8 @@ public class PackServiceImplTest {
         private long nextId = 1L;
 
         @Override
-        public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<PackTag> tags, byte[] imageData, String imageContentType) {
-            final Pack p = new Pack(nextId++, commerceId, title, description, originalPrice, finalPrice, stock, true, false, tags, imageData, imageContentType);
+        public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<PackTag> tags, Long imageId) {
+            final Pack p = new Pack(nextId++, commerceId, title, description, originalPrice, finalPrice, stock, true, false, tags, imageId);
             store.put(p.getId(), p);
             return p;
         }
@@ -67,12 +67,6 @@ public class PackServiceImplTest {
         }
 
         @Override
-        public Optional<Pack> findImageByPackId(Long id) {
-            final Pack p = store.get(id);
-            return Optional.ofNullable(p != null && p.getImageData() != null ? p : null);
-        }
-
-        @Override
         public boolean decrementStock(long packId, int quantity) {
             return true;
         }
@@ -80,15 +74,6 @@ public class PackServiceImplTest {
         @Override
         public boolean incrementStock(long packId, int quantity) {
             return true;
-        }
-
-        @Override
-        public void updateImage(Long packId, byte[] imageData, String imageContentType) {
-            final Pack p = store.get(packId);
-            if (p != null) {
-                p.setImageData(imageData);
-                p.setImageContentType(imageContentType);
-            }
         }
 
         @Override
@@ -119,10 +104,14 @@ public class PackServiceImplTest {
 
     @Test
     public void createPack_storesAndFinds() {
+        // 1. Setup
         final InMemoryPackDao dao = new InMemoryPackDao();
         final PackServiceImpl svc = new PackServiceImpl(dao, noopAuctionService());
 
-        final Pack created = svc.createPack(5L, "T", "D", 10.0, 7.0, 3, Collections.emptyList(), null, null);
+        // 2. Ejercicio
+        final Pack created = svc.createPack(5L, "T", "D", 10.0, 7.0, 3, Collections.emptyList(), null);
+
+        // 3. Asserts
         assertNotNull(created.getId());
         final var found = svc.findById(created.getId());
         assertTrue(found.isPresent());
@@ -131,24 +120,33 @@ public class PackServiceImplTest {
 
     @Test
     public void deletePack_updatesDeletedFlag() {
+        // 1. Setup
         final InMemoryPackDao dao = new InMemoryPackDao();
         final PackServiceImpl svc = new PackServiceImpl(dao, noopAuctionService());
 
-        final Pack p = svc.createPack(1L, "a", "b", 1.0, 1.0, 1, Collections.emptyList(), null, null);
+        // 2. Ejercicio
+        final Pack p = svc.createPack(1L, "a", "b", 1.0, 1.0, 1, Collections.emptyList(), null);
         assertFalse(svc.findById(p.getId()).get().getDeleted());
         svc.deletePack(p.getId());
+
+        // 3. Asserts
         assertTrue(svc.findById(p.getId()).get().getDeleted());
     }
 
     @Test
     public void update_changesValues() {
+        // 1. Setup
         final InMemoryPackDao dao = new InMemoryPackDao();
         final PackServiceImpl svc = new PackServiceImpl(dao, noopAuctionService());
 
-        final Pack p = svc.createPack(2L, "old", "d", 2.0, 1.0, 2, Collections.emptyList(), null, null);
+        final Pack p = svc.createPack(2L, "old", "d", 2.0, 1.0, 2, Collections.emptyList(), null);
         p.setTitle("new");
         p.setStock(5);
+
+        // 2. Ejercicio
         svc.update(p);
+
+        // 3. Asserts
         final Pack stored = svc.findById(p.getId()).get();
         assertEquals("new", stored.getTitle());
         assertEquals(5, stored.getStock());

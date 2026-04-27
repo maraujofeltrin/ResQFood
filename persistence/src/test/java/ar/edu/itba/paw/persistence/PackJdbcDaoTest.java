@@ -45,7 +45,7 @@ public class PackJdbcDaoTest {
     @BeforeEach
     public void setUp() {
         jdbcTemplate = new JdbcTemplate(dataSource);
-        JdbcTestUtils.deleteFromTables(jdbcTemplate, "bids", "auctions", "reservation_tokens", "pack_tags", "reservations", "packs", "commerces", "clients", "tokens", "users");
+        JdbcTestUtils.deleteFromTables(jdbcTemplate, "bids", "auctions", "reservation_tokens", "pack_tags", "reservations", "packs", "images", "commerces", "clients", "tokens", "users");
         
         commerceId = userDao.createUser("commerce@example.com", "pass", "Commerce", "123", User.Role.COMMERCE).getId();
         commerceDao.createCommerce(commerceId, "Comm", Commerce.Category.BAKERY, "Street", 123, "City", "Prov", "1000", "08:00", "20:00");
@@ -57,7 +57,7 @@ public class PackJdbcDaoTest {
         List<PackTag> tags = Collections.singletonList(PackTag.VEGAN);
 
         // 2. Ejercicio
-        Pack pack = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, tags, null, null);
+        Pack pack = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, tags, null);
 
         // 3. Asserts
         assertNotNull(pack);
@@ -71,7 +71,7 @@ public class PackJdbcDaoTest {
     @Test
     public void testFindById() {
         // 1. Setup
-        Pack created = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, null, null, null);
+        Pack created = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, null, null);
 
         // 2. Ejercicio
         Optional<Pack> pack = packDao.findById(created.getId());
@@ -84,8 +84,8 @@ public class PackJdbcDaoTest {
     @Test
     public void testFindAll() {
         // 1. Setup
-        packDao.createPack(commerceId, "Title1", "Desc1", 1000.0, 500.0, 10, null, null, null);
-        packDao.createPack(commerceId, "Title2", "Desc2", 2000.0, 1000.0, 5, null, null, null);
+        packDao.createPack(commerceId, "Title1", "Desc1", 1000.0, 500.0, 10, null, null);
+        packDao.createPack(commerceId, "Title2", "Desc2", 2000.0, 1000.0, 5, null, null);
 
         // 2. Ejercicio
         List<Pack> packs = packDao.findAll();
@@ -97,10 +97,10 @@ public class PackJdbcDaoTest {
     @Test
     public void testFindByCommerceId() {
         // 1. Setup
-        packDao.createPack(commerceId, "Title1", "Desc1", 1000.0, 500.0, 10, null, null, null);
+        packDao.createPack(commerceId, "Title1", "Desc1", 1000.0, 500.0, 10, null, null);
         Long otherCommerceId = userDao.createUser("other@example.com", "pass", "Other", "123", User.Role.COMMERCE).getId();
         commerceDao.createCommerce(otherCommerceId, "Other Comm", Commerce.Category.BAKERY, "Street", 123, "City", "Prov", "1000", "08:00", "20:00");
-        packDao.createPack(otherCommerceId, "Title2", "Desc2", 2000.0, 1000.0, 5, null, null, null);
+        packDao.createPack(otherCommerceId, "Title2", "Desc2", 2000.0, 1000.0, 5, null, null);
 
         // 2. Ejercicio
         List<Pack> packs = packDao.findByCommerceId(commerceId);
@@ -113,7 +113,7 @@ public class PackJdbcDaoTest {
     @Test
     public void testUpdate() {
         // 1. Setup
-        Pack created = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, null, null, null);
+        Pack created = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, null, null);
         created.setTitle("New Title");
         created.setStock(5);
 
@@ -130,7 +130,7 @@ public class PackJdbcDaoTest {
     @Test
     public void testSoftDelete() {
         // 1. Setup
-        Pack created = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, null, null, null);
+        Pack created = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, null, null);
 
         // 2. Ejercicio
         packDao.softDelete(created.getId());
@@ -144,7 +144,7 @@ public class PackJdbcDaoTest {
     @Test
     public void testDecrementStock() {
         // 1. Setup
-        Pack created = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, null, null, null);
+        Pack created = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, null, null);
 
         // 2. Ejercicio
         boolean success = packDao.decrementStock(created.getId(), 3);
@@ -159,7 +159,7 @@ public class PackJdbcDaoTest {
     @Test
     public void testIncrementStock() {
         // 1. Setup
-        Pack created = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, null, null, null);
+        Pack created = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, null, null);
 
         // 2. Ejercicio
         boolean success = packDao.incrementStock(created.getId(), 5);

@@ -8,15 +8,14 @@ import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
 
 public interface PackDao {
-    Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<PackTag> tags, byte[] imageData, String imageContentType);
+    Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<PackTag> tags, Long imageId);
     Optional<Pack> findById(Long id);
     List<Pack> findAll();
     List<Pack> findByCommerceId(Long commerceId);
     Pack update(Pack pack);
     void setActive(Long id, boolean active);
     void softDelete(Long id);
-    Optional<Pack> findImageByPackId(Long id);
-    void updateImage(Long packId, byte[] imageData, String imageContentType);
+
 
     /**
      * Resta {@code quantity} al stock del pack si hay unidades suficientes.

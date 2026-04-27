@@ -3,6 +3,7 @@
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 
 <%@ attribute name="packId" required="true" %>
+<%@ attribute name="imageId" required="false" %>
 <%@ attribute name="title" required="true" %>
 <%@ attribute name="subtitle" required="true" %>
 <%@ attribute name="imageAlt" required="false" %>
@@ -60,10 +61,20 @@
 </c:if>
 
   <div class="relative ${imgHClass} flex-shrink-0 overflow-hidden">
-    <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-         data-alt="<c:out value="${resolvedAlt}"/>"
-         src="${pageContext.request.contextPath}/packs/${packId}/image"
-         alt="<c:out value="${resolvedAlt}"/>" />
+    <c:choose>
+      <c:when test="${not empty imageId}">
+        <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+             data-alt="<c:out value="${resolvedAlt}"/>"
+             src="${pageContext.request.contextPath}/images/${imageId}"
+             alt="<c:out value="${resolvedAlt}"/>" />
+      </c:when>
+      <c:otherwise>
+        <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+             data-alt="<c:out value="${resolvedAlt}"/>"
+             src="${pageContext.request.contextPath}/images/pack-placeholder.svg"
+             alt="<c:out value="${resolvedAlt}"/>" />
+      </c:otherwise>
+    </c:choose>
     <c:if test="${not empty participationBadgeCode}">
       <div class="absolute top-3 left-3 z-10 flex flex-col gap-1.5 items-start">
         <c:choose>

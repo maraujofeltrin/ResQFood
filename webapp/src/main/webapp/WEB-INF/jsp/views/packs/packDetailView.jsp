@@ -24,9 +24,18 @@
         <div class="pack-detail-grid">
             <div class="pack-detail-media-col">
                 <div class="pack-detail-hero">
-                    <img class="pack-detail-hero-img"
-                         src="${pageContext.request.contextPath}/packs/${packId}/image"
-                         alt="${packDetailImageAlt}"/>
+                    <c:choose>
+                        <c:when test="${not empty packImageId}">
+                            <img class="pack-detail-hero-img"
+                                 src="${pageContext.request.contextPath}/images/${packImageId}"
+                                 alt="${packDetailImageAlt}"/>
+                        </c:when>
+                        <c:otherwise>
+                            <img class="pack-detail-hero-img"
+                                 src="${pageContext.request.contextPath}/images/pack-placeholder.svg"
+                                 alt="${packDetailImageAlt}"/>
+                        </c:otherwise>
+                    </c:choose>
                 </div>
 
                 <div class="pack-detail-intro">

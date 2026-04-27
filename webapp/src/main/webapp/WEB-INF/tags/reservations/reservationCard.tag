@@ -18,7 +18,7 @@
 <c:choose>
     <c:when test="${auctionVisual == true}">
         <fmt:formatNumber value="${reservation.finalPrice}" type="currency" currencyCode="ARS" var="formattedReservationTotal" />
-        <paw:packCardShell packId="${pack.id}" title="${pack.title}" subtitle="${pack.description}"
+        <paw:packCardShell packId="${pack.id}" imageId="${pack.imageId}" title="${pack.title}" subtitle="${pack.description}"
             commerceName="${commerceName}" auction="true" asLink="false">
             <jsp:attribute name="imageOverlay">
                 <c:if test="${messagePrefix == 'commerce.reservations' and reservation.status == 'RESERVED'}">
@@ -92,9 +92,18 @@
     <c:otherwise>
         <article class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
             <div class="relative h-48 sm:h-56 overflow-hidden">
-                <img src="${pageContext.request.contextPath}/packs/${pack.id}/image"
-                     alt="${pack.title}"
-                     class="w-full h-full object-cover" />
+                <c:choose>
+                    <c:when test="${not empty pack.imageId}">
+                        <img src="${pageContext.request.contextPath}/images/${pack.imageId}"
+                             alt="${pack.title}"
+                             class="w-full h-full object-cover" />
+                    </c:when>
+                    <c:otherwise>
+                        <img src="${pageContext.request.contextPath}/images/pack-placeholder.svg"
+                             alt="${pack.title}"
+                             class="w-full h-full object-cover" />
+                    </c:otherwise>
+                </c:choose>
 
                 <c:if test="${messagePrefix == 'commerce.reservations' and reservation.status == 'RESERVED'}">
                     <spring:message code="commerce.reservations.card.reject.confirm" var="rejectConfirmMsg" />

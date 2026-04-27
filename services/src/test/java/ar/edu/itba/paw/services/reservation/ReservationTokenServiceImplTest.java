@@ -151,15 +151,13 @@ public class ReservationTokenServiceImplTest {
     static class InMemoryPackDao implements PackDao {
         int incrementCalls = 0;
 
-        @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<ar.edu.itba.paw.models.pack.PackTag> tags, byte[] imageData, String imageContentType) { throw new UnsupportedOperationException(); }
+        @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<ar.edu.itba.paw.models.pack.PackTag> tags, Long imageId) { throw new UnsupportedOperationException(); }
         @Override public Optional<Pack> findById(Long id) { return Optional.empty(); }
         @Override public List<Pack> findAll() { return List.of(); }
         @Override public Pack update(Pack pack) { throw new UnsupportedOperationException(); }
         @Override public void setActive(Long id, boolean active) { }
-        @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
         @Override public boolean decrementStock(long packId, int quantity) { return true; }
         @Override public boolean incrementStock(long packId, int quantity) { incrementCalls++; return true; }
-        @Override public void updateImage(Long packId, byte[] imageData, String imageContentType) { }
         @Override public void softDelete(Long id) { }
         @Override public List<Pack> findByCommerceId(Long commerceId) { return List.of(); }
         @Override public List<Pack> filterPacks(String query, List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return List.of(); }

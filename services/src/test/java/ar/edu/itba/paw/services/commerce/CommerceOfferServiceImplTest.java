@@ -50,16 +50,16 @@ public class CommerceOfferServiceImplTest {
         List<PackTag> tags = Collections.singletonList(PackTag.VEGAN);
         Pack createdPack = new Pack(PACK_ID, COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, true, tags);
         
-        when(packService.createPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, tags, null, null))
+        when(packService.createPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, tags, null))
                 .thenReturn(createdPack);
 
         // 2. Ejercicio
-        Pack pack = commerceOfferService.createDirectPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, tags, null, null);
+        Pack pack = commerceOfferService.createDirectPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, tags, null);
 
         // 3. Asserts
         assertNotNull(pack);
         assertEquals(PACK_ID, pack.getId());
-        verify(packService).createPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, tags, null, null);
+        verify(packService).createPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, tags, null);
         verifyNoInteractions(auctionService);
     }
 
@@ -68,16 +68,16 @@ public class CommerceOfferServiceImplTest {
         // 1. Setup
         Pack createdPack = new Pack(PACK_ID, COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, true, Collections.emptyList());
         
-        when(packService.createPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, Collections.emptyList(), null, null))
+        when(packService.createPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, Collections.emptyList(), null))
                 .thenReturn(createdPack);
 
         // 2. Ejercicio
-        Pack pack = commerceOfferService.createDirectPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, null, null, null);
+        Pack pack = commerceOfferService.createDirectPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, null, null);
 
         // 3. Asserts
         assertNotNull(pack);
         assertEquals(PACK_ID, pack.getId());
-        verify(packService).createPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, Collections.emptyList(), null, null);
+        verify(packService).createPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, Collections.emptyList(), null);
     }
 
     @Test
@@ -87,7 +87,7 @@ public class CommerceOfferServiceImplTest {
         Pack createdPack = new Pack(PACK_ID, COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0, 1, true, tags);
         
         // Stock must be 1 and final price is initialPrice (1000.0)
-        when(packService.createPack(COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0, 1, tags, null, null))
+        when(packService.createPack(COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0, 1, tags, null))
                 .thenReturn(createdPack);
 
         String endDate = "2026-12-31";
@@ -102,12 +102,12 @@ public class CommerceOfferServiceImplTest {
 
         // 2. Ejercicio
         final double minBidInc = 500.0;
-        Pack pack = commerceOfferService.createAuctionOffer(COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0, minBidInc, endDate, endTime, tags, null, null);
+        Pack pack = commerceOfferService.createAuctionOffer(COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0, minBidInc, endDate, endTime, tags, null);
 
         // 3. Asserts
         assertNotNull(pack);
         assertEquals(PACK_ID, pack.getId());
-        verify(packService).createPack(COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0, 1, tags, null, null);
+        verify(packService).createPack(COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0, 1, tags, null);
         verify(auctionService).createAuction(PACK_ID, 1000.0, minBidInc, expectedUtc);
     }
 }

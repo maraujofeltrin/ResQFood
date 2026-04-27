@@ -2,8 +2,10 @@ package ar.edu.itba.paw.webapp.controller.commerce;
 
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackTag;
+import ar.edu.itba.paw.models.image.Image;
 import ar.edu.itba.paw.services.commerce.CommercePackAccess;
 import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.services.image.ImageService;
 import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
 import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
@@ -38,18 +40,21 @@ public class CommercePackEditController {
     private final CreateOfferFormValidator createOfferFormValidator;
     private final MessageSource messageSource;
     private final AuthenticatedUserResolver authResolver;
+    private final ImageService imageService;
 
     @Autowired
     public CommercePackEditController(final CommerceService commerceService,
                                       final PackService packService,
                                       final CreateOfferFormValidator createOfferFormValidator,
                                       final MessageSource messageSource,
-                                      final AuthenticatedUserResolver authResolver) {
+                                      final AuthenticatedUserResolver authResolver,
+                                      final ImageService imageService) {
         this.commerceService = commerceService;
         this.packService = packService;
         this.createOfferFormValidator = createOfferFormValidator;
         this.messageSource = messageSource;
         this.authResolver = authResolver;
+        this.imageService = imageService;
     }
 
     private Pack resolveEditPack(final long packId, final long commerceId, final String forbiddenActionKey) {
@@ -133,11 +138,10 @@ public class CommercePackEditController {
 
         try {
             final MultipartFile image = form.getImage();
-            byte[] imgData = null;
-            String imgType = null;
+            Long imageId = null;
             if (image != null && !image.isEmpty()) {
-                imgData = image.getBytes();
-                imgType = image.getContentType();
+                final Image savedImage = imageService.saveImage(image.getBytes(), image.getContentType());
+                imageId = savedImage.getId();
             }
 
             packService.updatePack(
@@ -148,8 +152,7 @@ public class CommercePackEditController {
                     form.getFinalPrice(),
                     form.getStock(),
                     form.getTags(),
-                    imgData,
-                    imgType
+                    imageId
             );
 
             redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");

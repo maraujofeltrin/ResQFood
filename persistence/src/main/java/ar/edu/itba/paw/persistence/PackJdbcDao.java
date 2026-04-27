@@ -24,7 +24,7 @@ import ar.edu.itba.paw.models.pack.PackSortOption;
 public class PackJdbcDao implements PackDao {
 
     private static final String PACK_COLS_NO_IMAGE =
-            "id, commerce_id, title, description, original_price, final_price, stock, active, deleted";
+            "id, commerce_id, title, description, original_price, final_price, stock, active, deleted, image_id";
 
     private final JdbcTemplate jdbcTemplate;
     private final SimpleJdbcInsert simpleJdbcInsert;
@@ -55,8 +55,7 @@ public class PackJdbcDao implements PackDao {
                 rs.getBoolean("active"),
                 rs.getBoolean("deleted"),
                 tags,
-                null,
-                null
+                rs.getObject("image_id") != null ? rs.getLong("image_id") : null
             );
         };
 
@@ -72,15 +71,14 @@ public class PackJdbcDao implements PackDao {
             rs.getBoolean("active"),
             rs.getBoolean("deleted"),
             Collections.emptyList(),
-            null,
-            null
+            rs.getObject("image_id") != null ? rs.getLong("image_id") : null
         );
     }
 
     @Override
     public Pack createPack(Long commerceId, String title, String description, Double originalPrice,
                            Double finalPrice, Integer stock, List<PackTag> tags,
-                           byte[] imageData, String imageContentType) {
+                           Long imageId) {
         final Map<String, Object> parameters = new HashMap<>();
         parameters.put("commerce_id", commerceId);
         parameters.put("title", title);
@@ -90,8 +88,7 @@ public class PackJdbcDao implements PackDao {
         parameters.put("stock", stock);
         parameters.put("active", true);
         parameters.put("deleted", false);
-        parameters.put("image_data", imageData);
-        parameters.put("image_content_type", imageContentType);
+        parameters.put("image_id", imageId);
         final Number id = simpleJdbcInsert.executeAndReturnKey(parameters);
 
         if (tags != null && !tags.isEmpty()) {
@@ -105,7 +102,7 @@ public class PackJdbcDao implements PackDao {
         }
 
         return new Pack(id.longValue(), commerceId, title, description, originalPrice, finalPrice,
-                stock, true, false, tags, imageData, imageContentType);
+                stock, true, false, tags, imageId);
     }
 
     @Override
@@ -134,12 +131,13 @@ public class PackJdbcDao implements PackDao {
     @Override
     public Pack update(Pack pack) {
         jdbcTemplate.update(
-            "UPDATE packs SET title = ?, description = ?, original_price = ?, final_price = ?, stock = ? WHERE id = ?",
+            "UPDATE packs SET title = ?, description = ?, original_price = ?, final_price = ?, stock = ?, image_id = ? WHERE id = ?",
             pack.getTitle(),
             pack.getDescription(),
             pack.getOriginalPrice(),
             pack.getFinalPrice(),
             pack.getStock(),
+            pack.getImageId(),
             pack.getId()
         );
 
@@ -187,37 +185,7 @@ public class PackJdbcDao implements PackDao {
         return updated == 1;
     }
 
-    @Override
-    public Optional<Pack> findImageByPackId(Long id) {
-        return jdbcTemplate.query(
-                "SELECT id, commerce_id, title, description, original_price, final_price, stock, active, deleted, image_data, image_content_type FROM packs WHERE id = ?",
-                (rs, rowNum) -> {
-                    byte[] imgData = rs.getBytes("image_data");
-                    String imgType = rs.getString("image_content_type");
-                    return new Pack(
-                            rs.getLong("id"),
-                            rs.getLong("commerce_id"),
-                            rs.getString("title"),
-                            rs.getString("description"),
-                            rs.getDouble("original_price"),
-                            rs.getDouble("final_price"),
-                            rs.getInt("stock"),
-                            rs.getBoolean("active"),
-                            rs.getBoolean("deleted"),
-                            Collections.emptyList(),
-                            imgData,
-                            imgType
-                    );
-                },
-                id
-        ).stream().findAny();
-    }
 
-    @Override
-    public void updateImage(Long packId, byte[] imageData, String imageContentType) {
-        jdbcTemplate.update("UPDATE packs SET image_data = ?, image_content_type = ? WHERE id = ?",
-                imageData, imageContentType, packId);
-    }
 
     private void appendFilterJoinsAndConditions(final StringBuilder sql, final List<Object> params,
                                                 final String query, final List<PackTag> tags,
@@ -300,14 +268,14 @@ public class PackJdbcDao implements PackDao {
 
         final StringBuilder sql = new StringBuilder();
         sql.append("SELECT p.id, p.commerce_id, p.title, p.description, ")
-           .append("p.original_price, p.final_price, p.stock, p.active, p.deleted ");
+           .append("p.original_price, p.final_price, p.stock, p.active, p.deleted, p.image_id ");
 
         final List<Object> params = new ArrayList<>();
         appendFilterJoinsAndConditions(sql, params, query, tags, city, timeRanges);
 
         if (tags != null && !tags.isEmpty()) {
             sql.append("GROUP BY p.id, p.commerce_id, p.title, p.description, ")
-               .append("p.original_price, p.final_price, p.stock, p.active, p.deleted, c.commercial_name ")
+               .append("p.original_price, p.final_price, p.stock, p.active, p.deleted, p.image_id, c.commercial_name ")
                .append("HAVING COUNT(DISTINCT pt.tag) = ? ");
             params.add(tags.size());
         }
@@ -352,7 +320,7 @@ public class PackJdbcDao implements PackDao {
     @Override
     public List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize) {
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT id, commerce_id, title, description, original_price, final_price, stock, active, deleted ");
+        sql.append("SELECT id, commerce_id, title, description, original_price, final_price, stock, active, deleted, image_id ");
         sql.append("FROM packs p WHERE p.commerce_id = ? AND p.deleted = false ");
         
         List<Object> params = new ArrayList<>();

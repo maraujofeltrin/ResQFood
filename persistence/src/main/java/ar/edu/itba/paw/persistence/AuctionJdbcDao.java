@@ -29,7 +29,7 @@ public class AuctionJdbcDao implements AuctionDao {
     private static final String AUCTION_JOIN_PACK =
             "SELECT a.id AS auction_id, a.pack_id, a.initial_price, a.min_bid_increment, a.current_bid, a.current_bidder_id, " +
             "a.end_time, a.status, a.created_at, " +
-            "p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active, p.deleted " +
+            "p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active, p.deleted, p.image_id " +
             "FROM auctions a JOIN packs p ON a.pack_id = p.id";
 
     private final JdbcTemplate jdbcTemplate;
@@ -61,8 +61,7 @@ public class AuctionJdbcDao implements AuctionDao {
                 rs.getBoolean("active"),
                 rs.getBoolean("deleted"),
                 Collections.emptyList(),
-                null,
-                null
+                rs.getObject("image_id") != null ? rs.getLong("image_id") : null
         );
     }
 
@@ -195,7 +194,7 @@ public class AuctionJdbcDao implements AuctionDao {
         final StringBuilder sql = new StringBuilder();
         sql.append("SELECT a.id AS auction_id, a.pack_id, a.initial_price, a.min_bid_increment, a.current_bid, a.current_bidder_id, ")
            .append("a.end_time, a.status, a.created_at, ")
-           .append("p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active, p.deleted ");
+           .append("p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active, p.deleted, p.image_id ");
 
         final List<Object> params = new ArrayList<>();
         appendFilterJoinsAndConditions(sql, params, query, tags, city, timeRanges);
@@ -203,7 +202,7 @@ public class AuctionJdbcDao implements AuctionDao {
         if (tags != null && !tags.isEmpty()) {
             sql.append("GROUP BY a.id, a.pack_id, a.initial_price, a.min_bid_increment, a.current_bid, a.current_bidder_id, ")
                .append("a.end_time, a.status, a.created_at, ")
-               .append("p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active, p.deleted, c.commercial_name ")
+               .append("p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active, p.deleted, p.image_id, c.commercial_name ")
                .append("HAVING COUNT(DISTINCT pt.tag) = ? ");
             params.add(tags.size());
         }

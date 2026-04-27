@@ -86,6 +86,7 @@ public class PackDetailModelBuilder {
         final String pageTitle = messageSource.getMessage("pack.detail.pageTitle", new Object[] { title, brand }, locale);
         final ModelAndView mav = new ModelAndView("packs/packDetailView");
         mav.addObject("packId", pack.getId());
+        mav.addObject("packImageId", pack.getImageId());
 
         final Optional<Auction> auctionOpt = auctionService.findByPackId(pack.getId());
         final boolean auctionPresent = auctionOpt.isPresent();

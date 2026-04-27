@@ -13,14 +13,13 @@ public class Pack {
     private Boolean active;
     private Boolean deleted;
     private List<PackTag> tags;
-    private byte[] imageData;
-    private String imageContentType;
+    private Long imageId;
 
     public Pack(Long id, Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, Boolean active, List<PackTag> tags) {
-        this(id, commerceId, title, description, originalPrice, finalPrice, stock, active, false, tags, null, null);
+        this(id, commerceId, title, description, originalPrice, finalPrice, stock, active, false, tags, null);
     }
 
-    public Pack(Long id, Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, Boolean active, Boolean deleted, List<PackTag> tags, byte[] imageData, String imageContentType) {
+    public Pack(Long id, Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, Boolean active, Boolean deleted, List<PackTag> tags, Long imageId) {
         this.id = id;
         this.commerceId = commerceId;
         this.title = title;
@@ -31,8 +30,7 @@ public class Pack {
         this.active = active;
         this.deleted = deleted;
         this.tags = tags;
-        this.imageData = imageData;
-        this.imageContentType = imageContentType;
+        this.imageId = imageId;
     }
 
     public Long getId() {
@@ -107,24 +105,16 @@ public class Pack {
         this.deleted = deleted;
     }
 
-    public byte[] getImageData() {
-        return imageData;
+    public Long getImageId() {
+        return imageId;
     }
 
-    public void setImageData(byte[] imageData) {
-        this.imageData = imageData;
-    }
-
-    public String getImageContentType() {
-        return imageContentType;
-    }
-
-    public void setImageContentType(String imageContentType) {
-        this.imageContentType = imageContentType;
+    public void setImageId(Long imageId) {
+        this.imageId = imageId;
     }
 
     @Override
     public String toString() {
-        return "Pack [id=" + id + ", commerceId=" + commerceId + ", title=" + title + ", description=" + description + ", originalPrice=" + originalPrice + ", finalPrice=" + finalPrice + ", stock=" + stock + ", active=" + active + ", tags=" + tags + ", hasImage=" + (imageData != null) + "]";
+        return "Pack [id=" + id + ", commerceId=" + commerceId + ", title=" + title + ", description=" + description + ", originalPrice=" + originalPrice + ", finalPrice=" + finalPrice + ", stock=" + stock + ", active=" + active + ", tags=" + tags + ", hasImage=" + (imageId != null) + "]";
     }
 }

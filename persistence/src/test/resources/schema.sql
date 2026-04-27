@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS packs CASCADE;
 DROP TABLE IF EXISTS commerces CASCADE;
 DROP TABLE IF EXISTS clients CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS images CASCADE;
 
 CREATE TABLE users (
     id INTEGER IDENTITY PRIMARY KEY,
@@ -44,6 +45,12 @@ CREATE TABLE commerces (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE images (
+    id INTEGER IDENTITY PRIMARY KEY,
+    data BLOB NOT NULL,
+    content_type VARCHAR(255) NOT NULL
+);
+
 CREATE TABLE packs (
     id INTEGER IDENTITY PRIMARY KEY,
     commerce_id BIGINT NOT NULL,
@@ -54,9 +61,9 @@ CREATE TABLE packs (
     stock INTEGER,
     active BOOLEAN,
     deleted BOOLEAN DEFAULT FALSE NOT NULL,
-    image_data BLOB,
-    image_content_type VARCHAR(255),
-    FOREIGN KEY (commerce_id) REFERENCES commerces(user_id) ON DELETE CASCADE
+    image_id BIGINT,
+    FOREIGN KEY (commerce_id) REFERENCES commerces(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE SET NULL
 );
 
 CREATE TABLE reservations (

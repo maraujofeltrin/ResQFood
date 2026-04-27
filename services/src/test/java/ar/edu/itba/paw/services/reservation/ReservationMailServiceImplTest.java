@@ -31,15 +31,13 @@ public class ReservationMailServiceImplTest {
         private final Pack pack;
         InMemoryPackDao(Pack pack) { this.pack = pack; }
 
-        @Override public Pack createPack(Long c, String t, String d, Double op, Double fp, Integer s, List<ar.edu.itba.paw.models.pack.PackTag> tags, byte[] id, String ic) { throw new UnsupportedOperationException(); }
+        @Override public Pack createPack(Long c, String t, String d, Double op, Double fp, Integer s, List<ar.edu.itba.paw.models.pack.PackTag> tags, Long imageId) { throw new UnsupportedOperationException(); }
         @Override public Optional<Pack> findById(Long id) { return id.equals(pack.getId()) ? Optional.of(pack) : Optional.empty(); }
         @Override public List<Pack> findAll() { return List.of(pack); }
         @Override public List<Pack> findByCommerceId(Long commerceId) { return pack.getCommerceId().equals(commerceId) ? List.of(pack) : Collections.emptyList(); }
         @Override public Pack update(Pack p) { throw new UnsupportedOperationException(); }
         @Override public void softDelete(Long id) { }
         @Override public void setActive(Long id, boolean active) { }
-        @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
-        @Override public void updateImage(Long pId, byte[] id, String ic) { }
         @Override public boolean decrementStock(long packId, int quantity) { return true; }
         @Override public boolean incrementStock(long packId, int quantity) { return true; }
         @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return Collections.emptyList(); }
@@ -123,7 +121,7 @@ public class ReservationMailServiceImplTest {
     public void sendReservationRequestToCommerce_sendsMail_withProvidedTokens() throws Exception {
         final Reservation reservation = new Reservation(1L, 2L, 3L, LocalDateTime.now(), 5.0,
                 Reservation.Status.RESERVED, "code123", null, 1, "pw");
-        final Pack pack = new Pack(3L, 2L, "Delicious", "desc", 10.0, 5.0, 1, true, false, List.of(), null, null);
+        final Pack pack = new Pack(3L, 2L, "Delicious", "desc", 10.0, 5.0, 1, true, false, List.of(), null);
         final String acceptToken = "accept-token-123";
         final String rejectToken = "reject-token-456";
 
@@ -152,7 +150,7 @@ public class ReservationMailServiceImplTest {
     public void sendReservationCodeToClient_sendsMail_withCodeAndPackLabel() throws Exception {
         final Reservation reservation = new Reservation(7L, 2L, 11L, LocalDateTime.now(), 9.99,
                 Reservation.Status.RESERVED, "PICKUPCODE", null, 1, "pw");
-        final Pack pack = new Pack(11L, 2L, "Morning Bread", "desc", 10.0, 5.0, 1, true, false, List.of(), null, null);
+        final Pack pack = new Pack(11L, 2L, "Morning Bread", "desc", 10.0, 5.0, 1, true, false, List.of(), null);
         final PackDao packDao = new InMemoryPackDao(pack);
         svc = new ReservationMailServiceImpl(mailSender, packDao, clientService,
                 "noreply@example.org", "ResQFood", ZoneId.of("America/Argentina/Buenos_Aires"));

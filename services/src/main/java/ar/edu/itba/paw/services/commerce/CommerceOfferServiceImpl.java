@@ -36,19 +36,19 @@ public class CommerceOfferServiceImpl implements CommerceOfferService {
     @Override
     public Pack createDirectPack(final long commerceId, final String title, final String description,
             final double originalPrice, final double finalPrice, final int stock, final List<PackTag> tags,
-            final byte[] imageData, final String imageContentType) {
+            final Long imageId) {
         return packService.createPack(commerceId, title, description, originalPrice, finalPrice, stock,
-                tags != null ? tags : Collections.emptyList(), imageData, imageContentType);
+                tags != null ? tags : Collections.emptyList(), imageId);
     }
 
     @Transactional
     @Override
     public Pack createAuctionOffer(final long commerceId, final String title, final String description,
             final double originalPrice, final double initialPrice, final double minBidIncrement, final String endDate, final String endTime,
-            final List<PackTag> tags, final byte[] imageData, final String imageContentType) {
+            final List<PackTag> tags, final Long imageId) {
         final Pack pack = packService.createPack(
                 commerceId, title, description, originalPrice, initialPrice, 1,
-                tags != null ? tags : Collections.emptyList(), imageData, imageContentType);
+                tags != null ? tags : Collections.emptyList(), imageId);
         final LocalDateTime endUtc = parseAuctionEndAsUtc(endDate, endTime);
         auctionService.createAuction(pack.getId(), initialPrice, minBidIncrement, endUtc);
         return pack;

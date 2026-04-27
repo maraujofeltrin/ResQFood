@@ -164,17 +164,15 @@ public class ReservationServiceImplTest {
 
         InMemoryPackDao(Pack pack) { this.pack = pack; }
 
-        @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, byte[] imageData, String imageContentType) { throw new UnsupportedOperationException(); }
+        @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, Long imageId) { throw new UnsupportedOperationException(); }
         @Override public Optional<Pack> findById(Long id) { return id.equals(pack.getId()) ? Optional.of(pack) : Optional.empty(); }
         @Override public java.util.List<Pack> findAll() { return Collections.emptyList(); }
         @Override public List<Pack> findByCommerceId(Long commerceId) { return pack.getCommerceId().equals(commerceId) ? List.of(pack) : Collections.emptyList(); }
         @Override public Pack update(Pack pack) { throw new UnsupportedOperationException(); }
         @Override public void softDelete(Long id) { }
         @Override public void setActive(Long id, boolean active) { }
-        @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
         @Override public boolean decrementStock(long packId, int quantity) { return true; }
         @Override public boolean incrementStock(long packId, int quantity) { incrementCalls++; return true; }
-        @Override public void updateImage(Long packId, byte[] imageData, String imageContentType) { }
         @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return Collections.emptyList(); }
         @Override public int countFilteredPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges) { return 0; }
         @Override public java.util.List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize) { return Collections.emptyList(); }
@@ -254,7 +252,7 @@ public class ReservationServiceImplTest {
         final String email = "user@example.org";
 
         final User user = new User(1L, email, "pwd", "Test User", null, User.Role.CLIENT, false);
-        final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, false, Collections.emptyList(), null, null);
+        final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, false, Collections.emptyList(), null);
 
         final UserService userService = new TestUserService(user);
         final PackDao packDao = new InMemoryPackDao(pack);
@@ -306,7 +304,7 @@ public class ReservationServiceImplTest {
         final String email = "user2@example.org";
 
         final User user = new User(2L, email, "pwd", "Test User2", null, User.Role.CLIENT, false);
-        final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, false, Collections.emptyList(), null, null);
+        final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, false, Collections.emptyList(), null);
 
         final UserService userService = new TestUserService(user);
         final PackDao packDao = new InMemoryPackDao(pack);
@@ -328,7 +326,7 @@ public class ReservationServiceImplTest {
         final String email = "user3@example.org";
 
         final User user = new User(3L, email, "pwd", "Test User3", null, User.Role.CLIENT, false);
-        final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, false, Collections.emptyList(), null, null);
+        final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, false, Collections.emptyList(), null);
 
         final UserService userService = new TestUserService(user);
         final PackDao packDao = new InMemoryPackDao(pack);
@@ -411,17 +409,15 @@ public class ReservationServiceImplTest {
                 reservationDao,
                 tokenDao,
                 new PackDao() {
-                    @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, byte[] imageData, String imageContentType) { throw new UnsupportedOperationException(); }
+                    @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, Long imageId) { throw new UnsupportedOperationException(); }
                     @Override public Optional<Pack> findById(Long id) { return id.equals(ownedPack.getId()) ? Optional.of(ownedPack) : id.equals(otherPack.getId()) ? Optional.of(otherPack) : Optional.empty(); }
                     @Override public java.util.List<Pack> findAll() { return Collections.emptyList(); }
                     @Override public Pack update(Pack pack) { throw new UnsupportedOperationException(); }
                     @Override public void setActive(Long id, boolean active) { }
-                    @Override public Optional<Pack> findImageByPackId(Long id) { return Optional.empty(); }
                     @Override public boolean decrementStock(long packId, int quantity) { return true; }
                     @Override public boolean incrementStock(long packId, int quantity) { return true; }
                     @Override public java.util.List<Pack> findByCommerceId(Long commerceId) { return Collections.emptyList(); }
                     @Override public void softDelete(Long id) { }
-                    @Override public void updateImage(Long packId, byte[] imageData, String imageContentType) { }
                     @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return Collections.emptyList(); }
                     @Override public int countFilteredPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges) { return 0; }
                     @Override public java.util.List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize) { return Collections.emptyList(); }

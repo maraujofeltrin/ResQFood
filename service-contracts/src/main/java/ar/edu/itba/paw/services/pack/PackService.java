@@ -9,21 +9,20 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PackService {
-    Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<PackTag> tags, byte[] imageData, String imageContentType);
+    Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<PackTag> tags, Long imageId);
     Optional<Pack> findById(Long id);
     List<Pack> findAll();
     List<Pack> findByCommerceId(Long commerceId);
     Pack update(Pack pack);
     void deletePack(Long id);
-    Optional<Pack> findImageByPackId(Long id);
-    void updateImage(Long packId, byte[] imageData, String imageContentType);
+
 
     /**
      * Updates an existing pack. If imageData is provided, it updates the image too.
      */
     Pack updatePack(long packId, String title, String description, Double originalPrice,
                     Double finalPrice, Integer stock, List<PackTag> tags,
-                    byte[] imageData, String imageContentType);
+                    Long imageId);
 
     /**
      * Direct-sale pack owned by the commerce, not soft-deleted, and not under an auction.

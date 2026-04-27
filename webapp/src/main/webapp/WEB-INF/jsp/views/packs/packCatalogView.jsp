@@ -51,6 +51,7 @@
                             <div class="min-w-[280px] max-w-[320px] snap-start flex-shrink-0">
                                 <paw:packCard
                                     packId="${auction.pack.id}"
+                                    imageId="${auction.pack.imageId}"
                                     title="${auction.pack.title}"
                                     subtitle="${auction.pack.description}"
                                     badgeText="${auctionBadgeText}"
@@ -117,6 +118,7 @@
                                     <c:forEach var="auction" items="${auctions}">
                                         <paw:packCard
                                             packId="${auction.pack.id}"
+                                            imageId="${auction.pack.imageId}"
                                             title="${auction.pack.title}"
                                             subtitle="${auction.pack.description}"
                                             badgeText="${auctionBadgeText}"
@@ -132,6 +134,7 @@
                                     <c:forEach var="pack" items="${packs}">
                                         <paw:packCard
                                             packId="${pack.id}"
+                                            imageId="${pack.imageId}"
                                             title="${pack.title}"
                                             subtitle="${pack.description}"
                                             price="$${pack.finalPrice}"

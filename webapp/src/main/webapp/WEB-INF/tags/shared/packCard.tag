@@ -1,5 +1,6 @@
 <%@ tag language="java" pageEncoding="UTF-8" %>
 <%@ attribute name="packId" required="true" %>
+<%@ attribute name="imageId" required="false" %>
 <%@ attribute name="title" required="true" %>
 <%@ attribute name="subtitle" required="true" %>
 <%@ attribute name="imageAlt" required="false" %>
@@ -18,7 +19,7 @@
 
 <c:set var="resolvedRescueLabel" value="${not empty rescueLabel ? rescueLabel : 'Rescue For'}"/>
 
-<paw:packCardShell packId="${packId}" title="${title}" subtitle="${subtitle}" imageAlt="${imageAlt}"
+<paw:packCardShell packId="${packId}" imageId="${imageId}" title="${title}" subtitle="${subtitle}" imageAlt="${imageAlt}"
     badgeText="${badgeText}" commerceName="${commerceName}" manageable="${manageable}" smallSize="${smallSize}"
     auction="${auction}" asLink="true" showPriceFooter="true"
     price="${price}" oldPrice="${oldPrice}" rescueLabel="${resolvedRescueLabel}">

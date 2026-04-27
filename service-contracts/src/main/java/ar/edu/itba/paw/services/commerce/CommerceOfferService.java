@@ -11,12 +11,11 @@ import java.util.List;
 public interface CommerceOfferService {
 
     Pack createDirectPack(long commerceId, String title, String description, double originalPrice, double finalPrice,
-            int stock, List<PackTag> tags, byte[] imageData, String imageContentType);
+            int stock, List<PackTag> tags, Long imageId);
 
     /**
      * Creates a pack (stock 1) and an auction for it. {@code endDate}/{@code endTime} are wall-clock in the app display zone.
      */
     Pack createAuctionOffer(long commerceId, String title, String description, double originalPrice,
-            double initialPrice, double minBidIncrement, String endDate, String endTime, List<PackTag> tags, byte[] imageData,
-            String imageContentType);
+            double initialPrice, double minBidIncrement, String endDate, String endTime, List<PackTag> tags, Long imageId);
 }

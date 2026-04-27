@@ -15,7 +15,7 @@
 <fmt:formatNumber value="${myMaxBid}" type="currency" currencyCode="ARS" var="formattedMyBid" />
 <spring:message code="reservation.my.auction.card.currentPrice" var="priceFooterLabel" />
 
-<paw:packCardShell packId="${pack.id}" title="${pack.title}" subtitle="${pack.description}"
+<paw:packCardShell packId="${pack.id}" imageId="${pack.imageId}" title="${pack.title}" subtitle="${pack.description}"
     commerceName="${commerceName}" auction="true" asLink="false"
     participationBadgeCode="${badgeCode}"
     showPriceFooter="true" price="${formattedEffective}" rescueLabel="${priceFooterLabel}">

@@ -1,7 +1,9 @@
 package ar.edu.itba.paw.webapp.controller.commerce;
 
 import ar.edu.itba.paw.models.pack.PackTag;
+import ar.edu.itba.paw.models.image.Image;
 import ar.edu.itba.paw.services.commerce.CommerceOfferService;
+import ar.edu.itba.paw.services.image.ImageService;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
 import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.form.CreateOfferForm;
@@ -32,16 +34,19 @@ public class CommerceOfferController {
     private final CreateOfferFormValidator createOfferFormValidator;
     private final MessageSource messageSource;
     private final AuthenticatedUserResolver authResolver;
+    private final ImageService imageService;
 
     @Autowired
     public CommerceOfferController(final CommerceOfferService commerceOfferService,
                                    final CreateOfferFormValidator createOfferFormValidator,
                                    final MessageSource messageSource,
-                                   final AuthenticatedUserResolver authResolver) {
+                                   final AuthenticatedUserResolver authResolver,
+                                   final ImageService imageService) {
         this.commerceOfferService = commerceOfferService;
         this.createOfferFormValidator = createOfferFormValidator;
         this.messageSource = messageSource;
         this.authResolver = authResolver;
+        this.imageService = imageService;
     }
 
     @RequestMapping(value = "/create-offer", method = RequestMethod.GET)
@@ -76,19 +81,18 @@ public class CommerceOfferController {
         try {
             final long commerceId = authResolver.resolveUser(principal).getId();
 
-            byte[] imageData = null;
-            String imageContentType = null;
+            Long imageId = null;
             final MultipartFile image = form.getImage();
             if (image != null && !image.isEmpty()) {
-                imageData = image.getBytes();
-                imageContentType = image.getContentType();
+                final Image savedImage = imageService.saveImage(image.getBytes(), image.getContentType());
+                imageId = savedImage.getId();
             }
 
             if (isAuction) {
                 commerceOfferService.createAuctionOffer(
                         commerceId, form.getTitle(), form.getDescription(), form.getOriginalPrice(),
                         form.getInitialPrice(), form.getMinBidIncrement(), form.getEndDate(), form.getEndTime(),
-                        form.getTags() != null ? form.getTags() : Collections.emptyList(), imageData, imageContentType);
+                        form.getTags() != null ? form.getTags() : Collections.emptyList(), imageId);
                 redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
                 redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource.getMessage(
                         "commerce.dashboard.success.create.auction", null, LocaleContextHolder.getLocale()));
@@ -96,7 +100,7 @@ public class CommerceOfferController {
                 commerceOfferService.createDirectPack(
                         commerceId, form.getTitle(), form.getDescription(), form.getOriginalPrice(),
                         form.getFinalPrice(), form.getStock(),
-                        form.getTags() != null ? form.getTags() : Collections.emptyList(), imageData, imageContentType);
+                        form.getTags() != null ? form.getTags() : Collections.emptyList(), imageId);
                 redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
                 redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource
                         .getMessage("commerce.dashboard.success.create.pack", null, LocaleContextHolder.getLocale()));

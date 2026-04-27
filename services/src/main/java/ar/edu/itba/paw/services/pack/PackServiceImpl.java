@@ -29,8 +29,8 @@ public class PackServiceImpl implements PackService {
     @Override
     public Pack createPack(Long commerceId, String title, String description, Double originalPrice,
                            Double finalPrice, Integer stock, List<PackTag> tags,
-                           byte[] imageData, String imageContentType) {
-        return packDao.createPack(commerceId, title, description, originalPrice, finalPrice, stock, tags, imageData, imageContentType);
+                           Long imageId) {
+        return packDao.createPack(commerceId, title, description, originalPrice, finalPrice, stock, tags, imageId);
     }
 
     @Override
@@ -59,19 +59,9 @@ public class PackServiceImpl implements PackService {
     }
 
     @Override
-    public Optional<Pack> findImageByPackId(Long id) {
-        return packDao.findImageByPackId(id);
-    }
-
-    @Override
-    public void updateImage(Long packId, byte[] imageData, String imageContentType) {
-        packDao.updateImage(packId, imageData, imageContentType);
-    }
-
-    @Override
     public Pack updatePack(long packId, String title, String description, Double originalPrice,
                            Double finalPrice, Integer stock, List<PackTag> tags,
-                           byte[] imageData, String imageContentType) {
+                           Long imageId) {
         final Pack packToUpdate = packDao.findById(packId)
                 .orElseThrow(() -> new IllegalArgumentException("Pack not found"));
 
@@ -82,13 +72,11 @@ public class PackServiceImpl implements PackService {
         packToUpdate.setStock(stock);
         packToUpdate.setTags(tags != null ? tags : java.util.Collections.emptyList());
 
-        final Pack updatedPack = packDao.update(packToUpdate);
-
-        if (imageData != null && imageData.length > 0) {
-            packDao.updateImage(packId, imageData, imageContentType);
+        if (imageId != null) {
+            packToUpdate.setImageId(imageId);
         }
 
-        return updatedPack;
+        return packDao.update(packToUpdate);
     }
 
     @Override

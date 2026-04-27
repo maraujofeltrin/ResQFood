@@ -109,7 +109,7 @@
                                                     arguments="${pack.stock}" var="stockLabel" />
                                                 <spring:message code="commerce.dashboard.pack.finalPriceLabel"
                                                     var="finalPriceLabel" />
-                                                <paw:packCard packId="${pack.id}" title="${pack.title}"
+                                                <paw:packCard packId="${pack.id}" imageId="${pack.imageId}" title="${pack.title}"
                                                     subtitle="${pack.description}" price="${formattedPrice}"
                                                     oldPrice="${formattedOldPrice}" badgeText="Stock: ${pack.stock}"
                                                     rescueLabel="${finalPriceLabel}"
