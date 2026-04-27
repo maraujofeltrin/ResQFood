@@ -6,14 +6,12 @@ import ar.edu.itba.paw.services.commerce.CommerceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
 public class ProfileServiceImpl implements ProfileService {
 
     private static final String PLACEHOLDER_PROFILE_IMAGE = "profile-avatar-placeholder.svg";
-    private static final List<String> LANGUAGE_CODES = List.of("es", "en");
 
     private final UserService userService;
     private final CommerceService commerceService;
@@ -29,7 +27,9 @@ public class ProfileServiceImpl implements ProfileService {
         final User user = userService.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
         final String phone = user.getPhone() == null ? "" : user.getPhone();
-        final String selectedLang = "en".equalsIgnoreCase(user.getLocale().getLanguage()) ? "en" : "es";
+        final String selectedLang = SupportedUserLocales.CODE_EN.equalsIgnoreCase(user.getLocale().getLanguage())
+                ? SupportedUserLocales.CODE_EN
+                : SupportedUserLocales.CODE_ES;
         ProfileCommerceSection commerceSection = null;
         String displayName = user.getName();
         if (user.getRole() == User.Role.COMMERCE) {
@@ -47,8 +47,56 @@ public class ProfileServiceImpl implements ProfileService {
                 user.getProfileImageId(),
                 PLACEHOLDER_PROFILE_IMAGE,
                 selectedLang,
-                LANGUAGE_CODES,
+                SupportedUserLocales.languageCodes(),
                 commerceSection);
+    }
+
+    @Override
+    public void updateProfileAccount(
+            final long userId,
+            final User.Role role,
+            final String category,
+            final String street,
+            final String streetNumber,
+            final String city,
+            final String province,
+            final String postalCode,
+            final String openingTime,
+            final String closingTime,
+            final byte[] profilePhoto,
+            final String profilePhotoContentType) {
+        if (role == User.Role.COMMERCE) {
+            try {
+                final Commerce.Category cat = Commerce.Category.valueOf(category.trim());
+                final Integer streetNum = parseStreetNumberOrNull(streetNumber);
+                commerceService.updateProfileFields(
+                        userId,
+                        cat,
+                        street != null ? street.trim() : "",
+                        streetNum,
+                        city != null ? city.trim() : "",
+                        province,
+                        postalCode,
+                        openingTime != null ? openingTime.trim() : "",
+                        closingTime != null ? closingTime.trim() : "");
+            } catch (final IllegalArgumentException | NoSuchElementException e) {
+                throw new ProfileAccountUpdateException(ProfileAccountUpdateException.Kind.COMMERCE, e);
+            }
+        }
+        if (profilePhoto != null && profilePhoto.length > 0) {
+            try {
+                userService.updateProfilePhoto(userId, profilePhoto, profilePhotoContentType);
+            } catch (final IllegalArgumentException | NoSuchElementException e) {
+                throw new ProfileAccountUpdateException(ProfileAccountUpdateException.Kind.PHOTO, e);
+            }
+        }
+    }
+
+    private static Integer parseStreetNumberOrNull(final String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        return Integer.parseInt(raw.trim());
     }
 
     private static ProfileCommerceSection toProfileCommerceSection(final Commerce c) {

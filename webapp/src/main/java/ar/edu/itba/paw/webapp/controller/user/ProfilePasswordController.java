@@ -47,11 +47,6 @@ public class ProfilePasswordController {
         if (errors.hasErrors()) {
             return "profile/changePasswordView";
         }
-        if (!form.getNewPassword().equals(form.getConfirmPassword())) {
-            errors.rejectValue("confirmPassword", "passwordReset.validation.passwords.mismatch",
-                    "{passwordReset.validation.passwords.mismatch}");
-            return "profile/changePasswordView";
-        }
         final User user = authenticatedUserResolver.resolveUser();
         final ChangePasswordResult result = userService.changePassword(user.getId(), form.getCurrentPassword(),
                 form.getNewPassword());

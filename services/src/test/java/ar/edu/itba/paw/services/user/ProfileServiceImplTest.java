@@ -64,9 +64,17 @@ class ProfileServiceImplTest {
             throw new UnsupportedOperationException();
         }
 
+        int updateProfilePhotoCalls;
+        long lastProfilePhotoUserId;
+        byte[] lastProfilePhotoData;
+        String lastProfilePhotoContentType;
+
         @Override
         public void updateProfilePhoto(final long userId, final byte[] data, final String contentType) {
-            throw new UnsupportedOperationException();
+            updateProfilePhotoCalls++;
+            lastProfilePhotoUserId = userId;
+            lastProfilePhotoData = data;
+            lastProfilePhotoContentType = contentType;
         }
 
         @Override
@@ -87,11 +95,17 @@ class ProfileServiceImplTest {
             return Optional.ofNullable(byUserId.get(userId));
         }
 
+        int updateProfileFieldsCalls;
+        long lastUserId;
+        Commerce.Category lastCategory;
+
         @Override
         public void updateProfileFields(final long userId, final Commerce.Category category, final String street,
                 final Integer streetNumber, final String city, final String province, final String postalCode,
                 final String openingTime, final String closingTime) {
-            throw new UnsupportedOperationException();
+            updateProfileFieldsCalls++;
+            lastUserId = userId;
+            lastCategory = category;
         }
     }
 
@@ -179,5 +193,74 @@ class ProfileServiceImplTest {
 
         // 2. Ejercicio / 3. Asserts
         assertThrows(NoSuchElementException.class, () -> profileService.getSettingsOverview(99L));
+    }
+
+    @Test
+    void updateProfileAccount_commerce_updatesCommerceSkipsPhotoWhenNoBytes() {
+        // 1. Setup
+        final StubUserService userService = new StubUserService();
+        userService.put(new User(5L, "comm@b.com", "h", "N", null, User.Role.COMMERCE, true, Locale.forLanguageTag("es"), null));
+        final StubCommerceService commerce = new StubCommerceService();
+        commerce.put(new Commerce(5L, "Café", Commerce.Category.OTHER, "Rivadavia", 1, "Morón", "BA", "1708", "08:00",
+                "20:00"));
+        final ProfileServiceImpl profileService = new ProfileServiceImpl(userService, commerce);
+
+        // 2. Ejercicio
+        profileService.updateProfileAccount(5L, User.Role.COMMERCE, "RESTAURANT", "Av. Siempre Viva", "42", "Ituzaingó",
+                "BA", "1714", "09:00", "18:00", null, null);
+
+        // 3. Asserts
+        assertEquals(1, commerce.updateProfileFieldsCalls);
+        assertEquals(5L, commerce.lastUserId);
+        assertEquals(Commerce.Category.RESTAURANT, commerce.lastCategory);
+        assertEquals(0, userService.updateProfilePhotoCalls);
+    }
+
+    @Test
+    void updateProfileAccount_clientWithPhoto_delegatesToUserServiceOnly() {
+        // 1. Setup
+        final StubUserService userService = new StubUserService();
+        userService.put(
+                new User(6L, "cli@b.com", "h", "Nombre", null, User.Role.CLIENT, true, Locale.forLanguageTag("es"), null));
+        final ProfileServiceImpl profileService = new ProfileServiceImpl(userService, new StubCommerceService());
+        final byte[] bytes = { 1, 2, 3 };
+
+        // 2. Ejercicio
+        profileService.updateProfileAccount(6L, User.Role.CLIENT, null, null, null, null, null, null, null, null, bytes,
+                "image/png");
+
+        // 3. Asserts
+        assertEquals(1, userService.updateProfilePhotoCalls);
+        assertEquals(6L, userService.lastProfilePhotoUserId);
+        assertEquals(bytes, userService.lastProfilePhotoData);
+        assertEquals("image/png", userService.lastProfilePhotoContentType);
+    }
+
+    @Test
+    void updateProfileAccount_commerceFailure_wrapsWithCommerceKind() {
+        // 1. Setup
+        final StubUserService userService = new StubUserService();
+        userService.put(
+                new User(7L, "bad@b.com", "h", "N", null, User.Role.COMMERCE, true, Locale.forLanguageTag("es"), null));
+        final CommerceService failing = new CommerceService() {
+            @Override
+            public java.util.Optional<Commerce> findByUserId(final Long userId) {
+                return java.util.Optional.empty();
+            }
+
+            @Override
+            public void updateProfileFields(final long userId, final Commerce.Category category, final String street,
+                    final Integer streetNumber, final String city, final String province, final String postalCode,
+                    final String openingTime, final String closingTime) {
+                throw new NoSuchElementException("Commerce not found for user: " + userId);
+            }
+        };
+        final ProfileServiceImpl profileService = new ProfileServiceImpl(userService, failing);
+
+        // 2. Ejercicio / 3. Asserts
+        final ProfileAccountUpdateException ex = assertThrows(ProfileAccountUpdateException.class,
+                () -> profileService.updateProfileAccount(7L, User.Role.COMMERCE, "OTHER", "Calle", "1", "Ciudad", "P",
+                        "pc", "09:00", "18:00", null, null));
+        assertEquals(ProfileAccountUpdateException.Kind.COMMERCE, ex.getKind());
     }
 }

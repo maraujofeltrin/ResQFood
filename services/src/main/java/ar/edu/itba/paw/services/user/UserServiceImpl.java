@@ -181,13 +181,8 @@ public class UserServiceImpl implements UserService {
     @Transactional
     @Override
     public void updatePreferredLocale(final long userId, final Locale locale) {
-        if (locale == null || locale.getLanguage() == null || locale.getLanguage().isEmpty()) {
-            throw new IllegalArgumentException("Locale is required");
-        }
+        SupportedUserLocales.assertSupported(locale);
         final String lang = locale.getLanguage().toLowerCase(Locale.ROOT);
-        if (!"es".equals(lang) && !"en".equals(lang)) {
-            throw new IllegalArgumentException("Unsupported locale");
-        }
         userDao.findById(userId).orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
         userDao.updateLocale(userId, lang);
     }

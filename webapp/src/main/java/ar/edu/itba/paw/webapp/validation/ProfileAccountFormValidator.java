@@ -2,29 +2,50 @@ package ar.edu.itba.paw.webapp.validation;
 
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.form.ProfileAccountForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
+import org.springframework.validation.Validator;
 
 import java.util.Locale;
 
 @Component
-public class ProfileAccountFormValidator {
+public class ProfileAccountFormValidator implements Validator {
 
     private final ImageMultipartValidator imageMultipartValidator;
     private final MessageSource messageSource;
+    private final AuthenticatedUserResolver authenticatedUserResolver;
 
     @Autowired
-    public ProfileAccountFormValidator(final ImageMultipartValidator imageMultipartValidator,
-            final MessageSource messageSource) {
+    public ProfileAccountFormValidator(
+            final ImageMultipartValidator imageMultipartValidator,
+            final MessageSource messageSource,
+            final AuthenticatedUserResolver authenticatedUserResolver) {
         this.imageMultipartValidator = imageMultipartValidator;
         this.messageSource = messageSource;
+        this.authenticatedUserResolver = authenticatedUserResolver;
     }
 
-    public void validate(final ProfileAccountForm form, final Errors errors, final User.Role role) {
+    @Override
+    public boolean supports(@NonNull final Class<?> clazz) {
+        return ProfileAccountForm.class.equals(clazz);
+    }
+
+    @Override
+    public void validate(@NonNull final Object target, @NonNull final Errors errors) {
+        if (!(target instanceof ProfileAccountForm)) {
+            return;
+        }
+        final User.Role role = authenticatedUserResolver.resolveUser().getRole();
+        validate((ProfileAccountForm) target, errors, role);
+    }
+
+    void validate(final ProfileAccountForm form, final Errors errors, final User.Role role) {
         final Locale locale = LocaleContextHolder.getLocale();
         if (role == User.Role.COMMERCE) {
             validateCommerceFields(form, errors, locale);

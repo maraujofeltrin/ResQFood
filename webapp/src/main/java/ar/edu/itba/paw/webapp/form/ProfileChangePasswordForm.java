@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.webapp.form;
 
+import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
@@ -37,5 +38,13 @@ public class ProfileChangePasswordForm {
 
     public void setConfirmPassword(final String confirmPassword) {
         this.confirmPassword = confirmPassword;
+    }
+
+    @AssertTrue(message = "{passwordReset.validation.passwords.mismatch}")
+    public boolean isNewPasswordMatchingConfirm() {
+        if (newPassword == null || confirmPassword == null) {
+            return true;
+        }
+        return newPassword.equals(confirmPassword);
     }
 }

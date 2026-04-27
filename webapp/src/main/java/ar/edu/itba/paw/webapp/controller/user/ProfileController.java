@@ -2,10 +2,11 @@ package ar.edu.itba.paw.webapp.controller.user;
 
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
-import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.services.user.ProfileAccountUpdateException;
 import ar.edu.itba.paw.services.user.ProfileCommerceSection;
 import ar.edu.itba.paw.services.user.ProfileService;
 import ar.edu.itba.paw.services.user.ProfileSettingsOverview;
+import ar.edu.itba.paw.services.user.SupportedUserLocales;
 import ar.edu.itba.paw.services.user.UserService;
 import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.form.ProfileAccountForm;
@@ -14,7 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,6 +26,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.NoSuchElementException;
@@ -36,7 +40,6 @@ public class ProfileController {
     private final AuthenticatedUserResolver authenticatedUserResolver;
     private final ProfileService profileService;
     private final UserService userService;
-    private final CommerceService commerceService;
     private final ProfileAccountFormValidator profileAccountFormValidator;
     private final LocaleResolver localeResolver;
 
@@ -45,15 +48,18 @@ public class ProfileController {
             final AuthenticatedUserResolver authenticatedUserResolver,
             final ProfileService profileService,
             final UserService userService,
-            final CommerceService commerceService,
             final ProfileAccountFormValidator profileAccountFormValidator,
             final LocaleResolver localeResolver) {
         this.authenticatedUserResolver = authenticatedUserResolver;
         this.profileService = profileService;
         this.userService = userService;
-        this.commerceService = commerceService;
         this.profileAccountFormValidator = profileAccountFormValidator;
         this.localeResolver = localeResolver;
+    }
+
+    @InitBinder("profileAccountForm")
+    public void initProfileAccountBinder(final WebDataBinder binder) {
+        binder.addValidators(profileAccountFormValidator);
     }
 
     @GetMapping("/profile")
@@ -68,43 +74,41 @@ public class ProfileController {
 
     @PostMapping("/profile/account")
     public String saveProfileAccount(
-            @ModelAttribute("profileAccountForm") final ProfileAccountForm profileAccountForm,
+            @Valid @ModelAttribute("profileAccountForm") final ProfileAccountForm profileAccountForm,
             final BindingResult bindingResult,
             final Model model,
             final RedirectAttributes redirectAttributes) {
-        final User user = authenticatedUserResolver.resolveUser();
-        profileAccountFormValidator.validate(profileAccountForm, bindingResult, user.getRole());
         if (bindingResult.hasErrors()) {
             return renderProfileWithAccountErrors(model, profileAccountForm, bindingResult);
         }
-        if (user.getRole() == User.Role.COMMERCE) {
-            final Integer streetNumber = parseStreetNumberOrNull(profileAccountForm.getStreetNumber());
-            try {
-                commerceService.updateProfileFields(
-                        user.getId(),
-                        Commerce.Category.valueOf(profileAccountForm.getCategory().trim()),
-                        profileAccountForm.getStreet().trim(),
-                        streetNumber,
-                        profileAccountForm.getCity().trim(),
-                        profileAccountForm.getProvince(),
-                        profileAccountForm.getPostalCode(),
-                        profileAccountForm.getOpeningTime().trim(),
-                        profileAccountForm.getClosingTime().trim());
-            } catch (final IllegalArgumentException | NoSuchElementException ex) {
+        final User user = authenticatedUserResolver.resolveUser();
+        try {
+            byte[] photo = null;
+            String contentType = null;
+            if (profileAccountForm.getPhoto() != null && !profileAccountForm.getPhoto().isEmpty()) {
+                photo = profileAccountForm.getPhoto().getBytes();
+                contentType = profileAccountForm.getPhoto().getContentType();
+            }
+            profileService.updateProfileAccount(
+                    user.getId(),
+                    user.getRole(),
+                    profileAccountForm.getCategory(),
+                    profileAccountForm.getStreet(),
+                    profileAccountForm.getStreetNumber(),
+                    profileAccountForm.getCity(),
+                    profileAccountForm.getProvince(),
+                    profileAccountForm.getPostalCode(),
+                    profileAccountForm.getOpeningTime(),
+                    profileAccountForm.getClosingTime(),
+                    photo,
+                    contentType);
+        } catch (final IOException ex) {
+            return renderProfilePhotoServiceError(model, profileAccountForm);
+        } catch (final ProfileAccountUpdateException ex) {
+            if (ex.getKind() == ProfileAccountUpdateException.Kind.COMMERCE) {
                 return renderProfileCommerceServiceError(model, profileAccountForm);
             }
-        }
-        if (profileAccountForm.getPhoto() != null && !profileAccountForm.getPhoto().isEmpty()) {
-            try {
-                userService.updateProfilePhoto(
-                        user.getId(),
-                        profileAccountForm.getPhoto().getBytes(),
-                        profileAccountForm.getPhoto().getContentType());
-            } catch (final IOException ex) {
-                return renderProfilePhotoServiceError(model, profileAccountForm);
-            } catch (final IllegalArgumentException | NoSuchElementException ex) {
-                return renderProfilePhotoServiceError(model, profileAccountForm);
-            }
+            return renderProfilePhotoServiceError(model, profileAccountForm);
         }
         redirectAttributes.addFlashAttribute("profileAccountUpdateSuccess", true);
         return "redirect:/profile";
@@ -116,13 +120,15 @@ public class ProfileController {
             final HttpServletRequest request,
             final HttpServletResponse response,
             final RedirectAttributes redirectAttributes) {
-        if (!"es".equalsIgnoreCase(lang) && !"en".equalsIgnoreCase(lang)) {
+        final User user = authenticatedUserResolver.resolveUser();
+        final Locale resolved;
+        try {
+            resolved = SupportedUserLocales.toLocaleOrThrow(lang);
+        } catch (final IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("profileLocaleUpdateError", true);
             return "redirect:/profile/settings";
         }
-        final User user = authenticatedUserResolver.resolveUser();
         try {
-            final Locale resolved = "en".equalsIgnoreCase(lang) ? Locale.ENGLISH : Locale.forLanguageTag("es");
             userService.updatePreferredLocale(user.getId(), resolved);
             localeResolver.setLocale(request, response, resolved);
         } catch (final IllegalArgumentException | NoSuchElementException ex) {
@@ -131,13 +137,6 @@ public class ProfileController {
         }
         redirectAttributes.addFlashAttribute("profileLocaleUpdateSuccess", true);
         return "redirect:/profile/settings";
-    }
-
-    private static Integer parseStreetNumberOrNull(final String raw) {
-        if (raw == null || raw.isBlank()) {
-            return null;
-        }
-        return Integer.parseInt(raw.trim());
     }
 
     private String renderProfileWithAccountErrors(

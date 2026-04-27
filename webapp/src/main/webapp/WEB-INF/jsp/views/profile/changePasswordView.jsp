@@ -22,6 +22,7 @@
         <form:form modelAttribute="profileChangePasswordForm" method="post"
                    action="${pageContext.request.contextPath}/profile/change-password"
                    cssClass="space-y-5">
+            <form:errors path="*" cssClass="text-error text-sm mb-2 block" element="p"/>
             <div>
                 <label for="currentPassword" class="block font-label text-sm font-medium text-secondary mb-1">
                     <spring:message code="profile.changePassword.label.current"/>
