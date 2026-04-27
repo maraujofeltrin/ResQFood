@@ -6,33 +6,43 @@ import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.ClientDao;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.UserDao;
+import ar.edu.itba.paw.services.image.ImageService;
 import ar.edu.itba.paw.services.security.EmailVerificationTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class UserServiceImpl implements UserService {
+
+    private static final long MAX_PROFILE_IMAGE_BYTES = 5L * 1024L * 1024L;
+    private static final Set<String> ALLOWED_PROFILE_IMAGE_TYPES = Set.of(
+            "image/jpeg", "image/png", "image/webp", "image/gif");
 
     private final UserDao userDao;
     private final ClientDao clientDao;
     private final CommerceDao commerceDao;
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationTokenService emailVerificationTokenService;
+    private final ImageService imageService;
 
     @Autowired
     public UserServiceImpl(final UserDao userDao, final ClientDao clientDao, final CommerceDao commerceDao,
             final PasswordEncoder passwordEncoder,
-            final EmailVerificationTokenService emailVerificationTokenService) {
+            final EmailVerificationTokenService emailVerificationTokenService,
+            final ImageService imageService) {
         this.userDao = userDao;
         this.clientDao = clientDao;
         this.commerceDao = commerceDao;
         this.passwordEncoder = passwordEncoder;
         this.emailVerificationTokenService = emailVerificationTokenService;
+        this.imageService = imageService;
     }
 
     @Transactional
@@ -149,5 +159,36 @@ public class UserServiceImpl implements UserService {
         emailVerificationTokenService.sendVerificationMail(created.getId(), created.getEmail(), appBaseUrl,
                 created.getLocale());
         return RegisterResult.createdPendingVerification(created);
+    }
+
+    @Transactional
+    @Override
+    public void updateProfilePhoto(final long userId, final byte[] data, final String contentType) {
+        if (data == null || data.length == 0) {
+            throw new IllegalArgumentException("Image data cannot be null or empty");
+        }
+        if (data.length > MAX_PROFILE_IMAGE_BYTES) {
+            throw new IllegalArgumentException("Image exceeds maximum size");
+        }
+        if (contentType == null || contentType.isEmpty() || !ALLOWED_PROFILE_IMAGE_TYPES.contains(contentType)) {
+            throw new IllegalArgumentException("Invalid or unsupported image content type");
+        }
+        userDao.findById(userId).orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
+        final long imageId = imageService.saveImage(data, contentType).getId();
+        userDao.updateProfileImage(userId, imageId);
+    }
+
+    @Transactional
+    @Override
+    public void updatePreferredLocale(final long userId, final Locale locale) {
+        if (locale == null || locale.getLanguage() == null || locale.getLanguage().isEmpty()) {
+            throw new IllegalArgumentException("Locale is required");
+        }
+        final String lang = locale.getLanguage().toLowerCase(Locale.ROOT);
+        if (!"es".equals(lang) && !"en".equals(lang)) {
+            throw new IllegalArgumentException("Unsupported locale");
+        }
+        userDao.findById(userId).orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
+        userDao.updateLocale(userId, lang);
     }
 }

@@ -17,9 +17,11 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.LocaleResolver;
-import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
+import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.web.servlet.view.JstlView;
 
@@ -44,7 +46,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @EnableTransactionManagement
 @EnableAsync
 @EnableScheduling
-@ComponentScan({ "ar.edu.itba.paw.webapp.controller", "ar.edu.itba.paw.webapp.validation", "ar.edu.itba.paw.services", "ar.edu.itba.paw.persistence", "ar.edu.itba.paw.webapp.config", "ar.edu.itba.paw.webapp.auth", "ar.edu.itba.paw.webapp.assembler" })
+@ComponentScan({ "ar.edu.itba.paw.webapp.controller", "ar.edu.itba.paw.webapp.validation", "ar.edu.itba.paw.services", "ar.edu.itba.paw.persistence", "ar.edu.itba.paw.webapp.config", "ar.edu.itba.paw.webapp.auth", "ar.edu.itba.paw.webapp.assembler", "ar.edu.itba.paw.webapp.controller.advice" })
 @Configuration
 @PropertySource("classpath:/env.properties")
 public class WebConfig implements WebMvcConfigurer {
@@ -66,13 +68,16 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Bean
     public LocaleResolver localeResolver() {
-        final AcceptHeaderLocaleResolver resolver = new AcceptHeaderLocaleResolver();
+        final SessionLocaleResolver resolver = new SessionLocaleResolver();
         resolver.setDefaultLocale(Locale.forLanguageTag("es"));
-        resolver.setSupportedLocales(java.util.Arrays.asList(
-                Locale.forLanguageTag("es"),
-                Locale.ENGLISH
-        ));
         return resolver;
+    }
+
+    @Override
+    public void addInterceptors(final InterceptorRegistry registry) {
+        final LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
+        interceptor.setParamName("lang");
+        registry.addInterceptor(interceptor);
     }
 
     @Override

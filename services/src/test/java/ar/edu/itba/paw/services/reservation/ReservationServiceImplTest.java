@@ -203,6 +203,14 @@ public class ReservationServiceImplTest {
         public RegisterResult tryRegister(final User u, final Client c, final Commerce com, final String appBaseUrl) {
             return RegisterResult.duplicateEmail();
         }
+
+        @Override
+        public void updateProfilePhoto(final long userId, final byte[] data, final String contentType) {
+        }
+
+        @Override
+        public void updatePreferredLocale(final long userId, final java.util.Locale locale) {
+        }
     }
 
     static class InMemoryMailService implements ReservationMailService {

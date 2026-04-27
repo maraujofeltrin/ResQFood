@@ -8,7 +8,6 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -16,25 +15,21 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Locale;
-import java.util.Set;
 
 @Component
 public class CreateOfferFormValidator implements Validator {
 
-    private static final long MAX_IMAGE_SIZE_BYTES = 5L * 1024L * 1024L;
-    private static final Set<String> ALLOWED_IMAGE_TYPES = new HashSet<>(Arrays.asList(
-            "image/jpeg", "image/png", "image/webp", "image/gif"));
-
     private final MessageSource messageSource;
     private final ZoneId businessZone;
+    private final ImageMultipartValidator imageMultipartValidator;
 
     @Autowired
-    public CreateOfferFormValidator(final MessageSource messageSource, final ZoneId businessZone) {
+    public CreateOfferFormValidator(final MessageSource messageSource, final ZoneId businessZone,
+            final ImageMultipartValidator imageMultipartValidator) {
         this.messageSource = messageSource;
         this.businessZone = businessZone;
+        this.imageMultipartValidator = imageMultipartValidator;
     }
 
     @Override
@@ -51,14 +46,14 @@ public class CreateOfferFormValidator implements Validator {
         } else {
             validatePackFields(form, errors, locale);
         }
-        validateImage(form.getImage(), errors, locale);
+        imageMultipartValidator.validate(form.getImage(), errors, "image", locale, false);
     }
 
     public void validatePackModeOnly(@NonNull final Object target, @NonNull final Errors errors) {
         final CreateOfferForm form = (CreateOfferForm) target;
         final Locale locale = LocaleContextHolder.getLocale();
         validatePackFields(form, errors, locale);
-        validateImage(form.getImage(), errors, locale);
+        imageMultipartValidator.validate(form.getImage(), errors, "image", locale, false);
     }
 
     private void validatePackFields(final CreateOfferForm form, final Errors errors, final Locale locale) {
@@ -127,20 +122,6 @@ public class CreateOfferFormValidator implements Validator {
             } catch (DateTimeParseException e) {
                 errors.rejectValue("endDate", "error.endDate",
                         messageSource.getMessage("commerce.createAuction.validation.endDateTime.invalid", null, locale));
-            }
-        }
-    }
-
-    private void validateImage(final MultipartFile image, final Errors errors, final Locale locale) {
-        if (image != null && !image.isEmpty()) {
-            if (image.getSize() > MAX_IMAGE_SIZE_BYTES) {
-                errors.rejectValue("image", "error.image.maxSize",
-                        messageSource.getMessage("commerce.createPack.validation.image.maxSize", null, locale));
-            }
-            final String contentType = image.getContentType();
-            if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
-                errors.rejectValue("image", "error.image.invalidType",
-                        messageSource.getMessage("commerce.createPack.validation.image.invalidType", null, locale));
             }
         }
     }

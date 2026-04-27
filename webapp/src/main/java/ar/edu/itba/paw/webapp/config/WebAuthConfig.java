@@ -3,13 +3,13 @@ package ar.edu.itba.paw.webapp.config;
 import ar.edu.itba.paw.webapp.auth.AuthUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import java.util.concurrent.TimeUnit;
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
@@ -18,15 +18,18 @@ import static org.springframework.security.web.util.matcher.AntPathRequestMatche
 public class WebAuthConfig extends WebSecurityConfigurerAdapter {
 
     private final AuthUserDetailsService authUserDetailsService;
+    private final AuthenticationSuccessHandler authenticationSuccessHandler;
     private final String rememberMeKey;
     private final int rememberMeValidityDays;
 
     @Autowired
     public WebAuthConfig(
             final AuthUserDetailsService authUserDetailsService,
+            final AuthenticationSuccessHandler authenticationSuccessHandler,
             @Value("${security.remember-me.key:resqfood-remember-me-secret}") final String rememberMeKey,
             @Value("${security.remember-me.validity-days:7}") final int rememberMeValidityDays) {
         this.authUserDetailsService = authUserDetailsService;
+        this.authenticationSuccessHandler = authenticationSuccessHandler;
         this.rememberMeKey = rememberMeKey;
         this.rememberMeValidityDays = rememberMeValidityDays;
     }
@@ -58,13 +61,14 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                 .requestMatchers(antMatcher(HttpMethod.POST, "/reservations/**")).authenticated()
                 .requestMatchers(antMatcher(HttpMethod.GET, "/reservations/**")).authenticated()
                 .requestMatchers(antMatcher(HttpMethod.GET, "/profile"), antMatcher(HttpMethod.GET, "/profile/settings"),
-                        antMatcher(HttpMethod.GET, "/profile/change-password"), antMatcher(HttpMethod.POST, "/profile/change-password")).authenticated()
+                        antMatcher(HttpMethod.GET, "/profile/change-password"), antMatcher(HttpMethod.POST, "/profile/change-password"),
+                        antMatcher(HttpMethod.POST, "/profile/photo"), antMatcher(HttpMethod.POST, "/profile/settings/locale")).authenticated()
                 .anyRequest().authenticated()
                 .and().formLogin()
                 .loginPage("/login")
                 .usernameParameter("email")
                 .passwordParameter("password")
-                .defaultSuccessUrl("/", false)
+                .successHandler(authenticationSuccessHandler)
                 .failureUrl("/login?error=true")
                 .and().logout()
                 .logoutUrl("/logout")

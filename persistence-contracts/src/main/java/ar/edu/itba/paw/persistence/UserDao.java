@@ -36,4 +36,8 @@ public interface UserDao {
     Optional<User> findById(Long id);
 
     void markVerified(Long userId);
+
+    void updateProfileImage(long userId, Long imageId);
+
+    void updateLocale(long userId, String languageTag);
 }

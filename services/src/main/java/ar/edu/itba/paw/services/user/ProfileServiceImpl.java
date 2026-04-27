@@ -30,6 +30,7 @@ public class ProfileServiceImpl implements ProfileService {
                 user.getName(),
                 phone,
                 user.getEmail(),
+                user.getProfileImageId(),
                 PLACEHOLDER_PROFILE_IMAGE,
                 selectedLang,
                 LANGUAGE_CODES);

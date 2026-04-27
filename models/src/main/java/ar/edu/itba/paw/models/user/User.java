@@ -15,6 +15,8 @@ public class User {
     private Role role;
     private final boolean verified;
     private final Locale locale;
+    /** FK opcional a {@code images}; null si el usuario usa solo el avatar por defecto. */
+    private final Long profileImageId;
 
     private final Long id;
 
@@ -29,6 +31,11 @@ public class User {
 
     public User(final Long id, final String email, final String password, final String name, final String phone,
             final Role role, final boolean verified, final Locale locale) {
+        this(id, email, password, name, phone, role, verified, locale, null);
+    }
+
+    public User(final Long id, final String email, final String password, final String name, final String phone,
+            final Role role, final boolean verified, final Locale locale, final Long profileImageId) {
         this.id = id;
         this.email = email;
         this.password = password;
@@ -37,6 +44,7 @@ public class User {
         this.role = role;
         this.verified = verified;
         this.locale = locale;
+        this.profileImageId = profileImageId;
     }
 
     public String getEmail() {
@@ -71,9 +79,14 @@ public class User {
         return locale;
     }
 
+    public Long getProfileImageId() {
+        return profileImageId;
+    }
+
     @Override
     public String toString() {
         return "User [id=" + id + ", email=" + email + ", password=" + password + ", name=" + name
-                + ", phone=" + phone + ", role=" + role + ", verified=" + verified + ", locale=" + locale + "]";
+                + ", phone=" + phone + ", role=" + role + ", verified=" + verified + ", locale=" + locale
+                + ", profileImageId=" + profileImageId + "]";
     }
 }

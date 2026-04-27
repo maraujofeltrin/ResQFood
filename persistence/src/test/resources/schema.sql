@@ -10,6 +10,12 @@ DROP TABLE IF EXISTS clients CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS images CASCADE;
 
+CREATE TABLE images (
+    id INTEGER IDENTITY PRIMARY KEY,
+    data BLOB NOT NULL,
+    content_type VARCHAR(255) NOT NULL
+);
+
 CREATE TABLE users (
     id INTEGER IDENTITY PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -18,7 +24,9 @@ CREATE TABLE users (
     phone VARCHAR(50),
     role VARCHAR(50),
     verified BOOLEAN DEFAULT FALSE NOT NULL,
-    locale VARCHAR(10) NOT NULL
+    locale VARCHAR(10) NOT NULL,
+    profile_image_id BIGINT,
+    FOREIGN KEY (profile_image_id) REFERENCES images(id) ON DELETE SET NULL
 );
 
 ALTER TABLE users ALTER COLUMN locale SET DEFAULT 'es';
@@ -43,12 +51,6 @@ CREATE TABLE commerces (
     opening_time VARCHAR(50),
     closing_time VARCHAR(50),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE images (
-    id INTEGER IDENTITY PRIMARY KEY,
-    data BLOB NOT NULL,
-    content_type VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE packs (

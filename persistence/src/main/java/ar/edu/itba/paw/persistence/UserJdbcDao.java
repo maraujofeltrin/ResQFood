@@ -19,15 +19,19 @@ public class UserJdbcDao implements UserDao {
     private final JdbcTemplate jdbcTemplate;
     private final SimpleJdbcInsert simpleJdbcInsert;
 
-    private static final RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) -> new User(
-            rs.getLong("id"),
-            rs.getString("email"),
-            rs.getString("password"),
-            rs.getString("name"),
-            rs.getString("phone"),
-            rs.getString("role") == null ? null : User.Role.valueOf(rs.getString("role")),
-            rs.getBoolean("verified"),
-            Locale.forLanguageTag(rs.getString("locale")));
+    private static final RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) -> {
+        final Long profileImageId = rs.getObject("profile_image_id") == null ? null : rs.getLong("profile_image_id");
+        return new User(
+                rs.getLong("id"),
+                rs.getString("email"),
+                rs.getString("password"),
+                rs.getString("name"),
+                rs.getString("phone"),
+                rs.getString("role") == null ? null : User.Role.valueOf(rs.getString("role")),
+                rs.getBoolean("verified"),
+                Locale.forLanguageTag(rs.getString("locale")),
+                profileImageId);
+    };
 
     @Autowired
     public UserJdbcDao(final DataSource dataSource) {
@@ -49,7 +53,7 @@ public class UserJdbcDao implements UserDao {
         parameters.put("locale", locale.toLanguageTag());
         parameters.put("verified", false);
         final Number id = simpleJdbcInsert.executeAndReturnKey(parameters);
-        return new User(id.longValue(), email, password, name, phone, role, false, locale);
+        return new User(id.longValue(), email, password, name, phone, role, false, locale, null);
     }
 
     @Override
@@ -78,5 +82,15 @@ public class UserJdbcDao implements UserDao {
     @Override
     public void markVerified(final Long userId) {
         jdbcTemplate.update("UPDATE users SET verified = true WHERE id = ?", userId);
+    }
+
+    @Override
+    public void updateProfileImage(final long userId, final Long imageId) {
+        jdbcTemplate.update("UPDATE users SET profile_image_id = ? WHERE id = ?", imageId, userId);
+    }
+
+    @Override
+    public void updateLocale(final long userId, final String languageTag) {
+        jdbcTemplate.update("UPDATE users SET locale = ? WHERE id = ?", languageTag, userId);
     }
 }

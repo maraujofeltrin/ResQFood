@@ -3,6 +3,7 @@ package ar.edu.itba.paw.services.user;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
+import java.util.Locale;
 import java.util.Optional;
 
 public interface UserService {
@@ -18,4 +19,12 @@ public interface UserService {
     void markVerified(final Long userId);
     RegisterResult tryRegister(final User user, final Client clientProfile, final Commerce commerceProfile,
             final String appBaseUrl);
+
+    /**
+     * Persiste una nueva imagen y asocia su id al usuario. Valida tamaño y tipo MIME como en el flujo de packs.
+     */
+    void updateProfilePhoto(long userId, byte[] data, String contentType);
+
+    /** Persiste {@code es} o {@code en} como preferencia de idioma (UI y correos). */
+    void updatePreferredLocale(long userId, Locale locale);
 }

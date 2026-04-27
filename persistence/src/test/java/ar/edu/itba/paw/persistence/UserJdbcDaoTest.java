@@ -6,12 +6,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.jdbc.JdbcTestUtils;
 
 import javax.sql.DataSource;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -79,5 +84,43 @@ public class UserJdbcDaoTest {
 
         // 3. Asserts
         assertFalse(user.isPresent());
+    }
+
+    @Test
+    public void testUpdateProfileImage() {
+        // 1. Setup
+        final User user = userDao.createUser(EMAIL, PASSWORD, NAME, PHONE, ROLE);
+        final GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            final PreparedStatement ps = connection.prepareStatement(
+                    "INSERT INTO images (data, content_type) VALUES (?, ?)",
+                    Statement.RETURN_GENERATED_KEYS);
+            ps.setBytes(1, new byte[] { 1, 2, 3 });
+            ps.setString(2, "image/png");
+            return ps;
+        }, keyHolder);
+        final long imageId = Objects.requireNonNull(keyHolder.getKey()).longValue();
+
+        // 2. Ejercicio
+        userDao.updateProfileImage(user.getId(), imageId);
+
+        // 3. Asserts
+        final Optional<User> loaded = userDao.findById(user.getId());
+        assertTrue(loaded.isPresent());
+        assertEquals(imageId, loaded.get().getProfileImageId().longValue());
+    }
+
+    @Test
+    public void testUpdateLocale() {
+        // 1. Setup
+        final User user = userDao.createUser(EMAIL, PASSWORD, NAME, PHONE, ROLE, Locale.forLanguageTag("es"));
+
+        // 2. Ejercicio
+        userDao.updateLocale(user.getId(), "en");
+
+        // 3. Asserts
+        final Optional<User> loaded = userDao.findById(user.getId());
+        assertTrue(loaded.isPresent());
+        assertEquals("en", loaded.get().getLocale().getLanguage());
     }
 }

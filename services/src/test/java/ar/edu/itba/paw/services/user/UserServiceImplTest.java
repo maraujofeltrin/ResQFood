@@ -1,11 +1,13 @@
 package ar.edu.itba.paw.services.user;
 
+import ar.edu.itba.paw.models.image.Image;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.ClientDao;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.UserDao;
+import ar.edu.itba.paw.services.image.ImageService;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -48,6 +50,20 @@ public class UserServiceImplTest {
         public void resendVerificationMail(final String email, final String baseUrl) { }
     }
 
+    static class StubImageService implements ImageService {
+        private long nextId = 100L;
+
+        @Override
+        public Image saveImage(final byte[] data, final String contentType) {
+            return new Image(nextId++, data, contentType);
+        }
+
+        @Override
+        public java.util.Optional<Image> getImage(final long id) {
+            return java.util.Optional.empty();
+        }
+    }
+
     static class InMemoryUserDao implements UserDao {
         private final Map<Long, User> byId = new HashMap<>();
         private final Map<String, User> byEmail = new HashMap<>();
@@ -69,7 +85,7 @@ public class UserServiceImplTest {
                 throw new IllegalStateException("User not found: " + id);
             }
             final User updated = new User(id, current.getEmail(), password, name, phone, role, current.isVerified(),
-                    current.getLocale());
+                    current.getLocale(), current.getProfileImageId());
             byId.put(id, updated);
             byEmail.put(updated.getEmail(), updated);
             return updated;
@@ -92,7 +108,7 @@ public class UserServiceImplTest {
                 throw new IllegalStateException("User not found: " + id);
             }
             final User updated = new User(id, current.getEmail(), password, current.getName(), current.getPhone(),
-                    current.getRole(), current.isVerified(), current.getLocale());
+                    current.getRole(), current.isVerified(), current.getLocale(), current.getProfileImageId());
             byId.put(id, updated);
             byEmail.put(updated.getEmail(), updated);
         }
@@ -104,9 +120,37 @@ public class UserServiceImplTest {
                 throw new IllegalStateException("User not found: " + userId);
             }
             final User verifiedUser = new User(current.getId(), current.getEmail(), current.getPassword(),
-                    current.getName(), current.getPhone(), current.getRole(), true, current.getLocale());
+                    current.getName(), current.getPhone(), current.getRole(), true, current.getLocale(),
+                    current.getProfileImageId());
             byId.put(userId, verifiedUser);
             byEmail.put(verifiedUser.getEmail(), verifiedUser);
+        }
+
+        @Override
+        public void updateProfileImage(final long userId, final Long imageId) {
+            final User current = byId.get(userId);
+            if (current == null) {
+                throw new IllegalStateException("User not found: " + userId);
+            }
+            final User updated = new User(current.getId(), current.getEmail(), current.getPassword(),
+                    current.getName(), current.getPhone(), current.getRole(), current.isVerified(), current.getLocale(),
+                    imageId);
+            byId.put(userId, updated);
+            byEmail.put(updated.getEmail(), updated);
+        }
+
+        @Override
+        public void updateLocale(final long userId, final String languageTag) {
+            final User current = byId.get(userId);
+            if (current == null) {
+                throw new IllegalStateException("User not found: " + userId);
+            }
+            final Locale newLocale = Locale.forLanguageTag(languageTag);
+            final User updated = new User(current.getId(), current.getEmail(), current.getPassword(),
+                    current.getName(), current.getPhone(), current.getRole(), current.isVerified(), newLocale,
+                    current.getProfileImageId());
+            byId.put(userId, updated);
+            byEmail.put(updated.getEmail(), updated);
         }
     }
 
@@ -162,7 +206,7 @@ public class UserServiceImplTest {
     public void createUser_and_findByEmailAndId() {
         final InMemoryUserDao dao = new InMemoryUserDao();
         final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-            new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService());
+            new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
 
         final User u = svc.createUser(new User(null, "a@b.com", "pw", "Name", null, null, false), null, null);
         assertNotNull(u.getId());
@@ -179,7 +223,7 @@ public class UserServiceImplTest {
     public void createUser_withRole_storesRole() {
         final InMemoryUserDao dao = new InMemoryUserDao();
         final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-            new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService());
+            new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
 
         final User userToCreate = new User(null, "c@d.com", "pw", "N", "123", User.Role.COMMERCE, false);
         final Commerce commerceProfile = new Commerce(null, "Shop", Commerce.Category.OTHER, "st", 1, "city", "prov", "pc", "09:00", "18:00");
@@ -195,7 +239,7 @@ public class UserServiceImplTest {
         // 1. Setup
         final InMemoryUserDao dao = new InMemoryUserDao();
         final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService());
+                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
         final User created = svc.createUser(new User(null, "u@u.com", "secret1", "User", null, null, false), null,
                 null);
 
@@ -212,7 +256,7 @@ public class UserServiceImplTest {
         // 1. Setup
         final InMemoryUserDao dao = new InMemoryUserDao();
         final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService());
+                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
         final User created = svc.createUser(new User(null, "v@v.com", "good", "V", null, null, false), null, null);
 
         // 2. Ejercicio
@@ -228,10 +272,66 @@ public class UserServiceImplTest {
         // 1. Setup
         final InMemoryUserDao dao = new InMemoryUserDao();
         final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService());
+                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
 
         // 2. Ejercicio / 3. Asserts
         assertThrows(NoSuchElementException.class, () -> svc.changePassword(999L, "a", "bxxxxx"));
+    }
+
+    @Test
+    public void updateProfilePhoto_success_linksImageId() {
+        // 1. Setup
+        final InMemoryUserDao dao = new InMemoryUserDao();
+        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
+                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
+        final User created = svc.createUser(new User(null, "photo@x.com", "p", "P", null, null, false), null, null);
+
+        // 2. Ejercicio
+        svc.updateProfilePhoto(created.getId(), new byte[] { 1, 2 }, "image/png");
+
+        // 3. Asserts
+        assertEquals(Long.valueOf(100L), dao.findById(created.getId()).orElseThrow().getProfileImageId());
+    }
+
+    @Test
+    public void updateProfilePhoto_invalidContentType_throws() {
+        // 1. Setup
+        final InMemoryUserDao dao = new InMemoryUserDao();
+        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
+                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
+        final User created = svc.createUser(new User(null, "bad@x.com", "p", "B", null, null, false), null, null);
+
+        // 2. Ejercicio / 3. Asserts
+        assertThrows(IllegalArgumentException.class,
+                () -> svc.updateProfilePhoto(created.getId(), new byte[] { 1 }, "application/pdf"));
+    }
+
+    @Test
+    public void updatePreferredLocale_success_persistsTag() {
+        // 1. Setup
+        final InMemoryUserDao dao = new InMemoryUserDao();
+        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
+                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
+        final User created = svc.createUser(new User(null, "loc@x.com", "p", "L", null, null, false), null, null);
+
+        // 2. Ejercicio
+        svc.updatePreferredLocale(created.getId(), Locale.ENGLISH);
+
+        // 3. Asserts
+        assertEquals("en", dao.findById(created.getId()).orElseThrow().getLocale().getLanguage());
+    }
+
+    @Test
+    public void updatePreferredLocale_unsupported_throws() {
+        // 1. Setup
+        final InMemoryUserDao dao = new InMemoryUserDao();
+        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
+                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
+        final User created = svc.createUser(new User(null, "loc2@x.com", "p", "L", null, null, false), null, null);
+
+        // 2. Ejercicio / 3. Asserts
+        assertThrows(IllegalArgumentException.class,
+                () -> svc.updatePreferredLocale(created.getId(), Locale.FRANCE));
     }
 
 }

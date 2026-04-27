@@ -1,4 +1,5 @@
 <%@ tag language="java" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <nav class="fixed top-0 w-full z-50 bg-surface-container-lowest/80 backdrop-blur-md shadow-soft font-headline antialiased">
@@ -27,10 +28,21 @@
       </sec:authorize>
       <sec:authorize access="isAuthenticated()">
           <spring:message code="layout.nav.profile" var="navProfileTitle"/>
+          <spring:message code="profile.avatar.alt" var="navProfileAvatarAlt"/>
           <a href="${pageContext.request.contextPath}/profile"
              class="text-on-surface-variant hover:text-primary transition-colors font-medium flex items-center gap-2 no-underline"
              title="${navProfileTitle}">
-              <span class="material-symbols-outlined text-[1.35rem]" data-icon="account_circle">account_circle</span>
+              <c:choose>
+                <c:when test="${not empty navProfileImageId}">
+                  <img src="${pageContext.request.contextPath}/images/${navProfileImageId}"
+                       alt="${navProfileAvatarAlt}"
+                       class="w-9 h-9 rounded-full object-cover shrink-0 border border-outline-variant/20 shadow-soft"
+                       width="36" height="36" loading="lazy"/>
+                </c:when>
+                <c:otherwise>
+                  <span class="material-symbols-outlined text-[1.35rem]" data-icon="account_circle">account_circle</span>
+                </c:otherwise>
+              </c:choose>
               <span class="sr-only">${navProfileTitle}</span>
           </a>
       </sec:authorize>
