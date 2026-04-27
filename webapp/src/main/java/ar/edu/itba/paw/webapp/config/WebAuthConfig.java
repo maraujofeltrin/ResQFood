@@ -57,6 +57,7 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                 .requestMatchers(antMatcher(HttpMethod.POST, "/reservations/*/reject")).hasRole("COMMERCE")
                 .requestMatchers(antMatcher(HttpMethod.POST, "/reservations/**")).authenticated()
                 .requestMatchers(antMatcher(HttpMethod.GET, "/reservations/**")).authenticated()
+                .requestMatchers(antMatcher(HttpMethod.GET, "/profile"), antMatcher(HttpMethod.GET, "/profile/settings")).authenticated()
                 .anyRequest().authenticated()
                 .and().formLogin()
                 .loginPage("/login")
