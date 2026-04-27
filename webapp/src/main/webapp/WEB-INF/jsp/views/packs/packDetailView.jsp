@@ -135,6 +135,101 @@
                             </c:if>
                         </div>
                     </section>
+                    <section class="commerce-reviews-card" id="commerce-reviews" aria-label="<spring:message code='pack.detail.reviews.section'/>">
+                        <div class="commerce-reviews-card__header">
+                            <div>
+                                <p class="commerce-reviews-card__eyebrow"><spring:message code="pack.detail.reviews.eyebrow"/></p>
+                                <h2 class="commerce-reviews-card__title font-headline"><spring:message code="pack.detail.reviews.title"/></h2>
+                            </div>
+                            <span class="commerce-reviews-card__count">
+                                <spring:message code="pack.detail.reviews.count" arguments="${commerceReviewCount}"/>
+                            </span>
+                        </div>
+
+                        <c:if test="${commerceReviewAlertKind eq 'success'}">
+                            <p class="pack-feedback pack-feedback--success" role="alert"><c:out value="${commerceReviewAlertMessage}"/></p>
+                        </c:if>
+                        <c:if test="${commerceReviewAlertKind eq 'error'}">
+                            <p class="pack-feedback pack-feedback--error" role="alert"><c:out value="${commerceReviewAlertMessage}"/></p>
+                        </c:if>
+
+                        <div class="commerce-reviews-card__list">
+                            <c:choose>
+                                <c:when test="${empty commerceReviewItems}">
+                                    <p class="commerce-reviews-card__empty"><spring:message code="pack.detail.reviews.empty"/></p>
+                                </c:when>
+                                <c:otherwise>
+                                    <c:forEach var="reviewItem" items="${commerceReviewItems}">
+                                        <article class="commerce-review">
+                                            <div class="commerce-review__meta">
+                                                <span class="commerce-review__client"><c:out value="${reviewItem.clientName}"/></span>
+                                                <span class="commerce-review__stars" aria-label="<spring:message code='pack.detail.reviews.ratingAria' arguments='${reviewItem.review.rating}'/>">
+                                                    <c:forEach begin="1" end="${reviewItem.review.rating}">
+                                                        <span class="material-symbols-outlined" aria-hidden="true">star</span>
+                                                    </c:forEach>
+                                                </span>
+                                            </div>
+                                            <p class="commerce-review__body"><c:out value="${reviewItem.review.body}"/></p>
+                                        </article>
+                                    </c:forEach>
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+
+                        <sec:authorize access="hasRole('CLIENT')">
+                            <c:choose>
+                                <c:when test="${commerceReviewCanSubmit}">
+                                    <div class="commerce-review-form-card">
+                                        <h3 class="commerce-review-form-card__title font-headline">
+                                            <c:choose>
+                                                <c:when test="${commerceReviewAlreadySubmitted}">
+                                                    <spring:message code="pack.detail.reviews.form.editTitle"/>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <spring:message code="pack.detail.reviews.form.title"/>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </h3>
+                                        <c:url var="commerceReviewAction" value="/packs/${packId}/commerce-review"/>
+                                        <form:form modelAttribute="commerceReviewForm" method="post" action="${commerceReviewAction}" cssClass="commerce-review-form" novalidate="novalidate">
+                                            <div class="commerce-review-form__field">
+                                                <span class="pack-form-label"><spring:message code="pack.detail.reviews.form.rating"/></span>
+                                                <div class="commerce-review-form__rating" role="radiogroup" aria-label="<spring:message code='pack.detail.reviews.form.rating'/>">
+                                                    <c:forEach begin="1" end="5" var="ratingOption">
+                                                        <label class="commerce-review-form__rating-option">
+                                                            <form:radiobutton path="rating" value="${ratingOption}"/>
+                                                            <span><c:out value="${ratingOption}"/></span>
+                                                        </label>
+                                                    </c:forEach>
+                                                </div>
+                                                <form:errors path="rating" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p"/>
+                                            </div>
+                                            <div class="commerce-review-form__field">
+                                                <label class="pack-form-label" for="commerce-review-body"><spring:message code="pack.detail.reviews.form.body"/></label>
+                                                <form:textarea path="body" id="commerce-review-body" cssClass="commerce-review-form__textarea" rows="4"
+                                                               maxlength="1000"/>
+                                                <form:errors path="body" cssClass="pack-feedback pack-feedback--error pack-form-errors" element="p"/>
+                                            </div>
+                                            <button type="submit" class="pack-submit-btn font-headline">
+                                                <span class="pack-submit-btn__label"><spring:message code="pack.detail.reviews.form.submit"/></span>
+                                                <span class="material-symbols-outlined pack-submit-btn__icon">rate_review</span>
+                                            </button>
+                                        </form:form>
+                                    </div>
+                                </c:when>
+                                <c:otherwise>
+                                    <p class="commerce-reviews-card__hint"><spring:message code="pack.detail.reviews.notEligible"/></p>
+                                </c:otherwise>
+                            </c:choose>
+                        </sec:authorize>
+                        <sec:authorize access="isAnonymous()">
+                            <p class="commerce-reviews-card__hint">
+                                <spring:message code="pack.detail.reviews.loginPrompt"/>
+                                <c:url var="reviewLoginUrl" value="/login"/>
+                                <a href="${reviewLoginUrl}" class="commerce-reviews-card__link"><spring:message code="pack.detail.reviews.loginLink"/></a>
+                            </p>
+                        </sec:authorize>
+                    </section>
                 </div>
             </div>
 

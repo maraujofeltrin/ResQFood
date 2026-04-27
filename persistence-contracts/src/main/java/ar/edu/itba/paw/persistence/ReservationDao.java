@@ -29,4 +29,6 @@ public interface ReservationDao {
     int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status);
 
     boolean hasActiveReservation(Long packId, Long customerId);
+
+    boolean hasPaidReservationWithCommerce(Long customerId, Long commerceId);
 }

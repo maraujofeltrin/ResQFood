@@ -1,0 +1,91 @@
+package ar.edu.itba.paw.webapp.controller.commerce;
+
+import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.services.commerce.CommerceReviewService;
+import ar.edu.itba.paw.services.pack.PackService;
+import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
+import ar.edu.itba.paw.webapp.controller.utils.PackDetailModelBuilder;
+import ar.edu.itba.paw.webapp.form.BidForm;
+import ar.edu.itba.paw.webapp.form.CommerceReviewForm;
+import ar.edu.itba.paw.webapp.form.ReservationForm;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import javax.validation.Valid;
+import java.util.Locale;
+
+@Controller
+public class CommerceReviewController {
+
+    private final CommerceReviewService commerceReviewService;
+    private final PackService packService;
+    private final AuthenticatedUserResolver authResolver;
+    private final PackDetailModelBuilder packDetailModelBuilder;
+    private final MessageSource messageSource;
+
+    @Autowired
+    public CommerceReviewController(final CommerceReviewService commerceReviewService, final PackService packService,
+            final AuthenticatedUserResolver authResolver, final PackDetailModelBuilder packDetailModelBuilder,
+            final MessageSource messageSource) {
+        this.commerceReviewService = commerceReviewService;
+        this.packService = packService;
+        this.authResolver = authResolver;
+        this.packDetailModelBuilder = packDetailModelBuilder;
+        this.messageSource = messageSource;
+    }
+
+    @PostMapping("/packs/{packId}/commerce-review")
+    public ModelAndView submitReview(@PathVariable("packId") final long packId,
+            @Valid @ModelAttribute("commerceReviewForm") final CommerceReviewForm commerceReviewForm,
+            final BindingResult bindingResult,
+            final RedirectAttributes redirectAttributes) {
+        final Pack pack = packService.findById(packId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        final Locale locale = LocaleContextHolder.getLocale();
+
+        final User currentUser = authResolver.resolveUser();
+        if (currentUser.getRole() != User.Role.CLIENT) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        if (bindingResult.hasErrors()) {
+            return packDetailModelBuilder.buildPackDetailModel(pack, createDefaultReservationForm(), new BidForm(),
+                    commerceReviewForm);
+        }
+
+        try {
+            commerceReviewService.upsertReview(currentUser.getId(), pack.getCommerceId(),
+                    commerceReviewForm.getRating().intValue(), commerceReviewForm.getBody());
+            redirectAttributes.addFlashAttribute("commerceReviewAlertKind", "success");
+            redirectAttributes.addFlashAttribute("commerceReviewAlertMessage",
+                    messageSource.getMessage("pack.detail.reviews.alert.success", null, locale));
+        } catch (final IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute("commerceReviewAlertKind", "error");
+            redirectAttributes.addFlashAttribute("commerceReviewAlertMessage",
+                    messageSource.getMessage("pack.detail.reviews.alert.notEligible", null, locale));
+        } catch (final IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("commerceReviewAlertKind", "error");
+            redirectAttributes.addFlashAttribute("commerceReviewAlertMessage",
+                    messageSource.getMessage("pack.detail.reviews.alert.invalid", null, locale));
+        }
+
+        return new ModelAndView("redirect:/packs/" + packId + "#commerce-reviews");
+    }
+
+    private ReservationForm createDefaultReservationForm() {
+        final ReservationForm form = new ReservationForm();
+        form.setQuantity(Integer.valueOf(1));
+        return form;
+    }
+}

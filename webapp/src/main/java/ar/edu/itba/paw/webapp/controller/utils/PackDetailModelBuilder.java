@@ -8,14 +8,17 @@ import org.springframework.web.servlet.ModelAndView;
 import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.auction.Bid;
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.CommerceReview;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.auction.AuctionService;
+import ar.edu.itba.paw.services.commerce.CommerceReviewService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.webapp.form.BidForm;
+import ar.edu.itba.paw.webapp.form.CommerceReviewForm;
 import ar.edu.itba.paw.webapp.form.ReservationForm;
 
 import java.text.NumberFormat;
@@ -35,6 +38,7 @@ public class PackDetailModelBuilder {
 
     private final CommerceService commerceService;
     private final AuctionService auctionService;
+    private final CommerceReviewService commerceReviewService;
     private final ClientService clientService;
     private final ReservationService reservationService;
     private final MessageSource messageSource;
@@ -44,10 +48,11 @@ public class PackDetailModelBuilder {
 
     @Autowired
     public PackDetailModelBuilder(final CommerceService commerceService, final AuctionService auctionService,
-            final ClientService clientService, final ReservationService reservationService, final MessageSource messageSource, final ZoneId businessZone,
+            final CommerceReviewService commerceReviewService, final ClientService clientService, final ReservationService reservationService, final MessageSource messageSource, final ZoneId businessZone,
             final AuthenticatedUserResolver authResolver) {
         this.commerceService = commerceService;
         this.auctionService = auctionService;
+        this.commerceReviewService = commerceReviewService;
         this.clientService = clientService;
         this.reservationService = reservationService;
         this.messageSource = messageSource;
@@ -83,6 +88,11 @@ public class PackDetailModelBuilder {
     }
 
     public ModelAndView buildPackDetailModel(final Pack pack, final ReservationForm reservationForm, final BidForm bidForm) {
+        return buildPackDetailModel(pack, reservationForm, bidForm, null);
+    }
+
+    public ModelAndView buildPackDetailModel(final Pack pack, final ReservationForm reservationForm,
+            final BidForm bidForm, final CommerceReviewForm commerceReviewForm) {
         final Optional<Commerce> commerceOpt = commerceService.findByUserId(pack.getCommerceId());
         final Locale locale = LocaleContextHolder.getLocale();
         final String title = pack.getTitle() != null && !pack.getTitle().isBlank() ? pack.getTitle() : messageSource.getMessage("pack.detail.defaultTitle", null, locale);
@@ -166,6 +176,7 @@ public class PackDetailModelBuilder {
             }
         }
         mav.addObject("clientHasActiveReservation", clientHasActiveReservation);
+        addCommerceReviewAttributes(mav, pack.getCommerceId(), commerceReviewForm);
 
         mav.addObject("originalPrice", formatPrice(pack.getOriginalPrice()));
         mav.addObject("finalPrice", formatPrice(pack.getFinalPrice()));
@@ -191,5 +202,37 @@ public class PackDetailModelBuilder {
         mav.addObject("reservationForm", reservationForm);
         mav.addObject("bidForm", bidForm);
         return mav;
+    }
+
+    private void addCommerceReviewAttributes(final ModelAndView mav, final long commerceId,
+            final CommerceReviewForm submittedForm) {
+        final List<CommerceReview> reviews = commerceReviewService.findReviewsForCommerce(commerceId, 1, 5);
+        mav.addObject("commerceReviewItems", CommerceReviewViewHelper.buildRows(reviews, clientService));
+        mav.addObject("commerceReviewCount", commerceReviewService.countReviewsForCommerce(commerceId));
+
+        final Optional<User> userOpt = authResolver.resolveUserOrEmpty();
+        boolean canReview = false;
+        boolean alreadyReviewed = false;
+        CommerceReviewForm form = submittedForm;
+        if (userOpt.isPresent() && userOpt.get().getRole() == User.Role.CLIENT) {
+            final long clientId = userOpt.get().getId();
+            canReview = commerceReviewService.canClientReviewCommerce(clientId, commerceId);
+            final Optional<CommerceReview> ownReview = commerceReviewService.findClientReview(clientId, commerceId);
+            alreadyReviewed = ownReview.isPresent();
+            if (form == null) {
+                form = new CommerceReviewForm();
+                if (ownReview.isPresent()) {
+                    final CommerceReview review = ownReview.get();
+                    form.setRating(review.getRating());
+                    form.setBody(review.getBody());
+                }
+            }
+        }
+        if (form == null) {
+            form = new CommerceReviewForm();
+        }
+        mav.addObject("commerceReviewForm", form);
+        mav.addObject("commerceReviewCanSubmit", Boolean.valueOf(canReview));
+        mav.addObject("commerceReviewAlreadySubmitted", Boolean.valueOf(alreadyReviewed));
     }
 }

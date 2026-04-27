@@ -162,6 +162,11 @@ public class ReservationServiceImplTest {
         public boolean hasActiveReservation(Long packId, Long customerId) {
             return false;
         }
+
+        @Override
+        public boolean hasPaidReservationWithCommerce(final Long customerId, final Long commerceId) {
+            return false;
+        }
     }
 
     static class InMemoryPackDao implements PackDao {

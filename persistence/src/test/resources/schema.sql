@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS tokens CASCADE;
 DROP TABLE IF EXISTS bids CASCADE;
 DROP TABLE IF EXISTS auctions CASCADE;
 DROP TABLE IF EXISTS reservation_tokens CASCADE;
+DROP TABLE IF EXISTS commerce_reviews CASCADE;
 DROP TABLE IF EXISTS pack_tags CASCADE;
 DROP TABLE IF EXISTS reservations CASCADE;
 DROP TABLE IF EXISTS packs CASCADE;
@@ -81,6 +82,19 @@ CREATE TABLE reservations (
     pickup_window VARCHAR(512),
     FOREIGN KEY (customer_id) REFERENCES clients(user_id) ON DELETE CASCADE,
     FOREIGN KEY (pack_id) REFERENCES packs(id) ON DELETE CASCADE
+);
+
+CREATE TABLE commerce_reviews (
+    id INTEGER IDENTITY PRIMARY KEY,
+    commerce_user_id BIGINT NOT NULL,
+    client_user_id BIGINT NOT NULL,
+    rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    body VARCHAR(2000) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    FOREIGN KEY (commerce_user_id) REFERENCES commerces(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (client_user_id) REFERENCES clients(user_id) ON DELETE CASCADE,
+    UNIQUE (client_user_id, commerce_user_id)
 );
 
 CREATE TABLE pack_tags (

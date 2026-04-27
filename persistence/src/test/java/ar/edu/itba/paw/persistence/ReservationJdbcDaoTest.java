@@ -54,7 +54,7 @@ public class ReservationJdbcDaoTest {
     @BeforeEach
     public void setUp() {
         jdbcTemplate = new JdbcTemplate(dataSource);
-        JdbcTestUtils.deleteFromTables(jdbcTemplate, "bids", "auctions", "reservation_tokens", "pack_tags", "reservations", "packs", "images", "commerces", "clients", "tokens", "users");
+        JdbcTestUtils.deleteFromTables(jdbcTemplate, "commerce_reviews", "bids", "auctions", "reservation_tokens", "pack_tags", "reservations", "packs", "images", "commerces", "clients", "tokens", "users");
         
         commerceId = userDao.createUser("commerce@example.com", "pass", "Commerce", "123", User.Role.COMMERCE).getId();
         commerceDao.createCommerce(commerceId, "Comm", Commerce.Category.BAKERY, "Street", 123, "City", "Prov", "1000", "08:00", "20:00");
@@ -163,5 +163,29 @@ public class ReservationJdbcDaoTest {
         // 3. Asserts
         assertTrue(found.isPresent());
         assertEquals(created.getId(), found.get().getId());
+    }
+
+    @Test
+    public void testHasPaidReservationWithCommerce_WhenPaidReservationExists() {
+        // 1. Setup
+        reservationDao.createReservation(clientId, packId, LocalDateTime.now(), 500.0, Reservation.Status.PAID, "PAID_CODE", LocalDateTime.now(), 1, null);
+
+        // 2. Ejercicio
+        final boolean result = reservationDao.hasPaidReservationWithCommerce(clientId, commerceId);
+
+        // 3. Asserts
+        assertTrue(result);
+    }
+
+    @Test
+    public void testHasPaidReservationWithCommerce_WhenOnlyReservedReservationExists() {
+        // 1. Setup
+        reservationDao.createReservation(clientId, packId, LocalDateTime.now(), 500.0, Reservation.Status.RESERVED, "RESERVED_CODE", null, 1, null);
+
+        // 2. Ejercicio
+        final boolean result = reservationDao.hasPaidReservationWithCommerce(clientId, commerceId);
+
+        // 3. Asserts
+        assertFalse(result);
     }
 }

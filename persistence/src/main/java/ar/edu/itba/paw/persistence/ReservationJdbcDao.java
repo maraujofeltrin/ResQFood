@@ -215,4 +215,14 @@ public class ReservationJdbcDao implements ReservationDao {
         );
         return count != null && count > 0;
     }
+
+    @Override
+    public boolean hasPaidReservationWithCommerce(final Long customerId, final Long commerceId) {
+        final Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(r.id) FROM reservations r JOIN packs p ON r.pack_id = p.id WHERE r.customer_id = ? AND p.commerce_id = ? AND r.status = ?",
+                Integer.class,
+                customerId, commerceId, Reservation.Status.PAID.name()
+        );
+        return count != null && count > 0;
+    }
 }
