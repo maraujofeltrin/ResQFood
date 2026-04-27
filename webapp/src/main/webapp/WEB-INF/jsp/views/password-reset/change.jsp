@@ -39,12 +39,12 @@ uri="http://itba.edu.ar/paw/tags" %>
               code="passwordReset.change.placeholder.newPassword"
               var="newPasswordPlaceholder"
             />
-            <form:input
-              type="password"
+            <form:password
               id="newPassword"
               path="newPassword"
               required="required"
-              class="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
+              showPassword="false"
+              cssClass="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
               placeholder="${newPasswordPlaceholder}"
             />
             <form:errors
@@ -63,12 +63,12 @@ uri="http://itba.edu.ar/paw/tags" %>
               code="passwordReset.change.placeholder.confirmPassword"
               var="confirmPasswordPlaceholder"
             />
-            <form:input
-              type="password"
+            <form:password
               id="confirmPassword"
               path="confirmPassword"
               required="required"
-              class="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
+              showPassword="false"
+              cssClass="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
               placeholder="${confirmPasswordPlaceholder}"
             />
             <form:errors

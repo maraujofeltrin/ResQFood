@@ -30,7 +30,7 @@
             </div>
             <div class="flex items-center justify-between gap-3">
                 <span class="text-on-surface-variant"><spring:message code="reservation.my.auction.card.myBid" /></span>
-                <span class="font-semibold text-on-surface"><c:out value="${formattedMyBid}" escapeXml="false"/></span>
+                <span class="font-semibold text-on-surface"><c:out value="${formattedMyBid}"/></span>
             </div>
             <div class="flex items-center justify-between gap-3">
                 <span class="text-on-surface-variant"><spring:message code="reservation.my.auction.card.ends" /></span>

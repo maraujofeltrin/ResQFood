@@ -6,8 +6,8 @@
 
 <div class="p-8 rounded-3xl bg-surface-container border-none flex flex-col items-center text-center">
     <div class="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mb-6 shadow-sm">
-        <span class="material-symbols-outlined text-primary text-3xl" data-icon="${icon}">${icon}</span>
+        <span class="material-symbols-outlined text-primary text-3xl" data-icon="<c:out value='${icon}'/>"><c:out value="${icon}" /></span>
     </div>
-    <h3 class="text-xl font-bold text-primary mb-3">${title}</h3>
-    <p class="text-secondary">${description}</p>
+    <h3 class="text-xl font-bold text-primary mb-3"><c:out value="${title}" /></h3>
+    <p class="text-secondary"><c:out value="${description}" /></p>
 </div>

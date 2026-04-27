@@ -14,11 +14,11 @@
 <c:set var="buttonHtmlType" value="${not empty htmlType ? htmlType : 'button'}" />
 <c:set var="classes" value="btn btn-${btnType} btn-${btnSize} ${btnCssClass}" />
 
-<button type="${buttonHtmlType}"
-    class="${classes}"
+<button type="<c:out value='${buttonHtmlType}'/>"
+    class="<c:out value='${classes}'/>"
     <c:if test="${not empty onclick}">
-        onclick="${onclick}"
+        onclick="<c:out value='${onclick}'/>"
     </c:if>
     <c:if test="${btnDisabled}">disabled="disabled"</c:if>>
-    ${text}
+    <c:out value="${text}" />
 </button>

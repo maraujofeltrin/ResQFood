@@ -126,9 +126,9 @@ uri="http://itba.edu.ar/paw/tags" %>
               var="passwordPlaceholder"
               text="••••••••"
             />
-            <form:input
-              type="password"
+            <form:password
               path="credentials.password"
+              showPassword="false"
               cssClass="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
               placeholder="${passwordPlaceholder}"
             />
@@ -154,9 +154,9 @@ uri="http://itba.edu.ar/paw/tags" %>
               var="repeatPlaceholder"
               text="••••••••"
             />
-            <form:input
-              type="password"
+            <form:password
               path="credentials.repeatPassword"
+              showPassword="false"
               cssClass="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
               placeholder="${repeatPlaceholder}"
             />

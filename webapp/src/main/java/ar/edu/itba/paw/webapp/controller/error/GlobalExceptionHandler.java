@@ -17,7 +17,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ModelAndView handleMaxUploadSize(final MaxUploadSizeExceededException e,
             final RedirectAttributes redirectAttributes) {
-        return new ModelAndView("redirect:/commerce/create-pack?error=maxUploadSize");
+        return new ModelAndView("redirect:/commerce/create-offer?error=maxUploadSize");
     }
 
     @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)

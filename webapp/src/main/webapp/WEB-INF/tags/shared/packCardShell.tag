@@ -131,9 +131,9 @@
       <div>
         <p class="${priceLabelClass}"><c:out value="${resolvedRescueLabel}"/></p>
         <div class="flex items-baseline gap-2">
-          <span class="${priceValueClass}"><c:out value="${price}" escapeXml="false"/></span>
+          <span class="${priceValueClass}"><c:out value="${price}"/></span>
           <c:if test="${not empty oldPrice}">
-             <span class="text-sm text-outline line-through"><c:out value="${oldPrice}" escapeXml="false"/></span>
+             <span class="text-sm text-outline line-through"><c:out value="${oldPrice}"/></span>
           </c:if>
         </div>
       </div>

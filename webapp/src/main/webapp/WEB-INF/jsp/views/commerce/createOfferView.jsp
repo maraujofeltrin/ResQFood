@@ -174,10 +174,10 @@
                     <spring:message code="commerce.createOffer.form.submit.pack" var="submitPackLabel"/>
                     <spring:message code="commerce.createOffer.form.submit.auction" var="submitAuctionLabel"/>
                     <button type="submit" class="pack-submit-btn font-headline mt-2" id="create-offer-submit-btn"
-                            data-submitting-text="${submittingText}"
-                            data-pack-label="${submitPackLabel}"
-                            data-auction-label="${submitAuctionLabel}">
-                        <span class="pack-submit-btn__label">${submitPackLabel}</span>
+                            data-submitting-text="<c:out value='${submittingText}'/>"
+                            data-pack-label="<c:out value='${submitPackLabel}'/>"
+                            data-auction-label="<c:out value='${submitAuctionLabel}'/>">
+                        <span class="pack-submit-btn__label"><c:out value="${submitPackLabel}" /></span>
                         <span class="material-symbols-outlined pack-submit-btn__icon" id="submit-btn-icon">rocket_launch</span>
                     </button>
                         </div>

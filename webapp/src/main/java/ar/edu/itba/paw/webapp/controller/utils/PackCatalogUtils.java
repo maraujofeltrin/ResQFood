@@ -34,6 +34,7 @@ public class PackCatalogUtils {
     private static final int AUCTION_CAROUSEL_SIZE = 6;
     private static final String TYPE_PACKS = "packs";
     private static final String TYPE_AUCTIONS = "auctions";
+    private static final Set<String> ALLOWED_TIME_RANGES = Set.of("morning", "afternoon", "evening");
 
     private enum CatalogMode {
         ALL,
@@ -80,7 +81,7 @@ public class PackCatalogUtils {
         final Municipality municipality = Municipality.fromString(locationParam);
         final String cityFilter = municipality != null ? municipality.getCityName() : null;
 
-        final List<String> safeTimeRange = timeRange != null ? timeRange : new ArrayList<>();
+        final List<String> safeTimeRange = normalizeTimeRanges(timeRange);
 
         final boolean hasQuery = query != null && !query.trim().isEmpty();
         final String trimmedQuery = hasQuery ? query.trim() : null;
@@ -99,7 +100,6 @@ public class PackCatalogUtils {
             catalogMode = CatalogMode.AUCTIONS;
         }
 
-        final boolean showPacks = catalogMode != CatalogMode.AUCTIONS;
         final boolean showAuctionsList = catalogMode == CatalogMode.AUCTIONS;
         final boolean showAuctionsCarousel = catalogMode == CatalogMode.ALL;
 
@@ -285,6 +285,23 @@ public class PackCatalogUtils {
             final String type = raw.trim().toLowerCase(Locale.ROOT);
             if (TYPE_PACKS.equals(type) || TYPE_AUCTIONS.equals(type)) {
                 values.add(type);
+            }
+        }
+        return new ArrayList<>(values);
+    }
+
+    private static List<String> normalizeTimeRanges(final List<String> rawTimeRanges) {
+        if (rawTimeRanges == null || rawTimeRanges.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final Set<String> values = new LinkedHashSet<>();
+        for (final String raw : rawTimeRanges) {
+            if (raw == null) {
+                continue;
+            }
+            final String value = raw.trim().toLowerCase(Locale.ROOT);
+            if (ALLOWED_TIME_RANGES.contains(value)) {
+                values.add(value);
             }
         }
         return new ArrayList<>(values);

@@ -24,6 +24,7 @@ import java.util.Set;
 @Component
 public class CreateOfferFormValidator implements Validator {
 
+    private static final long MAX_IMAGE_SIZE_BYTES = 5L * 1024L * 1024L;
     private static final Set<String> ALLOWED_IMAGE_TYPES = new HashSet<>(Arrays.asList(
             "image/jpeg", "image/png", "image/webp", "image/gif"));
 
@@ -132,6 +133,10 @@ public class CreateOfferFormValidator implements Validator {
 
     private void validateImage(final MultipartFile image, final Errors errors, final Locale locale) {
         if (image != null && !image.isEmpty()) {
+            if (image.getSize() > MAX_IMAGE_SIZE_BYTES) {
+                errors.rejectValue("image", "error.image.maxSize",
+                        messageSource.getMessage("commerce.createPack.validation.image.maxSize", null, locale));
+            }
             final String contentType = image.getContentType();
             if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
                 errors.rejectValue("image", "error.image.invalidType",

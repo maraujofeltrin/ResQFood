@@ -61,9 +61,9 @@
                     </div>
 
                     <button type="button"
-                            id="${btnId}"
+                            id="<c:out value='${btnId}'/>"
                             class="w-full mt-6 text-primary font-bold text-sm py-2 hover:bg-primary/5 rounded-lg transition-colors font-headline"
-                            data-bid-history-target="${moreWrapId}"
+                            data-bid-history-target="<c:out value='${moreWrapId}'/>"
                             aria-expanded="false">
                         <spring:message code="pack.detail.bidHistory.viewAll" arguments="${bidCount}"/>
                     </button>

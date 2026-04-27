@@ -27,10 +27,10 @@
 
 <div class="group relative overflow-hidden rounded-[2.5rem] ${containerClasses} p-10 flex flex-col justify-between h-[500px] transition-all hover:shadow-lg">
     <div class="z-10">
-        <span class="inline-block px-4 py-1 rounded-full ${tagClasses} text-xs font-bold tracking-widest uppercase mb-6">${tagLabel}</span>
-        <h2 class="text-4xl font-bold ${titleClasses} mb-4">${title}</h2>
+        <span class="inline-block px-4 py-1 rounded-full ${tagClasses} text-xs font-bold tracking-widest uppercase mb-6"><c:out value="${tagLabel}" /></span>
+        <h2 class="text-4xl font-bold ${titleClasses} mb-4"><c:out value="${title}" /></h2>
         <p class="text-lg ${descClasses} leading-relaxed mb-8 max-w-sm">
-            ${description}
+            <c:out value="${description}" />
         </p>
         <ul class="space-y-3 mb-10">
             <jsp:doBody />
@@ -38,12 +38,12 @@
     </div>
     <div class="z-10">
         <a href="<c:url value='${btnHref}'/>" class="w-full md:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full font-bold text-lg ${btnClasses} hover:scale-105 transition-transform">
-            ${btnText}
-            <span class="material-symbols-outlined" data-icon="${btnIcon}">${btnIcon}</span>
+            <c:out value="${btnText}" />
+            <span class="material-symbols-outlined" data-icon="<c:out value='${btnIcon}'/>"><c:out value="${btnIcon}" /></span>
         </a>
     </div>
     <!-- Background Decoration -->
     <div class="absolute bottom-0 right-0 w-64 h-64 ${bgIconClasses}">
-        <span class="material-symbols-outlined text-[15rem]" data-icon="${bgIcon}">${bgIcon}</span>
+        <span class="material-symbols-outlined text-[15rem]" data-icon="<c:out value='${bgIcon}'/>"><c:out value="${bgIcon}" /></span>
     </div>
 </div>

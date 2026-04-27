@@ -28,12 +28,12 @@
                         <c:when test="${not empty packImageId}">
                             <img class="pack-detail-hero-img"
                                  src="${pageContext.request.contextPath}/images/${packImageId}"
-                                 alt="${packDetailImageAlt}"/>
+                                 alt="<c:out value='${packDetailImageAlt}'/>"/>
                         </c:when>
                         <c:otherwise>
                             <img class="pack-detail-hero-img"
                                  src="${pageContext.request.contextPath}/images/pack-placeholder.svg"
-                                 alt="${packDetailImageAlt}"/>
+                                 alt="<c:out value='${packDetailImageAlt}'/>"/>
                         </c:otherwise>
                     </c:choose>
                 </div>
@@ -60,7 +60,7 @@
                             <p class="pack-detail-description break-words overflow-hidden"><c:out value="${packDescription}"/></p>
                         </c:otherwise>
                     </c:choose>
-                    <section class="pack-detail-commerce" aria-label="${packDetailCommerceSectionAria}">
+                    <section class="pack-detail-commerce" aria-label="<c:out value='${packDetailCommerceSectionAria}'/>">
                         <div class="commerce-info-card">
                             <div class="commerce-info-card__header">
                                 <span class="material-symbols-outlined commerce-info-card__icon commerce-info-card__icon--hero" aria-hidden="true">storefront</span>
@@ -182,7 +182,7 @@
                                             <spring:message code="pack.detail.bid.form.submitting" var="bidSubmittingText"/>
                                             <button type="submit" class="auction-submit-btn font-headline mt-2 w-full"
                                                     id="auction-bid-submit-btn"
-                                                    data-submitting-text="${bidSubmittingText}">
+                                                    data-submitting-text="<c:out value='${bidSubmittingText}'/>">
                                                 <span class="auction-submit-btn__label"><spring:message code="pack.detail.bid.form.submit"/></span>
                                                 <span class="material-symbols-outlined auction-submit-btn__icon">gavel</span>
                                             </button>
@@ -253,7 +253,7 @@
                             </c:choose>
 
                             <div class="pack-form-field" id="reservation-total-block"
-                                 data-unit-price="${unitPriceNumber}">
+                                 data-unit-price="<c:out value='${unitPriceNumber}'/>">
                                 <p class="pack-form-total-label"><spring:message code="pack.detail.form.total"/></p>
                                 <p class="pack-form-total-amount font-headline" id="reservation-total-display" aria-live="polite">—</p>
                             </div>
@@ -261,7 +261,7 @@
                             <spring:message code="pack.detail.form.submitting" var="submittingText"/>
                             <button type="submit" class="pack-submit-btn font-headline"
                                     id="reservation-submit-btn"
-                                    data-submitting-text="${submittingText}"
+                                    data-submitting-text="<c:out value='${submittingText}'/>"
                                     <c:if test="${quantityMax lt 1}">disabled="disabled" aria-disabled="true"</c:if>>
                                 <span class="pack-submit-btn__label"><spring:message code="pack.detail.form.submit"/></span>
                                 <span class="material-symbols-outlined pack-submit-btn__icon">arrow_forward</span>

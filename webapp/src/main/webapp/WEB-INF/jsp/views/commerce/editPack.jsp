@@ -119,7 +119,7 @@
                     <!-- ── Submit Button ── -->
                     <spring:message code="commerce.editPack.form.submitting" var="submittingText"/>
                     <button type="submit" class="pack-submit-btn font-headline mt-2" id="create-offer-submit-btn"
-                            data-submitting-text="${submittingText}">
+                            data-submitting-text="<c:out value='${submittingText}'/>">
                         <span class="pack-submit-btn__label"><spring:message code="commerce.editPack.form.submit"/></span>
                         <span class="material-symbols-outlined pack-submit-btn__icon">save</span>
                     </button>
