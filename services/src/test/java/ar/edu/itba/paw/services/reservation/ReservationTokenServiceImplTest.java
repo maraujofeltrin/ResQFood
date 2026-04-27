@@ -138,6 +138,7 @@ public class ReservationTokenServiceImplTest {
         @Override public Optional<Reservation> findById(Long id) { return reservationDao.findById(id); }
         @Override public java.util.List<Reservation> findByCustomerId(Long customerId) { throw new UnsupportedOperationException(); }
         @Override public java.util.List<Reservation> findByCommerceId(Long commerceId) { throw new UnsupportedOperationException(); }
+        @Override public java.util.List<Reservation> findByPackId(Long packId) { throw new UnsupportedOperationException(); }
         @Override public String computePickupDateStr(Reservation reservation) { throw new UnsupportedOperationException(); }
         @Override public void validateReservationBelongsToCommerce(Long reservationId, Long commerceUserId) { throw new UnsupportedOperationException(); }
         @Override public ar.edu.itba.paw.services.pack.DirectReservationCheck checkDirectPackReservation(long packId, int quantity) { throw new UnsupportedOperationException(); }

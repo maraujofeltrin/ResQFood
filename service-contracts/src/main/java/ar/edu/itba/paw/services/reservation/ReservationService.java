@@ -17,6 +17,8 @@ public interface ReservationService {
 
     List<Reservation> findByCommerceId(final Long commerceId);
 
+    List<Reservation> findByPackId(final Long packId);
+
     String computePickupDateStr(Reservation reservation);
 
     void validateReservationBelongsToCommerce(Long reservationId, Long commerceUserId);

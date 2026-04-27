@@ -194,6 +194,14 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
+    public List<Reservation> findByPackId(final Long packId) {
+        if (packId == null) {
+            return Collections.emptyList();
+        }
+        return reservationDao.findByPackId(packId);
+    }
+
+    @Override
     public void validateReservationBelongsToCommerce(final Long reservationId, final Long commerceUserId) {
         if (reservationId == null || commerceUserId == null) {
             throw new IllegalArgumentException("INVALID_PARAMS");

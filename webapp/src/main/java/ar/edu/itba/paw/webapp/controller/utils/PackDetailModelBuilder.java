@@ -12,7 +12,9 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.user.ClientService;
+import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.webapp.form.BidForm;
 import ar.edu.itba.paw.webapp.form.ReservationForm;
 
@@ -34,6 +36,7 @@ public class PackDetailModelBuilder {
     private final CommerceService commerceService;
     private final AuctionService auctionService;
     private final ClientService clientService;
+    private final ReservationService reservationService;
     private final MessageSource messageSource;
     private final ZoneId businessZone;
     private final AuthenticatedUserResolver authResolver;
@@ -41,11 +44,12 @@ public class PackDetailModelBuilder {
 
     @Autowired
     public PackDetailModelBuilder(final CommerceService commerceService, final AuctionService auctionService,
-            final ClientService clientService, final MessageSource messageSource, final ZoneId businessZone,
+            final ClientService clientService, final ReservationService reservationService, final MessageSource messageSource, final ZoneId businessZone,
             final AuthenticatedUserResolver authResolver) {
         this.commerceService = commerceService;
         this.auctionService = auctionService;
         this.clientService = clientService;
+        this.reservationService = reservationService;
         this.messageSource = messageSource;
         this.businessZone = businessZone;
         this.authResolver = authResolver;
@@ -141,7 +145,19 @@ public class PackDetailModelBuilder {
         final boolean isOwner = authResolver.resolveUserOrEmpty()
                 .map(u -> u.getRole() == User.Role.COMMERCE && u.getId().equals(pack.getCommerceId()))
                 .orElse(false);
-        mav.addObject("manageable", isOwner && !auctionPresent);
+        mav.addObject("isOwner", isOwner);
+        final boolean manageable = isOwner && !auctionPresent;
+        mav.addObject("manageable", manageable);
+        
+        if (isOwner) {
+            final List<Reservation> reservations = reservationService.findByPackId(pack.getId());
+            final List<ReservationHistoryViewHelper.ReservationHistoryRow> reservationHistoryItems = 
+                ReservationHistoryViewHelper.buildRows(reservations, clientService, messageSource, locale);
+            mav.addObject("packReservationHistoryItems", reservationHistoryItems);
+        } else {
+            mav.addObject("packReservationHistoryItems", Collections.emptyList());
+        }
+
         mav.addObject("originalPrice", formatPrice(pack.getOriginalPrice()));
         mav.addObject("finalPrice", formatPrice(pack.getFinalPrice()));
         final Integer stock = pack.getStock();

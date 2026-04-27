@@ -298,6 +298,9 @@
                 <c:if test="${auctionPresent}">
                     <paw:bidHistoryCard packId="${packId}" items="${auctionBidHistoryItems}"/>
                 </c:if>
+                <c:if test="${isOwner}">
+                    <paw:reservationHistoryCard packId="${packId}" items="${packReservationHistoryItems}"/>
+                </c:if>
             </aside>
         </div>
     </main>
