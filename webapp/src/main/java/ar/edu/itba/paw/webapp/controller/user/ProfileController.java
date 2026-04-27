@@ -1,11 +1,15 @@
 package ar.edu.itba.paw.webapp.controller.user;
 
+import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.services.user.ProfileCommerceSection;
 import ar.edu.itba.paw.services.user.ProfileService;
+import ar.edu.itba.paw.services.user.ProfileSettingsOverview;
 import ar.edu.itba.paw.services.user.UserService;
 import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
-import ar.edu.itba.paw.webapp.form.ProfilePhotoForm;
-import ar.edu.itba.paw.webapp.validation.ProfilePhotoFormValidator;
+import ar.edu.itba.paw.webapp.form.ProfileAccountForm;
+import ar.edu.itba.paw.webapp.validation.ProfileAccountFormValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -32,7 +36,8 @@ public class ProfileController {
     private final AuthenticatedUserResolver authenticatedUserResolver;
     private final ProfileService profileService;
     private final UserService userService;
-    private final ProfilePhotoFormValidator profilePhotoFormValidator;
+    private final CommerceService commerceService;
+    private final ProfileAccountFormValidator profileAccountFormValidator;
     private final LocaleResolver localeResolver;
 
     @Autowired
@@ -40,12 +45,14 @@ public class ProfileController {
             final AuthenticatedUserResolver authenticatedUserResolver,
             final ProfileService profileService,
             final UserService userService,
-            final ProfilePhotoFormValidator profilePhotoFormValidator,
+            final CommerceService commerceService,
+            final ProfileAccountFormValidator profileAccountFormValidator,
             final LocaleResolver localeResolver) {
         this.authenticatedUserResolver = authenticatedUserResolver;
         this.profileService = profileService;
         this.userService = userService;
-        this.profilePhotoFormValidator = profilePhotoFormValidator;
+        this.commerceService = commerceService;
+        this.profileAccountFormValidator = profileAccountFormValidator;
         this.localeResolver = localeResolver;
     }
 
@@ -59,31 +66,47 @@ public class ProfileController {
         return renderProfile(model, NAV_SETTINGS);
     }
 
-    @PostMapping("/profile/photo")
-    public String uploadProfilePhoto(
-            @ModelAttribute("profilePhotoForm") final ProfilePhotoForm profilePhotoForm,
+    @PostMapping("/profile/account")
+    public String saveProfileAccount(
+            @ModelAttribute("profileAccountForm") final ProfileAccountForm profileAccountForm,
             final BindingResult bindingResult,
             final Model model,
             final RedirectAttributes redirectAttributes) {
-        profilePhotoFormValidator.validate(profilePhotoForm, bindingResult);
-        if (bindingResult.hasErrors()) {
-            return renderProfileWithPhotoFormErrors(model, profilePhotoForm, bindingResult);
-        }
-        final byte[] bytes;
-        final String contentType;
-        try {
-            bytes = profilePhotoForm.getPhoto().getBytes();
-            contentType = profilePhotoForm.getPhoto().getContentType();
-        } catch (final IOException ex) {
-            return renderProfilePhotoServiceError(model, profilePhotoForm);
-        }
         final User user = authenticatedUserResolver.resolveUser();
-        try {
-            userService.updateProfilePhoto(user.getId(), bytes, contentType);
-        } catch (final IllegalArgumentException | NoSuchElementException ex) {
-            return renderProfilePhotoServiceError(model, profilePhotoForm);
+        profileAccountFormValidator.validate(profileAccountForm, bindingResult, user.getRole());
+        if (bindingResult.hasErrors()) {
+            return renderProfileWithAccountErrors(model, profileAccountForm, bindingResult);
         }
-        redirectAttributes.addFlashAttribute("profilePhotoUpdateSuccess", true);
+        if (user.getRole() == User.Role.COMMERCE) {
+            final Integer streetNumber = parseStreetNumberOrNull(profileAccountForm.getStreetNumber());
+            try {
+                commerceService.updateProfileFields(
+                        user.getId(),
+                        Commerce.Category.valueOf(profileAccountForm.getCategory().trim()),
+                        profileAccountForm.getStreet().trim(),
+                        streetNumber,
+                        profileAccountForm.getCity().trim(),
+                        profileAccountForm.getProvince(),
+                        profileAccountForm.getPostalCode(),
+                        profileAccountForm.getOpeningTime().trim(),
+                        profileAccountForm.getClosingTime().trim());
+            } catch (final IllegalArgumentException | NoSuchElementException ex) {
+                return renderProfileCommerceServiceError(model, profileAccountForm);
+            }
+        }
+        if (profileAccountForm.getPhoto() != null && !profileAccountForm.getPhoto().isEmpty()) {
+            try {
+                userService.updateProfilePhoto(
+                        user.getId(),
+                        profileAccountForm.getPhoto().getBytes(),
+                        profileAccountForm.getPhoto().getContentType());
+            } catch (final IOException ex) {
+                return renderProfilePhotoServiceError(model, profileAccountForm);
+            } catch (final IllegalArgumentException | NoSuchElementException ex) {
+                return renderProfilePhotoServiceError(model, profileAccountForm);
+            }
+        }
+        redirectAttributes.addFlashAttribute("profileAccountUpdateSuccess", true);
         return "redirect:/profile";
     }
 
@@ -110,28 +133,60 @@ public class ProfileController {
         return "redirect:/profile/settings";
     }
 
-    private String renderProfileWithPhotoFormErrors(
+    private static Integer parseStreetNumberOrNull(final String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        return Integer.parseInt(raw.trim());
+    }
+
+    private String renderProfileWithAccountErrors(
             final Model model,
-            final ProfilePhotoForm profilePhotoForm,
+            final ProfileAccountForm profileAccountForm,
             final BindingResult bindingResult) {
-        model.addAttribute("org.springframework.validation.BindingResult.profilePhotoForm", bindingResult);
-        model.addAttribute("profilePhotoForm", profilePhotoForm);
+        model.addAttribute("org.springframework.validation.BindingResult.profileAccountForm", bindingResult);
+        model.addAttribute("profileAccountForm", profileAccountForm);
         return renderProfile(model, NAV_PROFILE);
     }
 
-    private String renderProfilePhotoServiceError(final Model model, final ProfilePhotoForm profilePhotoForm) {
-        model.addAttribute("profilePhotoForm", profilePhotoForm);
+    private String renderProfilePhotoServiceError(final Model model, final ProfileAccountForm profileAccountForm) {
+        model.addAttribute("profileAccountForm", profileAccountForm);
         model.addAttribute("profilePhotoUpdateError", true);
+        return renderProfile(model, NAV_PROFILE);
+    }
+
+    private String renderProfileCommerceServiceError(final Model model, final ProfileAccountForm profileAccountForm) {
+        model.addAttribute("profileAccountForm", profileAccountForm);
+        model.addAttribute("profileCommerceUpdateError", true);
         return renderProfile(model, NAV_PROFILE);
     }
 
     private String renderProfile(final Model model, final String profileNavSection) {
         final User user = authenticatedUserResolver.resolveUser();
-        model.addAttribute("profile", profileService.getSettingsOverview(user.getId()));
+        final ProfileSettingsOverview overview = profileService.getSettingsOverview(user.getId());
+        model.addAttribute("profile", overview);
+        model.addAttribute("commerceCategories", Commerce.Category.values());
         model.addAttribute("profileNavSection", profileNavSection);
-        if (!model.containsAttribute("profilePhotoForm")) {
-            model.addAttribute("profilePhotoForm", new ProfilePhotoForm());
+        if (!model.containsAttribute("profileAccountForm")) {
+            final ProfileAccountForm form = new ProfileAccountForm();
+            populateAccountFormDefaults(form, overview);
+            model.addAttribute("profileAccountForm", form);
         }
         return "profile/profileView";
+    }
+
+    private static void populateAccountFormDefaults(final ProfileAccountForm form, final ProfileSettingsOverview overview) {
+        final ProfileCommerceSection c = overview.getCommerce();
+        if (c == null) {
+            return;
+        }
+        form.setStreet(c.getStreet());
+        form.setStreetNumber(c.getStreetNumber() != null ? String.valueOf(c.getStreetNumber()) : "");
+        form.setCity(c.getCity());
+        form.setProvince(c.getProvince());
+        form.setPostalCode(c.getPostalCode());
+        form.setCategory(c.getCategory());
+        form.setOpeningTime(c.getOpeningTime());
+        form.setClosingTime(c.getClosingTime());
     }
 }

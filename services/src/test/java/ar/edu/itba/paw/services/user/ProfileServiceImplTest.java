@@ -1,6 +1,8 @@
 package ar.edu.itba.paw.services.user;
 
+import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.services.commerce.CommerceService;
 import org.junit.jupiter.api.Test;
 
 import java.util.Locale;
@@ -10,6 +12,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -72,13 +75,33 @@ class ProfileServiceImplTest {
         }
     }
 
+    static final class StubCommerceService implements CommerceService {
+        private final Map<Long, Commerce> byUserId = new ConcurrentHashMap<>();
+
+        void put(final Commerce commerce) {
+            byUserId.put(commerce.getUserId(), commerce);
+        }
+
+        @Override
+        public Optional<Commerce> findByUserId(final Long userId) {
+            return Optional.ofNullable(byUserId.get(userId));
+        }
+
+        @Override
+        public void updateProfileFields(final long userId, final Commerce.Category category, final String street,
+                final Integer streetNumber, final String city, final String province, final String postalCode,
+                final String openingTime, final String closingTime) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
     @Test
     void getSettingsOverview_mapsPersistedUser() {
         // 1. Setup
         final StubUserService userService = new StubUserService();
         userService.put(new User(1L, "a@b.com", "hash", "Nombre", "+99", User.Role.CLIENT, true,
                 Locale.forLanguageTag("en"), null));
-        final ProfileServiceImpl profileService = new ProfileServiceImpl(userService);
+        final ProfileServiceImpl profileService = new ProfileServiceImpl(userService, new StubCommerceService());
 
         // 2. Ejercicio
         final ProfileSettingsOverview overview = profileService.getSettingsOverview(1L);
@@ -89,6 +112,7 @@ class ProfileServiceImplTest {
         assertEquals("a@b.com", overview.getEmail());
         assertEquals("profile-avatar-placeholder.svg", overview.getProfileImageFileName());
         assertNull(overview.getProfileImageId());
+        assertNull(overview.getCommerce());
         assertEquals("en", overview.getSelectedLanguageCode());
         assertEquals(2, overview.getLanguageCodes().size());
         assertTrue(overview.getLanguageCodes().contains("en"));
@@ -101,7 +125,10 @@ class ProfileServiceImplTest {
         final StubUserService userService = new StubUserService();
         userService.put(new User(2L, "c@d.com", "h", "Solo", null, User.Role.COMMERCE, false,
                 Locale.forLanguageTag("es"), null));
-        final ProfileServiceImpl profileService = new ProfileServiceImpl(userService);
+        final StubCommerceService commerceService = new StubCommerceService();
+        commerceService.put(new Commerce(2L, "El Almacén", Commerce.Category.BAKERY, "Rivadavia", 100, "Morón", "BA",
+                "1708", "08:30", "20:00"));
+        final ProfileServiceImpl profileService = new ProfileServiceImpl(userService, commerceService);
 
         // 2. Ejercicio
         final ProfileSettingsOverview overview = profileService.getSettingsOverview(2L);
@@ -109,6 +136,11 @@ class ProfileServiceImplTest {
         // 3. Asserts
         assertEquals("", overview.getPhone());
         assertEquals("es", overview.getSelectedLanguageCode());
+        assertEquals("El Almacén", overview.getFullName());
+        assertNotNull(overview.getCommerce());
+        assertEquals("El Almacén", overview.getCommerce().getCommercialName());
+        assertEquals("BAKERY", overview.getCommerce().getCategory());
+        assertEquals("Rivadavia", overview.getCommerce().getStreet());
     }
 
     @Test
@@ -116,7 +148,7 @@ class ProfileServiceImplTest {
         // 1. Setup
         final StubUserService userService = new StubUserService();
         userService.put(new User(3L, "e@f.com", "h", "Fr", null, User.Role.CLIENT, true, Locale.FRANCE, null));
-        final ProfileServiceImpl profileService = new ProfileServiceImpl(userService);
+        final ProfileServiceImpl profileService = new ProfileServiceImpl(userService, new StubCommerceService());
 
         // 2. Ejercicio
         final ProfileSettingsOverview overview = profileService.getSettingsOverview(3L);
@@ -131,7 +163,7 @@ class ProfileServiceImplTest {
         final StubUserService userService = new StubUserService();
         userService.put(new User(4L, "img@test.com", "h", "Con foto", null, User.Role.CLIENT, true,
                 Locale.forLanguageTag("es"), 99L));
-        final ProfileServiceImpl profileService = new ProfileServiceImpl(userService);
+        final ProfileServiceImpl profileService = new ProfileServiceImpl(userService, new StubCommerceService());
 
         // 2. Ejercicio
         final ProfileSettingsOverview overview = profileService.getSettingsOverview(4L);
@@ -143,7 +175,7 @@ class ProfileServiceImplTest {
     @Test
     void getSettingsOverview_userMissing_throws() {
         // 1. Setup
-        final ProfileServiceImpl profileService = new ProfileServiceImpl(new StubUserService());
+        final ProfileServiceImpl profileService = new ProfileServiceImpl(new StubUserService(), new StubCommerceService());
 
         // 2. Ejercicio / 3. Asserts
         assertThrows(NoSuchElementException.class, () -> profileService.getSettingsOverview(99L));

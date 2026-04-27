@@ -6,6 +6,7 @@ import java.util.Objects;
 /**
  * Datos mostrados en la pantalla de perfil, construidos desde el {@link ar.edu.itba.paw.models.user.User}
  * persistido. Si hay {@link #profileImageId}, la URL de la foto es {@code /images/{id}}; si no, {@link #profileImageFileName}.
+ * Para rol COMMERCE, {@link #commerce} contiene datos del comercio; para CLIENT es {@code null}.
  */
 public final class ProfileSettingsOverview {
 
@@ -18,6 +19,7 @@ public final class ProfileSettingsOverview {
     private final String profileImageFileName;
     private final String selectedLanguageCode;
     private final List<String> languageCodes;
+    private final ProfileCommerceSection commerce;
 
     public ProfileSettingsOverview(
             final String fullName,
@@ -26,7 +28,8 @@ public final class ProfileSettingsOverview {
             final Long profileImageId,
             final String profileImageFileName,
             final String selectedLanguageCode,
-            final List<String> languageCodes) {
+            final List<String> languageCodes,
+            final ProfileCommerceSection commerce) {
         this.fullName = Objects.requireNonNull(fullName);
         this.phone = Objects.requireNonNull(phone);
         this.email = Objects.requireNonNull(email);
@@ -34,6 +37,7 @@ public final class ProfileSettingsOverview {
         this.profileImageFileName = Objects.requireNonNull(profileImageFileName);
         this.selectedLanguageCode = Objects.requireNonNull(selectedLanguageCode);
         this.languageCodes = List.copyOf(languageCodes);
+        this.commerce = commerce;
     }
 
     public String getFullName() {
@@ -62,5 +66,9 @@ public final class ProfileSettingsOverview {
 
     public List<String> getLanguageCodes() {
         return languageCodes;
+    }
+
+    public ProfileCommerceSection getCommerce() {
+        return commerce;
     }
 }

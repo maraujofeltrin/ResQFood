@@ -1,6 +1,8 @@
 package ar.edu.itba.paw.services.user;
 
+import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.services.commerce.CommerceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,10 +16,12 @@ public class ProfileServiceImpl implements ProfileService {
     private static final List<String> LANGUAGE_CODES = List.of("es", "en");
 
     private final UserService userService;
+    private final CommerceService commerceService;
 
     @Autowired
-    public ProfileServiceImpl(final UserService userService) {
+    public ProfileServiceImpl(final UserService userService, final CommerceService commerceService) {
         this.userService = userService;
+        this.commerceService = commerceService;
     }
 
     @Override
@@ -26,13 +30,37 @@ public class ProfileServiceImpl implements ProfileService {
                 .orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
         final String phone = user.getPhone() == null ? "" : user.getPhone();
         final String selectedLang = "en".equalsIgnoreCase(user.getLocale().getLanguage()) ? "en" : "es";
+        ProfileCommerceSection commerceSection = null;
+        String displayName = user.getName();
+        if (user.getRole() == User.Role.COMMERCE) {
+            commerceSection = commerceService.findByUserId(userId)
+                    .map(ProfileServiceImpl::toProfileCommerceSection)
+                    .orElse(null);
+            if (commerceSection != null) {
+                displayName = commerceSection.getCommercialName();
+            }
+        }
         return new ProfileSettingsOverview(
-                user.getName(),
+                displayName,
                 phone,
                 user.getEmail(),
                 user.getProfileImageId(),
                 PLACEHOLDER_PROFILE_IMAGE,
                 selectedLang,
-                LANGUAGE_CODES);
+                LANGUAGE_CODES,
+                commerceSection);
+    }
+
+    private static ProfileCommerceSection toProfileCommerceSection(final Commerce c) {
+        return new ProfileCommerceSection(
+                c.getCommercialName(),
+                c.getCategory() == null ? null : c.getCategory().name(),
+                c.getStreet(),
+                c.getStreetNumber(),
+                c.getCity(),
+                c.getProvince(),
+                c.getPostalCode(),
+                c.getOpeningTime(),
+                c.getClosingTime());
     }
 }

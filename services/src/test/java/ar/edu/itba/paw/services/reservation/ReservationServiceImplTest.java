@@ -245,6 +245,12 @@ public class ReservationServiceImplTest {
 
     static class TestCommerceService implements CommerceService {
         @Override public Optional<ar.edu.itba.paw.models.user.Commerce> findByUserId(Long userId) { return Optional.empty(); }
+
+        @Override
+        public void updateProfileFields(final long userId, final ar.edu.itba.paw.models.user.Commerce.Category category,
+                final String street, final Integer streetNumber, final String city, final String province,
+                final String postalCode, final String openingTime, final String closingTime) {
+        }
     }
 
     static class TestClientService implements ClientService {

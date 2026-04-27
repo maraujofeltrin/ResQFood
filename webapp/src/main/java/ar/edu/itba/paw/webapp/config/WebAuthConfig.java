@@ -62,7 +62,7 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                 .requestMatchers(antMatcher(HttpMethod.GET, "/reservations/**")).authenticated()
                 .requestMatchers(antMatcher(HttpMethod.GET, "/profile"), antMatcher(HttpMethod.GET, "/profile/settings"),
                         antMatcher(HttpMethod.GET, "/profile/change-password"), antMatcher(HttpMethod.POST, "/profile/change-password"),
-                        antMatcher(HttpMethod.POST, "/profile/photo"), antMatcher(HttpMethod.POST, "/profile/settings/locale")).authenticated()
+                        antMatcher(HttpMethod.POST, "/profile/account"), antMatcher(HttpMethod.POST, "/profile/settings/locale")).authenticated()
                 .anyRequest().authenticated()
                 .and().formLogin()
                 .loginPage("/login")

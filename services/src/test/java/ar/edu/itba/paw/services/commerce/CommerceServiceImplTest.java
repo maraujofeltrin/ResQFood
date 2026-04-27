@@ -3,58 +3,70 @@ package ar.edu.itba.paw.services.commerce;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-public class CommerceServiceImplTest {
+@ExtendWith(MockitoExtension.class)
+class CommerceServiceImplTest {
 
-    static class InMemoryCommerceDao implements CommerceDao {
-        private final Map<Long, Commerce> store = new HashMap<>();
+    @Mock
+    private CommerceDao commerceDao;
 
-        @Override
-        public Commerce createCommerce(Long userId, String commercialName, Commerce.Category category, String street, Integer streetNumber, String city, String province, String postalCode, String openingTime, String closingTime) {
-            final Commerce c = new Commerce(userId, commercialName, category, street, streetNumber, city, province, postalCode, openingTime, closingTime);
-            store.put(userId, c);
-            return c;
-        }
+    @InjectMocks
+    private CommerceServiceImpl commerceService;
 
-        @Override
-        public Optional<Commerce> findByUserId(Long userId) {
-            return Optional.ofNullable(store.get(userId));
-        }
+    @Test
+    void updateProfileFields_keepsCommercialName_and_updatesRest() {
+        // 1. Setup
+        when(commerceDao.findByUserId(5L)).thenReturn(Optional.of(
+                new Commerce(5L, "Panadería Sur", Commerce.Category.BAKERY, "Old", 1, "Lanús", "BA", "1824",
+                        "08:00", "18:00")));
 
-        @Override
-        public Commerce update(Commerce commerce) {
-            store.put(commerce.getUserId(), commerce);
-            return commerce;
-        }
+        // 2. Ejercicio
+        commerceService.updateProfileFields(5L, Commerce.Category.RESTAURANT, "Nueva", 99, "Quilmes", "BA", "1878",
+                "10:00", "22:00");
+
+        // 3. Asserts
+        final ArgumentCaptor<Commerce> captor = ArgumentCaptor.forClass(Commerce.class);
+        verify(commerceDao).update(captor.capture());
+        final Commerce saved = captor.getValue();
+        assertEquals("Panadería Sur", saved.getCommercialName());
+        assertEquals(Commerce.Category.RESTAURANT, saved.getCategory());
+        assertEquals("Nueva", saved.getStreet());
+        assertEquals(Integer.valueOf(99), saved.getStreetNumber());
+        assertEquals("Quilmes", saved.getCity());
+        assertEquals("10:00", saved.getOpeningTime());
+        assertEquals("22:00", saved.getClosingTime());
     }
 
     @Test
-    public void findByUserId_existing_returnsCommerce() {
-        final InMemoryCommerceDao commerceDao = new InMemoryCommerceDao();
-        final Commerce stored = commerceDao.createCommerce(2L, "ShopName", Commerce.Category.BAKERY, "s", 1, "city", "prov", "pc", "09:00", "18:00");
+    void updateProfileFields_missingCommerce_throws() {
+        // 1. Setup
+        when(commerceDao.findByUserId(1L)).thenReturn(Optional.empty());
 
-        final CommerceServiceImpl svc = new CommerceServiceImpl(commerceDao);
-        final Optional<Commerce> result = svc.findByUserId(2L);
-
-        assertTrue(result.isPresent());
-        assertEquals(stored.getCommercialName(), result.get().getCommercialName());
-        assertEquals(stored.getUserId(), result.get().getUserId());
+        // 2. Ejercicio / 3. Asserts
+        assertThrows(NoSuchElementException.class,
+                () -> commerceService.updateProfileFields(1L, Commerce.Category.OTHER, "S", null, "C", null, null, "09:00",
+                        "17:00"));
     }
 
     @Test
-    public void findByUserId_nonExistent_returnsEmpty() {
-        final InMemoryCommerceDao commerceDao = new InMemoryCommerceDao();
-        final CommerceServiceImpl svc = new CommerceServiceImpl(commerceDao);
+    void updateProfileFields_nullCategory_throws() {
+        // 1. Setup — sin stub: no debe consultar DAO si falla validación temprana
 
-        final Optional<Commerce> result = svc.findByUserId(999L);
-
-        assertTrue(result.isEmpty());
+        // 2. Ejercicio / 3. Asserts
+        assertThrows(IllegalArgumentException.class,
+                () -> commerceService.updateProfileFields(1L, null, "S", 1, "C", null, null, "09:00", "17:00"));
     }
 }

@@ -4,7 +4,9 @@ import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
@@ -20,5 +22,39 @@ public class CommerceServiceImpl implements CommerceService {
     @Override
     public Optional<Commerce> findByUserId(final Long userId) {
         return commerceDao.findByUserId(userId);
+    }
+
+    @Transactional
+    @Override
+    public void updateProfileFields(final long userId, final Commerce.Category category, final String street,
+            final Integer streetNumber, final String city, final String province, final String postalCode,
+            final String openingTime, final String closingTime) {
+        if (category == null) {
+            throw new IllegalArgumentException("Category is required");
+        }
+        final String open = openingTime == null ? "" : openingTime.trim();
+        final String close = closingTime == null ? "" : closingTime.trim();
+        if (open.isEmpty() || close.isEmpty()) {
+            throw new IllegalArgumentException("Opening and closing times are required");
+        }
+        final String st = street == null ? "" : street.trim();
+        final String c = city == null ? "" : city.trim();
+        if (st.isEmpty() || c.isEmpty()) {
+            throw new IllegalArgumentException("Street and city are required");
+        }
+        final Commerce current = commerceDao.findByUserId(userId)
+                .orElseThrow(() -> new NoSuchElementException("Commerce not found for user: " + userId));
+        final Commerce updated = new Commerce(
+                userId,
+                current.getCommercialName(),
+                category,
+                st,
+                streetNumber,
+                c,
+                province == null || province.isBlank() ? null : province.trim(),
+                postalCode == null || postalCode.isBlank() ? null : postalCode.trim(),
+                open,
+                close);
+        commerceDao.update(updated);
     }
 }

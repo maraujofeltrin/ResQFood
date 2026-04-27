@@ -27,10 +27,10 @@
                 <spring:message code="profile.passwordChange.flashSuccess"/>
             </div>
         </c:if>
-        <c:if test="${not empty profilePhotoUpdateSuccess}">
+        <c:if test="${not empty profileAccountUpdateSuccess}">
             <div class="mb-8 max-w-2xl mx-auto lg:mx-0 rounded-2xl bg-primary-container/50 px-4 py-3 text-on-primary-container font-body text-sm font-medium text-center lg:text-left"
                  role="status">
-                <spring:message code="profile.photo.flashSuccess"/>
+                <spring:message code="profile.account.flashSuccess"/>
             </div>
         </c:if>
         <c:if test="${not empty profileLocaleUpdateSuccess}">
@@ -144,9 +144,9 @@
                                 <spring:message code="profile.section.accountDetails"/>
                             </h2>
 
-                            <form:form modelAttribute="profilePhotoForm"
-                                       cssClass="flex flex-col sm:flex-row gap-8 md:gap-10 items-center sm:items-start max-w-2xl mx-auto sm:mx-0 w-full m-0"
-                                       action="${pageContext.request.contextPath}/profile/photo"
+                            <form:form modelAttribute="profileAccountForm"
+                                       cssClass="flex flex-col sm:flex-row gap-8 md:gap-10 items-start max-w-3xl mx-auto sm:mx-0 w-full m-0"
+                                       action="${pageContext.request.contextPath}/profile/account"
                                        method="post"
                                        enctype="multipart/form-data">
                                 <div class="shrink-0 w-full sm:w-auto flex flex-col items-center sm:items-start">
@@ -181,7 +181,12 @@
                                             <spring:message code="profile.photo.updateFailed"/>
                                         </p>
                                     </c:if>
-                                    <spring:hasBindErrors name="profilePhotoForm">
+                                    <c:if test="${not empty profileCommerceUpdateError}">
+                                        <p class="mt-3 text-xs text-error font-body max-w-[14rem] text-center sm:text-left leading-relaxed" role="alert">
+                                            <spring:message code="profile.commerce.updateFailed"/>
+                                        </p>
+                                    </c:if>
+                                    <spring:hasBindErrors name="profileAccountForm">
                                         <form:errors path="photo" cssClass="mt-3 text-xs text-error font-body max-w-[14rem] text-center sm:text-left block" element="p"/>
                                     </spring:hasBindErrors>
                                     <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant font-label sr-only"
@@ -197,35 +202,132 @@
                                 </div>
 
                                 <div class="space-y-6 flex-1 w-full min-w-0">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div class="space-y-1.5">
-                                            <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label"
-                                                   for="profile-full-name">
-                                                <spring:message code="profile.label.fullName"/>
-                                            </label>
-                                            <input id="profile-full-name"
-                                                   class="w-full bg-surface-container-low px-4 py-3 rounded-xl border-none text-on-surface font-medium outline-none cursor-not-allowed opacity-90"
-                                                   type="text" value="<c:out value='${profile.fullName}'/>" readonly tabindex="-1"/>
-                                        </div>
-                                        <div class="space-y-1.5">
-                                            <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label"
-                                                   for="profile-phone">
-                                                <spring:message code="profile.label.phone"/>
-                                            </label>
-                                            <input id="profile-phone"
-                                                   class="w-full bg-surface-container-low px-4 py-3 rounded-xl border-none text-on-surface font-medium outline-none cursor-not-allowed opacity-90"
-                                                   type="tel" value="<c:out value='${profile.phone}'/>" readonly tabindex="-1"/>
-                                        </div>
-                                    </div>
-                                    <div class="space-y-1.5">
-                                        <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label"
-                                               for="profile-email">
-                                            <spring:message code="profile.label.email"/>
-                                        </label>
-                                        <input id="profile-email"
-                                               class="w-full bg-surface-container-low px-4 py-3 rounded-xl border-none text-on-surface font-medium outline-none cursor-not-allowed opacity-90"
-                                               type="email" value="<c:out value='${profile.email}'/>" readonly tabindex="-1"/>
-                                    </div>
+                                    <c:choose>
+                                        <c:when test="${not empty profile.commerce}">
+                                            <div class="space-y-1.5">
+                                                <p class="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label">
+                                                    <spring:message code="profile.commerce.label.commercialName"/>
+                                                </p>
+                                                <p class="w-full bg-surface-container-low px-4 py-3 rounded-xl text-on-surface font-medium m-0">
+                                                    <c:out value="${profile.commerce.commercialName}"/>
+                                                </p>
+                                            </div>
+                                            <div class="space-y-1.5">
+                                                <form:label path="category" cssClass="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label block">
+                                                    <spring:message code="register.label.category"/>
+                                                </form:label>
+                                                <form:select path="category"
+                                                             cssClass="w-full bg-surface-container px-4 py-3 rounded-xl border border-outline-variant/25 text-on-surface font-medium outline-none focus:ring-2 focus:ring-primary">
+                                                    <c:forEach var="cat" items="${commerceCategories}">
+                                                        <spring:message code="commerce.category.${cat}" var="commerceCatLabel"/>
+                                                        <form:option value="${cat}" label="${commerceCatLabel}"/>
+                                                    </c:forEach>
+                                                </form:select>
+                                                <form:errors path="category" cssClass="text-xs text-error font-body block" element="p"/>
+                                            </div>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div class="space-y-1.5 md:col-span-2">
+                                                    <form:label path="street" cssClass="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label block">
+                                                        <spring:message code="register.label.street"/>
+                                                    </form:label>
+                                                    <form:input path="street" type="text"
+                                                                cssClass="w-full bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/25 text-on-surface font-medium outline-none focus:ring-2 focus:ring-primary"/>
+                                                    <form:errors path="street" cssClass="text-xs text-error font-body block" element="p"/>
+                                                </div>
+                                                <div class="space-y-1.5">
+                                                    <form:label path="streetNumber" cssClass="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label block">
+                                                        <spring:message code="register.label.streetNumber"/>
+                                                    </form:label>
+                                                    <form:input path="streetNumber" type="text" inputmode="numeric"
+                                                                cssClass="w-full bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/25 text-on-surface font-medium outline-none focus:ring-2 focus:ring-primary"/>
+                                                    <form:errors path="streetNumber" cssClass="text-xs text-error font-body block" element="p"/>
+                                                </div>
+                                            </div>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div class="space-y-1.5">
+                                                    <form:label path="city" cssClass="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label block">
+                                                        <spring:message code="register.label.city"/>
+                                                    </form:label>
+                                                    <form:input path="city" type="text"
+                                                                cssClass="w-full bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/25 text-on-surface font-medium outline-none focus:ring-2 focus:ring-primary"/>
+                                                    <form:errors path="city" cssClass="text-xs text-error font-body block" element="p"/>
+                                                </div>
+                                                <div class="space-y-1.5">
+                                                    <form:label path="province" cssClass="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label block">
+                                                        <spring:message code="register.label.province"/>
+                                                    </form:label>
+                                                    <form:input path="province" type="text"
+                                                                cssClass="w-full bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/25 text-on-surface font-medium outline-none focus:ring-2 focus:ring-primary"/>
+                                                    <form:errors path="province" cssClass="text-xs text-error font-body block" element="p"/>
+                                                </div>
+                                            </div>
+                                            <div class="space-y-1.5">
+                                                <form:label path="postalCode" cssClass="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label block">
+                                                    <spring:message code="register.label.postalCode"/>
+                                                </form:label>
+                                                <form:input path="postalCode" type="text"
+                                                            cssClass="w-full bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/25 text-on-surface font-medium outline-none focus:ring-2 focus:ring-primary"/>
+                                                <form:errors path="postalCode" cssClass="text-xs text-error font-body block" element="p"/>
+                                            </div>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div class="space-y-1.5">
+                                                    <form:label path="openingTime" cssClass="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label block">
+                                                        <spring:message code="register.label.openingTime"/>
+                                                    </form:label>
+                                                    <form:input path="openingTime" type="time"
+                                                                cssClass="w-full bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/25 text-on-surface font-medium outline-none focus:ring-2 focus:ring-primary"/>
+                                                    <form:errors path="openingTime" cssClass="text-xs text-error font-body block" element="p"/>
+                                                </div>
+                                                <div class="space-y-1.5">
+                                                    <form:label path="closingTime" cssClass="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label block">
+                                                        <spring:message code="register.label.closingTime"/>
+                                                    </form:label>
+                                                    <form:input path="closingTime" type="time"
+                                                                cssClass="w-full bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/25 text-on-surface font-medium outline-none focus:ring-2 focus:ring-primary"/>
+                                                    <form:errors path="closingTime" cssClass="text-xs text-error font-body block" element="p"/>
+                                                </div>
+                                            </div>
+                                            <div class="space-y-1.5">
+                                                <p class="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label">
+                                                    <spring:message code="profile.label.email"/>
+                                                </p>
+                                                <p class="w-full bg-surface-container-low px-4 py-3 rounded-xl text-on-surface font-medium m-0 opacity-90">
+                                                    <c:out value="${profile.email}"/>
+                                                </p>
+                                            </div>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div class="space-y-1.5">
+                                                    <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label"
+                                                           for="profile-full-name">
+                                                        <spring:message code="profile.label.fullName"/>
+                                                    </label>
+                                                    <input id="profile-full-name"
+                                                           class="w-full bg-surface-container-low px-4 py-3 rounded-xl border-none text-on-surface font-medium outline-none cursor-not-allowed opacity-90"
+                                                           type="text" value="<c:out value='${profile.fullName}'/>" readonly tabindex="-1"/>
+                                                </div>
+                                                <div class="space-y-1.5">
+                                                    <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label"
+                                                           for="profile-phone">
+                                                        <spring:message code="profile.label.phone"/>
+                                                    </label>
+                                                    <input id="profile-phone"
+                                                           class="w-full bg-surface-container-low px-4 py-3 rounded-xl border-none text-on-surface font-medium outline-none cursor-not-allowed opacity-90"
+                                                           type="tel" value="<c:out value='${profile.phone}'/>" readonly tabindex="-1"/>
+                                                </div>
+                                            </div>
+                                            <div class="space-y-1.5">
+                                                <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label"
+                                                       for="profile-email">
+                                                    <spring:message code="profile.label.email"/>
+                                                </label>
+                                                <input id="profile-email"
+                                                       class="w-full bg-surface-container-low px-4 py-3 rounded-xl border-none text-on-surface font-medium outline-none cursor-not-allowed opacity-90"
+                                                       type="email" value="<c:out value='${profile.email}'/>" readonly tabindex="-1"/>
+                                            </div>
+                                        </c:otherwise>
+                                    </c:choose>
                                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4">
                                         <a class="text-primary font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all no-underline order-2 sm:order-1 justify-center sm:justify-start"
                                            href="${pageContext.request.contextPath}/profile/change-password">
