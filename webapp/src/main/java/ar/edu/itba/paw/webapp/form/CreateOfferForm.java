@@ -45,6 +45,9 @@ public class CreateOfferForm {
     private Double originalPrice;
 
     private MultipartFile image;
+    
+    /** If an image was previously uploaded and persisted temporarily, this holds its id. */
+    private Long existingImageId;
 
     // ── Mode Toggle ────────────────────────────────────────────
 
@@ -106,6 +109,14 @@ public class CreateOfferForm {
 
     public void setImage(MultipartFile image) {
         this.image = image;
+    }
+
+    public Long getExistingImageId() {
+        return existingImageId;
+    }
+
+    public void setExistingImageId(Long existingImageId) {
+        this.existingImageId = existingImageId;
     }
 
     public boolean getIsAuction() {
