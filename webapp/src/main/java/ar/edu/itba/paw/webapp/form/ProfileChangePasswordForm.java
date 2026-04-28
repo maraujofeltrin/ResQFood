@@ -1,9 +1,11 @@
 package ar.edu.itba.paw.webapp.form;
 
-import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
+import ar.edu.itba.paw.webapp.validation.constraints.FieldMatch;
+
+@FieldMatch(first = "newPassword", second = "confirmPassword", message = "{passwordReset.validation.passwords.mismatch}")
 public class ProfileChangePasswordForm {
 
     @NotBlank(message = "{profile.changePassword.validation.current.notEmpty}")
@@ -40,11 +42,5 @@ public class ProfileChangePasswordForm {
         this.confirmPassword = confirmPassword;
     }
 
-    @AssertTrue(message = "{passwordReset.validation.passwords.mismatch}")
-    public boolean isNewPasswordMatchingConfirm() {
-        if (newPassword == null || confirmPassword == null) {
-            return true;
-        }
-        return newPassword.equals(confirmPassword);
-    }
+    // Password equality validated by @FieldMatch on the bean
 }

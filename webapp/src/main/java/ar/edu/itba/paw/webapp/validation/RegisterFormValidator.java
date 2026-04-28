@@ -33,11 +33,7 @@ public class RegisterFormValidator implements Validator {
     @Override
     public void validate(@NonNull final Object target, @NonNull final Errors errors) {
         final RegisterForm form = (RegisterForm) target;
-        final UserCredentialsForm credentials = form.getCredentials();
-        if (credentials != null
-                && !Objects.equals(credentials.getPassword(), credentials.getRepeatPassword())) {
-            errors.rejectValue("credentials.repeatPassword", "user.password.mismatch");
-        }
+        // Password equality is now validated on the credentials bean via @FieldMatch
 
         final Optional<User.Role> parsedRole = parseRole(form.getRole());
         if (parsedRole.isEmpty()) {

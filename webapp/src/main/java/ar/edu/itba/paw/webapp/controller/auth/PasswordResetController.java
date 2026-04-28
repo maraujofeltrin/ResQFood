@@ -82,12 +82,7 @@ public class PasswordResetController {
             model.addAttribute("token", token);
             return "password-reset/change";
         }
-        if (!form.getNewPassword().equals(form.getConfirmPassword())) {
-            errors.rejectValue("confirmPassword", "passwordReset.validation.passwords.mismatch",
-                "{passwordReset.validation.passwords.mismatch}");
-            model.addAttribute("token", token);
-            return "password-reset/change";
-        }
+        // Password equality is validated at bean level (@AssertTrue on form)
         final String email = passwordResetTokenService.getEmailByToken(token)
                 .orElseThrow(IllegalStateException::new);
         passwordResetTokenService.resetPassword(token, form.getNewPassword());

@@ -11,7 +11,7 @@ import javax.validation.constraints.Size;
 import org.springframework.web.multipart.MultipartFile;
 
 import ar.edu.itba.paw.models.pack.PackTag;
-
+import ar.edu.itba.paw.webapp.validation.constraints.LessOrEqual;
 /**
  * Unified form for creating both Packs (direct sale) and Auctions.
  * <p>
@@ -21,6 +21,10 @@ import ar.edu.itba.paw.models.pack.PackTag;
  * When {@code isAuction == true}: {@code initialPrice}, {@code minBidIncrement}, {@code endDate} and {@code endTime} are
  * required (see {@link ar.edu.itba.paw.webapp.validation.CreateOfferFormValidator}).
  */
+@LessOrEqual.List({
+    @LessOrEqual(first = "finalPrice", second = "originalPrice", message = "commerce.createPack.validation.finalPrice.exceedsOriginal"),
+    @LessOrEqual(first = "initialPrice", second = "originalPrice", message = "commerce.createAuction.validation.initialPrice.exceedsOriginal")
+})
 public class CreateOfferForm {
 
     // ── Common Fields ──────────────────────────────────────────
