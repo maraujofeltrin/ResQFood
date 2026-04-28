@@ -162,6 +162,11 @@ public class ReservationServiceImplTest {
         public boolean hasActiveReservation(Long packId, Long customerId) {
             return false;
         }
+
+        @Override
+        public int countPaidReservationsInPeriod(Long commerceId, LocalDateTime periodStart, LocalDateTime periodEnd) {
+            return 0;
+        }
     }
 
     static class InMemoryPackDao implements PackDao {

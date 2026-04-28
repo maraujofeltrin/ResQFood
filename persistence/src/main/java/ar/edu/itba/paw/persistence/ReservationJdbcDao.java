@@ -215,4 +215,21 @@ public class ReservationJdbcDao implements ReservationDao {
         );
         return count != null && count > 0;
     }
+
+    @Override
+    public int countPaidReservationsInPeriod(final Long commerceId,
+                                          final LocalDateTime periodStart,
+                                          final LocalDateTime periodEnd) {
+        final Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(r.id) FROM reservations r " +
+                "JOIN packs p ON r.pack_id = p.id " +
+                "WHERE p.commerce_id = ? AND r.status = ? " +
+                "AND r.pickup_confirmation_date >= ? AND r.pickup_confirmation_date < ?",
+                Integer.class,
+                commerceId,
+                Reservation.Status.PAID.name(),
+                Timestamp.valueOf(periodStart),
+                Timestamp.valueOf(periodEnd));
+        return count != null ? count : 0;
+    }
 }

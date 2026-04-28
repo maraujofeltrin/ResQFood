@@ -24,9 +24,12 @@ public interface ReservationDao {
 
     Reservation confirmPickup(final Long id, final java.time.LocalDateTime pickupConfirmationDate);
 
-    List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize);
+    List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status,
+            int page, int pageSize);
 
     int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status);
 
     boolean hasActiveReservation(Long packId, Long customerId);
+
+    int countPaidReservationsInPeriod(Long commerceId, LocalDateTime periodStart, LocalDateTime periodEnd);
 }

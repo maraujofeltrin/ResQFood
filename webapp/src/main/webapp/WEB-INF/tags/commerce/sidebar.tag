@@ -3,7 +3,7 @@
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ attribute name="activeLink" required="true" type="java.lang.String" %>
 
-<aside class="fixed top-0 left-0 h-full w-20 hover:w-64 bg-surface-container-lowest border-r border-outline-variant/20 transition-[width] duration-300 ease-in-out z-40 overflow-hidden group pt-24 shadow-soft">
+<aside class="fixed top-0 left-0 h-full w-20 hover:w-48 bg-surface-container-lowest border-r border-outline-variant/20 transition-[width] duration-300 ease-in-out z-40 overflow-hidden group pt-24 shadow-soft">
     <nav class="flex flex-col gap-2 px-3">
         <a href="${pageContext.request.contextPath}/commerce" class="flex items-center gap-4 px-3 py-3 rounded-xl transition-colors whitespace-nowrap overflow-hidden ${activeLink == 'dashboard' ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'}" title="<spring:message code='commerce.sidebar.dashboard' />">
             <span class="material-symbols-outlined flex-shrink-0">dashboard</span>

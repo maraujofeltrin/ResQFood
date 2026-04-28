@@ -10,7 +10,13 @@
 
 <paw:navbar />
 
-<main class="pt-24 px-6 md:px-12 pb-20 max-w-7xl mx-auto flex-grow w-full">
+<c:set var="isCommerce" value="${messagePrefix == 'commerce.reservations'}" />
+
+<c:if test="${isCommerce}">
+    <paw:commerceSidebar activeLink="reservations"/>
+</c:if>
+
+<main class="pt-24 ${isCommerce ? 'pl-24 md:pl-28 pr-6 md:pr-12' : 'px-6 md:px-12'} pb-20 max-w-7xl mx-auto flex-grow w-full transition-all duration-300">
     <c:choose>
         <c:when test="${not hasAnyReservations and not hasActiveFilters}">
             <spring:message var="emptyTitle" code="${messagePrefix}.empty.title" />
