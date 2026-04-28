@@ -105,7 +105,7 @@ public class CommerceOfferController {
                 redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource
                         .getMessage("commerce.dashboard.success.create.pack", null, LocaleContextHolder.getLocale()));
             }
-            return new ModelAndView("redirect:/commerce");
+            return new ModelAndView("redirect:/commerce/products");
 
         } catch (final IllegalArgumentException e) {
             final ModelAndView mav = new ModelAndView("commerce/createOfferView");

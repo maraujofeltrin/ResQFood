@@ -44,7 +44,23 @@ public class CommerceDashboardController {
     }
 
     @GetMapping(value = "")
-    public ModelAndView dashboard(@AuthenticationPrincipal final AuthUser principal,
+    public ModelAndView dashboard(@AuthenticationPrincipal final AuthUser principal) {
+        final long id = authResolver.resolveUser(principal).getId();
+
+        final java.util.Optional<Commerce> commerceOpt = commerceService.findByUserId(id);
+        if (!commerceOpt.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        final Commerce commerce = commerceOpt.get();
+        final ModelAndView mav = new ModelAndView("commerce/dashboard");
+
+        mav.addObject("commerce", commerce);
+        return mav;
+    }
+
+    @GetMapping(value = "/products")
+    public ModelAndView products(@AuthenticationPrincipal final AuthUser principal,
             @RequestParam(value = "page", defaultValue = "1") final int page,
             @RequestParam(value = "tab", defaultValue = "items") final String tab) {
         final long id = authResolver.resolveUser(principal).getId();
@@ -55,7 +71,7 @@ public class CommerceDashboardController {
         }
 
         final Commerce commerce = commerceOpt.get();
-        final ModelAndView mav = new ModelAndView("commerce/dashboard");
+        final ModelAndView mav = new ModelAndView("commerce/products");
 
         Boolean hasAuction = null;
         if ("auctions".equalsIgnoreCase(tab)) {
@@ -86,10 +102,26 @@ public class CommerceDashboardController {
         mav.addObject("commerceId", id);
         mav.addObject("auctionPackIds", auctionPackIds);
         mav.addObject("currentTab", tab);
-        mav.addObject("paginationBaseUrl", "/commerce?tab=" + tab);
+        mav.addObject("paginationBaseUrl", "/commerce/products?tab=" + tab);
         mav.addObject("itemsCount", itemsCount);
         mav.addObject("packsCount", packsCount);
         mav.addObject("auctionsCount", auctionsCount);
+        return mav;
+    }
+
+    @GetMapping(value = "/metrics")
+    public ModelAndView metrics(@AuthenticationPrincipal final AuthUser principal) {
+        final long id = authResolver.resolveUser(principal).getId();
+
+        final java.util.Optional<Commerce> commerceOpt = commerceService.findByUserId(id);
+        if (!commerceOpt.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        final Commerce commerce = commerceOpt.get();
+        final ModelAndView mav = new ModelAndView("commerce/metrics");
+
+        mav.addObject("commerce", commerce);
         return mav;
     }
 }

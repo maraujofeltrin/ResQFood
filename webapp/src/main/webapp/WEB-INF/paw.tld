@@ -34,6 +34,7 @@
 
     <!-- Commerce flows -->
     <tag-file><name>commerceFormLayout</name><path>/WEB-INF/tags/commerce/commerceFormLayout.tag</path></tag-file>
+    <tag-file><name>commerceSidebar</name><path>/WEB-INF/tags/commerce/sidebar.tag</path></tag-file>
     <tag-file><name>offerImageUpload</name><path>/WEB-INF/tags/commerce/offerImageUpload.tag</path></tag-file>
     <tag-file><name>offerModeToggle</name><path>/WEB-INF/tags/commerce/offerModeToggle.tag</path></tag-file>
     <tag-file><name>commerceDataFields</name><path>/WEB-INF/tags/commerce/commerceDataFields.tag</path></tag-file>

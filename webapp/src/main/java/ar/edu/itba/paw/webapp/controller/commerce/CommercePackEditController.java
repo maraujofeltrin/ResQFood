@@ -159,7 +159,7 @@ public class CommercePackEditController {
             redirectAttributes.addFlashAttribute("dashboardAlertMessage",
                     messageSource.getMessage("commerce.dashboard.success.edit", null, LocaleContextHolder.getLocale()));
 
-            return new ModelAndView("redirect:/commerce");
+            return new ModelAndView("redirect:/commerce/products");
 
         } catch (IllegalArgumentException e) {
             final ModelAndView mav = new ModelAndView("commerce/editPack");
@@ -201,6 +201,6 @@ public class CommercePackEditController {
         redirectAttributes.addFlashAttribute("dashboardAlertMessage",
                 messageSource.getMessage("commerce.dashboard.success.delete", null, LocaleContextHolder.getLocale()));
 
-        return new ModelAndView("redirect:/commerce");
+        return new ModelAndView("redirect:/commerce/products");
     }
 }
