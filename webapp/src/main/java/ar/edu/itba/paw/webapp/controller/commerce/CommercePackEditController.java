@@ -90,6 +90,7 @@ public class CommercePackEditController {
             form.setFinalPrice(pack.getFinalPrice());
             form.setStock(pack.getStock());
             form.setIsAuction(false);
+            form.setExistingImageId(pack.getImageId());
         }
 
         final ModelAndView mav = new ModelAndView("commerce/editPack");
@@ -133,12 +134,24 @@ public class CommercePackEditController {
             mav.addObject("commerceId", commerceId);
             mav.addObject("packId", packId);
             mav.addObject("availableTags", PackTag.values());
+
+            // Persist uploaded image temporarily to show preview on validation failure
+            final MultipartFile image = form.getImage();
+            if (image != null && !image.isEmpty()) {
+                try {
+                    final Image savedImage = imageService.saveImage(image.getBytes(), image.getContentType());
+                    form.setExistingImageId(savedImage.getId());
+                } catch (final IOException ignored) {
+                    // ignore preview persistence failures
+                }
+            }
+
             return mav;
         }
 
         try {
             final MultipartFile image = form.getImage();
-            Long imageId = null;
+            Long imageId = form.getExistingImageId();
             if (image != null && !image.isEmpty()) {
                 final Image savedImage = imageService.saveImage(image.getBytes(), image.getContentType());
                 imageId = savedImage.getId();

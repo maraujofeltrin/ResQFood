@@ -31,26 +31,10 @@
     <c:when test="${auctionVisual == true}">
         <fmt:formatNumber value="${reservation.finalPrice}" type="currency" currencyCode="ARS" var="formattedReservationTotal" />
         <paw:packCardShell packId="${pack.id}" imageId="${pack.imageId}" title="${pack.title}" subtitle="${pack.description}"
-            commerceName="${commerceName}" auction="true" asLink="true">
-            <jsp:attribute name="imageOverlay">
-                <c:if test="${messagePrefix == 'commerce.reservations' and reservation.status == 'RESERVED'}">
-                    <spring:message code="commerce.reservations.card.reject.confirm" var="rejectConfirmMsg" />
-                    <spring:message code="commerce.reservations.card.reject.label" var="rejectButtonLabel" />
-                    <spring:message code="commerce.reservations.card.reject.modalTitle" var="rejectModalTitle" />
-                    <spring:message code="commerce.reservations.card.reject.confirmAction" var="rejectConfirmAction" />
-                    <spring:message code="commerce.reservations.card.reject.cancel" var="rejectCancelLabel" />
-                    <div class="absolute top-4 right-4 z-20">
-                        <button type="button"
-                                class="h-10 w-10 rounded-full border-0 bg-white/85 text-error shadow-sm backdrop-blur-sm transition hover:bg-error hover:text-on-error flex items-center justify-center"
-                                title="<c:out value='${rejectButtonLabel}'/>"
-                                aria-label="<c:out value='${rejectButtonLabel}'/>"
-                                onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('rejectModal-${reservation.id}').style.display='flex'">
-                            <span class="material-symbols-outlined text-lg leading-none">close</span>
-                        </button>
-                    </div>
-
-                </c:if>
-            </jsp:attribute>
+            commerceName="${commerceName}" auction="true" asLink="true" smallSize="${messagePrefix == 'commerce.reservations'}">
+                <jsp:attribute name="imageOverlay">
+                    <!-- Removed top-right cross action — replaced by action buttons below the details -->
+                </jsp:attribute>
             <jsp:body>
                 <div class="bg-surface-container rounded-xl p-4 space-y-2 text-sm mb-2">
                     <c:if test="${not empty clientName}">
@@ -80,10 +64,36 @@
                         </span>
                     </div>
                 </div>
+
+                <div class="mt-3 flex items-center justify-end gap-3">
+                    <spring:message code="commerce.reservations.card.accept.label" var="acceptButtonLabel" />
+                    <spring:message code="commerce.reservations.card.cancel.label" var="cancelButtonLabel" />
+                    <button type="button"
+                            title="<c:out value='${acceptButtonLabel}'/>"
+                            aria-label="<c:out value='${acceptButtonLabel}'/>"
+                            onclick="event.preventDefault(); event.stopPropagation(); window.location.href='${pageContext.request.contextPath}/commerce/verify-pickup';"
+                            class="bg-primary text-on-primary px-4 py-2 rounded-full font-semibold hover:brightness-105 transition inline-flex items-center gap-2">
+                        <span class="material-symbols-outlined text-base">qr_code_scanner</span>
+                        <span><c:out value="${acceptButtonLabel}"/></span>
+                    </button>
+                    <button type="button"
+                            title="<c:out value='${cancelButtonLabel}'/>"
+                            aria-label="<c:out value='${cancelButtonLabel}'/>"
+                            onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('rejectModal-${reservation.id}').style.display='flex';"
+                            class="bg-surface-container-high text-on-surface px-4 py-2 rounded-full font-semibold hover:bg-surface-container-highest transition inline-flex items-center gap-2">
+                        <span><c:out value="${cancelButtonLabel}"/></span>
+                    </button>
+                </div>
             </jsp:body>
         </paw:packCardShell>
 
         <c:if test="${messagePrefix == 'commerce.reservations' and reservation.status == 'RESERVED'}">
+            <spring:message code="commerce.reservations.card.reject.confirm" var="rejectConfirmMsg" />
+            <spring:message code="commerce.reservations.card.reject.label" var="rejectButtonLabel" />
+            <spring:message code="commerce.reservations.card.reject.modalTitle" var="rejectModalTitle" />
+            <spring:message code="commerce.reservations.card.reject.confirmAction" var="rejectConfirmAction" />
+            <spring:message code="commerce.reservations.card.reject.cancel" var="rejectCancelLabel" />
+
             <paw:modal id="rejectModal-${reservation.id}" title="${rejectModalTitle}">
                 <form action="${pageContext.request.contextPath}/reservations/${reservation.id}/reject" method="post" class="space-y-4">
                     <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
@@ -107,7 +117,14 @@
     </c:when>
     <c:otherwise>
         <a href="${pageContext.request.contextPath}/packs/${pack.id}" class="block bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:bg-surface-container-low transition-colors transition-shadow flex flex-col h-full cursor-pointer no-underline text-inherit group">
-            <div class="relative h-48 sm:h-56 overflow-hidden">
+            <c:choose>
+                <c:when test="${messagePrefix == 'commerce.reservations'}">
+                    <div class="relative h-36 sm:h-44 overflow-hidden">
+                </c:when>
+                <c:otherwise>
+                    <div class="relative h-48 sm:h-56 overflow-hidden">
+                </c:otherwise>
+            </c:choose>
                 <c:choose>
                     <c:when test="${not empty pack.imageId}">
                         <img src="${pageContext.request.contextPath}/images/${pack.imageId}"
@@ -120,24 +137,7 @@
                              class="w-full h-full object-cover" />
                     </c:otherwise>
                 </c:choose>
-
-                <c:if test="${messagePrefix == 'commerce.reservations' and reservation.status == 'RESERVED'}">
-                    <spring:message code="commerce.reservations.card.reject.confirm" var="rejectConfirmMsg" />
-                    <spring:message code="commerce.reservations.card.reject.label" var="rejectButtonLabel" />
-                    <spring:message code="commerce.reservations.card.reject.modalTitle" var="rejectModalTitle" />
-                    <spring:message code="commerce.reservations.card.reject.confirmAction" var="rejectConfirmAction" />
-                    <spring:message code="commerce.reservations.card.reject.cancel" var="rejectCancelLabel" />
-
-                    <button type="button"
-                            class="absolute top-4 right-4 z-10 h-10 w-10 rounded-full border-0 bg-white/85 text-error shadow-sm backdrop-blur-sm transition hover:bg-error hover:text-on-error flex items-center justify-center"
-                            title="<c:out value='${rejectButtonLabel}'/>"
-                            aria-label="<c:out value='${rejectButtonLabel}'/>"
-                            onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('rejectModal-${reservation.id}').style.display='flex'">
-                        <span class="material-symbols-outlined text-lg leading-none">close</span>
-                    </button>
-
-
-                </c:if>
+                <!-- top-right cross removed; actions moved into the card footer -->
             </div>
 
             <div class="p-5 flex flex-col gap-4 flex-grow">
@@ -180,10 +180,36 @@
                         </span>
                     </div>
                 </div>
+
+                <div class="mt-3 flex items-center justify-end gap-3">
+                    <spring:message code="commerce.reservations.card.accept.label" var="acceptButtonLabel" />
+                    <spring:message code="commerce.reservations.card.cancel.label" var="cancelButtonLabel" />
+                    <button type="button"
+                            title="<c:out value='${acceptButtonLabel}'/>"
+                            aria-label="<c:out value='${acceptButtonLabel}'/>"
+                            onclick="event.preventDefault(); event.stopPropagation(); window.location.href='${pageContext.request.contextPath}/commerce/verify-pickup';"
+                            class="bg-primary text-on-primary px-4 py-2 rounded-full font-semibold hover:brightness-105 transition inline-flex items-center gap-2">
+                        <span class="material-symbols-outlined text-base">qr_code_scanner</span>
+                        <span><c:out value="${acceptButtonLabel}"/></span>
+                    </button>
+                    <button type="button"
+                            title="<c:out value='${cancelButtonLabel}'/>"
+                            aria-label="<c:out value='${cancelButtonLabel}'/>"
+                            onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('rejectModal-${reservation.id}').style.display='flex';"
+                            class="bg-surface-container-high text-on-surface px-4 py-2 rounded-full font-semibold hover:bg-surface-container-highest transition inline-flex items-center gap-2">
+                        <span><c:out value="${cancelButtonLabel}"/></span>
+                    </button>
+                </div>
             </div>
         </a>
 
         <c:if test="${messagePrefix == 'commerce.reservations' and reservation.status == 'RESERVED'}">
+            <spring:message code="commerce.reservations.card.reject.confirm" var="rejectConfirmMsg" />
+            <spring:message code="commerce.reservations.card.reject.label" var="rejectButtonLabel" />
+            <spring:message code="commerce.reservations.card.reject.modalTitle" var="rejectModalTitle" />
+            <spring:message code="commerce.reservations.card.reject.confirmAction" var="rejectConfirmAction" />
+            <spring:message code="commerce.reservations.card.reject.cancel" var="rejectCancelLabel" />
+
             <paw:modal id="rejectModal-${reservation.id}" title="${rejectModalTitle}">
                 <form action="${pageContext.request.contextPath}/reservations/${reservation.id}/reject" method="post" class="space-y-4">
                     <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />

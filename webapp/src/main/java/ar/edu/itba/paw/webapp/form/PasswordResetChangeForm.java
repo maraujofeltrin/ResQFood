@@ -3,6 +3,10 @@ package ar.edu.itba.paw.webapp.form;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
+import ar.edu.itba.paw.webapp.validation.constraints.FieldMatch;
+
+
+@FieldMatch(first = "newPassword", second = "confirmPassword", message = "{passwordReset.validation.passwords.mismatch}")
 public class PasswordResetChangeForm {
 
     private String token;
@@ -37,4 +41,6 @@ public class PasswordResetChangeForm {
     public void setConfirmPassword(final String confirmPassword) {
         this.confirmPassword = confirmPassword;
     }
+
+    // Password equality validated by @FieldMatch on the bean
 }
