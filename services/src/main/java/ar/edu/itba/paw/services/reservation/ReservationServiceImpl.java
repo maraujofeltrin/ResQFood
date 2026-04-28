@@ -15,21 +15,27 @@ import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.pack.DirectReservationCheck;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.services.user.UserService;
+import ar.edu.itba.paw.models.CommerceMetrics;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.security.SecureRandom;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -423,5 +429,40 @@ public class ReservationServiceImpl implements ReservationService {
                 .withZoneSameInstant(ZoneOffset.UTC)
                 .toLocalDateTime();
         return reservationDao.countPaidReservationsInPeriod(commerceId, dayStartUtc, dayEndUtc);
+    }
+
+    @Override
+    public CommerceMetrics getCommerceMetrics(final Long commerceId, final int days) {
+        final LocalDateTime from = LocalDateTime.now().minusDays(days).truncatedTo(ChronoUnit.DAYS);
+        final LocalDateTime to = LocalDateTime.now();
+
+        final List<Object[]> rows = reservationDao.countPaidReservationsPerDay(commerceId, from, to);
+        final Map<LocalDate, Long> countsByDate = new HashMap<>();
+        for (final Object[] row : rows) {
+            final LocalDate d = (LocalDate) row[0];
+            final Long cnt = (Long) row[1];
+            countsByDate.put(d, cnt == null ? 0L : cnt);
+        }
+
+        final List<CommerceMetrics.DailySalesPoint> daily = new ArrayList<>();
+        final LocalDate startDate = from.toLocalDate();
+        for (int i = 0; i < days; i++) {
+            final LocalDate d = startDate.plusDays(i);
+            final long cnt = countsByDate.getOrDefault(d, 0L);
+            daily.add(new CommerceMetrics.DailySalesPoint(d.toString(), cnt));
+        }
+
+        final int totalReservations = reservationDao.countPaidReservationsInPeriod(commerceId, from, to);
+        final BigDecimal totalRevenue = reservationDao.sumRevenueInPeriod(commerceId, from, to);
+
+        final Optional<Long> bestPackId = reservationDao.findBestSellingPackId(commerceId, from, to);
+        final String bestTitle = bestPackId.flatMap(id -> packDao.findById(id).map(Pack::getTitle)).orElse(null);
+
+        final long paidCount = reservationDao.countByStatusInPeriod(commerceId, Reservation.Status.PAID, from, to);
+        final long canceledCount = reservationDao.countByStatusInPeriod(commerceId, Reservation.Status.CANCELED, from, to);
+        final long denom = paidCount + canceledCount;
+        final int acceptanceRate = denom == 0L ? 0 : (int) Math.round((double) paidCount / (double) denom * 100.0);
+
+        return new CommerceMetrics(daily, totalRevenue, totalReservations, bestTitle, acceptanceRate);
     }
 }

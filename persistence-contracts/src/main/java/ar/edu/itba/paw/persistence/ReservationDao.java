@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.reservation.Reservation;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -32,4 +33,12 @@ public interface ReservationDao {
     boolean hasActiveReservation(Long packId, Long customerId);
 
     int countPaidReservationsInPeriod(Long commerceId, LocalDateTime periodStart, LocalDateTime periodEnd);
+
+        List<Object[]> countPaidReservationsPerDay(Long commerceId, LocalDateTime from, LocalDateTime to);
+
+        BigDecimal sumRevenueInPeriod(Long commerceId, LocalDateTime from, LocalDateTime to);
+
+        Optional<Long> findBestSellingPackId(Long commerceId, LocalDateTime from, LocalDateTime to);
+
+        long countByStatusInPeriod(Long commerceId, Reservation.Status status, LocalDateTime from, LocalDateTime to);
 }

@@ -4,6 +4,8 @@ import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackSortOption;
+import ar.edu.itba.paw.models.pack.PackTag;
+import ar.edu.itba.paw.models.auction.AuctionSortOption;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.user.User;
@@ -20,6 +22,7 @@ import ar.edu.itba.paw.services.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -55,12 +58,12 @@ public class ReservationServiceImplTest {
         }
 
         @Override
-        public List<Auction> filterAuctions(String query, List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, List<String> timeRanges, ar.edu.itba.paw.models.auction.AuctionSortOption sort, int page, int pageSize) {
+        public List<Auction> filterAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges, AuctionSortOption sort, int page, int pageSize) {
             return Collections.emptyList();
         }
 
         @Override
-        public int countFilteredAuctions(String query, List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, List<String> timeRanges) {
+        public int countFilteredAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges) {
             return 0;
         }
 
@@ -167,6 +170,26 @@ public class ReservationServiceImplTest {
         public int countPaidReservationsInPeriod(Long commerceId, LocalDateTime periodStart, LocalDateTime periodEnd) {
             return 0;
         }
+
+        @Override
+        public List<Object[]> countPaidReservationsPerDay(Long commerceId, LocalDateTime from, LocalDateTime to) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public BigDecimal sumRevenueInPeriod(Long commerceId, LocalDateTime from, LocalDateTime to) {
+            return BigDecimal.ZERO;
+        }
+
+        @Override
+        public Optional<Long> findBestSellingPackId(Long commerceId, LocalDateTime from, LocalDateTime to) {
+            return Optional.empty();
+        }
+
+        @Override
+        public long countByStatusInPeriod(Long commerceId, Reservation.Status status, LocalDateTime from, LocalDateTime to) {
+            return 0L;
+        }
     }
 
     static class InMemoryPackDao implements PackDao {
@@ -175,18 +198,18 @@ public class ReservationServiceImplTest {
 
         InMemoryPackDao(Pack pack) { this.pack = pack; }
 
-        @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, Long imageId) { throw new UnsupportedOperationException(); }
+        @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<PackTag> tags, Long imageId) { throw new UnsupportedOperationException(); }
         @Override public Optional<Pack> findById(Long id) { return id.equals(pack.getId()) ? Optional.of(pack) : Optional.empty(); }
-        @Override public java.util.List<Pack> findAll() { return Collections.emptyList(); }
+        @Override public List<Pack> findAll() { return Collections.emptyList(); }
         @Override public List<Pack> findByCommerceId(Long commerceId) { return pack.getCommerceId().equals(commerceId) ? List.of(pack) : Collections.emptyList(); }
         @Override public Pack update(Pack pack) { throw new UnsupportedOperationException(); }
         @Override public void softDelete(Long id) { }
         @Override public void setActive(Long id, boolean active) { }
         @Override public boolean decrementStock(long packId, int quantity) { return true; }
         @Override public boolean incrementStock(long packId, int quantity) { incrementCalls++; return true; }
-        @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return Collections.emptyList(); }
-        @Override public int countFilteredPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges) { return 0; }
-        @Override public java.util.List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize) { return Collections.emptyList(); }
+        @Override public List<Pack> filterPacks(String query, List<PackTag> tags, String city, List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return Collections.emptyList(); }
+        @Override public int countFilteredPacks(String query, List<PackTag> tags, String city, List<String> timeRanges) { return 0; }
+        @Override public List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize) { return Collections.emptyList(); }
         @Override public int countCommercePacks(Long commerceId, Boolean hasAuction) { return 0; }
     }
 
@@ -214,7 +237,7 @@ public class ReservationServiceImplTest {
         }
 
         @Override
-        public void updatePreferredLocale(final long userId, final java.util.Locale locale) {
+        public void updatePreferredLocale(final long userId, final Locale locale) {
         }
     }
 
@@ -249,10 +272,10 @@ public class ReservationServiceImplTest {
     }
 
     static class TestCommerceService implements CommerceService {
-        @Override public Optional<ar.edu.itba.paw.models.user.Commerce> findByUserId(Long userId) { return Optional.empty(); }
+        @Override public Optional<Commerce> findByUserId(Long userId) { return Optional.empty(); }
 
         @Override
-        public void updateProfileFields(final long userId, final ar.edu.itba.paw.models.user.Commerce.Category category,
+        public void updateProfileFields(final long userId, final Commerce.Category category,
                 final String street, final Integer streetNumber, final String city, final String province,
                 final String postalCode, final String openingTime, final String closingTime) {
         }

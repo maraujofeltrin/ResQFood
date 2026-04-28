@@ -11,6 +11,7 @@ import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
 import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.controller.utils.ReservationHistoryViewHelper;
+import ar.edu.itba.paw.models.CommerceMetrics;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -26,6 +27,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -97,7 +99,7 @@ public class CommerceDashboardController {
             @RequestParam(value = "tab", defaultValue = "items") final String tab) {
         final long id = authResolver.resolveUser(principal).getId();
 
-        final java.util.Optional<Commerce> commerceOpt = commerceService.findByUserId(id);
+        final Optional<Commerce> commerceOpt = commerceService.findByUserId(id);
         if (!commerceOpt.isPresent()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
@@ -154,6 +156,33 @@ public class CommerceDashboardController {
         final ModelAndView mav = new ModelAndView("commerce/metrics");
 
         mav.addObject("commerce", commerce);
+
+        final CommerceMetrics metrics = reservationService.getCommerceMetrics(commerce.getUserId(), 30);
+        final String salesChartJson = buildSalesChartJson(metrics.getDailySales());
+        mav.addObject("salesChartJson", salesChartJson);
+        mav.addObject("totalRevenue", metrics.getTotalRevenue());
+        mav.addObject("totalReservations", metrics.getTotalReservations());
+        mav.addObject("bestSellingPackTitle", metrics.getBestSellingPackTitle());
+        mav.addObject("acceptanceRatePercent", metrics.getAcceptanceRatePercent());
+
         return mav;
+    }
+
+    private static String buildSalesChartJson(final List<CommerceMetrics.DailySalesPoint> points) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        for (int i = 0; i < points.size(); i++) {
+            final CommerceMetrics.DailySalesPoint point = points.get(i);
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append("{\"date\":\"")
+                    .append(point.getDate())
+                    .append("\",\"count\":")
+                    .append(point.getCount())
+                    .append('}');
+        }
+        sb.append(']');
+        return sb.toString();
     }
 }
