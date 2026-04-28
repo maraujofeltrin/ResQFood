@@ -125,8 +125,8 @@ uri="http://itba.edu.ar/paw/tags" %>
                 datasets: [
                   {
                     data: initData.map((d) => d.count),
-                    backgroundColor: "rgba(5, 150, 105, 0.1)",
-                    borderColor: "#059669",
+                    backgroundColor: "rgba(4, 120, 87, 0.2)",
+                    borderColor: "#047857",
                     borderWidth: 1,
                   },
                 ],
