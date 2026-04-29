@@ -9,7 +9,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import java.util.concurrent.TimeUnit;
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
@@ -18,18 +17,15 @@ import static org.springframework.security.web.util.matcher.AntPathRequestMatche
 public class WebAuthConfig extends WebSecurityConfigurerAdapter {
 
     private final AuthUserDetailsService authUserDetailsService;
-    private final AuthenticationSuccessHandler authenticationSuccessHandler;
     private final String rememberMeKey;
     private final int rememberMeValidityDays;
 
     @Autowired
     public WebAuthConfig(
             final AuthUserDetailsService authUserDetailsService,
-            final AuthenticationSuccessHandler authenticationSuccessHandler,
             @Value("${security.remember-me.key:resqfood-remember-me-secret}") final String rememberMeKey,
             @Value("${security.remember-me.validity-days:7}") final int rememberMeValidityDays) {
         this.authUserDetailsService = authUserDetailsService;
-        this.authenticationSuccessHandler = authenticationSuccessHandler;
         this.rememberMeKey = rememberMeKey;
         this.rememberMeValidityDays = rememberMeValidityDays;
     }
@@ -69,7 +65,6 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                 .loginPage("/login")
                 .usernameParameter("email")
                 .passwordParameter("password")
-                .successHandler(authenticationSuccessHandler)
                 .failureUrl("/login?error=true")
                 .and().logout()
                 .logoutUrl("/logout")

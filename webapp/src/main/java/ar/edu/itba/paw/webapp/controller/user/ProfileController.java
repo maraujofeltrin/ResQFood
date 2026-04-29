@@ -21,11 +21,8 @@ import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
 import java.util.Locale;
@@ -41,20 +38,17 @@ public class ProfileController {
     private final ProfileService profileService;
     private final UserService userService;
     private final ProfileAccountFormValidator profileAccountFormValidator;
-    private final LocaleResolver localeResolver;
 
     @Autowired
     public ProfileController(
             final AuthenticatedUserResolver authenticatedUserResolver,
             final ProfileService profileService,
             final UserService userService,
-            final ProfileAccountFormValidator profileAccountFormValidator,
-            final LocaleResolver localeResolver) {
+            final ProfileAccountFormValidator profileAccountFormValidator) {
         this.authenticatedUserResolver = authenticatedUserResolver;
         this.profileService = profileService;
         this.userService = userService;
         this.profileAccountFormValidator = profileAccountFormValidator;
-        this.localeResolver = localeResolver;
     }
 
     @InitBinder("profileAccountForm")
@@ -117,8 +111,6 @@ public class ProfileController {
     @PostMapping("/profile/settings/locale")
     public String updatePreferredLocale(
             @RequestParam("lang") final String lang,
-            final HttpServletRequest request,
-            final HttpServletResponse response,
             final RedirectAttributes redirectAttributes) {
         final User user = authenticatedUserResolver.resolveUser();
         final Locale resolved;
@@ -130,7 +122,6 @@ public class ProfileController {
         }
         try {
             userService.updatePreferredLocale(user.getId(), resolved);
-            localeResolver.setLocale(request, response, resolved);
         } catch (final IllegalArgumentException | NoSuchElementException ex) {
             redirectAttributes.addFlashAttribute("profileLocaleUpdateError", true);
             return "redirect:/profile/settings";
