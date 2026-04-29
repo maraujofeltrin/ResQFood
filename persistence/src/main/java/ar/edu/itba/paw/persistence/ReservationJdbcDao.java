@@ -2,12 +2,14 @@ package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.reservation.Reservation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -122,14 +124,14 @@ public class ReservationJdbcDao implements ReservationDao {
         return findById(id).orElseThrow(() -> new IllegalStateException("Reservation not found: " + id));
     }
 
-        @Override
-        public Reservation confirmPickup(final Long id, final java.time.LocalDateTime pickupConfirmationDate) {
-                jdbcTemplate.update("UPDATE reservations SET status = ?, pickup_confirmation_date = ? WHERE id = ?",
-                                Reservation.Status.PAID.name(),
-                                pickupConfirmationDate == null ? null : java.sql.Timestamp.valueOf(pickupConfirmationDate),
-                                id);
-                return findById(id).orElseThrow(() -> new IllegalStateException("Reservation not found: " + id));
-        }
+    @Override
+    public Reservation confirmPickup(final Long id, final LocalDateTime pickupConfirmationDate) {
+        jdbcTemplate.update("UPDATE reservations SET status = ?, pickup_confirmation_date = ? WHERE id = ?",
+                Reservation.Status.PAID.name(),
+                pickupConfirmationDate == null ? null : Timestamp.valueOf(pickupConfirmationDate),
+                id);
+        return findById(id).orElseThrow(() -> new IllegalStateException("Reservation not found: " + id));
+    }
 
     @Override
     public Optional<Reservation> findByPickupCode(final String pickupCode) {
@@ -214,5 +216,83 @@ public class ReservationJdbcDao implements ReservationDao {
                 packId, customerId, Reservation.Status.RESERVED.name()
         );
         return count != null && count > 0;
+    }
+
+    @Override
+    public int countPaidReservationsInPeriod(final Long commerceId,
+                                          final LocalDateTime periodStart,
+                                          final LocalDateTime periodEnd) {
+        final Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(r.id) FROM reservations r " +
+                "JOIN packs p ON r.pack_id = p.id " +
+                "WHERE p.commerce_id = ? AND r.status = ? " +
+                "AND r.pickup_confirmation_date >= ? AND r.pickup_confirmation_date < ?",
+                Integer.class,
+                commerceId,
+                Reservation.Status.PAID.name(),
+                Timestamp.valueOf(periodStart),
+                Timestamp.valueOf(periodEnd));
+        return count != null ? count : 0;
+    }
+
+    @Override
+    public List<Object[]> countPaidReservationsPerDay(final Long commerceId, final LocalDateTime from,
+            final LocalDateTime to) {
+        return jdbcTemplate.query(
+                "SELECT DATE(reservation_date) as day, COUNT(*) as cnt "
+                        + "FROM reservations r JOIN packs p ON r.pack_id = p.id "
+                        + "WHERE p.commerce_id = ? AND r.status = 'PAID' "
+                        + "AND r.reservation_date >= ? AND r.reservation_date < ? "
+                        + "GROUP BY DATE(reservation_date) ORDER BY day ASC",
+                (rs, rowNum) -> new Object[] { rs.getDate("day").toLocalDate(), rs.getLong("cnt") },
+                commerceId, Timestamp.valueOf(from), Timestamp.valueOf(to));
+    }
+
+    @Override
+    public BigDecimal sumRevenueInPeriod(final Long commerceId, final LocalDateTime from,
+            final LocalDateTime to) {
+        final BigDecimal sum = jdbcTemplate.queryForObject(
+                "SELECT SUM(r.final_price) FROM reservations r JOIN packs p ON r.pack_id = p.id "
+                        + "WHERE p.commerce_id = ? AND r.status = 'PAID' "
+                        + "AND r.pickup_confirmation_date >= ? AND r.pickup_confirmation_date < ?",
+                BigDecimal.class,
+                commerceId,
+                Timestamp.valueOf(from),
+                Timestamp.valueOf(to));
+        return sum == null ? BigDecimal.ZERO : sum;
+    }
+
+    @Override
+    public Optional<Long> findBestSellingPackId(final Long commerceId, final LocalDateTime from,
+            final LocalDateTime to) {
+        try {
+            final Long id = jdbcTemplate.queryForObject(
+                    "SELECT r.pack_id FROM reservations r JOIN packs p ON r.pack_id = p.id "
+                            + "WHERE p.commerce_id = ? AND r.status = 'PAID' "
+                            + "AND r.pickup_confirmation_date >= ? AND r.pickup_confirmation_date < ? "
+                            + "GROUP BY r.pack_id ORDER BY COUNT(*) DESC LIMIT 1",
+                    Long.class,
+                    commerceId,
+                    Timestamp.valueOf(from),
+                    Timestamp.valueOf(to));
+            return Optional.ofNullable(id);
+        } catch (final EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public long countByStatusInPeriod(final Long commerceId, final Reservation.Status status,
+            final LocalDateTime from, final LocalDateTime to) {
+        final Long count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(r.id) FROM reservations r JOIN packs p ON r.pack_id = p.id "
+                        + "WHERE p.commerce_id = ? AND r.status = ? "
+                        + "AND r.reservation_date >= ? AND r.reservation_date < ?",
+                Long.class,
+                commerceId,
+                status == null ? null : status.name(),
+                Timestamp.valueOf(from),
+                Timestamp.valueOf(to));
+        return count == null ? 0L : count.longValue();
     }
 }

@@ -67,4 +67,5 @@ public interface ReservationService {
     int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status);
 
     boolean hasActiveReservation(Long packId, Long customerId);
+
 }

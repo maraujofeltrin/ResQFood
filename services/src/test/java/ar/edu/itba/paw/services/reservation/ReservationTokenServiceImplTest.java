@@ -4,6 +4,7 @@ import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackSortOption;
+import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.persistence.PackDao;
@@ -15,6 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,17 +69,17 @@ public class ReservationTokenServiceImplTest {
         }
 
         @Override
-        public java.util.List<Reservation> findByCustomerId(Long customerId) {
+        public List<Reservation> findByCustomerId(Long customerId) {
             return store.values().stream().filter(r -> r.getCustomerId().equals(customerId)).toList();
         }
 
         @Override
-        public java.util.List<Reservation> findByCommerceId(Long commerceId) {
-            return java.util.Collections.emptyList();
+        public List<Reservation> findByCommerceId(Long commerceId) {
+            return Collections.emptyList();
         }
 
         @Override
-        public java.util.List<Reservation> findByPackId(Long packId) {
+        public List<Reservation> findByPackId(Long packId) {
             return store.values().stream().filter(r -> r.getPackId().equals(packId)).toList();
         }
 
@@ -104,8 +107,8 @@ public class ReservationTokenServiceImplTest {
         }
 
         @Override
-        public java.util.List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize) {
-            return java.util.Collections.emptyList();
+        public List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize) {
+            return Collections.emptyList();
         }
 
         @Override
@@ -116,6 +119,31 @@ public class ReservationTokenServiceImplTest {
         @Override
         public boolean hasActiveReservation(Long packId, Long customerId) {
             return false;
+        }
+
+        @Override
+        public int countPaidReservationsInPeriod(Long commerceId, LocalDateTime periodStart, LocalDateTime periodEnd) {
+            return 0;
+        }
+
+        @Override
+        public List<Object[]> countPaidReservationsPerDay(Long commerceId, LocalDateTime from, LocalDateTime to) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public BigDecimal sumRevenueInPeriod(Long commerceId, LocalDateTime from, LocalDateTime to) {
+            return BigDecimal.ZERO;
+        }
+
+        @Override
+        public Optional<Long> findBestSellingPackId(Long commerceId, LocalDateTime from, LocalDateTime to) {
+            return Optional.empty();
+        }
+
+        @Override
+        public long countByStatusInPeriod(Long commerceId, Reservation.Status status, LocalDateTime from, LocalDateTime to) {
+            return 0L;
         }
     }
 
@@ -141,16 +169,16 @@ public class ReservationTokenServiceImplTest {
 
         @Override public Reservation createReservation(long packId, long userId, int quantity, double unitPrice, String pickupWindow, String baseUrl) { throw new UnsupportedOperationException(); }
         @Override public Optional<Reservation> findById(Long id) { return reservationDao.findById(id); }
-        @Override public java.util.List<Reservation> findByCustomerId(Long customerId) { throw new UnsupportedOperationException(); }
-        @Override public java.util.List<Reservation> findByCommerceId(Long commerceId) { throw new UnsupportedOperationException(); }
-        @Override public java.util.List<Reservation> findByPackId(Long packId) { throw new UnsupportedOperationException(); }
+        @Override public List<Reservation> findByCustomerId(Long customerId) { throw new UnsupportedOperationException(); }
+        @Override public List<Reservation> findByCommerceId(Long commerceId) { throw new UnsupportedOperationException(); }
+        @Override public List<Reservation> findByPackId(Long packId) { throw new UnsupportedOperationException(); }
         @Override public String computePickupDateStr(Reservation reservation) { throw new UnsupportedOperationException(); }
         @Override public void validateReservationBelongsToCommerce(Long reservationId, Long commerceUserId) { throw new UnsupportedOperationException(); }
         @Override public ar.edu.itba.paw.services.pack.DirectReservationCheck checkDirectPackReservation(long packId, int quantity) { throw new UnsupportedOperationException(); }
         @Override public Reservation confirmPickup(Long id) { throw new UnsupportedOperationException(); }
         @Override public Reservation rejectReservationForCommerce(Long reservationId, Long commerceUserId) { throw new UnsupportedOperationException(); }
         @Override public PickupByCodeResult confirmPickupByCode(String pickupCode, Long commerceUserId) { throw new UnsupportedOperationException(); }
-        @Override public java.util.List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize) { throw new UnsupportedOperationException(); }
+        @Override public List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize) { throw new UnsupportedOperationException(); }
         @Override public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status) { throw new UnsupportedOperationException(); }
         @Override public boolean hasActiveReservation(Long packId, Long customerId) { throw new UnsupportedOperationException(); }
     }
@@ -158,7 +186,7 @@ public class ReservationTokenServiceImplTest {
     static class InMemoryPackDao implements PackDao {
         int incrementCalls = 0;
 
-        @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<ar.edu.itba.paw.models.pack.PackTag> tags, Long imageId) { throw new UnsupportedOperationException(); }
+        @Override public Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<PackTag> tags, Long imageId) { throw new UnsupportedOperationException(); }
         @Override public Optional<Pack> findById(Long id) { return Optional.empty(); }
         @Override public List<Pack> findAll() { return List.of(); }
         @Override public Pack update(Pack pack) { throw new UnsupportedOperationException(); }

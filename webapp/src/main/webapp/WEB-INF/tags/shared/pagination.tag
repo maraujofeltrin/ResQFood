@@ -5,7 +5,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<c:set var="pageSep" value="${fn:contains(baseUrl, '?') ? '&amp;' : '?'}" />
+<c:set var="pageSep" value="${fn:contains(baseUrl, '?') ? '&' : '?'}" />
 
 <c:if test="${totalPages > 1}">
     <div class="flex items-center justify-center mt-20 gap-2">
