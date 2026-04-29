@@ -88,19 +88,30 @@ uri="http://itba.edu.ar/paw/tags" %>
           <h2 class="text-2xl font-headline font-bold text-on-surface mb-4">
             <spring:message code="commerce.metrics.salesByDay" />
           </h2>
-          <div class="flex items-center gap-3 mb-4">
-            <button
-              id="btn7"
-              class="px-4 py-2 bg-primary text-on-primary rounded-full"
-            >
-              <spring:message code="commerce.metrics.last7" />
-            </button>
-            <button
-              id="btn30"
-              class="px-4 py-2 bg-surface-container text-on-surface rounded-full"
-            >
-              <spring:message code="commerce.metrics.last30" />
-            </button>
+          <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+            <div class="flex items-center gap-3">
+              <button
+                id="btn7"
+                class="px-4 py-2 bg-primary text-on-primary rounded-full"
+              >
+                <spring:message code="commerce.metrics.last7" />
+              </button>
+              <button
+                id="btn30"
+                class="px-4 py-2 bg-surface-container text-on-surface rounded-full"
+              >
+                <spring:message code="commerce.metrics.last30" />
+              </button>
+            </div>
+
+            <form id="filterForm" method="get" action="${pageContext.request.contextPath}/commerce/metrics" class="flex items-center gap-3" onsubmit="document.getElementById('daysInput').value='';">
+              <input type="hidden" id="daysInput" name="days" value="<c:out value='${days}'/>" />
+              <label class="text-sm text-secondary"><spring:message code="commerce.metrics.filter.from"/></label>
+              <input id="fromInput" type="date" name="from" class="pack-form-control" value="<c:out value='${from}'/>" />
+              <label class="text-sm text-secondary"><spring:message code="commerce.metrics.filter.to"/></label>
+              <input id="toInput" type="date" name="to" class="pack-form-control" value="<c:out value='${to}'/>" />
+              <button id="applyBtn" type="submit" class="px-4 py-2 bg-primary text-on-primary rounded-full"><spring:message code="commerce.metrics.filter.apply"/></button>
+            </form>
           </div>
           <canvas id="salesChart" height="120"></canvas>
         </div>
@@ -108,79 +119,151 @@ uri="http://itba.edu.ar/paw/tags" %>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
           (function () {
-            const raw = JSON.parse(
-              '<c:out value="${salesChartJson}" escapeXml="false"/>',
-            );
-            const fullData = raw.slice();
-            function sliceDays(n) {
-              return fullData.slice(Math.max(fullData.length - n, 0));
+            const raw = JSON.parse('<c:out value="${salesChartJson}" escapeXml="false"/>');
+            // limit to maximum 1 year on client as safeguard
+            const MAX_DAYS = 365;
+            let fullData = raw.slice();
+            if (fullData.length > MAX_DAYS) {
+              fullData = fullData.slice(fullData.length - MAX_DAYS);
             }
 
-            const ctx = document.getElementById("salesChart").getContext("2d");
-            const initData = sliceDays(7);
+            // detect if a date range or a quick-days selection was provided from server
+            const fromVal = '<c:out value="${from}"/>' || '';
+            const toVal = '<c:out value="${to}"/>' || '';
+            const daysSelected = Number('<c:out value="${days}"/>') || 0;
+            const rangeActive = fromVal.trim().length > 0 && toVal.trim().length > 0 && daysSelected === 0;
+
+            function parseISODate(s) {
+              const parts = s.split('-');
+              return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+            }
+
+            function formatDayLabelIso(s) {
+              // returns DD/MM
+              const parts = s.split('-');
+              return parts[2] + '/' + parts[1];
+            }
+
+            function aggregateWeekly(data) {
+              const res = [];
+              for (let i = 0; i < data.length; i += 7) {
+                let sum = 0;
+                const start = data[i].date;
+                for (let j = 0; j < 7 && i + j < data.length; j++) {
+                  sum += Number(data[i + j].count);
+                }
+                res.push({ date: start, count: sum });
+              }
+              return res;
+            }
+
+            function aggregateMonthly(data) {
+              const map = new Map();
+              data.forEach((d) => {
+                const key = d.date.slice(0, 7); // YYYY-MM
+                const prev = map.get(key) || { date: key, count: 0 };
+                prev.count += Number(d.count);
+                map.set(key, prev);
+              });
+              return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+            }
+
+            function computeAggregated(data) {
+              const len = data.length;
+              if (len <= 31) return { mode: 'daily', data };
+              if (len <= 92) return { mode: 'weekly', data: aggregateWeekly(data) };
+              return { mode: 'monthly', data: aggregateMonthly(data) };
+            }
+
+            // initial dataset selection
+            let initialData;
+            let aggregationMode = 'daily';
+            if (daysSelected > 0) {
+              // server returned a quick-days dataset (e.g. ?days=7)
+              const agg = computeAggregated(fullData);
+              initialData = agg.data;
+              aggregationMode = agg.mode;
+              // mark selected button visually
+              if (daysSelected === 7) {
+                document.getElementById('btn7').classList.add('bg-primary', 'text-on-primary');
+                document.getElementById('btn7').classList.remove('bg-surface-container', 'text-on-surface');
+                document.getElementById('btn30').classList.remove('bg-primary', 'text-on-primary');
+                document.getElementById('btn30').classList.add('bg-surface-container', 'text-on-surface');
+              } else if (daysSelected === 30) {
+                document.getElementById('btn30').classList.add('bg-primary', 'text-on-primary');
+                document.getElementById('btn30').classList.remove('bg-surface-container', 'text-on-surface');
+                document.getElementById('btn7').classList.remove('bg-primary', 'text-on-primary');
+                document.getElementById('btn7').classList.add('bg-surface-container', 'text-on-surface');
+              }
+            } else if (rangeActive) {
+              const agg = computeAggregated(fullData);
+              initialData = agg.data;
+              aggregationMode = agg.mode;
+              // leave quick buttons enabled so they can clear the range
+              document.getElementById('btn7').classList.remove('bg-primary', 'text-on-primary');
+              document.getElementById('btn7').classList.add('bg-surface-container', 'text-on-surface');
+              document.getElementById('btn30').classList.remove('bg-primary', 'text-on-primary');
+              document.getElementById('btn30').classList.add('bg-surface-container', 'text-on-surface');
+            } else {
+              // default to last 7 days
+              initialData = fullData.slice(Math.max(fullData.length - 7, 0));
+              aggregationMode = 'daily';
+              document.getElementById('btn7').classList.add('bg-primary', 'text-on-primary');
+              document.getElementById('btn30').classList.remove('bg-primary', 'text-on-primary');
+              document.getElementById('btn30').classList.add('bg-surface-container', 'text-on-surface');
+            }
+
+            const ctx = document.getElementById('salesChart').getContext('2d');
             const chart = new Chart(ctx, {
-              type: "bar",
+              type: 'bar',
               data: {
-                labels: initData.map((d) => d.date),
+                labels: initialData.map((d) => {
+                  if (aggregationMode === 'monthly') return d.date.replace('-', '/');
+                  return formatDayLabelIso(d.date);
+                }),
                 datasets: [
                   {
-                    data: initData.map((d) => d.count),
-                    backgroundColor: "rgba(4, 120, 87, 0.2)",
-                    borderColor: "#047857",
+                    data: initialData.map((d) => d.count),
+                    backgroundColor: 'rgba(4, 120, 87, 0.2)',
+                    borderColor: '#047857',
                     borderWidth: 1,
                   },
                 ],
               },
               options: {
                 plugins: { legend: { display: false } },
-                scales: {
-                  x: { type: "category" },
-                  y: { beginAtZero: true, ticks: { precision: 0 } },
-                },
+                scales: { x: { type: 'category' }, y: { beginAtZero: true, ticks: { precision: 0 } } },
               },
             });
 
-            function update(n) {
-              const data = sliceDays(n);
-              chart.data.labels = data.map((d) => d.date);
-              chart.data.datasets[0].data = data.map((d) => d.count);
+            function updateChartFromArray(arr) {
+              chart.data.labels = arr.map((d) => (aggregationMode === 'monthly' ? d.date.replace('-', '/') : formatDayLabelIso(d.date)));
+              chart.data.datasets[0].data = arr.map((d) => d.count);
               chart.update();
             }
 
-            document
-              .getElementById("btn7")
-              .addEventListener("click", function () {
-                document
-                  .getElementById("btn7")
-                  .classList.add("bg-primary", "text-on-primary");
-                document
-                  .getElementById("btn7")
-                  .classList.remove("bg-surface-container", "text-on-surface");
-                document
-                  .getElementById("btn30")
-                  .classList.remove("bg-primary", "text-on-primary");
-                document
-                  .getElementById("btn30")
-                  .classList.add("bg-surface-container", "text-on-surface");
-                update(7);
-              });
-            document
-              .getElementById("btn30")
-              .addEventListener("click", function () {
-                document
-                  .getElementById("btn30")
-                  .classList.add("bg-primary", "text-on-primary");
-                document
-                  .getElementById("btn30")
-                  .classList.remove("bg-surface-container", "text-on-surface");
-                document
-                  .getElementById("btn7")
-                  .classList.remove("bg-primary", "text-on-primary");
-                document
-                  .getElementById("btn7")
-                  .classList.add("bg-surface-container", "text-on-surface");
-                update(30);
-              });
+            function updateLastN(n) {
+              aggregationMode = 'daily';
+              const slice = fullData.slice(Math.max(fullData.length - n, 0));
+              updateChartFromArray(slice);
+            }
+
+            document.getElementById('btn7').addEventListener('click', function () {
+              // selecting quick range clears date inputs and submits the form with days=7
+              document.getElementById('fromInput').value = '';
+              document.getElementById('toInput').value = '';
+              document.getElementById('daysInput').value = '7';
+              document.getElementById('filterForm').submit();
+            });
+
+            document.getElementById('btn30').addEventListener('click', function () {
+              document.getElementById('fromInput').value = '';
+              document.getElementById('toInput').value = '';
+              document.getElementById('daysInput').value = '30';
+              document.getElementById('filterForm').submit();
+            });
+
+            // When the user clicks Apply, the form submits and page reloads; no extra handling needed.
           })();
         </script>
       </section>

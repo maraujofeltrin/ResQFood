@@ -465,4 +465,37 @@ public class ReservationServiceImpl implements ReservationService {
 
         return new CommerceMetrics(daily, totalRevenue, totalReservations, bestTitle, acceptanceRate);
     }
+
+    @Override
+    public CommerceMetrics getCommerceMetrics(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
+        final List<Object[]> rows = reservationDao.countPaidReservationsPerDay(commerceId, from, to);
+        final Map<LocalDate, Long> countsByDate = new HashMap<>();
+        for (final Object[] row : rows) {
+            final LocalDate d = (LocalDate) row[0];
+            final Long cnt = (Long) row[1];
+            countsByDate.put(d, cnt == null ? 0L : cnt);
+        }
+
+        final List<CommerceMetrics.DailySalesPoint> daily = new ArrayList<>();
+        final LocalDate startDate = from.toLocalDate();
+        final int days = (int) ChronoUnit.DAYS.between(startDate, to.toLocalDate());
+        for (int i = 0; i < days; i++) {
+            final LocalDate d = startDate.plusDays(i);
+            final long cnt = countsByDate.getOrDefault(d, 0L);
+            daily.add(new CommerceMetrics.DailySalesPoint(d.toString(), cnt));
+        }
+
+        final int totalReservations = reservationDao.countPaidReservationsInPeriod(commerceId, from, to);
+        final BigDecimal totalRevenue = reservationDao.sumRevenueInPeriod(commerceId, from, to);
+
+        final Optional<Long> bestPackId = reservationDao.findBestSellingPackId(commerceId, from, to);
+        final String bestTitle = bestPackId.flatMap(id -> packDao.findById(id).map(Pack::getTitle)).orElse(null);
+
+        final long paidCount = reservationDao.countByStatusInPeriod(commerceId, Reservation.Status.PAID, from, to);
+        final long canceledCount = reservationDao.countByStatusInPeriod(commerceId, Reservation.Status.CANCELED, from, to);
+        final long denom = paidCount + canceledCount;
+        final int acceptanceRate = denom == 0L ? 0 : (int) Math.round((double) paidCount / (double) denom * 100.0);
+
+        return new CommerceMetrics(daily, totalRevenue, totalReservations, bestTitle, acceptanceRate);
+    }
 }

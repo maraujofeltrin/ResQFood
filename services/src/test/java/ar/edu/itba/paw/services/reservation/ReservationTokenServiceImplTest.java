@@ -184,6 +184,7 @@ public class ReservationTokenServiceImplTest {
         @Override public boolean hasActiveReservation(Long packId, Long customerId) { throw new UnsupportedOperationException(); }
         @Override public int countSoldToday(Long commerceId) { throw new UnsupportedOperationException(); }
         @Override public CommerceMetrics getCommerceMetrics(Long commerceId, int days) { throw new UnsupportedOperationException(); }
+        @Override public CommerceMetrics getCommerceMetrics(Long commerceId, java.time.LocalDateTime from, java.time.LocalDateTime to) { throw new UnsupportedOperationException(); }
     }
 
     static class InMemoryPackDao implements PackDao {

@@ -25,6 +25,11 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.time.ZoneId;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -143,8 +148,11 @@ public class CommerceDashboardController {
         return mav;
     }
 
-    @GetMapping(value = "/metrics")
-    public ModelAndView metrics(@AuthenticationPrincipal final AuthUser principal) {
+        @GetMapping(value = "/metrics")
+        public ModelAndView metrics(@AuthenticationPrincipal final AuthUser principal,
+            @RequestParam(value = "from", required = false) final String fromStr,
+            @RequestParam(value = "to", required = false) final String toStr,
+            @RequestParam(value = "days", required = false) final Integer days) {
         final long id = authResolver.resolveUser(principal).getId();
 
         final java.util.Optional<Commerce> commerceOpt = commerceService.findByUserId(id);
@@ -157,7 +165,53 @@ public class CommerceDashboardController {
 
         mav.addObject("commerce", commerce);
 
-        final CommerceMetrics metrics = reservationService.getCommerceMetrics(commerce.getUserId(), 30);
+        // If user requested a quick "last N days", prioritize that (clears from/to)
+        CommerceMetrics metrics;
+        if (days != null && days > 0) {
+            final int safeDays = Math.min(days, 365);
+            metrics = reservationService.getCommerceMetrics(commerce.getUserId(), safeDays);
+            mav.addObject("days", safeDays);
+            mav.addObject("from", "");
+            mav.addObject("to", "");
+        } else if (fromStr != null && !fromStr.isBlank() && toStr != null && !toStr.isBlank()) {
+            try {
+                LocalDate fromDate = LocalDate.parse(fromStr);
+                LocalDate toDate = LocalDate.parse(toStr);
+
+                // if dates are reversed, swap them
+                if (toDate.isBefore(fromDate)) {
+                    final LocalDate tmp = fromDate;
+                    fromDate = toDate;
+                    toDate = tmp;
+                }
+
+                // Clamp to maximum 1 year (365 days) window
+                final long inclusiveDays = java.time.temporal.ChronoUnit.DAYS.between(fromDate, toDate) + 1;
+                final int MAX_DAYS = 365;
+                if (inclusiveDays > MAX_DAYS) {
+                    fromDate = toDate.minusDays(MAX_DAYS - 1);
+                }
+
+                final LocalDateTime fromUtc = fromDate.atStartOfDay(displayZone)
+                        .withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+                final LocalDateTime toUtc = toDate.plusDays(1).atStartOfDay(displayZone)
+                        .withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+                // expose the effective (possibly clamped) values back to the view
+                mav.addObject("from", fromDate.toString());
+                mav.addObject("to", toDate.toString());
+                metrics = reservationService.getCommerceMetrics(commerce.getUserId(), fromUtc, toUtc);
+            } catch (final DateTimeParseException ex) {
+                metrics = reservationService.getCommerceMetrics(commerce.getUserId(), 7);
+                mav.addObject("days", 7);
+                mav.addObject("from", "");
+                mav.addObject("to", "");
+            }
+        } else {
+            metrics = reservationService.getCommerceMetrics(commerce.getUserId(), 7);
+            mav.addObject("days", 7);
+            mav.addObject("from", "");
+            mav.addObject("to", "");
+        }
         final String salesChartJson = buildSalesChartJson(metrics.getDailySales());
         mav.addObject("salesChartJson", salesChartJson);
         mav.addObject("totalRevenue", metrics.getTotalRevenue());

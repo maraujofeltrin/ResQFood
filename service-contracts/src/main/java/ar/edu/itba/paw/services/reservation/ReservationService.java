@@ -5,6 +5,7 @@ import ar.edu.itba.paw.services.pack.DirectReservationCheck;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 import ar.edu.itba.paw.models.CommerceMetrics;
 
 public interface ReservationService {
@@ -74,6 +75,11 @@ public interface ReservationService {
      * "Today" is defined in the application's business timezone.
      */
     int countSoldToday(Long commerceId);
-
     CommerceMetrics getCommerceMetrics(Long commerceId, int days);
+
+    /**
+     * Get commerce metrics for an explicit UTC time range [from, to).
+     * The DAO layer accepts period bounds as LocalDateTime in UTC.
+     */
+    CommerceMetrics getCommerceMetrics(Long commerceId, LocalDateTime from, LocalDateTime to);
 }
