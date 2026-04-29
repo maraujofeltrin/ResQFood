@@ -40,7 +40,7 @@ public class TokenJdbcDaoTest {
     @BeforeEach
     public void setUp() {
         jdbcTemplate = new JdbcTemplate(dataSource);
-        JdbcTestUtils.deleteFromTables(jdbcTemplate, "bids", "auctions", "reservation_tokens", "pack_tags", "reservations", "packs", "commerces", "clients", "tokens", "users");
+        JdbcTestUtils.deleteFromTables(jdbcTemplate, "bids", "auctions", "reservation_tokens", "pack_tags", "reservations", "client_pack_favorites", "packs", "commerces", "clients", "tokens", "users");
         
         userId = userDao.createUser("user@example.com", "pass", "User", "123", User.Role.CLIENT).getId();
     }

@@ -1,0 +1,39 @@
+package ar.edu.itba.paw.webapp.controller.pack;
+
+import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.services.pack.PackFavoriteService;
+import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.server.ResponseStatusException;
+
+@Controller
+public class PackFavoriteController {
+
+    private final PackFavoriteService packFavoriteService;
+    private final AuthenticatedUserResolver authResolver;
+
+    @Autowired
+    public PackFavoriteController(final PackFavoriteService packFavoriteService,
+            final AuthenticatedUserResolver authResolver) {
+        this.packFavoriteService = packFavoriteService;
+        this.authResolver = authResolver;
+    }
+
+    @PostMapping("/packs/{packId}/favorite")
+    public String toggleFavorite(
+            @PathVariable("packId") final long packId,
+            final Authentication authentication) {
+        final User user = authResolver.requireRole(authentication, User.Role.CLIENT);
+        try {
+            packFavoriteService.toggleFavorite(user.getId(), packId);
+        } catch (final IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
+        return "redirect:/packs/" + packId;
+    }
+}

@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS auctions CASCADE;
 DROP TABLE IF EXISTS reservation_tokens CASCADE;
 DROP TABLE IF EXISTS pack_tags CASCADE;
 DROP TABLE IF EXISTS reservations CASCADE;
+DROP TABLE IF EXISTS client_pack_favorites CASCADE;
 DROP TABLE IF EXISTS packs CASCADE;
 DROP TABLE IF EXISTS commerces CASCADE;
 DROP TABLE IF EXISTS clients CASCADE;
@@ -87,6 +88,15 @@ CREATE TABLE pack_tags (
     pack_id BIGINT NOT NULL,
     tag VARCHAR(50) NOT NULL,
     PRIMARY KEY (pack_id, tag),
+    FOREIGN KEY (pack_id) REFERENCES packs(id) ON DELETE CASCADE
+);
+
+CREATE TABLE client_pack_favorites (
+    client_id BIGINT NOT NULL,
+    pack_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    PRIMARY KEY (client_id, pack_id),
+    FOREIGN KEY (client_id) REFERENCES clients(user_id) ON DELETE CASCADE,
     FOREIGN KEY (pack_id) REFERENCES packs(id) ON DELETE CASCADE
 );
 

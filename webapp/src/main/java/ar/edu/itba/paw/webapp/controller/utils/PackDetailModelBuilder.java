@@ -12,6 +12,7 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.services.pack.PackFavoriteService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.models.reservation.Reservation;
@@ -40,12 +41,13 @@ public class PackDetailModelBuilder {
     private final MessageSource messageSource;
     private final ZoneId businessZone;
     private final AuthenticatedUserResolver authResolver;
+    private final PackFavoriteService packFavoriteService;
     private static final Locale LOCALE_AR = new Locale("es", "AR");
 
     @Autowired
     public PackDetailModelBuilder(final CommerceService commerceService, final AuctionService auctionService,
             final ClientService clientService, final ReservationService reservationService, final MessageSource messageSource, final ZoneId businessZone,
-            final AuthenticatedUserResolver authResolver) {
+            final AuthenticatedUserResolver authResolver, final PackFavoriteService packFavoriteService) {
         this.commerceService = commerceService;
         this.auctionService = auctionService;
         this.clientService = clientService;
@@ -53,6 +55,7 @@ public class PackDetailModelBuilder {
         this.messageSource = messageSource;
         this.businessZone = businessZone;
         this.authResolver = authResolver;
+        this.packFavoriteService = packFavoriteService;
     }
 
     private static String formatPrice(final Double amount) {
@@ -166,6 +169,12 @@ public class PackDetailModelBuilder {
             }
         }
         mav.addObject("clientHasActiveReservation", clientHasActiveReservation);
+
+        final boolean packFavoriteSelected = authResolver.resolveUserOrEmpty()
+                .filter(u -> u.getRole() == User.Role.CLIENT)
+                .map(u -> packFavoriteService.isFavorite(u.getId(), pack.getId()))
+                .orElse(false);
+        mav.addObject("packFavoriteSelected", packFavoriteSelected);
 
         mav.addObject("originalPrice", formatPrice(pack.getOriginalPrice()));
         mav.addObject("finalPrice", formatPrice(pack.getFinalPrice()));
