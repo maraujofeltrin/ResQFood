@@ -5,7 +5,6 @@ import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
-import ar.edu.itba.paw.models.CommerceMetrics;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.persistence.PackDao;
@@ -183,8 +182,6 @@ public class ReservationTokenServiceImplTest {
         @Override public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status) { throw new UnsupportedOperationException(); }
         @Override public boolean hasActiveReservation(Long packId, Long customerId) { throw new UnsupportedOperationException(); }
         @Override public int countSoldToday(Long commerceId) { throw new UnsupportedOperationException(); }
-        @Override public CommerceMetrics getCommerceMetrics(Long commerceId, int days) { throw new UnsupportedOperationException(); }
-        @Override public CommerceMetrics getCommerceMetrics(Long commerceId, java.time.LocalDateTime from, java.time.LocalDateTime to) { throw new UnsupportedOperationException(); }
     }
 
     static class InMemoryPackDao implements PackDao {

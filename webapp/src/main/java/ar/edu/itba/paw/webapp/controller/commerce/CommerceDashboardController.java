@@ -5,11 +5,13 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.services.metrics.CommerceMetricsService;
 import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
 import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
+import ar.edu.itba.paw.webapp.controller.utils.CommerceMetricsFilterHelper;
 import ar.edu.itba.paw.webapp.controller.utils.ReservationHistoryViewHelper;
 import ar.edu.itba.paw.models.CommerceMetrics;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,12 +26,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.time.ZoneId;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -47,10 +43,11 @@ public class CommerceDashboardController {
     private final PackService packService;
     private final AuctionService auctionService;
     private final ReservationService reservationService;
+    private final CommerceMetricsService commerceMetricsService;
     private final ClientService clientService;
     private final AuthenticatedUserResolver authResolver;
     private final MessageSource messageSource;
-    private final ZoneId displayZone;
+    private final CommerceMetricsFilterHelper metricsFilterHelper;
 
     @Autowired
     public CommerceDashboardController(final CommerceService commerceService,
@@ -60,7 +57,8 @@ public class CommerceDashboardController {
                                        final ClientService clientService,
                                        final AuthenticatedUserResolver authResolver,
                                        final MessageSource messageSource,
-                                       final ZoneId businessZone) {
+                                       final CommerceMetricsService commerceMetricsService,
+                                       final CommerceMetricsFilterHelper metricsFilterHelper) {
         this.commerceService = commerceService;
         this.packService = packService;
         this.auctionService = auctionService;
@@ -68,7 +66,8 @@ public class CommerceDashboardController {
         this.clientService = clientService;
         this.authResolver = authResolver;
         this.messageSource = messageSource;
-        this.displayZone = businessZone;
+        this.commerceMetricsService = commerceMetricsService;
+        this.metricsFilterHelper = metricsFilterHelper;
     }
 
     @GetMapping(value = "")
@@ -148,77 +147,29 @@ public class CommerceDashboardController {
         return mav;
     }
 
-        @GetMapping(value = "/metrics")
-        public ModelAndView metrics(@AuthenticationPrincipal final AuthUser principal,
-            @RequestParam(value = "from", required = false) final String fromStr,
-            @RequestParam(value = "to", required = false) final String toStr,
-            @RequestParam(value = "days", required = false) final Integer days) {
-        final long id = authResolver.resolveUser(principal).getId();
-
-        final java.util.Optional<Commerce> commerceOpt = commerceService.findByUserId(id);
-        if (!commerceOpt.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-
-        final Commerce commerce = commerceOpt.get();
+    @GetMapping(value = "/metrics")
+    public ModelAndView metrics(@AuthenticationPrincipal final AuthUser principal,
+        @RequestParam(value = "from", required = false) final String fromStr,
+        @RequestParam(value = "to", required = false) final String toStr,
+        @RequestParam(value = "days", required = false) final Integer days) {
+        final long userId = authResolver.resolveUser(principal).getId();
+        final Commerce commerce = commerceService.findByUserId(userId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        final CommerceMetricsFilterHelper.MetricsFilterResolution resolution = metricsFilterHelper
+            .resolve(fromStr, toStr, days);
+        final CommerceMetrics metrics = commerceMetricsService.getCommerceMetrics(
+            commerce.getUserId(), resolution.getFrom(), resolution.getTo());
         final ModelAndView mav = new ModelAndView("commerce/metrics");
-
         mav.addObject("commerce", commerce);
-
-        // If user requested a quick "last N days", prioritize that (clears from/to)
-        CommerceMetrics metrics;
-        if (days != null && days > 0) {
-            final int safeDays = Math.min(days, 365);
-            metrics = reservationService.getCommerceMetrics(commerce.getUserId(), safeDays);
-            mav.addObject("days", safeDays);
-            mav.addObject("from", "");
-            mav.addObject("to", "");
-        } else if (fromStr != null && !fromStr.isBlank() && toStr != null && !toStr.isBlank()) {
-            try {
-                LocalDate fromDate = LocalDate.parse(fromStr);
-                LocalDate toDate = LocalDate.parse(toStr);
-
-                // if dates are reversed, swap them
-                if (toDate.isBefore(fromDate)) {
-                    final LocalDate tmp = fromDate;
-                    fromDate = toDate;
-                    toDate = tmp;
-                }
-
-                // Clamp to maximum 1 year (365 days) window
-                final long inclusiveDays = java.time.temporal.ChronoUnit.DAYS.between(fromDate, toDate) + 1;
-                final int MAX_DAYS = 365;
-                if (inclusiveDays > MAX_DAYS) {
-                    fromDate = toDate.minusDays(MAX_DAYS - 1);
-                }
-
-                final LocalDateTime fromUtc = fromDate.atStartOfDay(displayZone)
-                        .withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
-                final LocalDateTime toUtc = toDate.plusDays(1).atStartOfDay(displayZone)
-                        .withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
-                // expose the effective (possibly clamped) values back to the view
-                mav.addObject("from", fromDate.toString());
-                mav.addObject("to", toDate.toString());
-                metrics = reservationService.getCommerceMetrics(commerce.getUserId(), fromUtc, toUtc);
-            } catch (final DateTimeParseException ex) {
-                metrics = reservationService.getCommerceMetrics(commerce.getUserId(), 7);
-                mav.addObject("days", 7);
-                mav.addObject("from", "");
-                mav.addObject("to", "");
-            }
-        } else {
-            metrics = reservationService.getCommerceMetrics(commerce.getUserId(), 7);
-            mav.addObject("days", 7);
-            mav.addObject("from", "");
-            mav.addObject("to", "");
-        }
+        mav.addObject("days", resolution.getDaysValue());
+        mav.addObject("from", resolution.getFromValue());
+        mav.addObject("to", resolution.getToValue());
         final String salesChartJson = buildSalesChartJson(metrics.getDailySales());
         mav.addObject("salesChartJson", salesChartJson);
         mav.addObject("totalRevenue", metrics.getTotalRevenue());
         mav.addObject("totalReservations", metrics.getTotalReservations());
         mav.addObject("bestSellingPackTitle", metrics.getBestSellingPackTitle());
         mav.addObject("acceptanceRatePercent", metrics.getAcceptanceRatePercent());
-
         return mav;
     }
 
