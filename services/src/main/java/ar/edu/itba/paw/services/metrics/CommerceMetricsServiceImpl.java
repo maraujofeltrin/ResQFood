@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,11 +26,14 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
 
     private final ReservationDao reservationDao;
     private final PackDao packDao;
+    private final ZoneId displayZone;
 
     @Autowired
-    public CommerceMetricsServiceImpl(final ReservationDao reservationDao, final PackDao packDao) {
+    public CommerceMetricsServiceImpl(final ReservationDao reservationDao, final PackDao packDao,
+                                      final ZoneId businessZone) {
         this.reservationDao = reservationDao;
         this.packDao = packDao;
+        this.displayZone = businessZone;
     }
 
     @Override
@@ -61,6 +67,21 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
         final int acceptanceRate = denom == 0L ? 0 : (int) Math.round((double) paidCount / (double) denom * 100.0);
 
         return new CommerceMetrics(daily, totalRevenue, totalReservations, bestTitle, acceptanceRate);
+    }
+
+    @Override
+    public int countSoldToday(final Long commerceId) {
+        final ZonedDateTime nowInBiz = ZonedDateTime.now(displayZone);
+        final LocalDateTime dayStartUtc = nowInBiz.toLocalDate()
+                .atStartOfDay(displayZone)
+                .withZoneSameInstant(ZoneOffset.UTC)
+                .toLocalDateTime();
+        final LocalDateTime dayEndUtc = nowInBiz.toLocalDate()
+                .plusDays(1)
+                .atStartOfDay(displayZone)
+                .withZoneSameInstant(ZoneOffset.UTC)
+                .toLocalDateTime();
+        return reservationDao.countPaidReservationsInPeriod(commerceId, dayStartUtc, dayEndUtc);
     }
 
 }

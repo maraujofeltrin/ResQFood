@@ -410,19 +410,4 @@ public class ReservationServiceImpl implements ReservationService {
         return reservationDao.hasActiveReservation(packId, customerId);
     }
 
-    @Override
-    public int countSoldToday(final Long commerceId) {
-        final ZonedDateTime nowInBiz = ZonedDateTime.now(displayZone);
-        final LocalDateTime dayStartUtc = nowInBiz.toLocalDate()
-                .atStartOfDay(displayZone)
-                .withZoneSameInstant(ZoneOffset.UTC)
-                .toLocalDateTime();
-        final LocalDateTime dayEndUtc = nowInBiz.toLocalDate()
-                .plusDays(1)
-                .atStartOfDay(displayZone)
-                .withZoneSameInstant(ZoneOffset.UTC)
-                .toLocalDateTime();
-        return reservationDao.countPaidReservationsInPeriod(commerceId, dayStartUtc, dayEndUtc);
-    }
-
 }

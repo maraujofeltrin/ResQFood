@@ -82,7 +82,7 @@ public class CommerceDashboardController {
 
         // -- Stats --
         final int totalPublications = packService.countCommercePacks(id, null);
-        final int soldToday = reservationService.countSoldToday(id);
+        final int soldToday = commerceMetricsService.countSoldToday(id);
         mav.addObject("totalPublications", totalPublications);
         mav.addObject("soldToday", soldToday);
 
