@@ -17,7 +17,7 @@
 
     <main class="pack-detail-main">
         <div class="flex items-center gap-2 mb-8 text-secondary">
-            <a href="${pageContext.request.contextPath}/commerce"
+            <a href="${pageContext.request.contextPath}/commerce/products"
                 class="group flex items-center font-bold">
                 <span class="material-symbols-outlined text-xl mr-1">arrow_back</span>
                 <span class="group-hover:underline">
