@@ -212,8 +212,8 @@ public class ReservationTokenServiceImplTest {
         @Override public boolean incrementStock(long packId, int quantity) { incrementCalls++; return true; }
         @Override public void softDelete(Long id) { }
         @Override public List<Pack> findByCommerceId(Long commerceId) { return List.of(); }
-        @Override public List<Pack> filterPacks(String query, List<PackTag> tags, String city, List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return List.of(); }
-        @Override public int countFilteredPacks(String query, List<PackTag> tags, String city, List<String> timeRanges) { return 0; }
+        @Override public List<Pack> filterPacks(String query, List<PackTag> tags, String city, List<String> timeRanges, PackSortOption sort, int page, int pageSize, boolean requirePositiveStock) { return List.of(); }
+        @Override public int countFilteredPacks(String query, List<PackTag> tags, String city, List<String> timeRanges, boolean requirePositiveStock) { return 0; }
         @Override public List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize) { return List.of(); }
         @Override public int countCommercePacks(Long commerceId, Boolean hasAuction) { return 0; }
     }

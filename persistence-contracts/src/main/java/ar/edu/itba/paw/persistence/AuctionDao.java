@@ -16,9 +16,14 @@ public interface AuctionDao {
 
     Optional<Auction> findByPackId(long packId);
 
-    List<Auction> filterAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges, AuctionSortOption sort, int page, int pageSize);
+    /**
+     * @param requirePositiveStock when {@code true}, only auctions whose pack has {@code stock > 0} are included
+     */
+    List<Auction> filterAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges,
+                                 AuctionSortOption sort, int page, int pageSize, boolean requirePositiveStock);
 
-    int countFilteredAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges);
+    int countFilteredAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges,
+                              boolean requirePositiveStock);
 
     List<Auction> findByCommerceId(long commerceId);
 

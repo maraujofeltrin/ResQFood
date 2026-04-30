@@ -118,7 +118,8 @@ public class AuctionJdbcDao implements AuctionDao {
 
     private void appendFilterJoinsAndConditions(final StringBuilder sql, final List<Object> params,
                                                 final String query, final List<PackTag> tags,
-                                                final String city, final List<String> timeRanges) {
+                                                final String city, final List<String> timeRanges,
+                                                final boolean requirePositiveStock) {
         final boolean hasQuery = query != null && !query.isBlank();
         final boolean hasTags = tags != null && !tags.isEmpty();
         final boolean hasCity = city != null && !city.isBlank();
@@ -133,7 +134,11 @@ public class AuctionJdbcDao implements AuctionDao {
 
         sql.append("WHERE a.status = 'ACTIVE' AND a.end_time > ? ")
            .append("AND p.active = true AND p.deleted = false ");
-           
+
+        if (requirePositiveStock) {
+            sql.append("AND p.stock > 0 ");
+        }
+
         params.add(Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC)));
 
         if (hasQuery) {
@@ -190,14 +195,15 @@ public class AuctionJdbcDao implements AuctionDao {
     public List<Auction> filterAuctions(final String query, final List<PackTag> tags,
                                         final String city, final List<String> timeRanges,
                                         final AuctionSortOption sort,
-                                        final int page, final int pageSize) {
+                                        final int page, final int pageSize,
+                                        final boolean requirePositiveStock) {
         final StringBuilder sql = new StringBuilder();
         sql.append("SELECT a.id AS auction_id, a.pack_id, a.initial_price, a.min_bid_increment, a.current_bid, a.current_bidder_id, ")
            .append("a.end_time, a.status, a.created_at, ")
            .append("p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active, p.deleted, p.image_id ");
 
         final List<Object> params = new ArrayList<>();
-        appendFilterJoinsAndConditions(sql, params, query, tags, city, timeRanges);
+        appendFilterJoinsAndConditions(sql, params, query, tags, city, timeRanges, requirePositiveStock);
 
         if (tags != null && !tags.isEmpty()) {
             sql.append("GROUP BY a.id, a.pack_id, a.initial_price, a.min_bid_increment, a.current_bid, a.current_bidder_id, ")
@@ -219,10 +225,12 @@ public class AuctionJdbcDao implements AuctionDao {
 
     @Override
     public int countFilteredAuctions(final String query, final List<PackTag> tags,
-                                     final String city, final List<String> timeRanges) {
+                                     final String city, final List<String> timeRanges,
+                                     final boolean requirePositiveStock) {
         final StringBuilder sqlJoinsAndConditions = new StringBuilder();
         final List<Object> params = new ArrayList<>();
-        appendFilterJoinsAndConditions(sqlJoinsAndConditions, params, query, tags, city, timeRanges);
+        appendFilterJoinsAndConditions(sqlJoinsAndConditions, params, query, tags, city, timeRanges,
+                requirePositiveStock);
 
         if (tags != null && !tags.isEmpty()) {
             final StringBuilder wrapperSql = new StringBuilder();

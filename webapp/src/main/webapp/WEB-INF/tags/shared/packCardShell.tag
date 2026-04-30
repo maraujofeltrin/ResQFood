@@ -12,6 +12,7 @@
 <%@ attribute name="manageable" type="java.lang.Boolean" required="false" %>
 <%@ attribute name="smallSize" required="false" type="java.lang.Boolean" %>
 <%@ attribute name="auction" type="java.lang.Boolean" required="false" %>
+<%@ attribute name="unavailable" type="java.lang.Boolean" required="false" %>
 <%@ attribute name="asLink" type="java.lang.Boolean" required="false" %>
 <%@ attribute name="participationBadgeCode" required="false" type="java.lang.String" %>
 <%@ attribute name="showPriceFooter" type="java.lang.Boolean" required="false" %>
@@ -32,6 +33,9 @@
 <c:if test="${empty auction}">
     <c:set var="auction" value="false" />
 </c:if>
+<c:if test="${empty unavailable}">
+    <c:set var="unavailable" value="false" />
+</c:if>
 
 <c:set var="resolvedAlt" value="${not empty imageAlt ? imageAlt : title}" />
 <c:set var="resolvedRescueLabel" value="${not empty rescueLabel ? rescueLabel : ''}" />
@@ -51,10 +55,27 @@
   </c:otherwise>
 </c:choose>
 
-<c:set var="wrapClass" value="bg-surface-container-lowest rounded-xl overflow-hidden group shadow-sm hover:shadow-md transition-shadow flex flex-col h-full ${minWClass} ${asLink ? 'cursor-pointer hover:bg-surface-container-low transition-colors text-inherit no-underline' : ''}" />
+<c:set var="shadowHoverClass" value="${unavailable ? 'shadow-sm' : 'shadow-sm hover:shadow-md'}" />
+<c:set var="fadeClass" value="${unavailable ? 'opacity-[0.52] saturate-[0.55] blur-[0.35px]' : ''}" />
+<c:choose>
+    <c:when test="${asLink && unavailable}">
+        <c:set var="wrapClass" value="bg-surface-container-lowest rounded-xl overflow-hidden group ${shadowHoverClass} transition-shadow flex flex-col h-full relative ${minWClass} ${fadeClass} cursor-not-allowed text-inherit no-underline" />
+    </c:when>
+    <c:when test="${asLink}">
+        <c:set var="wrapClass" value="bg-surface-container-lowest rounded-xl overflow-hidden group ${shadowHoverClass} transition-shadow flex flex-col h-full relative ${minWClass} cursor-pointer hover:bg-surface-container-low transition-colors text-inherit no-underline" />
+    </c:when>
+    <c:otherwise>
+        <c:set var="wrapClass" value="bg-surface-container-lowest rounded-xl overflow-hidden group ${shadowHoverClass} transition-shadow flex flex-col h-full relative ${minWClass} ${fadeClass}" />
+    </c:otherwise>
+</c:choose>
 
 <c:if test="${asLink}">
-<a href="${pageContext.request.contextPath}/packs/${packId}" class="${wrapClass}">
+<c:set var="unavailableLinkTitle" value="" />
+<c:if test="${unavailable}">
+    <spring:message code="pack.card.unavailable.title" var="unavailableLinkTitle"/>
+</c:if>
+<a href="${pageContext.request.contextPath}/packs/${packId}" class="${wrapClass}" title="<c:out value="${unavailableLinkTitle}"/>"
+    ${unavailable ? 'aria-disabled="true"' : ''}>
 </c:if>
 <c:if test="${not asLink}">
 <article class="${wrapClass}" role="article">
@@ -63,13 +84,13 @@
   <div class="relative ${imgHClass} flex-shrink-0 overflow-hidden">
     <c:choose>
       <c:when test="${not empty imageId}">
-        <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        <img class="w-full h-full object-cover ${unavailable ? '' : 'group-hover:scale-105'} transition-transform duration-500"
              data-alt="<c:out value="${resolvedAlt}"/>"
              src="${pageContext.request.contextPath}/images/${imageId}"
              alt="<c:out value="${resolvedAlt}"/>" />
       </c:when>
       <c:otherwise>
-        <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        <img class="w-full h-full object-cover ${unavailable ? '' : 'group-hover:scale-105'} transition-transform duration-500"
              data-alt="<c:out value="${resolvedAlt}"/>"
              src="${pageContext.request.contextPath}/images/pack-placeholder.svg"
              alt="<c:out value="${resolvedAlt}"/>" />

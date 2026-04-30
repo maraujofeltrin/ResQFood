@@ -189,12 +189,32 @@ public class PackJdbcDaoTest {
 
         // 2. Ejercicio
         final List<Pack> filtered = packDao.filterPacks(
-                null, null, null, null, PackSortOption.DATE_DESC, 1, 10);
-        final int count = packDao.countFilteredPacks(null, null, null, null);
+                null, null, null, null, PackSortOption.DATE_DESC, 1, 10, false);
+        final int count = packDao.countFilteredPacks(null, null, null, null, false);
 
         // 3. Asserts
         assertEquals(1, count);
         assertEquals(1, filtered.size());
         assertEquals(directPack.getId(), filtered.get(0).getId());
+    }
+
+    @Test
+    public void testFilterPacksRequirePositiveStockExcludesZeroStockPack() {
+        // 1. Setup
+        packDao.createPack(commerceId, "NoStock", "D", 100.0, 50.0, 0, null, null);
+        final Pack inStock = packDao.createPack(commerceId, "InStock", "D2", 100.0, 50.0, 3, null, null);
+
+        // 2. Ejercicio
+        final List<Pack> withFilter = packDao.filterPacks(
+                null, null, null, null, PackSortOption.DATE_DESC, 1, 10, true);
+        final int countWith = packDao.countFilteredPacks(null, null, null, null, true);
+        final List<Pack> withoutFilter = packDao.filterPacks(
+                null, null, null, null, PackSortOption.DATE_DESC, 1, 10, false);
+
+        // 3. Asserts
+        assertEquals(1, countWith);
+        assertEquals(1, withFilter.size());
+        assertEquals(inStock.getId(), withFilter.get(0).getId());
+        assertEquals(2, withoutFilter.size());
     }
 }

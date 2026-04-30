@@ -77,18 +77,25 @@ public class PackServiceImplTest {
         }
 
         @Override
-        public List<Pack> filterPacks(String query, List<PackTag> tags, String city, List<String> timeRanges, PackSortOption sort, int page, int pageSize) {
-            //return all active non-deleted packs
+        public List<Pack> filterPacks(String query, List<PackTag> tags, String city, List<String> timeRanges, PackSortOption sort, int page, int pageSize, boolean requirePositiveStock) {
             final List<Pack> r = new ArrayList<>();
-            for (Pack p : store.values()) if (Boolean.TRUE.equals(p.getActive()) && !Boolean.TRUE.equals(p.getDeleted())) r.add(p);
+            for (Pack p : store.values()) {
+                if (!Boolean.TRUE.equals(p.getActive()) || Boolean.TRUE.equals(p.getDeleted())) {
+                    continue;
+                }
+                if (requirePositiveStock && (p.getStock() == null || p.getStock() < 1)) {
+                    continue;
+                }
+                r.add(p);
+            }
             return r;
         }
 
         @Override
-        public int countFilteredPacks(String query, List<PackTag> tags, String city, List<String> timeRanges) {
-            int count = 0;
-            for (Pack p : store.values()) if (Boolean.TRUE.equals(p.getActive()) && !Boolean.TRUE.equals(p.getDeleted())) count++;
-            return count;
+        public int countFilteredPacks(String query, List<PackTag> tags, String city, List<String> timeRanges,
+                boolean requirePositiveStock) {
+            return filterPacks(query, tags, city, timeRanges, PackSortOption.DATE_DESC, 1, Integer.MAX_VALUE,
+                    requirePositiveStock).size();
         }
 
         @Override

@@ -40,15 +40,19 @@ public interface PackDao {
      * @param timeRanges list of time-of-day labels ("morning","afternoon","evening") to match against
      *                   {@code commerces.opening_time} (nullable/empty = skip)
      * @param sort      ordering criterion
+     * @param requirePositiveStock when {@code true}, only packs with {@code stock > 0} are included
      */
     List<Pack> filterPacks(String query, List<PackTag> tags, String city,
                            List<String> timeRanges, PackSortOption sort,
-                           int page, int pageSize);
+                           int page, int pageSize, boolean requirePositiveStock);
 
     /**
      * Returns the total number of active packs matching the filters (ignoring sort/pagination).
+     *
+     * @param requirePositiveStock when {@code true}, only packs with {@code stock > 0} are counted
      */
-    int countFilteredPacks(String query, List<PackTag> tags, String city, List<String> timeRanges);
+    int countFilteredPacks(String query, List<PackTag> tags, String city, List<String> timeRanges,
+                           boolean requirePositiveStock);
 
     /**
      * Filters packs belonging to a specific commerce, optionally filtering by whether they have an associated auction.

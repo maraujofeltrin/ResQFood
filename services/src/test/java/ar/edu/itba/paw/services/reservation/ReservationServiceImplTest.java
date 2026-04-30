@@ -62,12 +62,14 @@ public class ReservationServiceImplTest {
         }
 
         @Override
-        public List<Auction> filterAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges, AuctionSortOption sort, int page, int pageSize) {
+        public List<Auction> filterAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges,
+                AuctionSortOption sort, int page, int pageSize, boolean requirePositiveStock) {
             return Collections.emptyList();
         }
 
         @Override
-        public int countFilteredAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges) {
+        public int countFilteredAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges,
+                boolean requirePositiveStock) {
             return 0;
         }
 
@@ -216,8 +218,8 @@ public class ReservationServiceImplTest {
         @Override public void setActive(Long id, boolean active) { }
         @Override public boolean decrementStock(long packId, int quantity) { return true; }
         @Override public boolean incrementStock(long packId, int quantity) { incrementCalls++; return true; }
-        @Override public List<Pack> filterPacks(String query, List<PackTag> tags, String city, List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return Collections.emptyList(); }
-        @Override public int countFilteredPacks(String query, List<PackTag> tags, String city, List<String> timeRanges) { return 0; }
+        @Override public List<Pack> filterPacks(String query, List<PackTag> tags, String city, List<String> timeRanges, PackSortOption sort, int page, int pageSize, boolean requirePositiveStock) { return Collections.emptyList(); }
+        @Override public int countFilteredPacks(String query, List<PackTag> tags, String city, List<String> timeRanges, boolean requirePositiveStock) { return 0; }
         @Override public List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize) { return Collections.emptyList(); }
         @Override public int countCommercePacks(Long commerceId, Boolean hasAuction) { return 0; }
     }
@@ -490,8 +492,8 @@ public class ReservationServiceImplTest {
                     @Override public boolean incrementStock(long packId, int quantity) { return true; }
                     @Override public java.util.List<Pack> findByCommerceId(Long commerceId) { return Collections.emptyList(); }
                     @Override public void softDelete(Long id) { }
-                    @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort, int page, int pageSize) { return Collections.emptyList(); }
-                    @Override public int countFilteredPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges) { return 0; }
+                    @Override public java.util.List<Pack> filterPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, PackSortOption sort, int page, int pageSize, boolean requirePositiveStock) { return Collections.emptyList(); }
+                    @Override public int countFilteredPacks(String query, java.util.List<ar.edu.itba.paw.models.pack.PackTag> tags, String city, java.util.List<String> timeRanges, boolean requirePositiveStock) { return 0; }
                     @Override public java.util.List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize) { return Collections.emptyList(); }
                     @Override public int countCommercePacks(Long commerceId, Boolean hasAuction) { return 0; }
                 },

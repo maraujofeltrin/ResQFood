@@ -80,13 +80,16 @@ public class AuctionServiceImpl implements AuctionService {
     }
 
     @Override
-    public List<Auction> filterAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges, AuctionSortOption sort, int page, int pageSize) {
-        return auctionDao.filterAuctions(query, tags, city, timeRanges, sort, page, pageSize);
+    public List<Auction> filterAuctions(final String query, final List<PackTag> tags, final String city,
+            final List<String> timeRanges, final AuctionSortOption sort, final int page, final int pageSize,
+            final boolean requirePositiveStock) {
+        return auctionDao.filterAuctions(query, tags, city, timeRanges, sort, page, pageSize, requirePositiveStock);
     }
 
     @Override
-    public int countFilteredAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges) {
-        return auctionDao.countFilteredAuctions(query, tags, city, timeRanges);
+    public int countFilteredAuctions(final String query, final List<PackTag> tags, final String city,
+            final List<String> timeRanges, final boolean requirePositiveStock) {
+        return auctionDao.countFilteredAuctions(query, tags, city, timeRanges, requirePositiveStock);
     }
 
     @Override

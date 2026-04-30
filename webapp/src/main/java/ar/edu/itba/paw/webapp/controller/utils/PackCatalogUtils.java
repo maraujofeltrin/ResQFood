@@ -127,6 +127,10 @@ public class PackCatalogUtils {
         final boolean showAuctionsList = catalogMode == CatalogMode.AUCTIONS;
         final boolean showAuctionsCarousel = catalogMode == CatalogMode.ALL;
 
+        final boolean catalogDirectSaleGridRequiresPositiveStock =
+                catalogMode == CatalogMode.ALL || catalogMode == CatalogMode.PACKS;
+        final boolean catalogAuctionListingRequiresPositiveStock = true;
+
         List<Pack> favoritesCarouselPacks = Collections.emptyList();
         if (showAuctionsCarousel && clientUserId != null) {
             favoritesCarouselPacks = packFavoriteService.listActiveFavoritePacks(
@@ -144,13 +148,15 @@ public class PackCatalogUtils {
                     trimmedQuery,
                     selectedTags.isEmpty() ? null : selectedTags,
                     cityFilter,
-                    safeTimeRange.isEmpty() ? null : safeTimeRange);
+                    safeTimeRange.isEmpty() ? null : safeTimeRange,
+                    catalogAuctionListingRequiresPositiveStock);
         } else {
             totalItems = packService.countFilteredPacks(
                     trimmedQuery,
                     selectedTags.isEmpty() ? null : selectedTags,
                     cityFilter,
-                    safeTimeRange.isEmpty() ? null : safeTimeRange);
+                    safeTimeRange.isEmpty() ? null : safeTimeRange,
+                    catalogDirectSaleGridRequiresPositiveStock);
         }
 
         final int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
@@ -168,7 +174,8 @@ public class PackCatalogUtils {
                     safeTimeRange.isEmpty() ? null : safeTimeRange,
                     auctionSortOption,
                     safePage,
-                    PAGE_SIZE);
+                    PAGE_SIZE,
+                    catalogAuctionListingRequiresPositiveStock);
         } else {
             packs = packService.filterPacks(
                     trimmedQuery,
@@ -177,7 +184,8 @@ public class PackCatalogUtils {
                     safeTimeRange.isEmpty() ? null : safeTimeRange,
                     sortOption,
                     safePage,
-                    PAGE_SIZE);
+                    PAGE_SIZE,
+                    catalogDirectSaleGridRequiresPositiveStock);
         }
 
         List<Auction> carouselAuctions = Collections.emptyList();
@@ -189,7 +197,8 @@ public class PackCatalogUtils {
                     safeTimeRange.isEmpty() ? null : safeTimeRange,
                     AuctionSortOption.TIME_REMAINING_ASC,
                     1,
-                    AUCTION_CAROUSEL_SIZE);
+                    AUCTION_CAROUSEL_SIZE,
+                    catalogAuctionListingRequiresPositiveStock);
         }
 
         final Map<Long, String> commerceNames = new HashMap<>();

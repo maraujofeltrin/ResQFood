@@ -51,6 +51,7 @@
                         <div class="flex gap-6 overflow-x-auto pb-2 snap-x snap-mandatory hide-scrollbar">
                             <c:forEach var="pack" items="${favoritesCarouselPacks}">
                                 <div class="min-w-[280px] max-w-[320px] snap-start flex-shrink-0">
+                                    <c:set var="favoritePackUnavailable" value="${pack.stock == null || pack.stock lt 1}"/>
                                     <c:set var="favAuction" value="${favoritePackActiveAuctions[pack.id]}"/>
                                     <c:choose>
                                         <c:when test="${not empty favAuction}">
@@ -65,6 +66,7 @@
                                                 oldPrice="$${pack.originalPrice}"
                                                 commerceName="${commerceNames[pack.id]}"
                                                 auction="${true}"
+                                                unavailable="${favoritePackUnavailable}"
                                             />
                                         </c:when>
                                         <c:otherwise>
@@ -76,6 +78,7 @@
                                                 price="$${pack.finalPrice}"
                                                 oldPrice="$${pack.originalPrice}"
                                                 commerceName="${commerceNames[pack.id]}"
+                                                unavailable="${favoritePackUnavailable}"
                                             />
                                         </c:otherwise>
                                     </c:choose>
@@ -174,6 +177,7 @@
                             <c:choose>
                                 <c:when test="${catalogMode eq 'FAVORITES'}">
                                     <c:forEach var="pack" items="${packs}">
+                                        <c:set var="favoritePackUnavailable" value="${pack.stock == null || pack.stock lt 1}"/>
                                         <c:set var="favAuction" value="${favoritePackActiveAuctions[pack.id]}"/>
                                         <c:choose>
                                             <c:when test="${not empty favAuction}">
@@ -188,6 +192,7 @@
                                                     oldPrice="$${pack.originalPrice}"
                                                     commerceName="${commerceNames[pack.id]}"
                                                     auction="${true}"
+                                                    unavailable="${favoritePackUnavailable}"
                                                 />
                                             </c:when>
                                             <c:otherwise>
@@ -199,6 +204,7 @@
                                                     price="$${pack.finalPrice}"
                                                     oldPrice="$${pack.originalPrice}"
                                                     commerceName="${commerceNames[pack.id]}"
+                                                    unavailable="${favoritePackUnavailable}"
                                                 />
                                             </c:otherwise>
                                         </c:choose>

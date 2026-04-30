@@ -103,14 +103,16 @@ public class PackServiceImpl implements PackService {
     public List<Pack> filterPacks(final String query, final List<PackTag> tags,
                                   final String city, final List<String> timeRanges,
                                   final PackSortOption sort,
-                                  final int page, final int pageSize) {
-        return packDao.filterPacks(query, tags, city, timeRanges, sort, page, pageSize);
+                                  final int page, final int pageSize,
+                                  final boolean requirePositiveStock) {
+        return packDao.filterPacks(query, tags, city, timeRanges, sort, page, pageSize, requirePositiveStock);
     }
 
     @Override
     public int countFilteredPacks(final String query, final List<PackTag> tags,
-                                  final String city, final List<String> timeRanges) {
-        return packDao.countFilteredPacks(query, tags, city, timeRanges);
+                                  final String city, final List<String> timeRanges,
+                                  final boolean requirePositiveStock) {
+        return packDao.countFilteredPacks(query, tags, city, timeRanges, requirePositiveStock);
     }
 
     @Override
