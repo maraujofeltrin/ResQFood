@@ -44,6 +44,22 @@
                                 </div>
                             </c:if>
 
+                            <c:if test="${param.cancelled}">
+                                <div class="mb-4">
+                                    <p class="pack-feedback pack-feedback--success" role="alert">
+                                        <spring:message code="commerce.auction.cancel.success" />
+                                    </p>
+                                </div>
+                            </c:if>
+
+                            <c:if test="${param.cancelFailed}">
+                                <div class="mb-4">
+                                    <p class="pack-feedback pack-feedback--error" role="alert">
+                                        <spring:message code="commerce.auction.cancel.hasBids" />
+                                    </p>
+                                </div>
+                            </c:if>
+
                             <section>
                                 <paw:segmentedTripleTabs basePath="/commerce/products"
                                     currentTab="${currentTab}"
@@ -117,7 +133,8 @@
                                                     rescueLabel="${finalPriceLabel}"
                                                     manageable="${not auctionPackIds.contains(pack.id)}"
                                                     commerceId="${commerceId}"
-                                                    auction="${auctionPackIds.contains(pack.id)}" />
+                                                    auction="${auctionPackIds.contains(pack.id)}"
+                                                    auctionId="${auctionPackIds.contains(pack.id) ? packIdToAuctionId[pack.id] : ''}" />
                                             </c:forEach>
                                         </div>
 

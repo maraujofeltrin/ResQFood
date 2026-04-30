@@ -12,6 +12,7 @@
 <%@ attribute name="manageable" type="java.lang.Boolean" required="false" %>
 <%@ attribute name="smallSize" required="false" type="java.lang.Boolean" %>
 <%@ attribute name="auction" type="java.lang.Boolean" required="false" %>
+<%@ attribute name="auctionId" required="false" %>
 <%@ attribute name="asLink" type="java.lang.Boolean" required="false" %>
 <%@ attribute name="participationBadgeCode" required="false" type="java.lang.String" %>
 <%@ attribute name="showPriceFooter" type="java.lang.Boolean" required="false" %>
@@ -106,6 +107,19 @@
                 onclick="event.preventDefault(); event.stopPropagation(); openDeleteModal(${packId});"
                 class="bg-white/90 backdrop-blur text-error hover:text-on-error hover:bg-error p-2 flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform">
             <span class="material-symbols-outlined text-[1.25rem]">delete</span>
+        </button>
+      </div>
+    </c:if>
+    <c:if test="${auction == true && not empty auctionId}">
+      <div class="absolute top-3 right-3 flex gap-2 z-10">
+        <form id="cancelAuctionForm${auctionId}" action="${pageContext.request.contextPath}/commerce/auctions/${auctionId}/cancel" method="post" style="display: none;">
+          <input type="hidden" name="_method" value="POST" />
+        </form>
+        <spring:message code="commerce.auction.cancel.confirm" var="confirmMessage" />
+        <button type="button"
+                onclick="event.preventDefault(); event.stopPropagation(); if (confirm('${confirmMessage}')) { document.getElementById('cancelAuctionForm${auctionId}').submit(); }"
+                class="bg-white/90 backdrop-blur text-error hover:text-on-error hover:bg-error p-2 flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform">
+            <span class="material-symbols-outlined text-[1.25rem]">cancel</span>
         </button>
       </div>
     </c:if>

@@ -10,6 +10,7 @@ import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.BidDao;
 import ar.edu.itba.paw.persistence.PackDao;
+import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,13 +31,15 @@ public class AuctionServiceImpl implements AuctionService {
     private final BidDao bidDao;
     private final PackDao packDao;
     private final ReservationService reservationService;
+    private final CommerceService commerceService;
 
     @Autowired
-    public AuctionServiceImpl(final AuctionDao auctionDao, final BidDao bidDao, final PackDao packDao, final ReservationService reservationService) {
+    public AuctionServiceImpl(final AuctionDao auctionDao, final BidDao bidDao, final PackDao packDao, final ReservationService reservationService, final CommerceService commerceService) {
         this.auctionDao = auctionDao;
         this.bidDao = bidDao;
         this.packDao = packDao;
         this.reservationService = reservationService;
+        this.commerceService = commerceService;
     }
 
     @Transactional
@@ -170,21 +173,30 @@ public class AuctionServiceImpl implements AuctionService {
 
     @Transactional
     @Override
-    public void cancelAuction(final long auctionId) {
-        final Auction auction = auctionDao.findById(auctionId)
-                .orElseThrow(() -> new IllegalArgumentException("Auction not found: " + auctionId));
+    public CancelAuctionResult cancelAuction(final long auctionId, final long requestingUserId) {
+        final Auction auction = auctionDao.findById(auctionId).orElse(null);
+        if (auction == null) {
+            return CancelAuctionResult.notFound();
+        }
 
-        if (auction.getStatus() != Auction.Status.ACTIVE) {
-            throw new IllegalStateException("Only active auctions can be cancelled");
+        final Pack pack = auction.getPack();
+        final Long commerceId = pack.getCommerceId();
+        final boolean isOwner = commerceService.findByUserId(requestingUserId)
+                .map(c -> c.getUserId().equals(commerceId))
+                .orElse(false);
+        if (!isOwner) {
+            return CancelAuctionResult.forbidden();
+        }
+
+        final int bidCount = bidDao.countByAuctionId(auctionId);
+        if (bidCount > 0) {
+            return CancelAuctionResult.hasBids();
         }
 
         auctionDao.updateStatus(auctionId, Auction.Status.CANCELLED);
+        packDao.setActive(pack.getId(), false);
 
-        // TODO: Notification hook — notify all bidders that auction was cancelled
-        // final List<Bid> bids = bidDao.findByAuctionId(auctionId);
-        // for (final Bid bid : bids) {
-        //     notificationService.notifyAuctionCancelled(bid.getClientId(), auctionId);
-        // }
+        return CancelAuctionResult.success();
     }
 
     @Override

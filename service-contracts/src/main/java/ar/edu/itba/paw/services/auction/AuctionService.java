@@ -57,8 +57,11 @@ public interface AuctionService {
 
     /**
      * Manually cancels an auction (typically by the commerce owner).
+     * @param auctionId the auction to cancel
+     * @param requestingUserId the user requesting the cancellation (must be the commerce owner)
+     * @return the result of the cancellation attempt
      */
-    void cancelAuction(long auctionId);
+    CancelAuctionResult cancelAuction(long auctionId, long requestingUserId);
 
     /**
      * Returns the bid history for an auction, ordered by amount descending.

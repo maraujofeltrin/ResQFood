@@ -13,6 +13,7 @@
 <%@ attribute name="manageable" type="java.lang.Boolean" required="false" %>
 <%@ attribute name="smallSize" required="false" type="java.lang.Boolean" %>
 <%@ attribute name="auction" type="java.lang.Boolean" required="false" %>
+<%@ attribute name="auctionId" required="false" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="paw" uri="http://itba.edu.ar/paw/tags" %>
@@ -22,7 +23,7 @@
 <paw:packCardShell packId="${packId}" imageId="${imageId}" title="${title}" subtitle="${subtitle}" imageAlt="${imageAlt}"
     badgeText="${badgeText}" commerceName="${commerceName}" manageable="${manageable}" smallSize="${smallSize}"
     auction="${auction}" asLink="true" showPriceFooter="true"
-    price="${price}" oldPrice="${oldPrice}" rescueLabel="${resolvedRescueLabel}">
+    price="${price}" oldPrice="${oldPrice}" rescueLabel="${resolvedRescueLabel}" auctionId="${auctionId}">
     <jsp:attribute name="imageOverlay"></jsp:attribute>
     <jsp:body></jsp:body>
 </paw:packCardShell>
