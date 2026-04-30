@@ -65,25 +65,27 @@
                     </div>
                 </div>
 
-                <div class="mt-3 flex items-center justify-end gap-3">
-                    <spring:message code="commerce.reservations.card.accept.label" var="acceptButtonLabel" />
-                    <spring:message code="commerce.reservations.card.cancel.label" var="cancelButtonLabel" />
-                    <button type="button"
-                            title="<c:out value='${acceptButtonLabel}'/>"
-                            aria-label="<c:out value='${acceptButtonLabel}'/>"
-                            onclick="event.preventDefault(); event.stopPropagation(); window.location.href='${pageContext.request.contextPath}/commerce/verify-pickup';"
-                            class="bg-primary text-on-primary px-4 py-2 rounded-full font-semibold hover:brightness-105 transition inline-flex items-center gap-2">
-                        <span class="material-symbols-outlined text-base">qr_code_scanner</span>
-                        <span><c:out value="${acceptButtonLabel}"/></span>
-                    </button>
-                    <button type="button"
-                            title="<c:out value='${cancelButtonLabel}'/>"
-                            aria-label="<c:out value='${cancelButtonLabel}'/>"
-                            onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('rejectModal-${reservation.id}').style.display='flex';"
-                            class="bg-surface-container-high text-on-surface px-4 py-2 rounded-full font-semibold hover:bg-surface-container-highest transition inline-flex items-center gap-2">
-                        <span><c:out value="${cancelButtonLabel}"/></span>
-                    </button>
-                </div>
+                <c:if test="${messagePrefix != 'commerce.reservations' or reservation.status == 'RESERVED'}">
+                    <div class="mt-3 flex items-center justify-end gap-3">
+                        <spring:message code="commerce.reservations.card.accept.label" var="acceptButtonLabel" />
+                        <spring:message code="commerce.reservations.card.cancel.label" var="cancelButtonLabel" />
+                        <button type="button"
+                                title="<c:out value='${acceptButtonLabel}'/>"
+                                aria-label="<c:out value='${acceptButtonLabel}'/>"
+                                onclick="event.preventDefault(); event.stopPropagation(); window.location.href='${pageContext.request.contextPath}/commerce/verify-pickup';"
+                                class="bg-primary text-on-primary px-4 py-2 rounded-full font-semibold hover:brightness-105 transition inline-flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base">qr_code_scanner</span>
+                            <span><c:out value="${acceptButtonLabel}"/></span>
+                        </button>
+                        <button type="button"
+                                title="<c:out value='${cancelButtonLabel}'/>"
+                                aria-label="<c:out value='${cancelButtonLabel}'/>"
+                                onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('rejectModal-${reservation.id}').style.display='flex';"
+                                class="bg-surface-container-high text-on-surface px-4 py-2 rounded-full font-semibold hover:bg-surface-container-highest transition inline-flex items-center gap-2">
+                            <span><c:out value="${cancelButtonLabel}"/></span>
+                        </button>
+                    </div>
+                </c:if>
             </jsp:body>
         </paw:packCardShell>
 
@@ -181,25 +183,27 @@
                     </div>
                 </div>
 
-                <div class="mt-3 flex items-center justify-end gap-3">
-                    <spring:message code="commerce.reservations.card.accept.label" var="acceptButtonLabel" />
-                    <spring:message code="commerce.reservations.card.cancel.label" var="cancelButtonLabel" />
-                    <button type="button"
-                            title="<c:out value='${acceptButtonLabel}'/>"
-                            aria-label="<c:out value='${acceptButtonLabel}'/>"
-                            onclick="event.preventDefault(); event.stopPropagation(); window.location.href='${pageContext.request.contextPath}/commerce/verify-pickup';"
-                            class="bg-primary text-on-primary px-4 py-2 rounded-full font-semibold hover:brightness-105 transition inline-flex items-center gap-2">
-                        <span class="material-symbols-outlined text-base">qr_code_scanner</span>
-                        <span><c:out value="${acceptButtonLabel}"/></span>
-                    </button>
-                    <button type="button"
-                            title="<c:out value='${cancelButtonLabel}'/>"
-                            aria-label="<c:out value='${cancelButtonLabel}'/>"
-                            onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('rejectModal-${reservation.id}').style.display='flex';"
-                            class="bg-surface-container-high text-on-surface px-4 py-2 rounded-full font-semibold hover:bg-surface-container-highest transition inline-flex items-center gap-2">
-                        <span><c:out value="${cancelButtonLabel}"/></span>
-                    </button>
-                </div>
+                <c:if test="${messagePrefix != 'commerce.reservations' or reservation.status == 'RESERVED'}">
+                    <div class="mt-3 flex items-center justify-end gap-3">
+                        <spring:message code="commerce.reservations.card.accept.label" var="acceptButtonLabel" />
+                        <spring:message code="commerce.reservations.card.cancel.label" var="cancelButtonLabel" />
+                        <button type="button"
+                                title="<c:out value='${acceptButtonLabel}'/>"
+                                aria-label="<c:out value='${acceptButtonLabel}'/>"
+                                onclick="event.preventDefault(); event.stopPropagation(); window.location.href='${pageContext.request.contextPath}/commerce/verify-pickup';"
+                                class="bg-primary text-on-primary px-4 py-2 rounded-full font-semibold hover:brightness-105 transition inline-flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base">qr_code_scanner</span>
+                            <span><c:out value="${acceptButtonLabel}"/></span>
+                        </button>
+                        <button type="button"
+                                title="<c:out value='${cancelButtonLabel}'/>"
+                                aria-label="<c:out value='${cancelButtonLabel}'/>"
+                                onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('rejectModal-${reservation.id}').style.display='flex';"
+                                class="bg-surface-container-high text-on-surface px-4 py-2 rounded-full font-semibold hover:bg-surface-container-highest transition inline-flex items-center gap-2">
+                            <span><c:out value="${cancelButtonLabel}"/></span>
+                        </button>
+                    </div>
+                </c:if>
             </div>
         </a>
 
