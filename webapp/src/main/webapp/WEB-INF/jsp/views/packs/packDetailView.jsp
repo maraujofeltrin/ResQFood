@@ -60,19 +60,7 @@
                             <span class="pack-detail-badge pack-detail-badge--stock ${packStockBadgeCssClass}"><c:out value="${packStockBadgeText}"/></span>
                         </c:if>
                     </div>
-                    <div class="pack-detail-title-row">
-                        <h1 class="pack-detail-title font-headline"><c:out value="${packTitle}"/></h1>
-                        <sec:authorize access="hasRole('CLIENT')">
-                            <form action="${packFavoriteAction}" method="post" class="pack-detail-favorite-form">
-                                <button type="submit"
-                                        class="pack-detail-favorite-btn<c:if test='${packFavoriteSelected}'> pack-detail-favorite-btn--selected</c:if>"
-                                        aria-label="<c:out value='${packDetailFavoriteToggleAria}'/>"
-                                        aria-pressed="${packFavoriteSelected}">
-                                    <span class="material-symbols-outlined pack-detail-favorite-btn__icon" aria-hidden="true">favorite</span>
-                                </button>
-                            </form>
-                        </sec:authorize>
-                    </div>
+                    <h1 class="pack-detail-title font-headline"><c:out value="${packTitle}"/></h1>
                     <c:choose>
                         <c:when test="${fn:length(packDescription) > 255}">
                             <p class="pack-detail-description break-words overflow-hidden" id="pack-description-short">
@@ -281,6 +269,16 @@
                                     <span class="material-symbols-outlined text-auction" aria-hidden="true">gavel</span>
                                     <spring:message code="pack.detail.auction.title"/>
                                 </h2>
+                                <sec:authorize access="hasRole('CLIENT')">
+                                    <form action="${packFavoriteAction}" method="post" class="pack-aside-favorite-form">
+                                        <button type="submit"
+                                                class="pack-aside-favorite-btn<c:if test='${packFavoriteSelected}'> pack-aside-favorite-btn--selected</c:if>"
+                                                aria-label="<c:out value='${packDetailFavoriteToggleAria}'/>"
+                                                aria-pressed="${packFavoriteSelected}">
+                                            <span class="material-symbols-outlined pack-aside-favorite-icon" aria-hidden="true">favorite</span>
+                                        </button>
+                                    </form>
+                                </sec:authorize>
                             </div>
 
                             <div class="pack-price-block mb-4">
