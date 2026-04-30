@@ -65,7 +65,7 @@
                     </div>
                 </div>
 
-                <c:if test="${messagePrefix != 'commerce.reservations' or reservation.status == 'RESERVED'}">
+                <c:if test="${messagePrefix == 'commerce.reservations' and reservation.status == 'RESERVED'}">
                     <div class="mt-3 flex items-center justify-end gap-3">
                         <spring:message code="commerce.reservations.card.accept.label" var="acceptButtonLabel" />
                         <spring:message code="commerce.reservations.card.cancel.label" var="cancelButtonLabel" />
@@ -85,6 +85,31 @@
                             <span><c:out value="${cancelButtonLabel}"/></span>
                         </button>
                     </div>
+                </c:if>
+
+                <c:if test="${messagePrefix == 'reservation.my' and not empty reservation.pickupCode}">
+                    <spring:message code="reservation.my.card.code.label" var="viewCodeLabel" />
+                    <spring:message code="reservation.my.card.code.title" var="viewCodeTitle" />
+                    <spring:message code="reservation.my.card.code.helper" var="viewCodeHelper" />
+                    <div class="mt-3 flex items-center justify-end gap-3">
+                        <button type="button"
+                                title="<c:out value='${viewCodeLabel}'/>"
+                                aria-label="<c:out value='${viewCodeLabel}'/>"
+                                onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('pickupCodeModal-${reservation.id}').style.display='flex';"
+                                class="bg-primary text-on-primary px-4 py-2 rounded-full font-semibold hover:brightness-105 transition inline-flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base">qr_code_2</span>
+                            <span><c:out value="${viewCodeLabel}"/></span>
+                        </button>
+                    </div>
+
+                    <paw:modal id="pickupCodeModal-${reservation.id}" title="${viewCodeTitle}">
+                        <p class="text-secondary text-sm">
+                            <c:out value="${viewCodeHelper}" />
+                        </p>
+                        <div class="mt-4 rounded-xl bg-surface-container-highest px-4 py-3 text-center font-mono text-lg tracking-widest text-on-surface">
+                            <c:out value="${reservation.pickupCode}" />
+                        </div>
+                    </paw:modal>
                 </c:if>
             </jsp:body>
         </paw:packCardShell>
@@ -183,7 +208,7 @@
                     </div>
                 </div>
 
-                <c:if test="${messagePrefix != 'commerce.reservations' or reservation.status == 'RESERVED'}">
+                <c:if test="${messagePrefix == 'commerce.reservations' and reservation.status == 'RESERVED'}">
                     <div class="mt-3 flex items-center justify-end gap-3">
                         <spring:message code="commerce.reservations.card.accept.label" var="acceptButtonLabel" />
                         <spring:message code="commerce.reservations.card.cancel.label" var="cancelButtonLabel" />
@@ -203,6 +228,31 @@
                             <span><c:out value="${cancelButtonLabel}"/></span>
                         </button>
                     </div>
+                </c:if>
+
+                <c:if test="${messagePrefix == 'reservation.my' and not empty reservation.pickupCode}">
+                    <spring:message code="reservation.my.card.code.label" var="viewCodeLabel" />
+                    <spring:message code="reservation.my.card.code.title" var="viewCodeTitle" />
+                    <spring:message code="reservation.my.card.code.helper" var="viewCodeHelper" />
+                    <div class="mt-3 flex items-center justify-end gap-3">
+                        <button type="button"
+                                title="<c:out value='${viewCodeLabel}'/>"
+                                aria-label="<c:out value='${viewCodeLabel}'/>"
+                                onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('pickupCodeModal-${reservation.id}').style.display='flex';"
+                                class="bg-primary text-on-primary px-4 py-2 rounded-full font-semibold hover:brightness-105 transition inline-flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base">qr_code_2</span>
+                            <span><c:out value="${viewCodeLabel}"/></span>
+                        </button>
+                    </div>
+
+                    <paw:modal id="pickupCodeModal-${reservation.id}" title="${viewCodeTitle}">
+                        <p class="text-secondary text-sm">
+                            <c:out value="${viewCodeHelper}" />
+                        </p>
+                        <div class="mt-4 rounded-xl bg-surface-container-highest px-4 py-3 text-center font-mono text-lg tracking-widest text-on-surface">
+                            <c:out value="${reservation.pickupCode}" />
+                        </div>
+                    </paw:modal>
                 </c:if>
             </div>
         </a>
