@@ -21,7 +21,6 @@ import ar.edu.itba.paw.services.mail.MailMessageResolver;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.io.UnsupportedEncodingException;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;

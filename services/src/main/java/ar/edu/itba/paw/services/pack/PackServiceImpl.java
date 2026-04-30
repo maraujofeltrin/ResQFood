@@ -59,6 +59,26 @@ public class PackServiceImpl implements PackService {
     }
 
     @Override
+    public Optional<Pack> findVisibleForDetail(final Long packId, final Long viewerUserId) {
+        final Optional<Pack> packOpt = packDao.findById(packId);
+        if (packOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        final Pack pack = packOpt.get();
+        if (Boolean.TRUE.equals(pack.getDeleted())) {
+            return Optional.empty();
+        }
+        if (Boolean.TRUE.equals(pack.getActive())) {
+            return Optional.of(pack);
+        }
+        if (viewerUserId != null && viewerUserId.equals(pack.getCommerceId())) {
+            return Optional.of(pack);
+        }
+        return Optional.empty();
+    }
+
+    @Override
     public Pack updatePack(long packId, String title, String description, Double originalPrice,
                            Double finalPrice, Integer stock, List<PackTag> tags,
                            Long imageId) {

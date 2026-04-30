@@ -26,7 +26,6 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -69,11 +68,8 @@ public class ReservationListModelBuilder {
         this.displayZone = businessZone;
     }
 
-    // ── Public API ──────────────────────────────────────────────────────────────
+    // -- Public API -----------------------------------------------------------
 
-    /**
-     * Builds the reservation list view for a commerce user, using DB-level pagination.
-     */
     public ModelAndView buildCommerceView(final int page, final String query, final String status,
             final User currentUser) {
 
@@ -84,14 +80,14 @@ public class ReservationListModelBuilder {
         final String normalizedQuery = normalizeQuery(query);
         final Reservation.Status statusFilter = parseReservationStatus(status);
 
-        final int totalItems = reservationService.countFilteredReservations(commerceId, null, normalizedQuery, statusFilter);
+        final int totalItems = reservationService.countFilteredReservations(commerceId, null, normalizedQuery, statusFilter, false);
         final int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
         final int safePage = Math.max(1, Math.min(page, totalPages));
 
         final List<Reservation> reservations = reservationService.filterReservations(
-                commerceId, null, normalizedQuery, statusFilter, safePage, PAGE_SIZE);
+                commerceId, null, normalizedQuery, statusFilter, false, safePage, PAGE_SIZE);
         final boolean hasAnyReservations = reservationService.countFilteredReservations(
-                commerceId, null, null, null) > 0;
+                commerceId, null, null, null, false) > 0;
 
         final Map<Long, Pack> packsByReservationId = new HashMap<>();
         final Map<Long, String> clientNamesByReservationId = new HashMap<>();
@@ -126,7 +122,6 @@ public class ReservationListModelBuilder {
         mav.addObject("totalPages", totalPages);
         mav.addObject("paginationBaseUrl", buildCommercePaginationBaseUrl(normalizedQuery, statusFilter));
         mav.addObject("messagePrefix", "commerce.reservations");
-        // Client-only attributes (empty defaults so JSP doesn't break)
         mav.addObject("clientReservationsTab", null);
         mav.addObject("clientAuctionsView", Boolean.FALSE);
         mav.addObject("selectedAuctionStatus", "");
@@ -134,14 +129,10 @@ public class ReservationListModelBuilder {
         mav.addObject("clientParticipationAuctions", List.of());
         mav.addObject("auctionParticipationBadges", Map.of());
         mav.addObject("auctionVisualReservationIds",
-                resolveAuctionReservationIds(reservations, resolveAuctionPackIds(reservations)));
+                resolveAuctionReservationIds(reservations));
         return mav;
     }
 
-    /**
-     * Builds the reservation list view for a client user, with tabs (items/packs/auctions)
-     * and in-memory filtering for auction participation.
-     */
     public ModelAndView buildClientView(final int page, final String query, final String status,
             final String auctionStatusParam, final String tabParam, final User currentUser) {
 
@@ -151,18 +142,8 @@ public class ReservationListModelBuilder {
         final String clientTab = normalizeClientTab(tabParam);
         final String safeQuery = normalizedQuery == null ? "" : normalizedQuery;
 
-        final List<Reservation> allReservations = new ArrayList<>(
-                reservationService.findByCustomerId(currentUser.getId()));
-
-        allReservations.sort(Comparator.comparing(Reservation::getReservationDate,
-                Comparator.nullsLast(LocalDateTime::compareTo)).reversed());
-
-        final Set<Long> auctionPackIds = resolveAuctionPackIds(allReservations);
-
-        final int itemsCount = allReservations.size();
-        final int packsCount = (int) allReservations.stream()
-                .filter(r -> r.getPackId() != null && !auctionPackIds.contains(r.getPackId()))
-                .count();
+        final int itemsCount = reservationService.countFilteredReservations(null, currentUser.getId(), null, null, false);
+        final int packsCount = reservationService.countFilteredReservations(null, currentUser.getId(), null, null, true);
 
         final List<Auction> allParticipatedAuctions = auctionService.findParticipatedAuctionsByClientId(currentUser.getId());
         final int auctionsCount = allParticipatedAuctions.size();
@@ -182,11 +163,11 @@ public class ReservationListModelBuilder {
             buildClientAuctionsTab(mav, allParticipatedAuctions, auctionStatusFilter, safeQuery,
                     page, currentUser);
         } else {
-            buildClientReservationsTab(mav, allReservations, auctionPackIds, statusFilter, safeQuery,
-                    clientTab, page);
+            final boolean excludeAuctions = "packs".equals(clientTab);
+            buildClientReservationsTab(mav, currentUser, statusFilter, safeQuery,
+                    excludeAuctions, page);
         }
 
-        // Shared client attributes
         mav.addObject("clientNamesByReservationId", Map.of());
         mav.addObject("searchQuery", safeQuery);
         mav.addObject("selectedStatus", statusFilter == null ? "" : statusFilter.name());
@@ -209,7 +190,7 @@ public class ReservationListModelBuilder {
         return mav;
     }
 
-    // ── Client tab builders ─────────────────────────────────────────────────────
+    // -- Client tab builders --------------------------------------------------
 
     private void buildClientAuctionsTab(final ModelAndView mav, final List<Auction> allParticipatedAuctions,
             final Auction.Status auctionStatusFilter, final String safeQuery,
@@ -276,52 +257,20 @@ public class ReservationListModelBuilder {
         mav.addObject("auctionVisualReservationIds", Set.of());
     }
 
-    private void buildClientReservationsTab(final ModelAndView mav, final List<Reservation> allReservations,
-            final Set<Long> auctionPackIds, final Reservation.Status statusFilter,
-            final String safeQuery, final String clientTab, final int page) {
+    private void buildClientReservationsTab(final ModelAndView mav, final User currentUser,
+            final Reservation.Status statusFilter, final String safeQuery,
+            final boolean excludeAuctionPacks, final int page) {
 
-        final List<Reservation> filteredReservations = new ArrayList<>();
-        final Map<Long, Pack> allPacksByReservationId = new HashMap<>();
-        final Map<Long, String> allCommerceNamesByReservationId = new HashMap<>();
+        final Long customerId = currentUser.getId();
+        final String queryParam = safeQuery.isBlank() ? null : safeQuery;
 
-        for (final Reservation reservation : allReservations) {
-            Pack pack = null;
-            String commerceName = "-";
-
-            if (reservation.getPackId() != null) {
-                final Optional<Pack> packOpt = packService.findById(reservation.getPackId());
-                if (packOpt.isPresent()) {
-                    pack = packOpt.get();
-                    commerceName = resolveCommerceName(pack);
-                }
-            }
-
-            if ("packs".equals(clientTab)) {
-                if (pack == null || auctionPackIds.contains(pack.getId())) {
-                    continue;
-                }
-            }
-
-            final boolean matchesStatus = statusFilter == null || statusFilter.equals(reservation.getStatus());
-            final boolean matchesQuery = safeQuery.isBlank()
-                    || containsIgnoreCase(pack == null ? null : pack.getTitle(), safeQuery)
-                    || containsIgnoreCase(pack == null ? null : pack.getDescription(), safeQuery)
-                    || containsIgnoreCase(commerceName, safeQuery);
-
-            if (matchesStatus && matchesQuery) {
-                filteredReservations.add(reservation);
-                if (pack != null) {
-                    allPacksByReservationId.put(reservation.getId(), pack);
-                }
-                allCommerceNamesByReservationId.put(reservation.getId(), commerceName);
-            }
-        }
-
-        final int totalPages = Math.max(1, (int) Math.ceil((double) filteredReservations.size() / PAGE_SIZE));
+        final int totalItems = reservationService.countFilteredReservations(
+                null, customerId, queryParam, statusFilter, excludeAuctionPacks);
+        final int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
         final int safePage = Math.max(1, Math.min(page, totalPages));
-        final int fromIdx = (safePage - 1) * PAGE_SIZE;
-        final int toIdx = Math.min(fromIdx + PAGE_SIZE, filteredReservations.size());
-        final List<Reservation> reservations = filteredReservations.subList(fromIdx, toIdx);
+
+        final List<Reservation> reservations = reservationService.filterReservations(
+                null, customerId, queryParam, statusFilter, excludeAuctionPacks, safePage, PAGE_SIZE);
 
         final Map<Long, Pack> packsByReservationId = new HashMap<>();
         final Map<Long, String> commerceNamesByReservationId = new HashMap<>();
@@ -329,15 +278,13 @@ public class ReservationListModelBuilder {
 
         for (final Reservation reservation : reservations) {
             populateFormattedDate(formattedDates, reservation);
-            if (reservation.getPackId() == null) {
-                continue;
-            }
-            if (allPacksByReservationId.containsKey(reservation.getId())) {
-                packsByReservationId.put(reservation.getId(), allPacksByReservationId.get(reservation.getId()));
-            }
-            if (allCommerceNamesByReservationId.containsKey(reservation.getId())) {
-                commerceNamesByReservationId.put(reservation.getId(),
-                        allCommerceNamesByReservationId.get(reservation.getId()));
+            if (reservation.getPackId() != null) {
+                final Optional<Pack> packOpt = packService.findById(reservation.getPackId());
+                if (packOpt.isPresent()) {
+                    final Pack pack = packOpt.get();
+                    packsByReservationId.put(reservation.getId(), pack);
+                    commerceNamesByReservationId.put(reservation.getId(), resolveCommerceName(pack));
+                }
             }
         }
 
@@ -352,10 +299,10 @@ public class ReservationListModelBuilder {
         mav.addObject("auctionParticipationBadges", Map.of());
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
-        mav.addObject("auctionVisualReservationIds", resolveAuctionReservationIds(reservations, auctionPackIds));
+        mav.addObject("auctionVisualReservationIds", resolveAuctionReservationIds(reservations));
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────────
+    // -- Helpers --------------------------------------------------------------
 
     private String formatUtcDateTimeForDisplay(final LocalDateTime utc) {
         if (utc == null) {
@@ -380,22 +327,17 @@ public class ReservationListModelBuilder {
                 .orElse("-");
     }
 
-    private Set<Long> resolveAuctionPackIds(final List<Reservation> reservations) {
+    private Set<Long> resolveAuctionReservationIds(final List<Reservation> reservations) {
         final Set<Long> distinctPackIds = new HashSet<>();
         for (final Reservation r : reservations) {
             if (r.getPackId() != null) {
                 distinctPackIds.add(r.getPackId());
             }
         }
-        final Set<Long> auctionPacks = new HashSet<>();
+        final Set<Long> auctionPackIds = new HashSet<>();
         for (final Long packId : distinctPackIds) {
-            auctionService.findByPackId(packId).ifPresent(a -> auctionPacks.add(packId));
+            auctionService.findByPackId(packId).ifPresent(a -> auctionPackIds.add(packId));
         }
-        return auctionPacks;
-    }
-
-    private static Set<Long> resolveAuctionReservationIds(final List<Reservation> reservations,
-            final Set<Long> auctionPackIds) {
         final Set<Long> ids = new HashSet<>();
         for (final Reservation r : reservations) {
             if (r.getPackId() != null && auctionPackIds.contains(r.getPackId())) {
@@ -410,10 +352,6 @@ public class ReservationListModelBuilder {
                 && value.toLowerCase(Locale.ROOT).contains(needle.toLowerCase(Locale.ROOT));
     }
 
-    /**
-     * @return badge code for the participation card, or {@code null} when no badge should be shown
-     *         (cancelled, or finished and the client won).
-     */
     private static String clientParticipationAuctionBadge(final Auction auction, final boolean leading) {
         if (auction.getStatus() == Auction.Status.CANCELLED) {
             return null;
@@ -427,7 +365,7 @@ public class ReservationListModelBuilder {
         return "OUTBID_FINISHED";
     }
 
-    // ── Parsing & URL helpers ───────────────────────────────────────────────────
+    // -- Parsing & URL helpers ------------------------------------------------
 
     private static String normalizeQuery(final String query) {
         return (query == null || query.isBlank()) ? null : query.trim();

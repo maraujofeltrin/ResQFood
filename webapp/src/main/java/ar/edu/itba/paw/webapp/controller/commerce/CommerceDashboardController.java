@@ -88,7 +88,7 @@ public class CommerceDashboardController {
 
         // -- Recent reservations (last 3) using the same history row format as pack detail --
         final List<Reservation> recentReservations = reservationService.filterReservations(
-                id, null, null, null, 1, DASHBOARD_RECENT_LIMIT);
+                id, null, null, null, false, 1, DASHBOARD_RECENT_LIMIT);
         final Locale locale = LocaleContextHolder.getLocale();
         final List<ReservationHistoryViewHelper.ReservationHistoryRow> recentHistoryItems =
                 ReservationHistoryViewHelper.buildRows(recentReservations, clientService, messageSource, locale);

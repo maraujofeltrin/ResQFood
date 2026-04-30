@@ -4,7 +4,9 @@ import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.PickupByCodeError;
 import ar.edu.itba.paw.models.reservation.Reservation;
+import ar.edu.itba.paw.models.reservation.ReservationRejectionError;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
+import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.persistence.AuctionDao;
@@ -203,24 +205,10 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public void validateReservationBelongsToCommerce(final Long reservationId, final Long commerceUserId) {
-        if (reservationId == null || commerceUserId == null) {
-            throw new IllegalArgumentException("INVALID_PARAMS");
-        }
-
-        final Reservation reservation = reservationDao.findById(reservationId)
-                .orElseThrow(() -> new IllegalArgumentException("RESERVATION_NOT_FOUND"));
-        
-        if (reservation.getPackId() == null) {
-            throw new IllegalArgumentException("PACK_NOT_FOUND");
-        }
-
-        final boolean isOwned = packDao.findById(reservation.getPackId())
-                .map(pack -> commerceUserId.equals(pack.getCommerceId()))
-                .orElse(false);
-        
-        if (!isOwned) {
-            throw new IllegalArgumentException("WRONG_COMMERCE");
-        }
+        resolveReservationOwnershipError(reservationId, commerceUserId)
+                .ifPresent(error -> {
+                    throw new IllegalArgumentException(error.name());
+                });
     }
 
     @Override
@@ -284,34 +272,54 @@ public class ReservationServiceImpl implements ReservationService {
     @Transactional
     @Override
     public Reservation rejectReservationForCommerce(final Long reservationId, final Long commerceUserId) {
-        validateReservationBelongsToCommerce(reservationId, commerceUserId);
-        return rejectReservation(reservationId);
+        final ReservationRejectionResult result = tryRejectReservationForCommerce(reservationId, commerceUserId);
+        return result.reservation().orElseThrow(() -> toRejectionException(result));
+    }
+
+    @Transactional
+    @Override
+    public ReservationRejectionResult tryRejectReservationForCommerce(final Long reservationId,
+            final Long commerceUserId) {
+        final Optional<ReservationRejectionError> ownershipError =
+                resolveReservationOwnershipError(reservationId, commerceUserId);
+        if (ownershipError.isPresent()) {
+            return ReservationRejectionResult.failure(ownershipError.get());
+        }
+        return rejectReservationInternal(reservationId);
     }
 
     @Transactional
     @Override
     public Reservation rejectReservation(final Long reservationId) {
+        final ReservationRejectionResult result = rejectReservationInternal(reservationId);
+        return result.reservation().orElseThrow(() -> toRejectionException(result));
+    }
+
+    private ReservationRejectionResult rejectReservationInternal(final Long reservationId) {
         final Reservation reservation = reservationDao.findById(reservationId)
-                .orElseThrow(() -> new IllegalArgumentException("RESERVATION_NOT_FOUND"));
+                .orElse(null);
+        if (reservation == null) {
+            return ReservationRejectionResult.failure(ReservationRejectionError.RESERVATION_NOT_FOUND);
+        }
 
         final Reservation.Status status = reservation.getStatus();
         if (status == Reservation.Status.CANCELED) {
-            throw new IllegalStateException("ALREADY_CANCELED");
+            return ReservationRejectionResult.failure(ReservationRejectionError.ALREADY_CANCELED);
         }
         if (status == Reservation.Status.PAID) {
-            throw new IllegalStateException("ALREADY_COMPLETED");
+            return ReservationRejectionResult.failure(ReservationRejectionError.ALREADY_COMPLETED);
         }
         if (status != Reservation.Status.RESERVED) {
-            throw new IllegalStateException("INVALID_STATUS");
+            return ReservationRejectionResult.failure(ReservationRejectionError.INVALID_STATUS);
         }
 
         if (reservation.getPackId() == null) {
-            throw new IllegalStateException("PACK_NOT_FOUND");
+            return ReservationRejectionResult.failure(ReservationRejectionError.PACK_NOT_FOUND);
         }
 
         final int quantity = reservation.getQuantity() == null ? 1 : reservation.getQuantity();
         if (!packDao.incrementStock(reservation.getPackId(), quantity)) {
-            throw new IllegalStateException("STOCK_RESTORE_FAILED");
+            return ReservationRejectionResult.failure(ReservationRejectionError.STOCK_RESTORE_FAILED);
         }
 
         final Reservation canceledReservation = reservationDao.updateStatus(reservation.getId(), Reservation.Status.CANCELED);
@@ -322,7 +330,50 @@ public class ReservationServiceImpl implements ReservationService {
 
         reservationMailService.sendReservationRejectedToClient(canceledReservation, clientEmail,
             clientUser.getLocale());
-        return canceledReservation;
+        return ReservationRejectionResult.success(canceledReservation);
+    }
+
+    private RuntimeException toRejectionException(final ReservationRejectionResult result) {
+        final ReservationRejectionError error = result.error()
+                .orElse(ReservationRejectionError.INVALID_STATUS);
+        switch (error) {
+            case INVALID_PARAMS:
+            case RESERVATION_NOT_FOUND:
+            case PACK_NOT_FOUND:
+            case WRONG_COMMERCE:
+                return new IllegalArgumentException(error.name());
+            case ALREADY_CANCELED:
+            case ALREADY_COMPLETED:
+            case INVALID_STATUS:
+            case STOCK_RESTORE_FAILED:
+            default:
+                return new IllegalStateException(error.name());
+        }
+    }
+
+    private Optional<ReservationRejectionError> resolveReservationOwnershipError(final Long reservationId,
+            final Long commerceUserId) {
+        if (reservationId == null || commerceUserId == null) {
+            return Optional.of(ReservationRejectionError.INVALID_PARAMS);
+        }
+
+        final Reservation reservation = reservationDao.findById(reservationId).orElse(null);
+        if (reservation == null) {
+            return Optional.of(ReservationRejectionError.RESERVATION_NOT_FOUND);
+        }
+
+        if (reservation.getPackId() == null) {
+            return Optional.of(ReservationRejectionError.PACK_NOT_FOUND);
+        }
+
+        final boolean isOwned = packDao.findById(reservation.getPackId())
+                .map(pack -> commerceUserId.equals(pack.getCommerceId()))
+                .orElse(false);
+
+        if (!isOwned) {
+            return Optional.of(ReservationRejectionError.WRONG_COMMERCE);
+        }
+        return Optional.empty();
     }
 
     @Override
@@ -351,6 +402,114 @@ public class ReservationServiceImpl implements ReservationService {
             return DirectReservationCheck.blocked(DirectReservationCheck.Outcome.MISSING_FINAL_PRICE, pack);
         }
         return DirectReservationCheck.ok(pack, finalPrice);
+    }
+
+    @Transactional
+    @Override
+    public ReservationTokenActionResult acceptReservationTokenWithPickupCode(final String token,
+            final String pickupCode, final Long commerceUserId) {
+        if (token == null || token.isBlank()) {
+            return ReservationTokenActionResult.failure(ReservationTokenActionError.INVALID_TOKEN);
+        }
+
+        final Optional<ReservationToken> tokenOpt = reservationTokenDao.findByToken(token);
+        if (tokenOpt.isEmpty()) {
+            return ReservationTokenActionResult.failure(ReservationTokenActionError.NOT_FOUND);
+        }
+        final ReservationToken reservationToken = tokenOpt.get();
+        if (reservationToken.getAction() != ReservationToken.Action.ACCEPT) {
+            return ReservationTokenActionResult.failure(ReservationTokenActionError.NOT_FOUND);
+        }
+
+        final Optional<Reservation> reservationOpt = reservationDao.findById(reservationToken.getReservationId());
+        if (reservationOpt.isEmpty()) {
+            return ReservationTokenActionResult.failure(ReservationTokenActionError.NOT_FOUND);
+        }
+        final Reservation reservation = reservationOpt.get();
+
+        if (reservation.getStatus() == Reservation.Status.PAID
+                || reservation.getStatus() == Reservation.Status.CANCELED
+                || reservationToken.isUsed()) {
+            return ReservationTokenActionResult.failure(ReservationTokenActionError.ALREADY_USED, reservation);
+        }
+        if (LocalDateTime.now(ZoneOffset.UTC).isAfter(reservationToken.getExpiresAt())) {
+            return ReservationTokenActionResult.failure(ReservationTokenActionError.EXPIRED, reservation);
+        }
+
+        final Optional<ReservationRejectionError> ownershipError =
+                resolveReservationOwnershipError(reservation.getId(), commerceUserId);
+        if (ownershipError.isPresent()) {
+            return ReservationTokenActionResult.failure(
+                    ownershipError.get() == ReservationRejectionError.WRONG_COMMERCE
+                            ? ReservationTokenActionError.WRONG_COMMERCE
+                            : ReservationTokenActionError.NOT_FOUND,
+                    reservation);
+        }
+
+        if (pickupCode == null || pickupCode.isBlank()) {
+            return ReservationTokenActionResult.failure(ReservationTokenActionError.MISSING_PICKUP_CODE, reservation);
+        }
+
+        final String inputCode = pickupCode.trim().toUpperCase(Locale.ROOT);
+        final String storedCode = reservation.getPickupCode() == null ? ""
+                : reservation.getPickupCode().trim().toUpperCase(Locale.ROOT);
+        if (!inputCode.equals(storedCode)) {
+            return ReservationTokenActionResult.failure(ReservationTokenActionError.INVALID_PICKUP_CODE, reservation);
+        }
+
+        reservationTokenDao.markAsUsed(token);
+        final Reservation confirmed = confirmPickup(reservation.getId());
+        return ReservationTokenActionResult.success(confirmed);
+    }
+
+    @Transactional
+    @Override
+    public ReservationTokenActionResult rejectReservationToken(final String token, final Long commerceUserId) {
+        if (token == null || token.isBlank()) {
+            return ReservationTokenActionResult.failure(ReservationTokenActionError.INVALID_TOKEN);
+        }
+
+        final Optional<ReservationToken> tokenOpt = reservationTokenDao.findByToken(token);
+        if (tokenOpt.isEmpty()) {
+            return ReservationTokenActionResult.failure(ReservationTokenActionError.NOT_FOUND);
+        }
+        final ReservationToken reservationToken = tokenOpt.get();
+        if (reservationToken.getAction() != ReservationToken.Action.REJECT) {
+            return ReservationTokenActionResult.failure(ReservationTokenActionError.NOT_FOUND);
+        }
+
+        final Optional<Reservation> reservationOpt = reservationDao.findById(reservationToken.getReservationId());
+        if (reservationOpt.isEmpty()) {
+            return ReservationTokenActionResult.failure(ReservationTokenActionError.NOT_FOUND);
+        }
+        final Reservation reservation = reservationOpt.get();
+
+        if (reservation.getStatus() == Reservation.Status.PAID
+                || reservation.getStatus() == Reservation.Status.CANCELED
+                || reservationToken.isUsed()) {
+            return ReservationTokenActionResult.failure(ReservationTokenActionError.ALREADY_USED, reservation);
+        }
+        if (LocalDateTime.now(ZoneOffset.UTC).isAfter(reservationToken.getExpiresAt())) {
+            return ReservationTokenActionResult.failure(ReservationTokenActionError.EXPIRED, reservation);
+        }
+
+        final Optional<ReservationRejectionError> ownershipError =
+                resolveReservationOwnershipError(reservation.getId(), commerceUserId);
+        if (ownershipError.isPresent()) {
+            return ReservationTokenActionResult.failure(
+                    ownershipError.get() == ReservationRejectionError.WRONG_COMMERCE
+                            ? ReservationTokenActionError.WRONG_COMMERCE
+                            : ReservationTokenActionError.NOT_FOUND,
+                    reservation);
+        }
+
+        reservationTokenDao.markAsUsed(token);
+
+        final ReservationRejectionResult rejectionResult = rejectReservationInternal(reservation.getId());
+        if (!rejectionResult.isSuccess()) {
+            return ReservationTokenActionResult.failure(ReservationTokenActionError.NOT_FOUND, reservation);
+        }
+        return ReservationTokenActionResult.success(rejectionResult.reservation().orElseThrow());
     }
 
     @Transactional
@@ -396,13 +555,15 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize) {
-        return reservationDao.filterReservations(commerceId, customerId, query, status, page, pageSize);
+    public List<Reservation> filterReservations(Long commerceId, Long customerId, String query,
+            Reservation.Status status, boolean excludeAuctionPacks, int page, int pageSize) {
+        return reservationDao.filterReservations(commerceId, customerId, query, status, excludeAuctionPacks, page, pageSize);
     }
 
     @Override
-    public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status) {
-        return reservationDao.countFilteredReservations(commerceId, customerId, query, status);
+    public int countFilteredReservations(Long commerceId, Long customerId, String query,
+            Reservation.Status status, boolean excludeAuctionPacks) {
+        return reservationDao.countFilteredReservations(commerceId, customerId, query, status, excludeAuctionPacks);
     }
 
     @Override

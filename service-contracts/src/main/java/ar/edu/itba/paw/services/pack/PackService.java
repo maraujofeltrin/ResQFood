@@ -16,6 +16,12 @@ public interface PackService {
     Pack update(Pack pack);
     void deletePack(Long id);
 
+    /**
+     * Returns a pack visible on its public detail page.
+     * Inactive packs are visible only to their owning commerce.
+     */
+    Optional<Pack> findVisibleForDetail(Long packId, Long viewerUserId);
+
 
     /**
      * Updates an existing pack. If imageData is provided, it updates the image too.

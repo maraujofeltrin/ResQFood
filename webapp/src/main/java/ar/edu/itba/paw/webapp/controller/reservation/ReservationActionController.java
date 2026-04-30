@@ -35,7 +35,7 @@ import ar.edu.itba.paw.webapp.form.ReservationForm;
 @Controller
 public class ReservationActionController {
 
-    private static final Locale LOCALE_AR = new Locale("es", "AR");
+    private static final Locale LOCALE_AR = Locale.of("es", "AR");
 
     private final ReservationService reservationService;
     private final PackService packService;
@@ -95,15 +95,11 @@ public class ReservationActionController {
             bindingResult.rejectValue("quantity", "reservation.quantity.exceedsStock", new Object[] { stock }, null);
             return packDetailModelBuilder.buildPackDetailModel(p, reservationForm, createDefaultBidForm());
         }
-        case AUCTION_ACTIVE: {
-            final Optional<Auction> auctionForReserve = auctionService.findByPackId(packId);
-            final boolean active = auctionForReserve.map(Auction::isActive).orElse(false);
+        case AUCTION_ACTIVE:
             redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
             redirectAttributes.addFlashAttribute("reservationAlertMessage", messageSource.getMessage(
-                    active ? "reservation.alert.activeAuction" : "reservation.alert.auctionEndedNoDirectSale",
-                    null, LocaleContextHolder.getLocale()));
+                    "reservation.alert.activeAuction", null, LocaleContextHolder.getLocale()));
             return redirectView;
-        }
         case AUCTION_ENDED_NO_DIRECT:
             redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
@@ -143,7 +139,7 @@ public class ReservationActionController {
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
                     messageSource.getMessage("reservation.alert.success", null,
                             LocaleContextHolder.getLocale()));
-        } catch (final Exception ex) {
+        } catch (final IllegalArgumentException | IllegalStateException ex) {
             redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
                     messageSource.getMessage("reservation.alert.genericError", null,
@@ -230,10 +226,6 @@ public class ReservationActionController {
             }
             redirectAttributes.addFlashAttribute("auctionAlertMessage", alertMessage);
         } catch (final DataIntegrityViolationException ex) {
-            redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
-            redirectAttributes.addFlashAttribute("auctionAlertMessage",
-                    messageSource.getMessage("pack.detail.bid.alert.genericError", null, locale));
-        } catch (final Exception ex) {
             redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
             redirectAttributes.addFlashAttribute("auctionAlertMessage",
                     messageSource.getMessage("pack.detail.bid.alert.genericError", null, locale));

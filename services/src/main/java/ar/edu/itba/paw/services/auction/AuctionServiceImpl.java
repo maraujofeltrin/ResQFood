@@ -163,14 +163,6 @@ public class AuctionServiceImpl implements AuctionService {
                 );
             }
 
-            // TODO: Notification hook — notify winner
-            // if (auction.getCurrentBidderId() != null) {
-            //     notificationService.notifyAuctionWon(auction.getCurrentBidderId(), auction.getId());
-            // }
-
-            // TODO: Notification hook — notify commerce that auction ended
-            // final Long commerceId = auction.getPack().getCommerceId();
-            // notificationService.notifyAuctionEnded(commerceId, auction.getId(), auction.getCurrentBid());
         }
 
         return closed;

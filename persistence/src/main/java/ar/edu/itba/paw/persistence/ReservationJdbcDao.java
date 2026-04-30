@@ -139,7 +139,7 @@ public class ReservationJdbcDao implements ReservationDao {
                 pickupCode).stream().findAny();
     }
 
-    private void appendReservationFilters(StringBuilder sql, List<Object> params, Long commerceId, Long customerId, String query, Reservation.Status status) {
+    private void appendReservationFilters(StringBuilder sql, List<Object> params, Long commerceId, Long customerId, String query, Reservation.Status status, boolean excludeAuctionPacks) {
         sql.append("FROM reservations r ");
         sql.append("LEFT JOIN packs p ON r.pack_id = p.id ");
         sql.append("LEFT JOIN commerces c ON p.commerce_id = c.user_id ");
@@ -178,15 +178,19 @@ public class ReservationJdbcDao implements ReservationDao {
             }
             sql.append(") ");
         }
+
+        if (excludeAuctionPacks) {
+            sql.append("AND NOT EXISTS (SELECT 1 FROM auctions a WHERE a.pack_id = r.pack_id) ");
+        }
     }
 
     @Override
-    public List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize) {
+    public List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, boolean excludeAuctionPacks, int page, int pageSize) {
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT r.id, r.customer_id, r.pack_id, r.reservation_date, r.final_price, r.status, r.pickup_code, r.pickup_confirmation_date, r.quantity, r.pickup_window ");
         
         List<Object> params = new ArrayList<>();
-        appendReservationFilters(sql, params, commerceId, customerId, query, status);
+        appendReservationFilters(sql, params, commerceId, customerId, query, status, excludeAuctionPacks);
 
         sql.append("ORDER BY r.reservation_date DESC ");
         sql.append("LIMIT ? OFFSET ?");
@@ -197,12 +201,12 @@ public class ReservationJdbcDao implements ReservationDao {
     }
 
     @Override
-    public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status) {
+    public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status, boolean excludeAuctionPacks) {
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT COUNT(r.id) ");
         
         List<Object> params = new ArrayList<>();
-        appendReservationFilters(sql, params, commerceId, customerId, query, status);
+        appendReservationFilters(sql, params, commerceId, customerId, query, status, excludeAuctionPacks);
 
         Integer count = jdbcTemplate.queryForObject(sql.toString(), Integer.class, params.toArray());
         return count != null ? count : 0;
