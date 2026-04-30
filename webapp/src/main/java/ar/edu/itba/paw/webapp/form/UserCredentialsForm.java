@@ -5,6 +5,9 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
+import ar.edu.itba.paw.webapp.validation.constraints.FieldMatch;
+
+@FieldMatch(first = "password", second = "repeatPassword", message = "{user.password.mismatch}")
 public class UserCredentialsForm {
 
     @NotBlank(message = "{register.validation.email.notEmpty}")

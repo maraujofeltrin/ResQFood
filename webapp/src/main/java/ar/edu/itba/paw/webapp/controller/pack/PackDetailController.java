@@ -43,17 +43,11 @@ public class PackDetailController {
 
     @GetMapping("/packs/{id}")
     public ModelAndView packDetail(@PathVariable("id") final long id) {
-        final Pack pack = packService.findById(id)
+        final Long viewerUserId = authResolver.resolveUserOrEmpty()
+                .map(user -> user.getId())
+                .orElse(null);
+        final Pack pack = packService.findVisibleForDetail(id, viewerUserId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
-        if (!Boolean.TRUE.equals(pack.getActive())) {
-            boolean isOwner = authResolver.resolveUserOrEmpty()
-                    .map(u -> u.getId().equals(pack.getCommerceId()))
-                    .orElse(false);
-            if (!isOwner) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-            }
-        }
 
         return packDetailModelBuilder.buildPackDetailModel(pack, createDefaultReservationForm(), createDefaultBidForm());
     }

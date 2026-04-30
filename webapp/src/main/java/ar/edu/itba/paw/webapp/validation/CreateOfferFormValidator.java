@@ -63,9 +63,6 @@ public class CreateOfferFormValidator implements Validator {
         } else if (form.getFinalPrice() <= 0) {
             errors.rejectValue("finalPrice", "error.finalPrice",
                     messageSource.getMessage("commerce.createPack.validation.finalPrice.positive", null, locale));
-        } else if (form.getOriginalPrice() != null && form.getFinalPrice() > form.getOriginalPrice()) {
-            errors.rejectValue("finalPrice", "error.finalPrice",
-                    messageSource.getMessage("commerce.createPack.validation.finalPrice.exceedsOriginal", null, locale));
         }
 
         if (form.getStock() == null) {
@@ -87,9 +84,6 @@ public class CreateOfferFormValidator implements Validator {
         } else if (form.getInitialPrice() <= 0) {
             errors.rejectValue("initialPrice", "error.initialPrice",
                     messageSource.getMessage("commerce.createAuction.validation.initialPrice.positive", null, locale));
-        } else if (form.getOriginalPrice() != null && form.getInitialPrice() > form.getOriginalPrice()) {
-            errors.rejectValue("initialPrice", "error.initialPrice",
-                    messageSource.getMessage("commerce.createAuction.validation.initialPrice.exceedsOriginal", null, locale));
         }
 
         if (form.getMinBidIncrement() == null) {

@@ -2,12 +2,14 @@ package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.reservation.Reservation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -122,14 +124,14 @@ public class ReservationJdbcDao implements ReservationDao {
         return findById(id).orElseThrow(() -> new IllegalStateException("Reservation not found: " + id));
     }
 
-        @Override
-        public Reservation confirmPickup(final Long id, final java.time.LocalDateTime pickupConfirmationDate) {
-                jdbcTemplate.update("UPDATE reservations SET status = ?, pickup_confirmation_date = ? WHERE id = ?",
-                                Reservation.Status.PAID.name(),
-                                pickupConfirmationDate == null ? null : java.sql.Timestamp.valueOf(pickupConfirmationDate),
-                                id);
-                return findById(id).orElseThrow(() -> new IllegalStateException("Reservation not found: " + id));
-        }
+    @Override
+    public Reservation confirmPickup(final Long id, final LocalDateTime pickupConfirmationDate) {
+        jdbcTemplate.update("UPDATE reservations SET status = ?, pickup_confirmation_date = ? WHERE id = ?",
+                Reservation.Status.PAID.name(),
+                pickupConfirmationDate == null ? null : Timestamp.valueOf(pickupConfirmationDate),
+                id);
+        return findById(id).orElseThrow(() -> new IllegalStateException("Reservation not found: " + id));
+    }
 
     @Override
     public Optional<Reservation> findByPickupCode(final String pickupCode) {
@@ -137,7 +139,7 @@ public class ReservationJdbcDao implements ReservationDao {
                 pickupCode).stream().findAny();
     }
 
-    private void appendReservationFilters(StringBuilder sql, List<Object> params, Long commerceId, Long customerId, String query, Reservation.Status status) {
+    private void appendReservationFilters(StringBuilder sql, List<Object> params, Long commerceId, Long customerId, String query, Reservation.Status status, boolean excludeAuctionPacks) {
         sql.append("FROM reservations r ");
         sql.append("LEFT JOIN packs p ON r.pack_id = p.id ");
         sql.append("LEFT JOIN commerces c ON p.commerce_id = c.user_id ");
@@ -176,15 +178,19 @@ public class ReservationJdbcDao implements ReservationDao {
             }
             sql.append(") ");
         }
+
+        if (excludeAuctionPacks) {
+            sql.append("AND NOT EXISTS (SELECT 1 FROM auctions a WHERE a.pack_id = r.pack_id) ");
+        }
     }
 
     @Override
-    public List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize) {
+    public List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, boolean excludeAuctionPacks, int page, int pageSize) {
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT r.id, r.customer_id, r.pack_id, r.reservation_date, r.final_price, r.status, r.pickup_code, r.pickup_confirmation_date, r.quantity, r.pickup_window ");
         
         List<Object> params = new ArrayList<>();
-        appendReservationFilters(sql, params, commerceId, customerId, query, status);
+        appendReservationFilters(sql, params, commerceId, customerId, query, status, excludeAuctionPacks);
 
         sql.append("ORDER BY r.reservation_date DESC ");
         sql.append("LIMIT ? OFFSET ?");
@@ -195,12 +201,12 @@ public class ReservationJdbcDao implements ReservationDao {
     }
 
     @Override
-    public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status) {
+    public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status, boolean excludeAuctionPacks) {
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT COUNT(r.id) ");
         
         List<Object> params = new ArrayList<>();
-        appendReservationFilters(sql, params, commerceId, customerId, query, status);
+        appendReservationFilters(sql, params, commerceId, customerId, query, status, excludeAuctionPacks);
 
         Integer count = jdbcTemplate.queryForObject(sql.toString(), Integer.class, params.toArray());
         return count != null ? count : 0;
@@ -224,5 +230,83 @@ public class ReservationJdbcDao implements ReservationDao {
                 customerId, commerceId, Reservation.Status.PAID.name()
         );
         return count != null && count > 0;
+    }
+
+    @Override
+    public int countPaidReservationsInPeriod(final Long commerceId,
+                                          final LocalDateTime periodStart,
+                                          final LocalDateTime periodEnd) {
+        final Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(r.id) FROM reservations r " +
+                "JOIN packs p ON r.pack_id = p.id " +
+                "WHERE p.commerce_id = ? AND r.status = ? " +
+                "AND r.pickup_confirmation_date >= ? AND r.pickup_confirmation_date < ?",
+                Integer.class,
+                commerceId,
+                Reservation.Status.PAID.name(),
+                Timestamp.valueOf(periodStart),
+                Timestamp.valueOf(periodEnd));
+        return count != null ? count : 0;
+    }
+
+    @Override
+    public List<Object[]> countPaidReservationsPerDay(final Long commerceId, final LocalDateTime from,
+            final LocalDateTime to) {
+        return jdbcTemplate.query(
+                "SELECT DATE(reservation_date) as day, COUNT(*) as cnt "
+                        + "FROM reservations r JOIN packs p ON r.pack_id = p.id "
+                        + "WHERE p.commerce_id = ? AND r.status = 'PAID' "
+                        + "AND r.reservation_date >= ? AND r.reservation_date < ? "
+                        + "GROUP BY DATE(reservation_date) ORDER BY day ASC",
+                (rs, rowNum) -> new Object[] { rs.getDate("day").toLocalDate(), rs.getLong("cnt") },
+                commerceId, Timestamp.valueOf(from), Timestamp.valueOf(to));
+    }
+
+    @Override
+    public BigDecimal sumRevenueInPeriod(final Long commerceId, final LocalDateTime from,
+            final LocalDateTime to) {
+        final BigDecimal sum = jdbcTemplate.queryForObject(
+                "SELECT SUM(r.final_price) FROM reservations r JOIN packs p ON r.pack_id = p.id "
+                        + "WHERE p.commerce_id = ? AND r.status = 'PAID' "
+                        + "AND r.pickup_confirmation_date >= ? AND r.pickup_confirmation_date < ?",
+                BigDecimal.class,
+                commerceId,
+                Timestamp.valueOf(from),
+                Timestamp.valueOf(to));
+        return sum == null ? BigDecimal.ZERO : sum;
+    }
+
+    @Override
+    public Optional<Long> findBestSellingPackId(final Long commerceId, final LocalDateTime from,
+            final LocalDateTime to) {
+        try {
+            final Long id = jdbcTemplate.queryForObject(
+                    "SELECT r.pack_id FROM reservations r JOIN packs p ON r.pack_id = p.id "
+                            + "WHERE p.commerce_id = ? AND r.status = 'PAID' "
+                            + "AND r.pickup_confirmation_date >= ? AND r.pickup_confirmation_date < ? "
+                            + "GROUP BY r.pack_id ORDER BY COUNT(*) DESC LIMIT 1",
+                    Long.class,
+                    commerceId,
+                    Timestamp.valueOf(from),
+                    Timestamp.valueOf(to));
+            return Optional.ofNullable(id);
+        } catch (final EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public long countByStatusInPeriod(final Long commerceId, final Reservation.Status status,
+            final LocalDateTime from, final LocalDateTime to) {
+        final Long count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(r.id) FROM reservations r JOIN packs p ON r.pack_id = p.id "
+                        + "WHERE p.commerce_id = ? AND r.status = ? "
+                        + "AND r.reservation_date >= ? AND r.reservation_date < ?",
+                Long.class,
+                commerceId,
+                status == null ? null : status.name(),
+                Timestamp.valueOf(from),
+                Timestamp.valueOf(to));
+        return count == null ? 0L : count.longValue();
     }
 }

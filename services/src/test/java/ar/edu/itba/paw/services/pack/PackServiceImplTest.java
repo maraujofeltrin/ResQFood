@@ -151,4 +151,63 @@ public class PackServiceImplTest {
         assertEquals("new", stored.getTitle());
         assertEquals(5, stored.getStock());
     }
+
+    @Test
+    public void findVisibleForDetail_activePack_returnsPackForAnonymousViewer() {
+        // 1. Setup
+        final InMemoryPackDao dao = new InMemoryPackDao();
+        final PackServiceImpl svc = new PackServiceImpl(dao, noopAuctionService());
+        final Pack pack = svc.createPack(10L, "active", "d", 2.0, 1.0, 2, Collections.emptyList(), null);
+
+        // 2. Ejercicio
+        final Optional<Pack> result = svc.findVisibleForDetail(pack.getId(), null);
+
+        // 3. Asserts
+        assertTrue(result.isPresent());
+        assertEquals(pack.getId(), result.get().getId());
+    }
+
+    @Test
+    public void findVisibleForDetail_inactivePack_returnsPackForOwner() {
+        // 1. Setup
+        final InMemoryPackDao dao = new InMemoryPackDao();
+        final PackServiceImpl svc = new PackServiceImpl(dao, noopAuctionService());
+        final Pack pack = svc.createPack(11L, "inactive", "d", 2.0, 1.0, 2, Collections.emptyList(), null);
+        pack.setActive(false);
+
+        // 2. Ejercicio
+        final Optional<Pack> result = svc.findVisibleForDetail(pack.getId(), 11L);
+
+        // 3. Asserts
+        assertTrue(result.isPresent());
+        assertEquals(pack.getId(), result.get().getId());
+    }
+
+    @Test
+    public void findVisibleForDetail_inactivePack_returnsEmptyForNonOwner() {
+        // 1. Setup
+        final InMemoryPackDao dao = new InMemoryPackDao();
+        final PackServiceImpl svc = new PackServiceImpl(dao, noopAuctionService());
+        final Pack pack = svc.createPack(12L, "inactive", "d", 2.0, 1.0, 2, Collections.emptyList(), null);
+        pack.setActive(false);
+
+        // 2. Ejercicio
+        final Optional<Pack> result = svc.findVisibleForDetail(pack.getId(), 99L);
+
+        // 3. Asserts
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void findVisibleForDetail_missingPack_returnsEmpty() {
+        // 1. Setup
+        final InMemoryPackDao dao = new InMemoryPackDao();
+        final PackServiceImpl svc = new PackServiceImpl(dao, noopAuctionService());
+
+        // 2. Ejercicio
+        final Optional<Pack> result = svc.findVisibleForDetail(999L, 99L);
+
+        // 3. Asserts
+        assertTrue(result.isEmpty());
+    }
 }

@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.reservation.Reservation;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -24,11 +25,23 @@ public interface ReservationDao {
 
     Reservation confirmPickup(final Long id, final java.time.LocalDateTime pickupConfirmationDate);
 
-    List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize);
+    List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status,
+            boolean excludeAuctionPacks, int page, int pageSize);
 
-    int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status);
+    int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status,
+            boolean excludeAuctionPacks);
 
     boolean hasActiveReservation(Long packId, Long customerId);
 
     boolean hasPaidReservationWithCommerce(Long customerId, Long commerceId);
+
+    int countPaidReservationsInPeriod(Long commerceId, LocalDateTime periodStart, LocalDateTime periodEnd);
+
+    List<Object[]> countPaidReservationsPerDay(Long commerceId, LocalDateTime from, LocalDateTime to);
+
+    BigDecimal sumRevenueInPeriod(Long commerceId, LocalDateTime from, LocalDateTime to);
+
+    Optional<Long> findBestSellingPackId(Long commerceId, LocalDateTime from, LocalDateTime to);
+
+    long countByStatusInPeriod(Long commerceId, Reservation.Status status, LocalDateTime from, LocalDateTime to);
 }

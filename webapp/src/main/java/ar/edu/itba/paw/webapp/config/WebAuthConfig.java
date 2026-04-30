@@ -9,7 +9,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import java.util.concurrent.TimeUnit;
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
@@ -18,18 +17,15 @@ import static org.springframework.security.web.util.matcher.AntPathRequestMatche
 public class WebAuthConfig extends WebSecurityConfigurerAdapter {
 
     private final AuthUserDetailsService authUserDetailsService;
-    private final AuthenticationSuccessHandler authenticationSuccessHandler;
     private final String rememberMeKey;
     private final int rememberMeValidityDays;
 
     @Autowired
     public WebAuthConfig(
             final AuthUserDetailsService authUserDetailsService,
-            final AuthenticationSuccessHandler authenticationSuccessHandler,
             @Value("${security.remember-me.key:resqfood-remember-me-secret}") final String rememberMeKey,
             @Value("${security.remember-me.validity-days:7}") final int rememberMeValidityDays) {
         this.authUserDetailsService = authUserDetailsService;
-        this.authenticationSuccessHandler = authenticationSuccessHandler;
         this.rememberMeKey = rememberMeKey;
         this.rememberMeValidityDays = rememberMeValidityDays;
     }
@@ -55,9 +51,9 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                 .requestMatchers(antMatcher(HttpMethod.POST, "/packs/*/bid")).hasRole("CLIENT")
                 .requestMatchers(antMatcher(HttpMethod.POST, "/packs/*/reserve")).hasRole("CLIENT")
                 .requestMatchers(antMatcher(HttpMethod.POST, "/packs/*/commerce-review")).hasRole("CLIENT")
+                .requestMatchers(antMatcher(HttpMethod.POST, "/packs/*/favorite")).hasRole("CLIENT")
                 .requestMatchers(antMatcher(HttpMethod.POST, "/packs/**")).authenticated()
                 .requestMatchers(antMatcher("/commerce"), antMatcher("/commerce/**")).hasRole("COMMERCE")
-                .requestMatchers(antMatcher(HttpMethod.GET, "/reservations/mine")).hasRole("CLIENT")
                 .requestMatchers(antMatcher(HttpMethod.POST, "/reservations/*/reject")).hasRole("COMMERCE")
                 .requestMatchers(antMatcher(HttpMethod.POST, "/reservations/**")).authenticated()
                 .requestMatchers(antMatcher(HttpMethod.GET, "/reservations/**")).authenticated()
@@ -69,7 +65,6 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                 .loginPage("/login")
                 .usernameParameter("email")
                 .passwordParameter("password")
-                .successHandler(authenticationSuccessHandler)
                 .failureUrl("/login?error=true")
                 .and().logout()
                 .logoutUrl("/logout")

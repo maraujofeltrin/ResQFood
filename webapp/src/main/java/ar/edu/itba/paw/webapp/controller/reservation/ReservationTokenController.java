@@ -3,9 +3,9 @@ package ar.edu.itba.paw.webapp.controller.reservation;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
-import ar.edu.itba.paw.models.user.User;
-import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
 import ar.edu.itba.paw.services.reservation.ReservationService;
+import ar.edu.itba.paw.services.reservation.ReservationTokenActionResult;
 import ar.edu.itba.paw.services.reservation.ReservationTokenService;
 import ar.edu.itba.paw.services.reservation.ReservationTokenService.TokenValidationResult;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,22 +14,17 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 
-import java.nio.charset.StandardCharsets;
-import java.net.URLEncoder;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 import java.util.Optional;
 
 @Controller
@@ -40,19 +35,16 @@ public class ReservationTokenController {
 
     private final ReservationTokenService reservationTokenService;
     private final ReservationService reservationService;
-    private final CommerceService commerceService;
     private final ZoneId displayZone;
     private final AuthenticatedUserResolver authResolver;
 
     @Autowired
     public ReservationTokenController(final ReservationTokenService reservationTokenService,
             final ReservationService reservationService,
-            final CommerceService commerceService,
             final AuthenticatedUserResolver authResolver,
             final ZoneId businessZone) {
         this.reservationTokenService = reservationTokenService;
         this.reservationService = reservationService;
-        this.commerceService = commerceService;
         this.authResolver = authResolver;
         this.displayZone = businessZone;
     }
@@ -90,88 +82,21 @@ public class ReservationTokenController {
         return handleConsumePost(token, null, model, authentication, ReservationToken.Action.REJECT, "reservation.token.action.rejected");
     }
 
-    @PostMapping("/{id}/reject")
-    public String rejectReservationFromCard(@PathVariable("id") final Long reservationId,
-            @RequestParam(value = "page", required = false) final Integer page,
-            @RequestParam(value = "q", required = false) final String query,
-            @RequestParam(value = "status", required = false) final String status,
-            final Authentication authentication,
-            final RedirectAttributes redirectAttributes) {
-        final User currentUser = authResolver.resolveUser(authentication);
-        if (currentUser.getRole() != User.Role.COMMERCE) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-
-        try {
-            reservationService.rejectReservationForCommerce(reservationId, currentUser.getId());
-            redirectAttributes.addFlashAttribute("reservationActionKind", "success");
-            redirectAttributes.addFlashAttribute("reservationActionMessageCode", "commerce.reservations.action.reject.success");
-        } catch (final IllegalArgumentException ex) {
-            if ("WRONG_COMMERCE".equals(ex.getMessage())) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-            }
-            redirectAttributes.addFlashAttribute("reservationActionKind", "error");
-            redirectAttributes.addFlashAttribute("reservationActionMessageCode", "commerce.reservations.action.reject.error");
-        } catch (final IllegalStateException ex) {
-            final String messageCode;
-            if ("ALREADY_CANCELED".equals(ex.getMessage())) {
-                messageCode = "commerce.reservations.action.reject.alreadyCanceled";
-            } else if ("ALREADY_COMPLETED".equals(ex.getMessage())) {
-                messageCode = "commerce.reservations.action.reject.alreadyCompleted";
-            } else if ("INVALID_STATUS".equals(ex.getMessage())) {
-                messageCode = "commerce.reservations.action.reject.invalidStatus";
-            } else {
-                messageCode = "commerce.reservations.action.reject.error";
-            }
-            redirectAttributes.addFlashAttribute("reservationActionKind", "error");
-            redirectAttributes.addFlashAttribute("reservationActionMessageCode", messageCode);
-        }
-
-        return "redirect:" + buildReservationsRedirectUrl(page, query, status);
-    }
-
-    private static String buildReservationsRedirectUrl(final Integer page, final String query, final String status) {
-        final StringBuilder baseUrl = new StringBuilder("/reservations");
-        boolean firstParam = true;
-
-        if (page != null && page > 1) {
-            baseUrl.append(firstParam ? "?" : "&").append("page=").append(page);
-            firstParam = false;
-        }
-
-        if (query != null && !query.isBlank()) {
-            baseUrl.append(firstParam ? "?" : "&").append("q=").append(URLEncoder.encode(query.trim(), StandardCharsets.UTF_8));
-            firstParam = false;
-        }
-
-        if (status != null && !status.isBlank()) {
-            try {
-                Reservation.Status statusFilter = Reservation.Status.valueOf(status.trim().toUpperCase(Locale.ROOT));
-                baseUrl.append(firstParam ? "?" : "&").append("status=").append(statusFilter.name());
-            } catch (final IllegalArgumentException ex) {
-            }
-        }
-
-        return baseUrl.toString();
-    }
-
     private String handleConfirmGet(final String token, final Model model, final Authentication authentication,
-            final ReservationToken.Action action,
-            final String viewName) {
+            final ReservationToken.Action action, final String viewName) {
         if (token == null || token.isBlank()) {
             model.addAttribute("tokenStatus", "invalid");
             return "reservations/token-status";
         }
+
         final TokenValidationResult result = reservationTokenService.validateOnly(token, action);
+
         if (result == TokenValidationResult.SUCCESS || result == TokenValidationResult.ALREADY_USED) {
-            try {
-                verifyReservationOwnership(token, authentication);
-            } catch (final IllegalArgumentException ex) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-            }
+            verifyTokenOwnership(token, authentication);
         }
+
         switch (result) {
-            case SUCCESS:
+            case SUCCESS: {
                 final Long reservationId = reservationTokenService
                         .findReservationIdByToken(token)
                         .orElseThrow(() -> new IllegalStateException("Reservation id missing for token: " + token));
@@ -183,7 +108,7 @@ public class ReservationTokenController {
                 final Reservation res = reservation.get();
                 model.addAttribute("reservation", res);
                 model.addAttribute("token", token);
-                
+
                 if (res.getReservationDate() != null) {
                     model.addAttribute("reservationDateFormatted", formatUtcDateTimeForDisplay(res.getReservationDate()));
                 }
@@ -191,11 +116,12 @@ public class ReservationTokenController {
                     model.addAttribute("pickupConfirmationDateFormatted",
                             formatUtcDateTimeForDisplay(res.getPickupConfirmationDate()));
                 }
-                
+
                 if (action == ReservationToken.Action.ACCEPT) {
                     model.addAttribute("confirmEndpoint", "accept");
                 }
                 return viewName;
+            }
             case ALREADY_USED:
                 return buildAlreadyUsedView(token, model);
             case EXPIRED:
@@ -215,88 +141,66 @@ public class ReservationTokenController {
             model.addAttribute("tokenStatus", "invalid");
             return "reservations/token-status";
         }
-        final TokenValidationResult validate = reservationTokenService.validateOnly(token, action);
-        if (validate == TokenValidationResult.SUCCESS || validate == TokenValidationResult.ALREADY_USED) {
-            try {
-                verifyReservationOwnership(token, authentication);
-            } catch (final IllegalArgumentException ex) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-            }
+
+        final Commerce commerce = authResolver.resolveCommerce(authentication);
+
+        if (action == ReservationToken.Action.ACCEPT) {
+            final ReservationTokenActionResult result = reservationService.acceptReservationTokenWithPickupCode(
+                    token, pickupCode, commerce.getUserId());
+            return mapAcceptTokenResult(result, token, model, actionCode);
         }
-        switch (validate) {
-            case SUCCESS:
-                if (action == ReservationToken.Action.ACCEPT) {
-                    final Long reservationId = reservationTokenService
-                            .findReservationIdByToken(token)
-                            .orElseThrow(() -> new IllegalStateException("Reservation id missing for token: " + token));
-                    final Optional<Reservation> reservation = reservationService.findById(reservationId);
-                    if (reservation.isEmpty()) {
-                        model.addAttribute("tokenStatus", "invalid");
-                        return "reservations/token-status";
-                    }
-                    final Reservation res = reservation.get();
-                    model.addAttribute("reservation", res);
-                    model.addAttribute("token", token);
 
-                    if (pickupCode == null || pickupCode.isBlank()) {
-                        model.addAttribute("confirmEndpoint", "accept");
-                        return "reservations/confirm-action";
-                    }
+        final ReservationTokenActionResult result = reservationService.rejectReservationToken(
+                token, commerce.getUserId());
+        return mapTokenActionResult(result, token, model, actionCode);
+    }
 
-                    final String inputCode = pickupCode == null ? "" : pickupCode.trim().toUpperCase(Locale.ROOT);
-                    final String storedCode = res.getPickupCode() == null ? ""
-                            : res.getPickupCode().trim().toUpperCase(Locale.ROOT);
-                    if (!inputCode.equals(storedCode)) {
-                        model.addAttribute("pickupError", "reservation.token.pickup.invalidCode");
-                        model.addAttribute("confirmEndpoint", "accept");
-                        return "reservations/confirm-action";
-                    }
+    private String mapTokenActionResult(final ReservationTokenActionResult result, final String token,
+            final Model model, final String actionCode) {
+        if (result.isSuccess()) {
+            model.addAttribute("actionCode", actionCode);
+            return "reservations/action-success";
+        }
 
-                    final TokenValidationResult result = reservationTokenService.validateAndConsume(token, action);
-                    if (result != TokenValidationResult.SUCCESS) {
-                        switch (result) {
-                            case ALREADY_USED:
-                                model.addAttribute("tokenStatus", "already-used");
-                                return "reservations/token-status";
-                            case EXPIRED:
-                                model.addAttribute("tokenStatus", "expired");
-                                return "reservations/token-status";
-                            case NOT_FOUND:
-                            default:
-                                model.addAttribute("tokenStatus", "invalid");
-                                return "reservations/token-status";
-                        }
-                    }
-
-                    reservationService.confirmPickup(reservationId);
-                    model.addAttribute("actionCode", actionCode);
-                    return "reservations/action-success";
-                } else {
-                    final TokenValidationResult result = reservationTokenService.validateAndConsume(token, action);
-                    switch (result) {
-                        case SUCCESS:
-                            model.addAttribute("actionCode", actionCode);
-                            return "reservations/action-success";
-                        case ALREADY_USED:
-                            return buildAlreadyUsedView(token, model);
-                        case EXPIRED:
-                            model.addAttribute("tokenStatus", "expired");
-                            return "reservations/token-status";
-                        case NOT_FOUND:
-                        default:
-                            model.addAttribute("tokenStatus", "invalid");
-                            return "reservations/token-status";
-                    }
-                }
+        final ReservationTokenActionError error = result.error().orElseThrow(IllegalStateException::new);
+        switch (error) {
             case ALREADY_USED:
                 return buildAlreadyUsedView(token, model);
             case EXPIRED:
                 model.addAttribute("tokenStatus", "expired");
                 return "reservations/token-status";
+            case WRONG_COMMERCE:
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            case INVALID_TOKEN:
             case NOT_FOUND:
             default:
                 model.addAttribute("tokenStatus", "invalid");
                 return "reservations/token-status";
+        }
+    }
+
+    private String mapAcceptTokenResult(final ReservationTokenActionResult result, final String token,
+            final Model model, final String actionCode) {
+        if (result.isSuccess()) {
+            model.addAttribute("actionCode", actionCode);
+            return "reservations/action-success";
+        }
+
+        final ReservationTokenActionError error = result.error().orElseThrow(IllegalStateException::new);
+        switch (error) {
+            case MISSING_PICKUP_CODE:
+                result.reservation().ifPresent(reservation -> model.addAttribute("reservation", reservation));
+                model.addAttribute("token", token);
+                model.addAttribute("confirmEndpoint", "accept");
+                return "reservations/confirm-action";
+            case INVALID_PICKUP_CODE:
+                result.reservation().ifPresent(reservation -> model.addAttribute("reservation", reservation));
+                model.addAttribute("token", token);
+                model.addAttribute("pickupError", "reservation.token.pickup.invalidCode");
+                model.addAttribute("confirmEndpoint", "accept");
+                return "reservations/confirm-action";
+            default:
+                return mapTokenActionResult(result, token, model, actionCode);
         }
     }
 
@@ -317,16 +221,18 @@ public class ReservationTokenController {
         return "reservations/token-status";
     }
 
-    private void verifyReservationOwnership(final String token, final Authentication authentication) {
-        final User currentUser = authResolver.resolveUser(authentication);
-        if (currentUser.getRole() != User.Role.COMMERCE) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-
-        final Commerce commerce = commerceService.findByUserId(currentUser.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN));
+    /**
+     * Verifies that the authenticated commerce user owns the reservation behind the token.
+     * Used for GET (display-only) endpoints; POST endpoints delegate ownership to the service layer.
+     */
+    private void verifyTokenOwnership(final String token, final Authentication authentication) {
+        final Commerce commerce = authResolver.resolveCommerce(authentication);
         final Long reservationId = reservationTokenService.findReservationIdByToken(token)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN));
-        reservationService.validateReservationBelongsToCommerce(reservationId, commerce.getUserId());
+        try {
+            reservationService.validateReservationBelongsToCommerce(reservationId, commerce.getUserId());
+        } catch (final IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
     }
 }

@@ -73,6 +73,19 @@ public class CommerceOfferController {
         if (bindingResult.hasErrors()) {
             final ModelAndView mav = new ModelAndView("commerce/createOfferView");
             mav.addObject("availableTags", PackTag.values());
+
+            // If the user uploaded an image before validation failed, persist it temporarily
+            // so we can show a preview and avoid forcing the user to re-upload.
+            final MultipartFile image = form.getImage();
+            if (image != null && !image.isEmpty()) {
+                try {
+                    final Image savedImage = imageService.saveImage(image.getBytes(), image.getContentType());
+                    form.setExistingImageId(savedImage.getId());
+                } catch (final IOException ignored) {
+                    // Ignore preview persistence failures; validation errors are primary.
+                }
+            }
+
             return mav;
         }
 
@@ -81,7 +94,7 @@ public class CommerceOfferController {
         try {
             final long commerceId = authResolver.resolveUser(principal).getId();
 
-            Long imageId = null;
+            Long imageId = form.getExistingImageId();
             final MultipartFile image = form.getImage();
             if (image != null && !image.isEmpty()) {
                 final Image savedImage = imageService.saveImage(image.getBytes(), image.getContentType());
@@ -105,7 +118,7 @@ public class CommerceOfferController {
                 redirectAttributes.addFlashAttribute("dashboardAlertMessage", messageSource
                         .getMessage("commerce.dashboard.success.create.pack", null, LocaleContextHolder.getLocale()));
             }
-            return new ModelAndView("redirect:/commerce");
+            return new ModelAndView("redirect:/commerce/products");
 
         } catch (final IllegalArgumentException e) {
             final ModelAndView mav = new ModelAndView("commerce/createOfferView");

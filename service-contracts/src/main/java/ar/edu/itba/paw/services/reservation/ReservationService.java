@@ -31,6 +31,12 @@ public interface ReservationService {
     Reservation confirmPickup(final Long id);
 
     /**
+     * Rejects a RESERVED reservation for a commerce-owned pack without using exceptions
+     * for expected failures.
+     */
+    ReservationRejectionResult tryRejectReservationForCommerce(Long reservationId, Long commerceUserId);
+
+    /**
      * Rejects a RESERVED reservation for a commerce-owned pack.
      * Changes status to CANCELED, restores pack stock and notifies the client.
      *
@@ -53,6 +59,19 @@ public interface ReservationService {
     Reservation rejectReservation(Long reservationId);
 
     /**
+     * Consumes an ACCEPT token after validating commerce ownership and pickup code,
+     * then confirms pickup.
+     */
+    ReservationTokenActionResult acceptReservationTokenWithPickupCode(
+            String token, String pickupCode, Long commerceUserId);
+
+    /**
+     * Consumes a REJECT token after validating commerce ownership,
+     * then rejects the reservation (stock restore + status + email).
+     */
+    ReservationTokenActionResult rejectReservationToken(String token, Long commerceUserId);
+
+    /**
      * Validates a pickup code belongs to a RESERVED reservation owned by the given commerce,
      * then confirms pickup (status → PAID, sets pickupConfirmationDate).
      *
@@ -62,9 +81,12 @@ public interface ReservationService {
      */
     PickupByCodeResult confirmPickupByCode(String pickupCode, Long commerceUserId);
 
-    List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, int page, int pageSize);
+    List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status,
+            boolean excludeAuctionPacks, int page, int pageSize);
 
-    int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status);
+    int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status,
+            boolean excludeAuctionPacks);
 
     boolean hasActiveReservation(Long packId, Long customerId);
+
 }

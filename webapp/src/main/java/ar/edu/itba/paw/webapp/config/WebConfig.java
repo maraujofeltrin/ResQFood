@@ -21,7 +21,6 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
-import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.web.servlet.view.JstlView;
 
@@ -67,10 +66,8 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     @Bean
-    public LocaleResolver localeResolver() {
-        final SessionLocaleResolver resolver = new SessionLocaleResolver();
-        resolver.setDefaultLocale(Locale.forLanguageTag("es"));
-        return resolver;
+    public LocaleResolver localeResolver(final DatabaseAwareLocaleResolver databaseAwareLocaleResolver) {
+        return databaseAwareLocaleResolver;
     }
 
     @Override

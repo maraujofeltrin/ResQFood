@@ -1,27 +1,23 @@
 package ar.edu.itba.paw.webapp.controller.advice;
 
-import ar.edu.itba.paw.services.user.UserService;
+import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
 @ControllerAdvice
 public class NavProfileModelAdvice {
 
-    private final UserService userService;
+    private final AuthenticatedUserResolver authResolver;
 
     @Autowired
-    public NavProfileModelAdvice(final UserService userService) {
-        this.userService = userService;
+    public NavProfileModelAdvice(final AuthenticatedUserResolver authResolver) {
+        this.authResolver = authResolver;
     }
 
     @ModelAttribute("navProfileImageId")
-    public Long navProfileImageId(final Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return null;
-        }
-        return userService.findByEmail(authentication.getName())
+    public Long navProfileImageId() {
+        return authResolver.resolveUserOrEmpty()
                 .map(u -> u.getProfileImageId())
                 .orElse(null);
     }

@@ -1,4 +1,4 @@
-CREATE TABLE commerce_reviews (
+CREATE TABLE IF NOT EXISTS commerce_reviews (
     id               SERIAL PRIMARY KEY,
     commerce_user_id BIGINT NOT NULL,
     client_user_id   BIGINT NOT NULL,

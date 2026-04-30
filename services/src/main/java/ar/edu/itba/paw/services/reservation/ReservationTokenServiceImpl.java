@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 @Service
@@ -47,7 +48,7 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
         reservationTokenDao.markAsUsed(token);
 
         // For REJECT, delegate to ReservationService which handles stock restore + status + email.
-        // For ACCEPT, the controller will verify pickup code and call reservationService.confirmPickup.
+        // Full ACCEPT with pickup-code validation is handled by ReservationService.
         if (action == ReservationToken.Action.REJECT) {
             reservationService.rejectReservation(reservationToken.getReservationId());
         }
@@ -82,7 +83,7 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
         if (reservationToken.isUsed()) {
             return TokenValidationResult.ALREADY_USED;
         }
-        if (LocalDateTime.now().isAfter(reservationToken.getExpiresAt())) {
+        if (LocalDateTime.now(ZoneOffset.UTC).isAfter(reservationToken.getExpiresAt())) {
             return TokenValidationResult.EXPIRED;
         }
         return TokenValidationResult.SUCCESS;

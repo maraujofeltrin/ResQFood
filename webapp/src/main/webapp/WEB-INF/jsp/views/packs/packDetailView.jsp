@@ -14,6 +14,8 @@
     <spring:message code="pack.detail.image.alt" var="packDetailImageAlt"/>
     <spring:message code="pack.detail.commerce.section" var="packDetailCommerceSectionAria"/>
     <c:url var="packCatalogUrl" value="/packs"/>
+    <c:url var="packFavoriteAction" value="/packs/${packId}/favorite"/>
+    <spring:message code="pack.detail.favorite.toggleAria" var="packDetailFavoriteToggleAria"/>
     <main class="pack-detail-main">
         <div class="flex items-center gap-2 mb-8 text-secondary">
             <a href="${packCatalogUrl}" class="group flex items-center font-bold">
@@ -58,7 +60,19 @@
                             <span class="pack-detail-badge pack-detail-badge--stock ${packStockBadgeCssClass}"><c:out value="${packStockBadgeText}"/></span>
                         </c:if>
                     </div>
-                    <h1 class="pack-detail-title font-headline"><c:out value="${packTitle}"/></h1>
+                    <div class="pack-detail-title-row">
+                        <h1 class="pack-detail-title font-headline"><c:out value="${packTitle}"/></h1>
+                        <sec:authorize access="hasRole('CLIENT')">
+                            <form action="${packFavoriteAction}" method="post" class="pack-detail-favorite-form">
+                                <button type="submit"
+                                        class="pack-detail-favorite-btn<c:if test='${packFavoriteSelected}'> pack-detail-favorite-btn--selected</c:if>"
+                                        aria-label="<c:out value='${packDetailFavoriteToggleAria}'/>"
+                                        aria-pressed="${packFavoriteSelected}">
+                                    <span class="material-symbols-outlined pack-detail-favorite-btn__icon" aria-hidden="true">favorite</span>
+                                </button>
+                            </form>
+                        </sec:authorize>
+                    </div>
                     <c:choose>
                         <c:when test="${fn:length(packDescription) > 255}">
                             <p class="pack-detail-description break-words overflow-hidden" id="pack-description-short">
@@ -262,10 +276,12 @@
 
                     <c:choose>
                         <c:when test="${auctionActive}">
-                            <h2 class="pack-aside-heading font-headline flex items-center gap-2">
-                                <span class="material-symbols-outlined text-auction" aria-hidden="true">gavel</span>
-                                <spring:message code="pack.detail.auction.title"/>
-                            </h2>
+                            <div class="pack-aside-heading-row">
+                                <h2 class="pack-aside-heading font-headline flex items-center gap-2 flex-1 min-w-0">
+                                    <span class="material-symbols-outlined text-auction" aria-hidden="true">gavel</span>
+                                    <spring:message code="pack.detail.auction.title"/>
+                                </h2>
+                            </div>
 
                             <div class="pack-price-block mb-4">
                                 <p class="pack-price-block-label"><spring:message code="pack.detail.auction.currentPriceLabel"/></p>
@@ -322,17 +338,41 @@
                             </sec:authorize>
                         </c:when>
                         <c:when test="${auctionPresent}">
-                            <h2 class="pack-aside-heading font-headline flex items-center gap-2">
-                                <span class="material-symbols-outlined text-secondary" aria-hidden="true">gavel</span>
-                                <spring:message code="pack.detail.auction.ended.title"/>
-                            </h2>
+                            <div class="pack-aside-heading-row">
+                                <h2 class="pack-aside-heading font-headline flex items-center gap-2 flex-1 min-w-0">
+                                    <span class="material-symbols-outlined text-secondary" aria-hidden="true">gavel</span>
+                                    <spring:message code="pack.detail.auction.ended.title"/>
+                                </h2>
+                                <sec:authorize access="hasRole('CLIENT')">
+                                    <form action="${packFavoriteAction}" method="post" class="pack-aside-favorite-form">
+                                        <button type="submit"
+                                                class="pack-aside-favorite-btn<c:if test='${packFavoriteSelected}'> pack-aside-favorite-btn--selected</c:if>"
+                                                aria-label="<c:out value='${packDetailFavoriteToggleAria}'/>"
+                                                aria-pressed="${packFavoriteSelected}">
+                                            <span class="material-symbols-outlined pack-aside-favorite-icon" aria-hidden="true">favorite</span>
+                                        </button>
+                                    </form>
+                                </sec:authorize>
+                            </div>
                             <p class="text-secondary text-sm mb-2"><spring:message code="pack.detail.auction.ended.body"/></p>
                             <p class="text-sm text-on-surface"><spring:message code="pack.detail.auction.endsAt"/>
                                 <span class="font-semibold"><c:out value="${auctionEndDisplay}"/></span>
                             </p>
                         </c:when>
                         <c:otherwise>
-                    <h2 class="pack-aside-heading font-headline"><spring:message code="pack.detail.reserve.title"/></h2>
+                            <div class="pack-aside-heading-row">
+                                <h2 class="pack-aside-heading font-headline flex-1 min-w-0"><spring:message code="pack.detail.reserve.title"/></h2>
+                                <sec:authorize access="hasRole('CLIENT')">
+                                    <form action="${packFavoriteAction}" method="post" class="pack-aside-favorite-form">
+                                        <button type="submit"
+                                                class="pack-aside-favorite-btn<c:if test='${packFavoriteSelected}'> pack-aside-favorite-btn--selected</c:if>"
+                                                aria-label="<c:out value='${packDetailFavoriteToggleAria}'/>"
+                                                aria-pressed="${packFavoriteSelected}">
+                                            <span class="material-symbols-outlined pack-aside-favorite-icon" aria-hidden="true">favorite</span>
+                                        </button>
+                                    </form>
+                                </sec:authorize>
+                            </div>
 
                     <div class="pack-price-block mb-4">
                         <p class="pack-price-block-label"><spring:message code="pack.detail.price.perPack"/></p>

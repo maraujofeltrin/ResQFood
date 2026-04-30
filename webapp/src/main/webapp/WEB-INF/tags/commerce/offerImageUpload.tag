@@ -14,6 +14,8 @@
         <div class="relative flex flex-col items-center justify-center border-2 border-dashed border-[#C2C9C2] rounded-xl overflow-hidden bg-surface-container-low hover:bg-surface-container-high transition-colors" style="min-height: 16rem;">
             <!-- Real Input -->
             <input type="file" id="image-input" name="${path}" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" />
+            <!-- Hidden binding to carry an existing/persisted image id between requests -->
+            <form:hidden path="existingImageId" id="existing-image-id" />
 
             <!-- Empty state -->
             <div id="image-empty-state" class="absolute inset-0 flex flex-col items-center justify-center p-6 w-full h-full">
@@ -53,6 +55,15 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!imageInput) return;
     var maxFileSize = 5 * 1024 * 1024;
     var allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    var existingImageIdInput = document.getElementById('existing-image-id');
+    var contextPath = '${pageContext.request.contextPath}';
+
+    // If an existing image id was provided by the server, show it on load.
+    if (existingImageIdInput && existingImageIdInput.value) {
+        previewImg.src = contextPath + '/images/' + existingImageIdInput.value;
+        emptyState.classList.add('hidden');
+        previewState.classList.remove('hidden');
+    }
 
     function showEmptyState() {
         previewImg.src = '';
@@ -67,7 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var existingErrors = errorContainer.querySelectorAll('.image-js-error');
         existingErrors.forEach(function(e) { e.remove(); });
 
-        if (file) {
+            if (file) {
             var errorMsg = '';
             if (file.size > maxFileSize) {
                 errorMsg = "<spring:message code='commerce.createPack.validation.image.maxSize' javaScriptEscape='true'/>";
@@ -89,6 +100,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     previewImg.src = e.target.result;
                     emptyState.classList.add('hidden');
                     previewState.classList.remove('hidden');
+                    if (existingImageIdInput) existingImageIdInput.value = '';
                 }
                 reader.readAsDataURL(file);
             }
@@ -100,6 +112,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (removeBtn) {
         removeBtn.addEventListener('click', function() {
             imageInput.value = '';
+            if (existingImageIdInput) existingImageIdInput.value = '';
             showEmptyState();
         });
     }
