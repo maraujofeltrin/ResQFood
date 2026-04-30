@@ -31,6 +31,47 @@ uri="http://itba.edu.ar/paw/tags" %>
             <spring:message code="commerce.sidebar.metrics" />
           </p>
         </div>
+        <form
+          id="filterForm"
+          method="get"
+          action="${pageContext.request.contextPath}/commerce/metrics"
+          class="flex items-center gap-3"
+          onsubmit="document.getElementById('daysInput').value = ''"
+        >
+          <input
+            type="hidden"
+            id="daysInput"
+            name="days"
+            value="<c:out value='${days}'/>"
+          />
+          <label class="text-sm text-secondary"
+            ><spring:message code="commerce.metrics.filter.from"
+          /></label>
+          <input
+            id="fromInput"
+            type="date"
+            name="from"
+            class="pack-form-control"
+            value="<c:out value='${from}'/>"
+          />
+          <label class="text-sm text-secondary"
+            ><spring:message code="commerce.metrics.filter.to"
+          /></label>
+          <input
+            id="toInput"
+            type="date"
+            name="to"
+            class="pack-form-control"
+            value="<c:out value='${to}'/>"
+          />
+          <button
+            id="applyBtn"
+            type="submit"
+            class="px-4 py-2 bg-primary text-on-primary rounded-full"
+          >
+            <spring:message code="commerce.metrics.filter.apply" />
+          </button>
+        </form>
       </header>
 
       <section>
@@ -103,48 +144,6 @@ uri="http://itba.edu.ar/paw/tags" %>
                 <spring:message code="commerce.metrics.last30" />
               </button>
             </div>
-
-            <form
-              id="filterForm"
-              method="get"
-              action="${pageContext.request.contextPath}/commerce/metrics"
-              class="flex items-center gap-3"
-              onsubmit="document.getElementById('daysInput').value = ''"
-            >
-              <input
-                type="hidden"
-                id="daysInput"
-                name="days"
-                value="<c:out value='${days}'/>"
-              />
-              <label class="text-sm text-secondary"
-                ><spring:message code="commerce.metrics.filter.from"
-              /></label>
-              <input
-                id="fromInput"
-                type="date"
-                name="from"
-                class="pack-form-control"
-                value="<c:out value='${from}'/>"
-              />
-              <label class="text-sm text-secondary"
-                ><spring:message code="commerce.metrics.filter.to"
-              /></label>
-              <input
-                id="toInput"
-                type="date"
-                name="to"
-                class="pack-form-control"
-                value="<c:out value='${to}'/>"
-              />
-              <button
-                id="applyBtn"
-                type="submit"
-                class="px-4 py-2 bg-primary text-on-primary rounded-full"
-              >
-                <spring:message code="commerce.metrics.filter.apply" />
-              </button>
-            </form>
           </div>
           <canvas id="salesChart" height="120"></canvas>
         </div>
