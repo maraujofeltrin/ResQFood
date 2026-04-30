@@ -38,20 +38,7 @@
                                  alt="<c:out value='${packDetailImageAlt}'/>"/>
                         </c:otherwise>
                     </c:choose>
-                    <c:if test="${manageable}">
-                      <div class="absolute top-3 right-3 flex gap-2 z-10">
-                        <button type="button"
-                                onclick="window.location.href='${pageContext.request.contextPath}/commerce/edit-pack/${packId}'"
-                                class="bg-white/90 backdrop-blur text-secondary hover:text-primary p-2 flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform">
-                            <span class="material-symbols-outlined text-[1.25rem]">edit</span>
-                        </button>
-                        <button type="button"
-                                onclick="openDeleteModal('${packId}')"
-                                class="bg-white/90 backdrop-blur text-error hover:text-on-error hover:bg-error p-2 flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform">
-                            <span class="material-symbols-outlined text-[1.25rem]">delete</span>
-                        </button>
-                      </div>
-                    </c:if>
+
                 </div>
 
                 <div class="pack-detail-intro">
@@ -236,6 +223,22 @@
             </div>
 
             <aside class="pack-detail-aside flex flex-col gap-4">
+                <c:if test="${manageable}">
+                    <div class="pack-manage-actions">
+                        <button type="button"
+                                onclick="window.location.href='${pageContext.request.contextPath}/commerce/edit-pack/${packId}'"
+                                class="pack-manage-btn pack-manage-btn--edit">
+                            <span class="material-symbols-outlined pack-manage-btn__icon">edit</span>
+                            <span class="pack-manage-btn__label"><spring:message code="pack.detail.manage.edit"/></span>
+                        </button>
+                        <button type="button"
+                                onclick="openDeleteModal('${packId}')"
+                                class="pack-manage-btn pack-manage-btn--delete">
+                            <span class="material-symbols-outlined pack-manage-btn__icon">delete</span>
+                            <span class="pack-manage-btn__label"><spring:message code="pack.detail.manage.delete"/></span>
+                        </button>
+                    </div>
+                </c:if>
                 <c:if test="${clientHasActiveReservation}">
                     <div class="pack-feedback pack-feedback--warning flex items-center justify-between shadow-sm" role="alert">
                         <span><spring:message code="pack.detail.reserve.alreadyReserved"/></span>

@@ -1,5 +1,62 @@
 /* ── Pack detail aside (reservation column) ──────────────── */
 
+/* ── Owner management actions ──────────────── */
+
+.pack-manage-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.pack-manage-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pack-manage-btn:active {
+  transform: scale(0.97);
+}
+
+.pack-manage-btn__icon {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.pack-manage-btn--edit {
+  background-color: #F3F5F3;
+  color: #191C1A;
+  border-color: #D0D5D0;
+}
+
+.pack-manage-btn--edit:hover {
+  background-color: #E8EDE8;
+  border-color: #059669;
+  color: #059669;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.10);
+}
+
+.pack-manage-btn--delete {
+  background-color: #FFF5F5;
+  color: #BA1A1A;
+  border-color: #FFDAD6;
+}
+
+.pack-manage-btn--delete:hover {
+  background-color: #FFDAD6;
+  border-color: #BA1A1A;
+  color: #93000A;
+  box-shadow: 0 4px 12px rgba(186, 26, 26, 0.12);
+}
+
 .pack-detail-aside {
   grid-column: 1 / -1;
 }
