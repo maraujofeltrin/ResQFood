@@ -43,7 +43,7 @@ public class EmailVerificationController {
         final User verifiedUser = emailVerificationTokenService.verifyEmailAndGetUser(token)
                 .orElse(null);
         if (verifiedUser == null) {
-            return "redirect:/verify-email/expired";
+            return "redirect:/verify-email/resend?expired=true";
         }
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(verifiedUser.getEmail());
@@ -58,17 +58,17 @@ public class EmailVerificationController {
         return "redirect:/?verified=true";
     }
 
-    @GetMapping("/expired")
-    public String expired(final Model model) {
+    @GetMapping("/resend")
+    public String resendView(final Model model) {
         model.addAttribute("resendForm", new EmailVerificationResendForm());
-        return "verify-email/expired";
+        return "verify-email/resend";
     }
 
     @PostMapping("/resend")
     public String resend(@Valid @ModelAttribute("resendForm") final EmailVerificationResendForm form,
             final BindingResult errors) {
         if (errors.hasErrors()) {
-            return "verify-email/expired";
+            return "verify-email/resend";
         }
 
         final String appBaseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
