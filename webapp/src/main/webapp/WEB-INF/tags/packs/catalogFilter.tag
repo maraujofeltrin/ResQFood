@@ -112,11 +112,12 @@
             <h4 class="text-xs font-bold uppercase tracking-wider text-secondary mb-4 flex items-center justify-between">
                 <spring:message code="pack.catalog.filter.location"/>
             </h4>
-            <div class="relative">
-                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" style="font-size: 20px;">location_on</span>
+            <div class="relative w-full max-w-full overflow-hidden rounded-full shrink-0">
+                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none shrink-0" style="font-size: 20px;">location_on</span>
                 <select name="location"
                         onchange="this.form.submit()"
-                        class="w-full pl-11 pr-4 py-2.5 bg-surface-container-low text-sm font-medium text-on-surface rounded-full border border-outline-variant/30 hover:border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors duration-200 shadow-sm appearance-none cursor-pointer">
+                        class="w-full min-w-0 pl-11 pr-8 py-2.5 bg-surface-container-low text-sm font-medium text-on-surface rounded-full border border-outline-variant/30 hover:border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors duration-200 shadow-sm appearance-none cursor-pointer truncate"
+                        style="text-overflow: ellipsis;">
                     <option value=""><spring:message code="pack.catalog.filter.location.any"/></option>
                     <c:forEach var="muni" items="${availableMunicipalities}">
                         <option value="${muni.name()}" ${selectedMunicipality != null && selectedMunicipality == muni ? 'selected' : ''}>
