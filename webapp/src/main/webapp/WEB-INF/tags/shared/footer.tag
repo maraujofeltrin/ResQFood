@@ -1,6 +1,6 @@
 <%@ tag language="java" pageEncoding="UTF-8" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
-<footer class="w-full py-12 px-8 mt-20 bg-surface-container-high font-body text-sm leading-relaxed">
+<footer class="w-full py-12 px-8 mt-20 bg-surface-container-high font-body text-sm leading-relaxed relative z-50">
   <div class="flex flex-col md:flex-row justify-between items-start gap-10 max-w-7xl mx-auto">
     <div>
       <span class="text-xl font-bold italic text-primary mb-3 block font-headline"><spring:message code="app.brand"/></span>
