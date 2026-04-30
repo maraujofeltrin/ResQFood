@@ -21,12 +21,14 @@
     <org.postgresql.version>42.2.5</org.postgresql.version>
     <org.flywaydb.version>8.5.13</org.flywaydb.version>
     <org.hibernate.validator.version>6.2.4.Final</org.hibernate.validator.version>
-    <org.mockito.version>5.5.0</org.mockito.version>
+    <org.mockito.version>5.23.0</org.mockito.version>
     <org.springframework.security.version>5.8.10</org.springframework.security.version>
     <org.thymeleaf.version>3.1.2.RELEASE</org.thymeleaf.version>
     <org.slf4j.version>2.0.16</org.slf4j.version>
     <ch.qos.logback.version>1.5.14</ch.qos.logback.version>
     <org.logback-extensions.version>0.1.5</org.logback-extensions.version>
+    <org.junit.version>5.11.0</org.junit.version>
+    <org.hsqldb.version>2.7.4</org.hsqldb.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -74,19 +76,21 @@
       <dependency>
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
-        <version>5.11.0</version>
+        <version>${org.junit.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-api</artifactId>
+        <version>${org.junit.version}</version>
         <scope>test</scope>
       </dependency>
       <!-- Optionally: parameterized tests support -->
       <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-params</artifactId>
+        <version>${org.junit.version}</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -99,11 +103,24 @@
         <groupId>org.mockito</groupId>
         <artifactId>mockito-core</artifactId>
         <version>${org.mockito.version}</version>
+        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.mockito</groupId>
         <artifactId>mockito-junit-jupiter</artifactId>
         <version>${org.mockito.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-test</artifactId>
+        <version>${org.springframework.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.hsqldb</groupId>
+        <artifactId>hsqldb</artifactId>
+        <version>${org.hsqldb.version}</version>
+        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>commons-fileupload</groupId>
