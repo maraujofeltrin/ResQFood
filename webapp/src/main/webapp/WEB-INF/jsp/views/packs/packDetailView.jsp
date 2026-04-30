@@ -259,6 +259,22 @@
                         </a>
                     </div>
                 </c:if>
+
+                <c:if test="${isOwner && auctionActive}">
+                    <form id="cancelAuctionForm${auctionId}" 
+                        action="${pageContext.request.contextPath}/commerce/auctions/${auctionId}/cancel" 
+                        method="post" 
+                        style="display: none;">
+                    </form>
+                    <spring:message code="commerce.auction.cancel.confirm" var="confirmMessage" />
+                    <button type="button"
+                            onclick="if (confirm('${confirmMessage}')) { document.getElementById('cancelAuctionForm${auctionId}').submit(); }"
+                            class="w-full bg-error text-on-error px-6 py-3 rounded-full text-base font-bold flex items-center justify-center gap-2 hover:scale-105 transition-transform shadow-md">
+                        <span class="material-symbols-outlined font-bold" style="font-size: 20px;">cancel</span>
+                        <spring:message code="commerce.auction.cancel.button" />
+                    </button>
+                </c:if>
+
                 <div class="pack-aside-card">
                     <c:if test="${auctionAlertKind eq 'success'}">
                         <p class="pack-feedback pack-feedback--success" role="alert"><c:out value="${auctionAlertMessage}"/></p>

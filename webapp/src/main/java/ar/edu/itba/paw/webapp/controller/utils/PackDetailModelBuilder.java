@@ -112,6 +112,7 @@ public class PackDetailModelBuilder {
         mav.addObject("auctionActive", Boolean.valueOf(auctionActive));
         if (auctionPresent) {
             final long auctionId = auctionOpt.get().getId();
+            mav.addObject("auctionId", auctionId);
             final List<Bid> bidHistory = auctionService.getBidHistory(auctionId);
             final List<BidHistoryViewHelper.BidHistoryRow> bidHistoryItems = BidHistoryViewHelper.buildRows(
                     bidHistory, clientService, messageSource, locale);
