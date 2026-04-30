@@ -32,6 +32,7 @@ uri="http://itba.edu.ar/paw/tags" %>
           method="post"
           action="${pageContext.request.contextPath}/verify-email/resend"
           class="space-y-5"
+          novalidate="novalidate"
         >
           <div>
             <label
@@ -54,6 +55,7 @@ uri="http://itba.edu.ar/paw/tags" %>
             <form:errors
               path="email"
               cssClass="text-error text-sm mt-1 block"
+              element="p"
             />
           </div>
           <button

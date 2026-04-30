@@ -36,6 +36,7 @@ uri="http://itba.edu.ar/paw/tags" %>
           action="${postPath}"
           method="post"
           class="space-y-5"
+          novalidate="novalidate"
         >
           <c:set
             var="registerBinding"
