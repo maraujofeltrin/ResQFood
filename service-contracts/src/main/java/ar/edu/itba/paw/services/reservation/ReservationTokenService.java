@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.reservation;
 
 import ar.edu.itba.paw.models.reservation.ReservationToken;
+import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
 
 import java.util.Optional;
 
@@ -15,7 +16,18 @@ public interface ReservationTokenService {
 
     TokenValidationResult validateOnly(String token, ReservationToken.Action action);
 
-    TokenValidationResult validateAndConsume(String token, ReservationToken.Action action);
-
     Optional<Long> findReservationIdByToken(String token);
+
+    /**
+     * Consumes an ACCEPT token after validating commerce ownership and pickup code,
+     * then confirms pickup.
+     */
+    ReservationServiceResult<ReservationTokenActionError> acceptReservationTokenWithPickupCode(
+            String token, String pickupCode, Long commerceUserId);
+
+    /**
+     * Consumes a REJECT token after validating commerce ownership,
+     * then rejects the reservation (stock restore + status + email).
+     */
+    ReservationServiceResult<ReservationTokenActionError> rejectReservationToken(String token, Long commerceUserId);
 }

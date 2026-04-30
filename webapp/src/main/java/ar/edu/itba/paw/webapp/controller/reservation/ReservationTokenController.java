@@ -5,9 +5,9 @@ import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
 import ar.edu.itba.paw.services.reservation.ReservationService;
-import ar.edu.itba.paw.services.reservation.ReservationTokenActionResult;
 import ar.edu.itba.paw.services.reservation.ReservationTokenService;
 import ar.edu.itba.paw.services.reservation.ReservationTokenService.TokenValidationResult;
+import ar.edu.itba.paw.services.reservation.ReservationServiceResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -145,17 +145,17 @@ public class ReservationTokenController {
         final Commerce commerce = authResolver.resolveCommerce(authentication);
 
         if (action == ReservationToken.Action.ACCEPT) {
-            final ReservationTokenActionResult result = reservationService.acceptReservationTokenWithPickupCode(
+            final ReservationServiceResult<ReservationTokenActionError> result = reservationTokenService.acceptReservationTokenWithPickupCode(
                     token, pickupCode, commerce.getUserId());
             return mapAcceptTokenResult(result, token, model, actionCode);
         }
 
-        final ReservationTokenActionResult result = reservationService.rejectReservationToken(
+        final ReservationServiceResult<ReservationTokenActionError> result = reservationTokenService.rejectReservationToken(
                 token, commerce.getUserId());
         return mapTokenActionResult(result, token, model, actionCode);
     }
 
-    private String mapTokenActionResult(final ReservationTokenActionResult result, final String token,
+    private String mapTokenActionResult(final ReservationServiceResult<ReservationTokenActionError> result, final String token,
             final Model model, final String actionCode) {
         if (result.isSuccess()) {
             model.addAttribute("actionCode", actionCode);
@@ -179,7 +179,7 @@ public class ReservationTokenController {
         }
     }
 
-    private String mapAcceptTokenResult(final ReservationTokenActionResult result, final String token,
+    private String mapAcceptTokenResult(final ReservationServiceResult<ReservationTokenActionError> result, final String token,
             final Model model, final String actionCode) {
         if (result.isSuccess()) {
             model.addAttribute("actionCode", actionCode);

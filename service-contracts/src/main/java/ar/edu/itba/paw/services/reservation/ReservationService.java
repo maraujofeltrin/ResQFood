@@ -1,6 +1,8 @@
 package ar.edu.itba.paw.services.reservation;
 
+import ar.edu.itba.paw.models.reservation.PickupByCodeError;
 import ar.edu.itba.paw.models.reservation.Reservation;
+import ar.edu.itba.paw.models.reservation.ReservationRejectionError;
 import ar.edu.itba.paw.services.pack.DirectReservationCheck;
 
 import java.util.List;
@@ -34,7 +36,7 @@ public interface ReservationService {
      * Rejects a RESERVED reservation for a commerce-owned pack without using exceptions
      * for expected failures.
      */
-    ReservationRejectionResult tryRejectReservationForCommerce(Long reservationId, Long commerceUserId);
+    ReservationServiceResult<ReservationRejectionError> tryRejectReservationForCommerce(Long reservationId, Long commerceUserId);
 
     /**
      * Rejects a RESERVED reservation for a commerce-owned pack.
@@ -59,27 +61,14 @@ public interface ReservationService {
     Reservation rejectReservation(Long reservationId);
 
     /**
-     * Consumes an ACCEPT token after validating commerce ownership and pickup code,
-     * then confirms pickup.
-     */
-    ReservationTokenActionResult acceptReservationTokenWithPickupCode(
-            String token, String pickupCode, Long commerceUserId);
-
-    /**
-     * Consumes a REJECT token after validating commerce ownership,
-     * then rejects the reservation (stock restore + status + email).
-     */
-    ReservationTokenActionResult rejectReservationToken(String token, Long commerceUserId);
-
-    /**
      * Validates a pickup code belongs to a RESERVED reservation owned by the given commerce,
-     * then confirms pickup (status → PAID, sets pickupConfirmationDate).
+     * then confirms pickup (status -> PAID, sets pickupConfirmationDate).
      *
      * @param pickupCode     the 5-char alphanumeric code shown by the client
      * @param commerceUserId the user-id of the authenticated commerce
      * @return success with confirmation, or a typed failure
      */
-    PickupByCodeResult confirmPickupByCode(String pickupCode, Long commerceUserId);
+    ReservationServiceResult<PickupByCodeError> confirmPickupByCode(String pickupCode, Long commerceUserId);
 
     List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status,
             boolean excludeAuctionPacks, int page, int pageSize);

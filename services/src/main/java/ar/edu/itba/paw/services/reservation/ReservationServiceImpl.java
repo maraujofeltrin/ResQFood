@@ -6,7 +6,6 @@ import ar.edu.itba.paw.models.reservation.PickupByCodeError;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationRejectionError;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
-import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.persistence.AuctionDao;
@@ -31,7 +30,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -125,7 +123,7 @@ public class ReservationServiceImpl implements ReservationService {
         final User commerceUser = userService.findById(commerceId)
                 .orElseThrow(() -> new IllegalStateException("Commerce user not found for id: " + commerceId));
         final String commerceEmail = commerceUser.getEmail();
-        final Locale commerceLocale = commerceUser.getLocale();
+        final java.util.Locale commerceLocale = commerceUser.getLocale();
 
         final String pickupDateStr = computePickupDateStr(reservation);
         final boolean auctionReservation = baseUrl == null || baseUrl.trim().isEmpty();
@@ -227,7 +225,7 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         try {
-            final ar.edu.itba.paw.models.pack.Pack pack = packDao.findById(reservation.getPackId()).orElse(null);
+            final Pack pack = packDao.findById(reservation.getPackId()).orElse(null);
             if (pack != null) {
                 final Long commerceId = pack.getCommerceId();
                 if (commerceId != null) {
@@ -272,18 +270,18 @@ public class ReservationServiceImpl implements ReservationService {
     @Transactional
     @Override
     public Reservation rejectReservationForCommerce(final Long reservationId, final Long commerceUserId) {
-        final ReservationRejectionResult result = tryRejectReservationForCommerce(reservationId, commerceUserId);
+        final ReservationServiceResult<ReservationRejectionError> result = tryRejectReservationForCommerce(reservationId, commerceUserId);
         return result.reservation().orElseThrow(() -> toRejectionException(result));
     }
 
     @Transactional
     @Override
-    public ReservationRejectionResult tryRejectReservationForCommerce(final Long reservationId,
+    public ReservationServiceResult<ReservationRejectionError> tryRejectReservationForCommerce(final Long reservationId,
             final Long commerceUserId) {
         final Optional<ReservationRejectionError> ownershipError =
                 resolveReservationOwnershipError(reservationId, commerceUserId);
         if (ownershipError.isPresent()) {
-            return ReservationRejectionResult.failure(ownershipError.get());
+            return ReservationServiceResult.failure(ownershipError.get());
         }
         return rejectReservationInternal(reservationId);
     }
@@ -291,35 +289,35 @@ public class ReservationServiceImpl implements ReservationService {
     @Transactional
     @Override
     public Reservation rejectReservation(final Long reservationId) {
-        final ReservationRejectionResult result = rejectReservationInternal(reservationId);
+        final ReservationServiceResult<ReservationRejectionError> result = rejectReservationInternal(reservationId);
         return result.reservation().orElseThrow(() -> toRejectionException(result));
     }
 
-    private ReservationRejectionResult rejectReservationInternal(final Long reservationId) {
+    private ReservationServiceResult<ReservationRejectionError> rejectReservationInternal(final Long reservationId) {
         final Reservation reservation = reservationDao.findById(reservationId)
                 .orElse(null);
         if (reservation == null) {
-            return ReservationRejectionResult.failure(ReservationRejectionError.RESERVATION_NOT_FOUND);
+            return ReservationServiceResult.failure(ReservationRejectionError.RESERVATION_NOT_FOUND);
         }
 
         final Reservation.Status status = reservation.getStatus();
         if (status == Reservation.Status.CANCELED) {
-            return ReservationRejectionResult.failure(ReservationRejectionError.ALREADY_CANCELED);
+            return ReservationServiceResult.failure(ReservationRejectionError.ALREADY_CANCELED);
         }
         if (status == Reservation.Status.PAID) {
-            return ReservationRejectionResult.failure(ReservationRejectionError.ALREADY_COMPLETED);
+            return ReservationServiceResult.failure(ReservationRejectionError.ALREADY_COMPLETED);
         }
         if (status != Reservation.Status.RESERVED) {
-            return ReservationRejectionResult.failure(ReservationRejectionError.INVALID_STATUS);
+            return ReservationServiceResult.failure(ReservationRejectionError.INVALID_STATUS);
         }
 
         if (reservation.getPackId() == null) {
-            return ReservationRejectionResult.failure(ReservationRejectionError.PACK_NOT_FOUND);
+            return ReservationServiceResult.failure(ReservationRejectionError.PACK_NOT_FOUND);
         }
 
         final int quantity = reservation.getQuantity() == null ? 1 : reservation.getQuantity();
         if (!packDao.incrementStock(reservation.getPackId(), quantity)) {
-            return ReservationRejectionResult.failure(ReservationRejectionError.STOCK_RESTORE_FAILED);
+            return ReservationServiceResult.failure(ReservationRejectionError.STOCK_RESTORE_FAILED);
         }
 
         final Reservation canceledReservation = reservationDao.updateStatus(reservation.getId(), Reservation.Status.CANCELED);
@@ -330,10 +328,10 @@ public class ReservationServiceImpl implements ReservationService {
 
         reservationMailService.sendReservationRejectedToClient(canceledReservation, clientEmail,
             clientUser.getLocale());
-        return ReservationRejectionResult.success(canceledReservation);
+        return ReservationServiceResult.success(canceledReservation);
     }
 
-    private RuntimeException toRejectionException(final ReservationRejectionResult result) {
+    private RuntimeException toRejectionException(final ReservationServiceResult<ReservationRejectionError> result) {
         final ReservationRejectionError error = result.error()
                 .orElse(ReservationRejectionError.INVALID_STATUS);
         switch (error) {
@@ -362,6 +360,11 @@ public class ReservationServiceImpl implements ReservationService {
             return Optional.of(ReservationRejectionError.RESERVATION_NOT_FOUND);
         }
 
+        return resolveOwnershipError(reservation, commerceUserId);
+    }
+
+    private Optional<ReservationRejectionError> resolveOwnershipError(final Reservation reservation,
+            final Long commerceUserId) {
         if (reservation.getPackId() == null) {
             return Optional.of(ReservationRejectionError.PACK_NOT_FOUND);
         }
@@ -406,152 +409,43 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Transactional
     @Override
-    public ReservationTokenActionResult acceptReservationTokenWithPickupCode(final String token,
-            final String pickupCode, final Long commerceUserId) {
-        if (token == null || token.isBlank()) {
-            return ReservationTokenActionResult.failure(ReservationTokenActionError.INVALID_TOKEN);
-        }
-
-        final Optional<ReservationToken> tokenOpt = reservationTokenDao.findByToken(token);
-        if (tokenOpt.isEmpty()) {
-            return ReservationTokenActionResult.failure(ReservationTokenActionError.NOT_FOUND);
-        }
-        final ReservationToken reservationToken = tokenOpt.get();
-        if (reservationToken.getAction() != ReservationToken.Action.ACCEPT) {
-            return ReservationTokenActionResult.failure(ReservationTokenActionError.NOT_FOUND);
-        }
-
-        final Optional<Reservation> reservationOpt = reservationDao.findById(reservationToken.getReservationId());
-        if (reservationOpt.isEmpty()) {
-            return ReservationTokenActionResult.failure(ReservationTokenActionError.NOT_FOUND);
-        }
-        final Reservation reservation = reservationOpt.get();
-
-        if (reservation.getStatus() == Reservation.Status.PAID
-                || reservation.getStatus() == Reservation.Status.CANCELED
-                || reservationToken.isUsed()) {
-            return ReservationTokenActionResult.failure(ReservationTokenActionError.ALREADY_USED, reservation);
-        }
-        if (LocalDateTime.now(ZoneOffset.UTC).isAfter(reservationToken.getExpiresAt())) {
-            return ReservationTokenActionResult.failure(ReservationTokenActionError.EXPIRED, reservation);
-        }
-
-        final Optional<ReservationRejectionError> ownershipError =
-                resolveReservationOwnershipError(reservation.getId(), commerceUserId);
-        if (ownershipError.isPresent()) {
-            return ReservationTokenActionResult.failure(
-                    ownershipError.get() == ReservationRejectionError.WRONG_COMMERCE
-                            ? ReservationTokenActionError.WRONG_COMMERCE
-                            : ReservationTokenActionError.NOT_FOUND,
-                    reservation);
-        }
-
+    public ReservationServiceResult<PickupByCodeError> confirmPickupByCode(final String pickupCode, final Long commerceUserId) {
         if (pickupCode == null || pickupCode.isBlank()) {
-            return ReservationTokenActionResult.failure(ReservationTokenActionError.MISSING_PICKUP_CODE, reservation);
-        }
-
-        final String inputCode = pickupCode.trim().toUpperCase(Locale.ROOT);
-        final String storedCode = reservation.getPickupCode() == null ? ""
-                : reservation.getPickupCode().trim().toUpperCase(Locale.ROOT);
-        if (!inputCode.equals(storedCode)) {
-            return ReservationTokenActionResult.failure(ReservationTokenActionError.INVALID_PICKUP_CODE, reservation);
-        }
-
-        reservationTokenDao.markAsUsed(token);
-        final Reservation confirmed = confirmPickup(reservation.getId());
-        return ReservationTokenActionResult.success(confirmed);
-    }
-
-    @Transactional
-    @Override
-    public ReservationTokenActionResult rejectReservationToken(final String token, final Long commerceUserId) {
-        if (token == null || token.isBlank()) {
-            return ReservationTokenActionResult.failure(ReservationTokenActionError.INVALID_TOKEN);
-        }
-
-        final Optional<ReservationToken> tokenOpt = reservationTokenDao.findByToken(token);
-        if (tokenOpt.isEmpty()) {
-            return ReservationTokenActionResult.failure(ReservationTokenActionError.NOT_FOUND);
-        }
-        final ReservationToken reservationToken = tokenOpt.get();
-        if (reservationToken.getAction() != ReservationToken.Action.REJECT) {
-            return ReservationTokenActionResult.failure(ReservationTokenActionError.NOT_FOUND);
-        }
-
-        final Optional<Reservation> reservationOpt = reservationDao.findById(reservationToken.getReservationId());
-        if (reservationOpt.isEmpty()) {
-            return ReservationTokenActionResult.failure(ReservationTokenActionError.NOT_FOUND);
-        }
-        final Reservation reservation = reservationOpt.get();
-
-        if (reservation.getStatus() == Reservation.Status.PAID
-                || reservation.getStatus() == Reservation.Status.CANCELED
-                || reservationToken.isUsed()) {
-            return ReservationTokenActionResult.failure(ReservationTokenActionError.ALREADY_USED, reservation);
-        }
-        if (LocalDateTime.now(ZoneOffset.UTC).isAfter(reservationToken.getExpiresAt())) {
-            return ReservationTokenActionResult.failure(ReservationTokenActionError.EXPIRED, reservation);
-        }
-
-        final Optional<ReservationRejectionError> ownershipError =
-                resolveReservationOwnershipError(reservation.getId(), commerceUserId);
-        if (ownershipError.isPresent()) {
-            return ReservationTokenActionResult.failure(
-                    ownershipError.get() == ReservationRejectionError.WRONG_COMMERCE
-                            ? ReservationTokenActionError.WRONG_COMMERCE
-                            : ReservationTokenActionError.NOT_FOUND,
-                    reservation);
-        }
-
-        reservationTokenDao.markAsUsed(token);
-
-        final ReservationRejectionResult rejectionResult = rejectReservationInternal(reservation.getId());
-        if (!rejectionResult.isSuccess()) {
-            return ReservationTokenActionResult.failure(ReservationTokenActionError.NOT_FOUND, reservation);
-        }
-        return ReservationTokenActionResult.success(rejectionResult.reservation().orElseThrow());
-    }
-
-    @Transactional
-    @Override
-    public PickupByCodeResult confirmPickupByCode(final String pickupCode, final Long commerceUserId) {
-        if (pickupCode == null || pickupCode.isBlank()) {
-            return PickupByCodeResult.failure(PickupByCodeError.EMPTY);
+            return ReservationServiceResult.failure(PickupByCodeError.EMPTY);
         }
 
         final String normalizedCode = pickupCode.trim().toUpperCase(java.util.Locale.ROOT);
 
         final Optional<Reservation> resOpt = reservationDao.findByPickupCode(normalizedCode);
         if (resOpt.isEmpty()) {
-            return PickupByCodeResult.failure(PickupByCodeError.NOT_FOUND);
+            return ReservationServiceResult.failure(PickupByCodeError.NOT_FOUND);
         }
         final Reservation reservation = resOpt.get();
 
         final Reservation.Status status = reservation.getStatus();
         if (status == Reservation.Status.PAID) {
-            return PickupByCodeResult.failure(PickupByCodeError.ALREADY_COMPLETED);
+            return ReservationServiceResult.failure(PickupByCodeError.ALREADY_COMPLETED);
         }
         if (status == Reservation.Status.CANCELED) {
-            return PickupByCodeResult.failure(PickupByCodeError.ALREADY_CANCELED);
+            return ReservationServiceResult.failure(PickupByCodeError.ALREADY_CANCELED);
         }
         if (status != Reservation.Status.RESERVED) {
-            return PickupByCodeResult.failure(PickupByCodeError.NOT_FOUND);
+            return ReservationServiceResult.failure(PickupByCodeError.NOT_FOUND);
         }
 
         final Long packId = reservation.getPackId();
         if (packId == null) {
-            return PickupByCodeResult.failure(PickupByCodeError.NOT_FOUND);
+            return ReservationServiceResult.failure(PickupByCodeError.NOT_FOUND);
         }
         final Long packCommerceId = packDao.findById(packId)
                 .map(Pack::getCommerceId)
                 .orElse(null);
         if (packCommerceId == null || !packCommerceId.equals(commerceUserId)) {
-            return PickupByCodeResult.failure(PickupByCodeError.WRONG_COMMERCE);
+            return ReservationServiceResult.failure(PickupByCodeError.WRONG_COMMERCE);
         }
 
-        final Reservation confirmed = reservationDao.confirmPickup(reservation.getId(),
-                LocalDateTime.now(ZoneOffset.UTC));
-        return PickupByCodeResult.success(confirmed);
+        final Reservation confirmed = confirmPickup(reservation.getId());
+        return ReservationServiceResult.success(confirmed);
     }
 
     @Override

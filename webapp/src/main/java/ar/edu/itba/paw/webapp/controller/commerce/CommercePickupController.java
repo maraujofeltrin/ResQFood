@@ -5,8 +5,8 @@ import ar.edu.itba.paw.models.reservation.PickupByCodeError;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.services.pack.PackService;
-import ar.edu.itba.paw.services.reservation.PickupByCodeResult;
 import ar.edu.itba.paw.services.reservation.ReservationService;
+import ar.edu.itba.paw.services.reservation.ReservationServiceResult;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
 import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.form.PickupCodeForm;
@@ -62,7 +62,7 @@ public class CommercePickupController {
             return mav;
         }
 
-        final PickupByCodeResult result = reservationService.confirmPickupByCode(pickupCode, commerce.getUserId());
+        final ReservationServiceResult<PickupByCodeError> result = reservationService.confirmPickupByCode(pickupCode, commerce.getUserId());
         if (result.isSuccess()) {
             final Reservation confirmed = result.reservation().orElseThrow(IllegalStateException::new);
             mav.addObject("pickupSuccess", true);

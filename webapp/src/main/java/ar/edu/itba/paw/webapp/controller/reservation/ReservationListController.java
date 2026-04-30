@@ -3,8 +3,8 @@ package ar.edu.itba.paw.webapp.controller.reservation;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationRejectionError;
 import ar.edu.itba.paw.models.user.User;
-import ar.edu.itba.paw.services.reservation.ReservationRejectionResult;
 import ar.edu.itba.paw.services.reservation.ReservationService;
+import ar.edu.itba.paw.services.reservation.ReservationServiceResult;
 import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.controller.utils.ReservationListModelBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,7 +71,7 @@ public class ReservationListController {
             final RedirectAttributes redirectAttributes) {
         final User currentUser = authResolver.requireRole(authentication, User.Role.COMMERCE);
 
-        final ReservationRejectionResult result =
+        final ReservationServiceResult<ReservationRejectionError> result =
                 reservationService.tryRejectReservationForCommerce(reservationId, currentUser.getId());
         if (result.isSuccess()) {
             redirectAttributes.addFlashAttribute("reservationActionKind", "success");
