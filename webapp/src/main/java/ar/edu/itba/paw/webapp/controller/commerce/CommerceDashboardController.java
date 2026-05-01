@@ -4,6 +4,7 @@ import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.services.auction.AuctionService;
+import ar.edu.itba.paw.services.auction.CancelAuctionResult;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.metrics.CommerceMetricsService;
 import ar.edu.itba.paw.services.pack.PackService;
@@ -21,6 +22,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
@@ -132,6 +135,15 @@ public class CommerceDashboardController {
         final Set<Long> auctionPackIds = commerceAuctions.stream()
                 .map(a -> a.getPack().getId())
                 .collect(Collectors.toSet());
+        final java.util.Map<Long, Long> packIdToAuctionId = new java.util.HashMap<>();
+        final java.util.Map<Long, Boolean> packIdToAuctionActive = new java.util.HashMap<>();
+        final java.util.Map<Long, Boolean> packIdToAuctionHasBids = new java.util.HashMap<>();
+        for (final ar.edu.itba.paw.models.auction.Auction auction : commerceAuctions) {
+            final long packId = auction.getPack().getId();
+            packIdToAuctionId.put(packId, auction.getId());
+            packIdToAuctionActive.put(packId, auction.getStatus() == ar.edu.itba.paw.models.auction.Auction.Status.ACTIVE);
+            packIdToAuctionHasBids.put(packId, !auctionService.getBidHistory(auction.getId()).isEmpty());
+        }
 
         mav.addObject("commerce", commerce);
         mav.addObject("packs", displayedPacks);
@@ -139,6 +151,9 @@ public class CommerceDashboardController {
         mav.addObject("totalPages", totalPages);
         mav.addObject("commerceId", id);
         mav.addObject("auctionPackIds", auctionPackIds);
+        mav.addObject("packIdToAuctionId", packIdToAuctionId);
+        mav.addObject("packIdToAuctionActive", packIdToAuctionActive);
+        mav.addObject("packIdToAuctionHasBids", packIdToAuctionHasBids);
         mav.addObject("currentTab", tab);
         mav.addObject("paginationBaseUrl", "/commerce/products?tab=" + tab);
         mav.addObject("itemsCount", itemsCount);
@@ -171,6 +186,28 @@ public class CommerceDashboardController {
         mav.addObject("bestSellingPackTitle", metrics.getBestSellingPackTitle());
         mav.addObject("acceptanceRatePercent", metrics.getAcceptanceRatePercent());
         return mav;
+    }
+
+    @PostMapping(value = "/auctions/{auctionId}/cancel")
+    public ModelAndView cancelAuction(@PathVariable("auctionId") final long auctionId,
+            @AuthenticationPrincipal final AuthUser principal) {
+        final long userId = authResolver.resolveUser(principal).getId();
+        final CancelAuctionResult result = auctionService.cancelAuction(auctionId, userId);
+
+        switch (result.getOutcome()) {
+            case SUCCESS:
+                return new ModelAndView("redirect:/commerce/products?cancelled=true");
+            case NOT_FOUND:
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            case FORBIDDEN:
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            case HAS_BIDS:
+                return new ModelAndView("redirect:/commerce/products?cancelFailed=true");
+            case NOT_ACTIVE:
+                throw new ResponseStatusException(HttpStatus.CONFLICT);
+            default:
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     private static String buildSalesChartJson(final List<CommerceMetrics.DailySalesPoint> points) {

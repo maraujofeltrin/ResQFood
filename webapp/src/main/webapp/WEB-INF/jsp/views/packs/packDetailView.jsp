@@ -250,6 +250,16 @@
                         </a>
                     </div>
                 </c:if>
+
+                <c:if test="${isOwner && auctionActive && not auctionHasBids}">
+                    <button type="button"
+                            onclick="openCancelAuctionModal('${auctionId}')"
+                            class="w-full bg-error text-on-error px-6 py-3 rounded-full text-base font-bold flex items-center justify-center gap-2 hover:scale-105 transition-transform shadow-md">
+                        <span class="material-symbols-outlined font-bold" style="font-size: 20px;">cancel</span>
+                        <spring:message code="commerce.auction.cancel.button" />
+                    </button>
+                </c:if>
+
                 <div class="pack-aside-card">
                     <c:if test="${auctionAlertKind eq 'success'}">
                         <p class="pack-feedback pack-feedback--success" role="alert"><c:out value="${auctionAlertMessage}"/></p>
@@ -453,6 +463,8 @@
     </main>
 
     <paw:footer />
+    <paw:deletePackModal />
+    <paw:cancelAuctionModal />
     <script>
         (function () {
             var block = document.getElementById('reservation-total-block');
@@ -582,6 +594,5 @@
             }
         })();
     </script>
-    <paw:deletePackModal />
 </body>
 </html>

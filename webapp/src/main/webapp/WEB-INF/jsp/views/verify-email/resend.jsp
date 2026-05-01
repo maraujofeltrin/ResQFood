@@ -22,16 +22,19 @@ uri="http://itba.edu.ar/paw/tags" %>
         >
           <spring:message code="emailVerification.expired.title" />
         </h1>
-        <div
-          class="bg-primary-container text-on-primary-container rounded-lg p-4 mb-6 text-sm"
-        >
-          <spring:message code="emailVerification.expired.message" />
-        </div>
+        <c:if test="${not empty param.expired}">
+          <div
+            class="bg-primary-container text-on-primary-container rounded-lg p-4 mb-6 text-sm"
+          >
+            <spring:message code="emailVerification.expired.message" />
+          </div>
+        </c:if>
         <form:form
           modelAttribute="resendForm"
           method="post"
           action="${pageContext.request.contextPath}/verify-email/resend"
           class="space-y-5"
+          novalidate="novalidate"
         >
           <div>
             <label
@@ -54,6 +57,7 @@ uri="http://itba.edu.ar/paw/tags" %>
             <form:errors
               path="email"
               cssClass="text-error text-sm mt-1 block"
+              element="p"
             />
           </div>
           <button
