@@ -25,7 +25,8 @@
 
 <paw:packCardShell packId="${packId}" imageId="${imageId}" title="${title}" subtitle="${subtitle}" imageAlt="${imageAlt}"
     badgeText="${badgeText}" commerceName="${commerceName}" manageable="${manageable}" smallSize="${smallSize}"
-    auction="${auction}" asLink="true" showPriceFooter="true"
+    auction="${auction}" auctionId="${auctionId}" auctionActive="${auctionActive}"
+    auctionHasBids="${auctionHasBids}" unavailable="${unavailable}" asLink="true" showPriceFooter="true"
     price="${price}" oldPrice="${oldPrice}" rescueLabel="${resolvedRescueLabel}">
     <jsp:attribute name="imageOverlay"></jsp:attribute>
     <jsp:body></jsp:body>
