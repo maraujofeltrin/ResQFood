@@ -192,6 +192,8 @@ uri="http://itba.edu.ar/paw/tags" %>
                   commerceId="${commerceId}"
                   auction="${auctionPackIds.contains(pack.id)}"
                   auctionId="${auctionPackIds.contains(pack.id) ? packIdToAuctionId[pack.id] : ''}"
+                  auctionActive="${auctionPackIds.contains(pack.id) ? packIdToAuctionActive[pack.id] : false}"
+                  auctionHasBids="${auctionPackIds.contains(pack.id) ? packIdToAuctionHasBids[pack.id] : false}"
                 />
               </c:forEach>
             </div>

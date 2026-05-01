@@ -260,7 +260,7 @@
                     </div>
                 </c:if>
 
-                <c:if test="${isOwner && auctionActive}">
+                <c:if test="${isOwner && auctionActive && not auctionHasBids}">
                     <button type="button"
                             onclick="openCancelAuctionModal('${auctionId}')"
                             class="w-full bg-error text-on-error px-6 py-3 rounded-full text-base font-bold flex items-center justify-center gap-2 hover:scale-105 transition-transform shadow-md">

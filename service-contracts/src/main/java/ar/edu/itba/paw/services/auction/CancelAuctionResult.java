@@ -13,7 +13,9 @@ public final class CancelAuctionResult {
         /** Requesting user is not the owner of the auction's commerce. */
         FORBIDDEN,
         /** Auction has bids and cannot be cancelled. */
-        HAS_BIDS
+        HAS_BIDS,
+        /** Auction is not active (already cancelled or finished). */
+        NOT_ACTIVE
     }
 
     private final Outcome outcome;
@@ -36,6 +38,10 @@ public final class CancelAuctionResult {
 
     public static CancelAuctionResult hasBids() {
         return new CancelAuctionResult(Outcome.HAS_BIDS);
+    }
+
+    public static CancelAuctionResult notActive() {
+        return new CancelAuctionResult(Outcome.NOT_ACTIVE);
     }
 
     public Outcome getOutcome() {

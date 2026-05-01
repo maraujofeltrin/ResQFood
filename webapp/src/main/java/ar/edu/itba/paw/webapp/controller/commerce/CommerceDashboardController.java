@@ -136,8 +136,13 @@ public class CommerceDashboardController {
                 .map(a -> a.getPack().getId())
                 .collect(Collectors.toSet());
         final java.util.Map<Long, Long> packIdToAuctionId = new java.util.HashMap<>();
+        final java.util.Map<Long, Boolean> packIdToAuctionActive = new java.util.HashMap<>();
+        final java.util.Map<Long, Boolean> packIdToAuctionHasBids = new java.util.HashMap<>();
         for (final ar.edu.itba.paw.models.auction.Auction auction : commerceAuctions) {
-            packIdToAuctionId.put(auction.getPack().getId(), auction.getId());
+            final long packId = auction.getPack().getId();
+            packIdToAuctionId.put(packId, auction.getId());
+            packIdToAuctionActive.put(packId, auction.getStatus() == ar.edu.itba.paw.models.auction.Auction.Status.ACTIVE);
+            packIdToAuctionHasBids.put(packId, !auctionService.getBidHistory(auction.getId()).isEmpty());
         }
 
         mav.addObject("commerce", commerce);
@@ -147,6 +152,8 @@ public class CommerceDashboardController {
         mav.addObject("commerceId", id);
         mav.addObject("auctionPackIds", auctionPackIds);
         mav.addObject("packIdToAuctionId", packIdToAuctionId);
+        mav.addObject("packIdToAuctionActive", packIdToAuctionActive);
+        mav.addObject("packIdToAuctionHasBids", packIdToAuctionHasBids);
         mav.addObject("currentTab", tab);
         mav.addObject("paginationBaseUrl", "/commerce/products?tab=" + tab);
         mav.addObject("itemsCount", itemsCount);
@@ -196,6 +203,8 @@ public class CommerceDashboardController {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             case HAS_BIDS:
                 return new ModelAndView("redirect:/commerce/products?cancelFailed=true");
+            case NOT_ACTIVE:
+                throw new ResponseStatusException(HttpStatus.CONFLICT);
             default:
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
         }

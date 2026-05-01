@@ -117,8 +117,10 @@ public class PackDetailModelBuilder {
             final List<BidHistoryViewHelper.BidHistoryRow> bidHistoryItems = BidHistoryViewHelper.buildRows(
                     bidHistory, clientService, messageSource, locale);
             mav.addObject("auctionBidHistoryItems", bidHistoryItems);
+            mav.addObject("auctionHasBids", !bidHistory.isEmpty());
         } else {
             mav.addObject("auctionBidHistoryItems", Collections.emptyList());
+            mav.addObject("auctionHasBids", Boolean.FALSE);
         }
 
         boolean auctionClientIsLeading = false;

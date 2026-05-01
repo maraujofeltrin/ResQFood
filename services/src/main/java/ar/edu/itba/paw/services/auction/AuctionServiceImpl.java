@@ -179,6 +179,11 @@ public class AuctionServiceImpl implements AuctionService {
             return CancelAuctionResult.notFound();
         }
 
+        // Check if auction is active
+        if (auction.getStatus() != Auction.Status.ACTIVE) {
+            return CancelAuctionResult.notActive();
+        }
+
         final Pack pack = auction.getPack();
         final Long commerceId = pack.getCommerceId();
         final boolean isOwner = commerceService.findByUserId(requestingUserId)

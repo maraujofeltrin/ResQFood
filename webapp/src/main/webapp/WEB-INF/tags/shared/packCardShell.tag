@@ -13,6 +13,8 @@
 <%@ attribute name="smallSize" required="false" type="java.lang.Boolean" %>
 <%@ attribute name="auction" type="java.lang.Boolean" required="false" %>
 <%@ attribute name="auctionId" required="false" %>
+<%@ attribute name="auctionActive" type="java.lang.Boolean" required="false" %>
+<%@ attribute name="auctionHasBids" type="java.lang.Boolean" required="false" %>
 <%@ attribute name="asLink" type="java.lang.Boolean" required="false" %>
 <%@ attribute name="participationBadgeCode" required="false" type="java.lang.String" %>
 <%@ attribute name="showPriceFooter" type="java.lang.Boolean" required="false" %>
@@ -32,6 +34,9 @@
 </c:if>
 <c:if test="${empty auction}">
     <c:set var="auction" value="false" />
+</c:if>
+<c:if test="${empty auctionHasBids}">
+  <c:set var="auctionHasBids" value="false" />
 </c:if>
 
 <c:set var="resolvedAlt" value="${not empty imageAlt ? imageAlt : title}" />
@@ -110,7 +115,7 @@
         </button>
       </div>
     </c:if>
-    <c:if test="${auction == true && not empty auctionId}">
+    <c:if test="${auction == true && not empty auctionId && auctionActive == true && auctionHasBids == false}">
       <div class="absolute top-3 right-3 flex gap-2 z-10">
         <button type="button"
                 onclick="event.preventDefault(); event.stopPropagation(); openCancelAuctionModal('${auctionId}');"
