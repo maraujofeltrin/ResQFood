@@ -261,14 +261,8 @@
                 </c:if>
 
                 <c:if test="${isOwner && auctionActive}">
-                    <form id="cancelAuctionForm${auctionId}" 
-                        action="${pageContext.request.contextPath}/commerce/auctions/${auctionId}/cancel" 
-                        method="post" 
-                        style="display: none;">
-                    </form>
-                    <spring:message code="commerce.auction.cancel.confirm" var="confirmMessage" />
                     <button type="button"
-                            onclick="if (confirm('${confirmMessage}')) { document.getElementById('cancelAuctionForm${auctionId}').submit(); }"
+                            onclick="openCancelAuctionModal('${auctionId}')"
                             class="w-full bg-error text-on-error px-6 py-3 rounded-full text-base font-bold flex items-center justify-center gap-2 hover:scale-105 transition-transform shadow-md">
                         <span class="material-symbols-outlined font-bold" style="font-size: 20px;">cancel</span>
                         <spring:message code="commerce.auction.cancel.button" />
@@ -468,6 +462,8 @@
     </main>
 
     <paw:footer />
+    <paw:deletePackModal />
+    <paw:cancelAuctionModal />
     <script>
         (function () {
             var block = document.getElementById('reservation-total-block');
@@ -597,6 +593,5 @@
             }
         })();
     </script>
-    <paw:deletePackModal />
 </body>
 </html>
