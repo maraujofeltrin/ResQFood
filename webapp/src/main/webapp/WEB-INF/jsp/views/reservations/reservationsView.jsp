@@ -24,9 +24,10 @@
             <paw:packEmptyState icon="inventory_2" title="${emptyTitle}" description="${emptyDesc}" />
             <c:if test="${messagePrefix == 'reservation.my'}">
                 <section class="mt-8 flex items-center justify-center text-center px-6">
-                    <p class="text-xl font-headline font-medium text-primary tracking-tight">
+                    <a href="${pageContext.request.contextPath}/packs"
+                       class="text-xl font-headline font-medium text-primary tracking-tight underline-offset-4 decoration-primary/40 hover:underline hover:decoration-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
                         <spring:message code="reservation.my.empty.centerMessage" />
-                    </p>
+                    </a>
                 </section>
             </c:if>
         </c:when>
