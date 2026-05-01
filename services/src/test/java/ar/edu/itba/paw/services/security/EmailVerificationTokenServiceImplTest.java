@@ -7,7 +7,6 @@ import ar.edu.itba.paw.persistence.TokenDao;
 import ar.edu.itba.paw.persistence.UserDao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -15,13 +14,23 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class EmailVerificationTokenServiceImplTest {
+class EmailVerificationTokenServiceImplTest {
 
     private static final long USER_ID = 42L;
     private static final String EMAIL = "u@example.com";
@@ -50,32 +59,43 @@ public class EmailVerificationTokenServiceImplTest {
     }
 
     @Test
-    public void sendVerificationMail_createsToken_and_sendsMailWithVerificationUrl() {
+    void testSendVerificationMailWhenValidSendsMailWithVerificationUrl() {
         // 1. Setup
         stubCreateReturnsTokenString();
         final String baseUrl = "https://app.example";
+        final AtomicReference<String> capturedUrl = new AtomicReference<>();
+        doAnswer(invocation -> {
+            capturedUrl.set(invocation.getArgument(1));
+            return null;
+        }).when(emailVerificationMailService).sendVerificationMail(eq(EMAIL), anyString(), eq(LOCALE));
 
         // 2. Ejercicio
         service.sendVerificationMail(USER_ID, EMAIL, baseUrl, LOCALE);
 
         // 3. Asserts
-        verify(tokenDao).create(anyString(), eq(USER_ID), eq(TokenType.EMAIL_VERIFICATION), any(LocalDateTime.class),
-                any(LocalDateTime.class));
-        final ArgumentCaptor<String> urlCaptor = ArgumentCaptor.forClass(String.class);
-        verify(emailVerificationMailService).sendVerificationMail(eq(EMAIL), urlCaptor.capture(), eq(LOCALE));
-        final String url = urlCaptor.getValue();
+        final String url = capturedUrl.get();
         assertTrue(url.startsWith(baseUrl + "/verify-email?token="));
         assertFalse(url.endsWith("token="));
     }
 
     @Test
-    public void verifyEmailAndGetUser_validToken_marksVerified_marksTokenUsed_returnsUser() {
+    void testVerifyEmailAndGetUserWhenTokenValidMarksUserAndTokenReturnsUser() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
         final Token stored = new Token("tok", USER_ID, false, TokenType.EMAIL_VERIFICATION, now, now.plusHours(24));
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(stored));
         final User verifiedReturned = new User(USER_ID, EMAIL, "pw", "N", null, User.Role.CLIENT, true, LOCALE);
         when(userDao.findById(USER_ID)).thenReturn(Optional.of(verifiedReturned));
+        final AtomicBoolean markVerifiedCalled = new AtomicBoolean(false);
+        doAnswer(invocation -> {
+            markVerifiedCalled.set(true);
+            return null;
+        }).when(userDao).markVerified(USER_ID);
+        final AtomicReference<String> markUsedToken = new AtomicReference<>();
+        doAnswer(invocation -> {
+            markUsedToken.set(invocation.getArgument(0));
+            return null;
+        }).when(tokenDao).markAsUsed(eq("tok"), eq(TokenType.EMAIL_VERIFICATION));
 
         // 2. Ejercicio
         final Optional<User> result = service.verifyEmailAndGetUser("tok");
@@ -83,63 +103,69 @@ public class EmailVerificationTokenServiceImplTest {
         // 3. Asserts
         assertTrue(result.isPresent());
         assertTrue(result.get().isVerified());
-        verify(userDao).markVerified(USER_ID);
-        verify(tokenDao).markAsUsed("tok", TokenType.EMAIL_VERIFICATION);
+        assertTrue(markVerifiedCalled.get());
+        assertEquals("tok", markUsedToken.get());
     }
 
     @Test
-    public void verifyEmailAndGetUser_unknownToken_returnsEmpty() {
+    void testVerifyEmailAndGetUserWhenTokenUnknownReturnsEmpty() {
         // 1. Setup
         when(tokenDao.findByTokenAndType("missing", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.empty());
+        lenient().doThrow(new AssertionError("markVerified no debe invocarse")).when(userDao).markVerified(anyLong());
+        lenient().doThrow(new AssertionError("markAsUsed no debe invocarse")).when(tokenDao).markAsUsed(anyString(),
+                any(TokenType.class));
 
         // 2. Ejercicio
         final Optional<User> result = service.verifyEmailAndGetUser("missing");
 
         // 3. Asserts
         assertTrue(result.isEmpty());
-        verify(userDao, never()).markVerified(anyLong());
-        verify(tokenDao, never()).markAsUsed(anyString(), any());
     }
 
     @Test
-    public void verifyEmailAndGetUser_usedToken_returnsEmpty() {
+    void testVerifyEmailAndGetUserWhenTokenUsedReturnsEmpty() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
         final Token used = new Token("tok", USER_ID, true, TokenType.EMAIL_VERIFICATION, now, now.plusHours(1));
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(used));
+        lenient().doThrow(new AssertionError("markVerified no debe invocarse")).when(userDao).markVerified(anyLong());
+        lenient().doThrow(new AssertionError("markAsUsed no debe invocarse")).when(tokenDao).markAsUsed(anyString(),
+                any(TokenType.class));
 
         // 2. Ejercicio
         final Optional<User> result = service.verifyEmailAndGetUser("tok");
 
         // 3. Asserts
         assertTrue(result.isEmpty());
-        verify(userDao, never()).markVerified(anyLong());
-        verify(tokenDao, never()).markAsUsed(anyString(), any());
     }
 
     @Test
-    public void verifyEmailAndGetUser_expiredToken_returnsEmpty() {
+    void testVerifyEmailAndGetUserWhenTokenExpiredReturnsEmpty() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
         final Token expired = new Token("tok", USER_ID, false, TokenType.EMAIL_VERIFICATION, now.minusDays(2),
                 now.minusHours(1));
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(expired));
+        lenient().doThrow(new AssertionError("markVerified no debe invocarse")).when(userDao).markVerified(anyLong());
+        lenient().doThrow(new AssertionError("markAsUsed no debe invocarse")).when(tokenDao).markAsUsed(anyString(),
+                any(TokenType.class));
 
         // 2. Ejercicio
         final Optional<User> result = service.verifyEmailAndGetUser("tok");
 
         // 3. Asserts
         assertTrue(result.isEmpty());
-        verify(userDao, never()).markVerified(anyLong());
     }
 
     @Test
-    public void verifyEmail_delegatesToVerifyEmailAndGetUser() {
+    void testVerifyEmailWhenTokenValidReturnsTrue() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
         final Token stored = new Token("tok", USER_ID, false, TokenType.EMAIL_VERIFICATION, now, now.plusHours(1));
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(stored));
         when(userDao.findById(USER_ID)).thenReturn(Optional.of(new User(USER_ID, EMAIL, "p", "N")));
+        doAnswer(invocation -> null).when(userDao).markVerified(USER_ID);
+        doAnswer(invocation -> null).when(tokenDao).markAsUsed(eq("tok"), eq(TokenType.EMAIL_VERIFICATION));
 
         // 2. Ejercicio
         final boolean ok = service.verifyEmail("tok");
@@ -149,44 +175,62 @@ public class EmailVerificationTokenServiceImplTest {
     }
 
     @Test
-    public void resendVerificationMail_unverifiedUser_sendsMail() {
+    void testResendVerificationMailWhenUserUnverifiedSendsMailWithVerificationLink() {
         // 1. Setup
         final User unverified = new User(USER_ID, EMAIL, "p", "N", null, User.Role.CLIENT, false, LOCALE);
         when(userDao.findByEmail(EMAIL)).thenReturn(Optional.of(unverified));
         stubCreateReturnsTokenString();
+        final AtomicReference<String> capturedUrl = new AtomicReference<>();
+        doAnswer(invocation -> {
+            capturedUrl.set(invocation.getArgument(1));
+            return null;
+        }).when(emailVerificationMailService).sendVerificationMail(eq(EMAIL), anyString(), eq(LOCALE));
 
         // 2. Ejercicio
         service.resendVerificationMail(EMAIL, "https://x.example");
 
         // 3. Asserts
-        verify(emailVerificationMailService).sendVerificationMail(eq(EMAIL), contains("/verify-email?token="),
-                eq(LOCALE));
+        assertTrue(capturedUrl.get().contains("/verify-email?token="));
     }
 
     @Test
-    public void resendVerificationMail_verifiedUser_doesNotSend() {
+    void testResendVerificationMailWhenUserAlreadyVerifiedDoesNotCreateTokenOrSendMail() {
         // 1. Setup
         final User verified = new User(USER_ID, EMAIL, "p", "N", null, User.Role.CLIENT, true, LOCALE);
-        when(userDao.findByEmail(EMAIL)).thenReturn(Optional.of(verified));
+        final AtomicInteger emailLookups = new AtomicInteger();
+        when(userDao.findByEmail(EMAIL)).thenAnswer(invocation -> {
+            emailLookups.incrementAndGet();
+            return Optional.of(verified);
+        });
+        lenient().doThrow(new AssertionError("create no debe invocarse")).when(tokenDao).create(anyString(), anyLong(),
+                any(TokenType.class), any(LocalDateTime.class), any(LocalDateTime.class));
+        lenient().doThrow(new AssertionError("sendVerificationMail no debe invocarse")).when(
+                emailVerificationMailService).sendVerificationMail(anyString(), anyString(), any(Locale.class));
 
         // 2. Ejercicio
         service.resendVerificationMail(EMAIL, "https://x.example");
 
         // 3. Asserts
-        verifyNoInteractions(tokenDao);
-        verifyNoInteractions(emailVerificationMailService);
+        assertEquals(1, emailLookups.get());
     }
 
     @Test
-    public void resendVerificationMail_unknownEmail_doesNotSend() {
+    void testResendVerificationMailWhenEmailUnknownDoesNotCreateTokenOrSendMail() {
         // 1. Setup
-        when(userDao.findByEmail("nobody@example.com")).thenReturn(Optional.empty());
+        final AtomicInteger emailLookups = new AtomicInteger();
+        when(userDao.findByEmail("nobody@example.com")).thenAnswer(invocation -> {
+            emailLookups.incrementAndGet();
+            return Optional.empty();
+        });
+        lenient().doThrow(new AssertionError("create no debe invocarse")).when(tokenDao).create(anyString(), anyLong(),
+                any(TokenType.class), any(LocalDateTime.class), any(LocalDateTime.class));
+        lenient().doThrow(new AssertionError("sendVerificationMail no debe invocarse")).when(
+                emailVerificationMailService).sendVerificationMail(anyString(), anyString(), any(Locale.class));
 
         // 2. Ejercicio
         service.resendVerificationMail("nobody@example.com", "https://x.example");
 
         // 3. Asserts
-        verifyNoInteractions(tokenDao);
-        verifyNoInteractions(emailVerificationMailService);
+        assertEquals(1, emailLookups.get());
     }
 }
