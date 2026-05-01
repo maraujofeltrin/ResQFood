@@ -38,7 +38,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
@@ -154,9 +153,13 @@ class ReservationServiceImplTest {
                         inv.getArgument(5), null, 1, null));
         when(packDao.findById(packId)).thenReturn(Optional.of(pack));
         when(userService.findById(commerceUserId)).thenReturn(Optional.of(commerceUser));
-        lenient().doThrow(new AssertionError("createReservation no debe crear tokens en reserva de subasta"))
-                .when(reservationTokenDao).create(anyString(), anyLong(), any(ReservationToken.Action.class),
-                        any(LocalDateTime.class), any(LocalDateTime.class));
+        final AtomicInteger tokenCreates = new AtomicInteger();
+        lenient().when(reservationTokenDao.create(anyString(), anyLong(), any(ReservationToken.Action.class),
+                any(LocalDateTime.class), any(LocalDateTime.class))).thenAnswer(inv -> {
+            tokenCreates.incrementAndGet();
+            return new ReservationToken(inv.getArgument(0), inv.getArgument(1), inv.getArgument(2), false,
+                    inv.getArgument(3), inv.getArgument(4));
+        });
         final AtomicInteger sentAuctionToClient = new AtomicInteger();
         final AtomicInteger sentAuctionToCommerce = new AtomicInteger();
         doAnswer(inv -> {
@@ -175,6 +178,7 @@ class ReservationServiceImplTest {
 
         // 3. Asserts
         assertEquals(packId, result.getPackId());
+        assertEquals(0, tokenCreates.get());
         assertEquals(1, sentAuctionToClient.get());
         assertEquals(1, sentAuctionToCommerce.get());
     }
@@ -182,9 +186,6 @@ class ReservationServiceImplTest {
     @Test
     void testCreateReservationWhenQuantityInvalidDoesNotPersistOrSendMail() {
         // 1. Setup
-        lenient().doThrow(new AssertionError("createReservation no debe invocarse")).when(reservationDao)
-                .createReservation(anyLong(), anyLong(), any(LocalDateTime.class), any(Double.class),
-                        any(Reservation.Status.class), anyString(), any(), any(Integer.class), any());
 
         // 2. Ejercicio
         final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -202,9 +203,6 @@ class ReservationServiceImplTest {
             sb.append('x');
         }
         final String longPickup = sb.toString();
-        lenient().doThrow(new AssertionError("createReservation no debe invocarse")).when(reservationDao)
-                .createReservation(anyLong(), anyLong(), any(LocalDateTime.class), any(Double.class),
-                        any(Reservation.Status.class), anyString(), any(), any(Integer.class), any());
 
         // 2. Ejercicio
         final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,

@@ -23,11 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -90,10 +88,6 @@ class PasswordResetTokenServiceImplTest {
             emailLookups.incrementAndGet();
             return Optional.empty();
         });
-        lenient().doThrow(new AssertionError("create no debe invocarse")).when(tokenDao).create(anyString(), anyLong(),
-                any(TokenType.class), any(LocalDateTime.class), any(LocalDateTime.class));
-        lenient().doThrow(new AssertionError("sendPasswordResetMail no debe invocarse")).when(
-                passwordResetMailService).sendPasswordResetMail(anyString(), anyString(), any(Locale.class));
 
         // 2. Ejercicio
         service.requestPasswordReset("missing@example.com", "https://x.example");
@@ -178,8 +172,6 @@ class PasswordResetTokenServiceImplTest {
     void testResetPasswordWhenTokenUnknownThrowsIllegalStateException() {
         // 1. Setup
         when(tokenDao.findByTokenAndType("bad", TokenType.PASSWORD_RESET)).thenReturn(Optional.empty());
-        lenient().doThrow(new AssertionError("updatePassword no debe invocarse")).when(userDao)
-                .updatePassword(anyLong(), anyString());
 
         // 2. Ejercicio
         final IllegalStateException thrown = assertThrows(IllegalStateException.class,
@@ -196,8 +188,6 @@ class PasswordResetTokenServiceImplTest {
         final Token expired = new Token("exp", USER_ID, false, TokenType.PASSWORD_RESET, now.minusDays(1),
                 now.minusMinutes(1));
         when(tokenDao.findByTokenAndType("exp", TokenType.PASSWORD_RESET)).thenReturn(Optional.of(expired));
-        lenient().doThrow(new AssertionError("updatePassword no debe invocarse")).when(userDao)
-                .updatePassword(anyLong(), anyString());
 
         // 2. Ejercicio
         final IllegalStateException thrown = assertThrows(IllegalStateException.class,

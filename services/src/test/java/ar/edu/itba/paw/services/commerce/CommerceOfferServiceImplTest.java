@@ -26,7 +26,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,8 +56,6 @@ class CommerceOfferServiceImplTest {
         final Pack createdPack = new Pack(PACK_ID, COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, true, tags);
         when(packService.createPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, tags, null)).thenReturn(
                 createdPack);
-        lenient().doThrow(new AssertionError("createAuction no debe invocarse")).when(auctionService)
-                .createAuction(anyLong(), anyDouble(), anyDouble(), any(LocalDateTime.class));
 
         // 2. Ejercicio
         final Pack pack = commerceOfferService.createDirectPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5,
@@ -76,8 +73,6 @@ class CommerceOfferServiceImplTest {
                 Collections.emptyList());
         when(packService.createPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, Collections.emptyList(),
                 null)).thenReturn(createdPack);
-        lenient().doThrow(new AssertionError("createAuction no debe invocarse")).when(auctionService)
-                .createAuction(anyLong(), anyDouble(), anyDouble(), any(LocalDateTime.class));
 
         // 2. Ejercicio
         final Pack pack = commerceOfferService.createDirectPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5,

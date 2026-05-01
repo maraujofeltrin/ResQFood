@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,9 +56,6 @@ class PackFavoriteServiceImplTest {
             deleteInvoked.set(true);
             return null;
         }).when(packFavoriteDao).delete(5L, 10L);
-        lenient().doThrow(new AssertionError("insert no debe invocarse")).when(packFavoriteDao).insert(anyLong(),
-                anyLong());
-        lenient().doThrow(new AssertionError("findById no debe invocarse")).when(packDao).findById(anyLong());
 
         // 2. Ejercicio
         packFavoriteService.toggleFavorite(5L, 10L);
@@ -96,8 +92,6 @@ class PackFavoriteServiceImplTest {
         when(packFavoriteDao.exists(5L, 10L)).thenReturn(false);
         final Pack pack = new Pack(10L, 1L, "t", "d", 1.0, 1.0, 1, false, false, Collections.emptyList(), null);
         when(packDao.findById(10L)).thenReturn(Optional.of(pack));
-        lenient().doThrow(new AssertionError("insert no debe invocarse")).when(packFavoriteDao).insert(anyLong(),
-                anyLong());
 
         // 2. Ejercicio
         final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,

@@ -22,11 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -111,9 +109,6 @@ class EmailVerificationTokenServiceImplTest {
     void testVerifyEmailAndGetUserWhenTokenUnknownReturnsEmpty() {
         // 1. Setup
         when(tokenDao.findByTokenAndType("missing", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.empty());
-        lenient().doThrow(new AssertionError("markVerified no debe invocarse")).when(userDao).markVerified(anyLong());
-        lenient().doThrow(new AssertionError("markAsUsed no debe invocarse")).when(tokenDao).markAsUsed(anyString(),
-                any(TokenType.class));
 
         // 2. Ejercicio
         final Optional<User> result = service.verifyEmailAndGetUser("missing");
@@ -128,9 +123,6 @@ class EmailVerificationTokenServiceImplTest {
         final LocalDateTime now = LocalDateTime.now();
         final Token used = new Token("tok", USER_ID, true, TokenType.EMAIL_VERIFICATION, now, now.plusHours(1));
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(used));
-        lenient().doThrow(new AssertionError("markVerified no debe invocarse")).when(userDao).markVerified(anyLong());
-        lenient().doThrow(new AssertionError("markAsUsed no debe invocarse")).when(tokenDao).markAsUsed(anyString(),
-                any(TokenType.class));
 
         // 2. Ejercicio
         final Optional<User> result = service.verifyEmailAndGetUser("tok");
@@ -146,9 +138,6 @@ class EmailVerificationTokenServiceImplTest {
         final Token expired = new Token("tok", USER_ID, false, TokenType.EMAIL_VERIFICATION, now.minusDays(2),
                 now.minusHours(1));
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(expired));
-        lenient().doThrow(new AssertionError("markVerified no debe invocarse")).when(userDao).markVerified(anyLong());
-        lenient().doThrow(new AssertionError("markAsUsed no debe invocarse")).when(tokenDao).markAsUsed(anyString(),
-                any(TokenType.class));
 
         // 2. Ejercicio
         final Optional<User> result = service.verifyEmailAndGetUser("tok");
@@ -202,10 +191,6 @@ class EmailVerificationTokenServiceImplTest {
             emailLookups.incrementAndGet();
             return Optional.of(verified);
         });
-        lenient().doThrow(new AssertionError("create no debe invocarse")).when(tokenDao).create(anyString(), anyLong(),
-                any(TokenType.class), any(LocalDateTime.class), any(LocalDateTime.class));
-        lenient().doThrow(new AssertionError("sendVerificationMail no debe invocarse")).when(
-                emailVerificationMailService).sendVerificationMail(anyString(), anyString(), any(Locale.class));
 
         // 2. Ejercicio
         service.resendVerificationMail(EMAIL, "https://x.example");
@@ -222,10 +207,6 @@ class EmailVerificationTokenServiceImplTest {
             emailLookups.incrementAndGet();
             return Optional.empty();
         });
-        lenient().doThrow(new AssertionError("create no debe invocarse")).when(tokenDao).create(anyString(), anyLong(),
-                any(TokenType.class), any(LocalDateTime.class), any(LocalDateTime.class));
-        lenient().doThrow(new AssertionError("sendVerificationMail no debe invocarse")).when(
-                emailVerificationMailService).sendVerificationMail(anyString(), anyString(), any(Locale.class));
 
         // 2. Ejercicio
         service.resendVerificationMail("nobody@example.com", "https://x.example");

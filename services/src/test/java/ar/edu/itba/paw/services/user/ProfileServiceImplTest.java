@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -153,8 +154,11 @@ class ProfileServiceImplTest {
             return null;
         }).when(commerceService).updateProfileFields(anyLong(), any(), anyString(), any(), anyString(), anyString(),
                 anyString(), anyString(), anyString());
-        lenient().doThrow(new AssertionError("updateProfilePhoto no debe invocarse")).when(userService)
-                .updateProfilePhoto(anyLong(), any(), any());
+        final AtomicInteger photoCalls = new AtomicInteger();
+        lenient().doAnswer(invocation -> {
+            photoCalls.incrementAndGet();
+            return null;
+        }).when(userService).updateProfilePhoto(anyLong(), any(), any());
 
         // 2. Ejercicio
         profileService.updateProfileAccount(5L, User.Role.COMMERCE, "RESTAURANT", "Av. Siempre Viva", "42", "Ituzaingó",
@@ -170,6 +174,7 @@ class ProfileServiceImplTest {
         assertEquals("1714", capturedPostal.get());
         assertEquals("09:00", capturedOpening.get());
         assertEquals("18:00", capturedClosing.get());
+        assertEquals(0, photoCalls.get());
     }
 
     @Test
@@ -185,9 +190,12 @@ class ProfileServiceImplTest {
             capturedContentType.set(invocation.getArgument(2));
             return null;
         }).when(userService).updateProfilePhoto(anyLong(), any(), any());
-        lenient().doThrow(new AssertionError("updateProfileFields no debe invocarse")).when(commerceService)
-                .updateProfileFields(anyLong(), any(), anyString(), any(), anyString(), anyString(), anyString(),
-                        anyString(), anyString());
+        final AtomicInteger commerceUpdateCalls = new AtomicInteger();
+        lenient().doAnswer(invocation -> {
+            commerceUpdateCalls.incrementAndGet();
+            return null;
+        }).when(commerceService).updateProfileFields(anyLong(), any(), anyString(), any(), anyString(), anyString(),
+                anyString(), anyString(), anyString());
 
         // 2. Ejercicio
         profileService.updateProfileAccount(6L, User.Role.CLIENT, null, null, null, null, null, null, null, null, bytes,
@@ -197,6 +205,7 @@ class ProfileServiceImplTest {
         assertEquals(6L, capturedUserId.get());
         assertArrayEquals(bytes, capturedData.get());
         assertEquals("image/png", capturedContentType.get());
+        assertEquals(0, commerceUpdateCalls.get());
     }
 
     @Test

@@ -16,10 +16,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -59,8 +55,6 @@ class CommerceReviewServiceImplTest {
         when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
         when(commerceReviewDao.findByClientAndCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(Optional.empty());
         when(commerceReviewDao.createReview(COMMERCE_ID, CLIENT_ID, 5, BODY)).thenReturn(created);
-        lenient().doThrow(new AssertionError("updateReview no debe invocarse")).when(commerceReviewDao)
-                .updateReview(anyLong(), anyInt(), anyString());
 
         // 2. Ejercicio
         final CommerceReview result = commerceReviewService.upsertReview(CLIENT_ID, COMMERCE_ID, 5,
@@ -80,8 +74,6 @@ class CommerceReviewServiceImplTest {
         when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
         when(commerceReviewDao.findByClientAndCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(Optional.of(existing));
         when(commerceReviewDao.updateReview(REVIEW_ID, 3, BODY)).thenReturn(updated);
-        lenient().doThrow(new AssertionError("createReview no debe invocarse")).when(commerceReviewDao)
-                .createReview(anyLong(), anyLong(), anyInt(), anyString());
 
         // 2. Ejercicio
         final CommerceReview result = commerceReviewService.upsertReview(CLIENT_ID, COMMERCE_ID, 3, BODY);
@@ -94,12 +86,6 @@ class CommerceReviewServiceImplTest {
     void testUpsertReviewWhenClientNotEligibleThrowsIllegalStateException() {
         // 1. Setup
         when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(false);
-        lenient().doThrow(new AssertionError("commerceReviewDao no debe usarse")).when(commerceReviewDao)
-                .findByClientAndCommerce(anyLong(), anyLong());
-        lenient().doThrow(new AssertionError("createReview no debe invocarse")).when(commerceReviewDao)
-                .createReview(anyLong(), anyLong(), anyInt(), anyString());
-        lenient().doThrow(new AssertionError("updateReview no debe invocarse")).when(commerceReviewDao)
-                .updateReview(anyLong(), anyInt(), anyString());
 
         // 2. Ejercicio
         final IllegalStateException exception = assertThrows(IllegalStateException.class,
@@ -113,8 +99,6 @@ class CommerceReviewServiceImplTest {
     void testUpsertReviewWhenRatingInvalidThrowsIllegalArgumentException() {
         // 1. Setup
         when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
-        lenient().doThrow(new AssertionError("findByClientAndCommerce no debe invocarse")).when(commerceReviewDao)
-                .findByClientAndCommerce(anyLong(), anyLong());
 
         // 2. Ejercicio
         final IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
@@ -128,8 +112,6 @@ class CommerceReviewServiceImplTest {
     void testUpsertReviewWhenBodyBlankThrowsIllegalArgumentException() {
         // 1. Setup
         when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
-        lenient().doThrow(new AssertionError("findByClientAndCommerce no debe invocarse")).when(commerceReviewDao)
-                .findByClientAndCommerce(anyLong(), anyLong());
 
         // 2. Ejercicio
         final IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,

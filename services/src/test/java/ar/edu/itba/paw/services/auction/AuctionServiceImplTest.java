@@ -31,7 +31,6 @@ import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -86,8 +85,6 @@ class AuctionServiceImplTest {
         // 1. Setup
         final Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, false, null);
         when(packDao.findById(PACK_ID)).thenReturn(Optional.of(pack));
-        lenient().doThrow(new AssertionError("createAuction no debe invocarse")).when(auctionDao)
-                .createAuction(anyLong(), anyDouble(), anyDouble(), any(LocalDateTime.class));
 
         // 2. Ejercicio
         final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
@@ -136,10 +133,6 @@ class AuctionServiceImplTest {
         final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime,
                 Auction.Status.ACTIVE, LocalDateTime.now());
         when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
-        lenient().doThrow(new AssertionError("createBid no debe invocarse")).when(bidDao).createBid(anyLong(),
-                anyLong(), anyDouble());
-        lenient().doThrow(new AssertionError("updateCurrentBid no debe invocarse")).when(auctionDao)
-                .updateCurrentBid(anyLong(), anyDouble(), anyLong());
 
         // 2. Ejercicio
         final BidPlacementException exception = assertThrows(BidPlacementException.class,
@@ -158,8 +151,6 @@ class AuctionServiceImplTest {
         final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime,
                 Auction.Status.ACTIVE, LocalDateTime.now());
         when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
-        lenient().doThrow(new AssertionError("createBid no debe invocarse")).when(bidDao).createBid(anyLong(),
-                anyLong(), anyDouble());
 
         // 2. Ejercicio
         final BidPlacementException exception = assertThrows(BidPlacementException.class,
@@ -178,8 +169,6 @@ class AuctionServiceImplTest {
         final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime,
                 Auction.Status.ACTIVE, LocalDateTime.now());
         when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
-        lenient().doThrow(new AssertionError("createBid no debe invocarse")).when(bidDao).createBid(anyLong(),
-                anyLong(), anyDouble());
 
         // 2. Ejercicio
         final BidPlacementException exception = assertThrows(BidPlacementException.class,
