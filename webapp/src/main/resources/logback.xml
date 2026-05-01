@@ -1,39 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-
-  <property name="logFormat" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
-
-  <!-- Aplicación (INFO+): trazas de negocio; sin propagación al root para no duplicar líneas -->
-  <appender name="APP_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>logs/PAW-ResQFood-app.log</file>
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>logs/PAW-ResQFood-app.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <!-- Daily rollover -->
+      <fileNamePattern>logs/PAW-ResQFood.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <!-- Keep 5 days of logs -->
       <maxHistory>5</maxHistory>
-      <totalSizeCap>200MB</totalSizeCap>
     </rollingPolicy>
-    <encoder charset="UTF-8">
-      <pattern>${logFormat}</pattern>
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
-
-  <!-- Frameworks y dependencias (WARN+): evita DEBUG/INFO masivo de terceros en producción -->
-  <appender name="SYSTEM_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>logs/PAW-ResQFood-system.log</file>
-    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>logs/PAW-ResQFood-system.%d{yyyy-MM-dd}.log</fileNamePattern>
-      <maxHistory>5</maxHistory>
-      <totalSizeCap>200MB</totalSizeCap>
-    </rollingPolicy>
-    <encoder charset="UTF-8">
-      <pattern>${logFormat}</pattern>
-    </encoder>
-  </appender>
-
-  <logger name="ar.edu.itba" level="INFO" additivity="false">
-    <appender-ref ref="APP_FILE"/>
-  </logger>
-
   <root level="WARN">
-    <appender-ref ref="SYSTEM_FILE"/>
+    <appender-ref ref="FILE" />
   </root>
 </configuration>
