@@ -13,7 +13,7 @@ public class CommerceReviewForm {
     private Integer rating;
 
     @NotNull
-    @Size(min = 1, max = 1000)
+    @Size(min = 1, max = 500)
     private String body;
 
     public Integer getRating() {
