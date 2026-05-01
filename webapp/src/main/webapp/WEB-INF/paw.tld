@@ -18,6 +18,7 @@
     <tag-file><name>packCardShell</name><path>/WEB-INF/tags/shared/packCardShell.tag</path></tag-file>
     <tag-file><name>pagination</name><path>/WEB-INF/tags/shared/pagination.tag</path></tag-file>
     <tag-file><name>searchBar</name><path>/WEB-INF/tags/shared/searchBar.tag</path></tag-file>
+    <tag-file><name>inlineFormSelectDropdown</name><path>/WEB-INF/tags/shared/inlineFormSelectDropdown.tag</path></tag-file>
     <tag-file><name>segmentedTripleTabs</name><path>/WEB-INF/tags/shared/segmentedTripleTabs.tag</path></tag-file>
     <tag-file><name>pickupConfirm</name><path>/WEB-INF/tags/shared/pickupConfirm.tag</path></tag-file>
     <tag-file><name>reservationLayout</name><path>/WEB-INF/tags/shared/reservationLayout.tag</path></tag-file>
