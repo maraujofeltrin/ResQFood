@@ -1,4 +1,4 @@
-package ar.edu.itba.paw.models;
+package ar.edu.itba.paw.services.metrics;
 
 import java.math.BigDecimal;
 import java.util.List;
