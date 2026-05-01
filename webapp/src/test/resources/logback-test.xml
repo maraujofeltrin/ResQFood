@@ -1,11 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+  <!--
+    Dependencias heredan el root (p. ej. WARN): sin spam DEBUG de Spring/JDBC.
+    Código bajo ar.edu.itba sigue en DEBUG.
+  -->
+  <property name="testRootLevel" value="${logback.test.root:-WARN}"/>
+
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder>
+    <encoder charset="UTF-8">
       <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
-  <root level="DEBUG">
-    <appender-ref ref="STDOUT" />
+
+  <logger name="ar.edu.itba" level="DEBUG"/>
+
+  <root level="${testRootLevel}">
+    <appender-ref ref="STDOUT"/>
   </root>
 </configuration>
