@@ -6,19 +6,21 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.jdbc.JdbcTestUtils;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Rollback
+@Transactional
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
-@Sql("classpath:schema.sql")
 public class ImageJdbcDaoTest {
 
     @Autowired
@@ -32,11 +34,13 @@ public class ImageJdbcDaoTest {
     @BeforeEach
     public void setUp() {
         jdbcTemplate = new JdbcTemplate(dataSource);
-        JdbcTestUtils.deleteFromTables(jdbcTemplate, "images");
+        JdbcTestUtils.deleteFromTables(jdbcTemplate, "commerce_reviews", "bids", "auctions", "reservation_tokens",
+                "pack_tags", "reservations", "client_pack_favorites", "packs", "images", "commerces", "clients", "tokens",
+                "users");
     }
 
     @Test
-    public void saveImage_persistsImageData() {
+    public void testSaveImageWhenDataAndContentTypeProvided() {
         // 1. Setup
         final byte[] data = new byte[] {3, 4, 5};
         final String contentType = "image/png";
@@ -52,7 +56,7 @@ public class ImageJdbcDaoTest {
     }
 
     @Test
-    public void getImage_returnsExistingImage() {
+    public void testGetImageWhenImageExists() {
         // 1. Setup
         final Image saved = imageDao.saveImage(new byte[] {7, 8}, "image/jpeg");
 
@@ -64,5 +68,6 @@ public class ImageJdbcDaoTest {
         assertEquals(saved.getId(), loaded.get().getId());
         assertEquals("image/jpeg", loaded.get().getContentType());
         assertArrayEquals(new byte[] {7, 8}, loaded.get().getData());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "images"));
     }
 }

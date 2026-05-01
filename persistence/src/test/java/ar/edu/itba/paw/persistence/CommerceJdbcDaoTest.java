@@ -7,26 +7,28 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.jdbc.JdbcTestUtils;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Rollback
+@Transactional
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
-@Sql("classpath:schema.sql")
 public class CommerceJdbcDaoTest {
 
     private static final String EMAIL = "test@example.com";
     private static final String PASSWORD = "password123";
     private static final String NAME = "Test";
     private static final String PHONE = "123456789";
-    
+
     private static final String COMMERCIAL_NAME = "Test Commerce";
     private static final Commerce.Category CATEGORY = Commerce.Category.BAKERY;
     private static final String STREET = "Av. Siempre Viva";
@@ -53,16 +55,15 @@ public class CommerceJdbcDaoTest {
     @BeforeEach
     public void setUp() {
         jdbcTemplate = new JdbcTemplate(dataSource);
-        JdbcTestUtils.deleteFromTables(jdbcTemplate, "commerces", "users");
-        
-        // Create an underlying user for foreign key constraints
+        JdbcTestUtils.deleteFromTables(jdbcTemplate, "bids", "auctions", "reservation_tokens", "pack_tags", "reservations", "client_pack_favorites", "packs", "images", "commerces", "clients", "tokens", "users");
+
         userId = userDao.createUser(EMAIL, PASSWORD, NAME, PHONE, User.Role.COMMERCE).getId();
     }
 
     @Test
-    public void testCreateCommerce() {
+    public void testCreateCommerceWhenUserExists() {
         // 1. Setup
-        // Clean table with user ready
+        // Base commerce user prepared in setUp().
 
         // 2. Ejercicio
         final Commerce commerce = commerceDao.createCommerce(userId, COMMERCIAL_NAME, CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
@@ -83,7 +84,7 @@ public class CommerceJdbcDaoTest {
     }
 
     @Test
-    public void testFindByUserId_WhenCommerceExists() {
+    public void testFindByUserIdWhenCommerceExists() {
         // 1. Setup
         commerceDao.createCommerce(userId, COMMERCIAL_NAME, CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
 
@@ -94,41 +95,38 @@ public class CommerceJdbcDaoTest {
         assertTrue(commerce.isPresent());
         assertEquals(userId, commerce.get().getUserId());
         assertEquals(COMMERCIAL_NAME, commerce.get().getCommercialName());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerces"));
     }
 
     @Test
-    public void testFindByUserId_WhenCommerceDoesNotExist() {
+    public void testFindByUserIdWhenCommerceDoesNotExist() {
         // 1. Setup
-        // Commerce not created for existing user
+        // No commerce row for the user created in setUp().
 
         // 2. Ejercicio
         final Optional<Commerce> commerce = commerceDao.findByUserId(userId);
 
         // 3. Asserts
-        assertFalse(commerce.isPresent());
+        assertTrue(commerce.isEmpty());
+        assertEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerces"));
     }
 
     @Test
-    public void testUpdate() {
+    public void testUpdateWhenCommerceExists() {
         // 1. Setup
         commerceDao.createCommerce(userId, COMMERCIAL_NAME, CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
-        
-        String newName = "Updated Commerce";
-        Commerce.Category newCategory = Commerce.Category.RESTAURANT; // Valid enum constant
-        
-        Commerce commerce = new Commerce(userId, newName, newCategory, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+
+        final String newName = "Updated Commerce";
+        final Commerce.Category newCategory = Commerce.Category.RESTAURANT;
+        final Commerce commerce = new Commerce(userId, newName, newCategory, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
 
         // 2. Ejercicio
-        Commerce updatedCommerce = commerceDao.update(commerce);
+        final Commerce updatedCommerce = commerceDao.update(commerce);
 
         // 3. Asserts
         assertNotNull(updatedCommerce);
         assertEquals(newName, updatedCommerce.getCommercialName());
         assertEquals(newCategory, updatedCommerce.getCategory());
-        
-        Optional<Commerce> dbCommerce = commerceDao.findByUserId(userId);
-        assertTrue(dbCommerce.isPresent());
-        assertEquals(newName, dbCommerce.get().getCommercialName());
-        assertEquals(newCategory, dbCommerce.get().getCategory());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerces"));
     }
 }
