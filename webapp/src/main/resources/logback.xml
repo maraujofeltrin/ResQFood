@@ -1,28 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-  <property name="defaultPattern" value="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" />
-  <appender name="root-appender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <!-- Daily rollover -->
+      <fileNamePattern>logs/PAW-ResQFood.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <!-- Keep 5 days of logs -->
       <maxHistory>5</maxHistory>
-      <fileNamePattern>logs/warnings.%d{yyyy-MM-dd}.log</fileNamePattern>
     </rollingPolicy>
     <encoder>
-      <pattern>${defaultPattern:-}</pattern>
-    </encoder>
-  </appender>
-  <appender name="paw-appender" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <maxHistory>5</maxHistory>
-      <fileNamePattern>logs/paw.%d{yyyy-MM-dd}.log</fileNamePattern>
-    </rollingPolicy>
-    <encoder>
-      <pattern>${defaultPattern:-}</pattern>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
   <root level="WARN">
-    <appender-ref ref="root-appender" />
+    <appender-ref ref="FILE" />
   </root>
-  <logger name="ar.edu.itba" level="DEBUG" additivity="false">
-    <appender-ref ref="paw-appender" />
-  </logger>
 </configuration>

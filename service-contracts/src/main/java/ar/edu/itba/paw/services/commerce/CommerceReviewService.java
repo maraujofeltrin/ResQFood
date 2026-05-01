@@ -9,7 +9,7 @@ public interface CommerceReviewService {
 
     int MIN_RATING = 1;
     int MAX_RATING = 5;
-    int MAX_BODY_LENGTH = 1000;
+    int MAX_BODY_LENGTH = 500;
 
     boolean canClientReviewCommerce(long clientUserId, long commerceUserId);
 
@@ -20,4 +20,6 @@ public interface CommerceReviewService {
     int countReviewsForCommerce(long commerceUserId);
 
     CommerceReview upsertReview(long clientUserId, long commerceUserId, int rating, String body);
+
+    Optional<Double> averageRatingForCommerce(long commerceUserId);
 }

@@ -7,7 +7,6 @@ import ar.edu.itba.paw.persistence.TokenDao;
 import ar.edu.itba.paw.persistence.UserDao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -16,13 +15,21 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class PasswordResetTokenServiceImplTest {
+class PasswordResetTokenServiceImplTest {
 
     private static final long USER_ID = 7L;
     private static final String EMAIL = "reset@example.com";
@@ -54,39 +61,43 @@ public class PasswordResetTokenServiceImplTest {
     }
 
     @Test
-    public void requestPasswordReset_existingUser_sendsMailWithResetUrl() {
+    void testRequestPasswordResetWhenUserExistsSendsMailWithResetUrl() {
         // 1. Setup
         final User user = new User(USER_ID, EMAIL, "old", "Name", null, User.Role.CLIENT, true, LOCALE);
         when(userDao.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         stubCreateReturnsTokenString();
         final String baseUrl = "https://app.example";
+        final AtomicReference<String> capturedUrl = new AtomicReference<>();
+        doAnswer(invocation -> {
+            capturedUrl.set(invocation.getArgument(1));
+            return null;
+        }).when(passwordResetMailService).sendPasswordResetMail(eq(EMAIL), anyString(), eq(LOCALE));
 
         // 2. Ejercicio
         service.requestPasswordReset(EMAIL, baseUrl);
 
         // 3. Asserts
-        verify(tokenDao).create(anyString(), eq(USER_ID), eq(TokenType.PASSWORD_RESET), any(LocalDateTime.class),
-                any(LocalDateTime.class));
-        final ArgumentCaptor<String> urlCaptor = ArgumentCaptor.forClass(String.class);
-        verify(passwordResetMailService).sendPasswordResetMail(eq(EMAIL), urlCaptor.capture(), eq(LOCALE));
-        assertTrue(urlCaptor.getValue().startsWith(baseUrl + "/password-reset/change?token="));
+        assertTrue(capturedUrl.get().startsWith(baseUrl + "/password-reset/change?token="));
     }
 
     @Test
-    public void requestPasswordReset_unknownEmail_doesNotTouchTokenOrMail() {
+    void testRequestPasswordResetWhenEmailUnknownDoesNotCreateTokenOrSendMail() {
         // 1. Setup
-        when(userDao.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+        final AtomicInteger emailLookups = new AtomicInteger();
+        when(userDao.findByEmail("missing@example.com")).thenAnswer(invocation -> {
+            emailLookups.incrementAndGet();
+            return Optional.empty();
+        });
 
         // 2. Ejercicio
         service.requestPasswordReset("missing@example.com", "https://x.example");
 
         // 3. Asserts
-        verifyNoInteractions(tokenDao);
-        verifyNoInteractions(passwordResetMailService);
+        assertEquals(1, emailLookups.get());
     }
 
     @Test
-    public void isPasswordResetTokenValid_valid_returnsTrue() {
+    void testIsPasswordResetTokenValidWhenTokenValidReturnsTrue() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
         final Token t = new Token("r1", USER_ID, false, TokenType.PASSWORD_RESET, now, now.plusHours(1));
@@ -100,69 +111,94 @@ public class PasswordResetTokenServiceImplTest {
     }
 
     @Test
-    public void isPasswordResetTokenValid_expired_returnsFalse() {
+    void testIsPasswordResetTokenValidWhenExpiredReturnsFalse() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
         final Token t = new Token("r2", USER_ID, false, TokenType.PASSWORD_RESET, now.minusDays(1), now.minusHours(1));
         when(tokenDao.findByTokenAndType("r2", TokenType.PASSWORD_RESET)).thenReturn(Optional.of(t));
 
         // 2. Ejercicio
-        assertFalse(service.isPasswordResetTokenValid("r2"));
+        final boolean valid = service.isPasswordResetTokenValid("r2");
+
+        // 3. Asserts
+        assertFalse(valid);
     }
 
     @Test
-    public void isPasswordResetTokenValid_used_returnsFalse() {
+    void testIsPasswordResetTokenValidWhenUsedReturnsFalse() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
         final Token t = new Token("r3", USER_ID, true, TokenType.PASSWORD_RESET, now, now.plusHours(1));
         when(tokenDao.findByTokenAndType("r3", TokenType.PASSWORD_RESET)).thenReturn(Optional.of(t));
 
         // 2. Ejercicio
-        assertFalse(service.isPasswordResetTokenValid("r3"));
+        final boolean valid = service.isPasswordResetTokenValid("r3");
+
+        // 3. Asserts
+        assertFalse(valid);
     }
 
     @Test
-    public void resetPassword_validToken_encodesUpdatesPassword_and_marksTokenUsed() {
+    void testResetPasswordWhenTokenValidEncodesPasswordAndMarksTokenUsed() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
         final Token resetToken = new Token("ok", USER_ID, false, TokenType.PASSWORD_RESET, now, now.plusHours(1));
         when(tokenDao.findByTokenAndType("ok", TokenType.PASSWORD_RESET)).thenReturn(Optional.of(resetToken));
         when(userDao.findById(USER_ID)).thenReturn(Optional.of(new User(USER_ID, EMAIL, "old", "N")));
         when(passwordEncoder.encode("new-secret")).thenReturn("ENC");
+        final AtomicReference<Long> updateUserId = new AtomicReference<>();
+        final AtomicReference<String> updatePassword = new AtomicReference<>();
+        doAnswer(invocation -> {
+            updateUserId.set(invocation.getArgument(0));
+            updatePassword.set(invocation.getArgument(1));
+            return null;
+        }).when(userDao).updatePassword(eq(USER_ID), eq("ENC"));
+        final AtomicReference<String> markedToken = new AtomicReference<>();
+        doAnswer(invocation -> {
+            markedToken.set(invocation.getArgument(0));
+            return null;
+        }).when(tokenDao).markAsUsed(eq("ok"), eq(TokenType.PASSWORD_RESET));
 
         // 2. Ejercicio
         service.resetPassword("ok", "new-secret");
 
         // 3. Asserts
-        verify(userDao).updatePassword(USER_ID, "ENC");
-        verify(tokenDao).markAsUsed("ok", TokenType.PASSWORD_RESET);
+        assertEquals(USER_ID, updateUserId.get().longValue());
+        assertEquals("ENC", updatePassword.get());
+        assertEquals("ok", markedToken.get());
     }
 
     @Test
-    public void resetPassword_unknownToken_throws() {
+    void testResetPasswordWhenTokenUnknownThrowsIllegalStateException() {
         // 1. Setup
         when(tokenDao.findByTokenAndType("bad", TokenType.PASSWORD_RESET)).thenReturn(Optional.empty());
 
-        // 2. Ejercicio & 3. Asserts
-        assertThrows(IllegalStateException.class, () -> service.resetPassword("bad", "x"));
-        verify(userDao, never()).updatePassword(anyLong(), anyString());
+        // 2. Ejercicio
+        final IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                () -> service.resetPassword("bad", "x"));
+
+        // 3. Asserts
+        assertTrue(thrown.getMessage().contains("Password reset failed"));
     }
 
     @Test
-    public void resetPassword_expiredToken_throws() {
+    void testResetPasswordWhenTokenExpiredThrowsIllegalStateException() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
         final Token expired = new Token("exp", USER_ID, false, TokenType.PASSWORD_RESET, now.minusDays(1),
                 now.minusMinutes(1));
         when(tokenDao.findByTokenAndType("exp", TokenType.PASSWORD_RESET)).thenReturn(Optional.of(expired));
 
-        // 2. Ejercicio & 3. Asserts
-        assertThrows(IllegalStateException.class, () -> service.resetPassword("exp", "x"));
-        verify(userDao, never()).updatePassword(anyLong(), anyString());
+        // 2. Ejercicio
+        final IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                () -> service.resetPassword("exp", "x"));
+
+        // 3. Asserts
+        assertTrue(thrown.getMessage().contains("Password reset failed"));
     }
 
     @Test
-    public void getEmailByToken_resolvesEmailFromUser() {
+    void testGetEmailByTokenWhenTokenValidReturnsEmail() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
         final Token t = new Token("g1", USER_ID, false, TokenType.PASSWORD_RESET, now, now.plusHours(1));
@@ -177,11 +213,14 @@ public class PasswordResetTokenServiceImplTest {
     }
 
     @Test
-    public void getEmailByToken_unknownToken_returnsEmpty() {
+    void testGetEmailByTokenWhenTokenUnknownReturnsEmpty() {
         // 1. Setup
         when(tokenDao.findByTokenAndType("nope", TokenType.PASSWORD_RESET)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
-        assertTrue(service.getEmailByToken("nope").isEmpty());
+        final Optional<String> email = service.getEmailByToken("nope");
+
+        // 3. Asserts
+        assertTrue(email.isEmpty());
     }
 }

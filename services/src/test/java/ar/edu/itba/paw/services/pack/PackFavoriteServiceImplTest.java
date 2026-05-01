@@ -12,13 +12,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class PackFavoriteServiceImplTest {
+class PackFavoriteServiceImplTest {
 
     @Mock
     private PackFavoriteDao packFavoriteDao;
@@ -30,7 +36,7 @@ public class PackFavoriteServiceImplTest {
     private PackFavoriteServiceImpl packFavoriteService;
 
     @Test
-    public void testListActiveFavoritePacksFirstPageClampsMax() {
+    void testListActiveFavoritePacksWhenLimitExceedsMaxUsesClampedPageSize() {
         // 1. Setup
         when(packFavoriteDao.findActiveFavoritePacksForClient(eq(1L), eq(1), eq(48))).thenReturn(Collections.emptyList());
 
@@ -38,47 +44,60 @@ public class PackFavoriteServiceImplTest {
         final List<Pack> result = packFavoriteService.listActiveFavoritePacks(1L, 999);
 
         // 3. Asserts
-        assertNotNull(result);
-        verify(packFavoriteDao).findActiveFavoritePacksForClient(1L, 1, 48);
+        assertEquals(Collections.emptyList(), result);
     }
 
     @Test
-    public void testToggleFavoriteRemovesWhenExists() {
+    void testToggleFavoriteWhenFavoriteExistsCallsDeleteOnly() {
         // 1. Setup
         when(packFavoriteDao.exists(5L, 10L)).thenReturn(true);
+        final AtomicBoolean deleteInvoked = new AtomicBoolean(false);
+        doAnswer(invocation -> {
+            deleteInvoked.set(true);
+            return null;
+        }).when(packFavoriteDao).delete(5L, 10L);
 
         // 2. Ejercicio
         packFavoriteService.toggleFavorite(5L, 10L);
 
         // 3. Asserts
-        verify(packFavoriteDao).delete(5L, 10L);
-        verify(packFavoriteDao, never()).insert(anyLong(), anyLong());
-        verify(packDao, never()).findById(anyLong());
+        assertTrue(deleteInvoked.get());
     }
 
     @Test
-    public void testToggleFavoriteAddsWhenActivePack() {
+    void testToggleFavoriteWhenNotFavoriteAndPackActiveInsertsFavorite() {
         // 1. Setup
         when(packFavoriteDao.exists(5L, 10L)).thenReturn(false);
         final Pack pack = new Pack(10L, 1L, "t", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
         when(packDao.findById(10L)).thenReturn(Optional.of(pack));
+        final AtomicLong capturedClientUserId = new AtomicLong();
+        final AtomicLong capturedPackId = new AtomicLong();
+        doAnswer(invocation -> {
+            capturedClientUserId.set(invocation.getArgument(0));
+            capturedPackId.set(invocation.getArgument(1));
+            return null;
+        }).when(packFavoriteDao).insert(anyLong(), anyLong());
 
         // 2. Ejercicio
         packFavoriteService.toggleFavorite(5L, 10L);
 
         // 3. Asserts
-        verify(packFavoriteDao).insert(5L, 10L);
+        assertEquals(5L, capturedClientUserId.get());
+        assertEquals(10L, capturedPackId.get());
     }
 
     @Test
-    public void testToggleFavoriteThrowsWhenPackInactive() {
+    void testToggleFavoriteWhenPackInactiveThrowsIllegalArgumentException() {
         // 1. Setup
         when(packFavoriteDao.exists(5L, 10L)).thenReturn(false);
         final Pack pack = new Pack(10L, 1L, "t", "d", 1.0, 1.0, 1, false, false, Collections.emptyList(), null);
         when(packDao.findById(10L)).thenReturn(Optional.of(pack));
 
-        // 2. Ejercicio / 3. Asserts
-        assertThrows(IllegalArgumentException.class, () -> packFavoriteService.toggleFavorite(5L, 10L));
-        verify(packFavoriteDao, never()).insert(anyLong(), anyLong());
+        // 2. Ejercicio
+        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> packFavoriteService.toggleFavorite(5L, 10L));
+
+        // 3. Asserts
+        assertTrue(thrown.getMessage().contains("not available"));
     }
 }

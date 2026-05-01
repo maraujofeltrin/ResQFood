@@ -1,29 +1,28 @@
 package ar.edu.itba.paw.persistence;
 
+import ar.edu.itba.paw.models.image.Image;
 import ar.edu.itba.paw.models.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.jdbc.JdbcTestUtils;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
-import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Rollback
+@Transactional
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
-@Sql("classpath:schema.sql")
 public class UserJdbcDaoTest {
 
     private static final String EMAIL = "test@example.com";
@@ -38,18 +37,23 @@ public class UserJdbcDaoTest {
     @Autowired
     private UserJdbcDao userDao;
 
+    @Autowired
+    private ImageJdbcDao imageDao;
+
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     public void setUp() {
         jdbcTemplate = new JdbcTemplate(dataSource);
-        JdbcTestUtils.deleteFromTables(jdbcTemplate, "users");
+        JdbcTestUtils.deleteFromTables(jdbcTemplate, "commerce_reviews", "bids", "auctions", "reservation_tokens",
+                "pack_tags", "reservations", "client_pack_favorites", "packs", "images", "commerces", "clients", "tokens",
+                "users");
     }
 
     @Test
-    public void testCreateUser() {
+    public void testCreateUserWhenNoUsersExist() {
         // 1. Setup
-        // No setup needed, table is clean
+        // Tables cleared in setUp().
 
         // 2. Ejercicio
         final User user = userDao.createUser(EMAIL, PASSWORD, NAME, PHONE, ROLE);
@@ -62,7 +66,7 @@ public class UserJdbcDaoTest {
     }
 
     @Test
-    public void testFindByEmail_WhenUserExists() {
+    public void testFindByEmailWhenUserExists() {
         // 1. Setup
         userDao.createUser(EMAIL, PASSWORD, NAME, PHONE, ROLE);
 
@@ -72,34 +76,28 @@ public class UserJdbcDaoTest {
         // 3. Asserts
         assertTrue(user.isPresent());
         assertEquals(EMAIL, user.get().getEmail());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "users"));
     }
 
     @Test
-    public void testFindByEmail_WhenUserDoesNotExist() {
+    public void testFindByEmailWhenUserDoesNotExist() {
         // 1. Setup
-        // No user inserted
+        // No user row for this email.
 
         // 2. Ejercicio
         final Optional<User> user = userDao.findByEmail(EMAIL);
 
         // 3. Asserts
-        assertFalse(user.isPresent());
+        assertTrue(user.isEmpty());
+        assertEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "users"));
     }
 
     @Test
-    public void testUpdateProfileImage() {
+    public void testUpdateProfileImageWhenUserExists() {
         // 1. Setup
         final User user = userDao.createUser(EMAIL, PASSWORD, NAME, PHONE, ROLE);
-        final GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
-        jdbcTemplate.update(connection -> {
-            final PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO images (data, content_type) VALUES (?, ?)",
-                    Statement.RETURN_GENERATED_KEYS);
-            ps.setBytes(1, new byte[] { 1, 2, 3 });
-            ps.setString(2, "image/png");
-            return ps;
-        }, keyHolder);
-        final long imageId = Objects.requireNonNull(keyHolder.getKey()).longValue();
+        final Image image = imageDao.saveImage(new byte[] {1, 2, 3}, "image/png");
+        final long imageId = image.getId();
 
         // 2. Ejercicio
         userDao.updateProfileImage(user.getId(), imageId);
@@ -108,10 +106,12 @@ public class UserJdbcDaoTest {
         final Optional<User> loaded = userDao.findById(user.getId());
         assertTrue(loaded.isPresent());
         assertEquals(imageId, loaded.get().getProfileImageId().longValue());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "users"));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "images"));
     }
 
     @Test
-    public void testUpdateLocale() {
+    public void testUpdateLocaleWhenUserExists() {
         // 1. Setup
         final User user = userDao.createUser(EMAIL, PASSWORD, NAME, PHONE, ROLE, Locale.forLanguageTag("es"));
 
@@ -122,5 +122,6 @@ public class UserJdbcDaoTest {
         final Optional<User> loaded = userDao.findById(user.getId());
         assertTrue(loaded.isPresent());
         assertEquals("en", loaded.get().getLocale().getLanguage());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "users"));
     }
 }

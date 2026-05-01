@@ -1,6 +1,5 @@
 package ar.edu.itba.paw.persistence;
 
-import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.CommerceReview;
 import ar.edu.itba.paw.models.user.User;
@@ -9,10 +8,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.jdbc.JdbcTestUtils;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.util.Collections;
@@ -21,9 +21,10 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Rollback
+@Transactional
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
-@Sql("classpath:schema.sql")
 public class CommerceReviewJdbcDaoTest {
 
     private static final int RATING = 5;
@@ -55,7 +56,8 @@ public class CommerceReviewJdbcDaoTest {
     public void setUp() {
         jdbcTemplate = new JdbcTemplate(dataSource);
         JdbcTestUtils.deleteFromTables(jdbcTemplate, "commerce_reviews", "bids", "auctions", "reservation_tokens",
-                "pack_tags", "reservations", "packs", "images", "commerces", "clients", "tokens", "users");
+                "pack_tags", "reservations", "client_pack_favorites", "packs", "images", "commerces", "clients", "tokens",
+                "users");
 
         commerceId = userDao.createUser("commerce-review@example.com", "pass", "Commerce", "123",
                 User.Role.COMMERCE).getId();
@@ -65,15 +67,13 @@ public class CommerceReviewJdbcDaoTest {
         clientId = userDao.createUser("client-review@example.com", "pass", "Client", "123", User.Role.CLIENT)
                 .getId();
         clientDao.createClient(clientId, "Client", "Last", true);
-        final Pack pack = packDao.createPack(commerceId, "Pack", "Desc", 1000.0, 500.0, 10,
-                Collections.emptyList(), null);
-        assertNotNull(pack);
+        packDao.createPack(commerceId, "Pack", "Desc", 1000.0, 500.0, 10, Collections.emptyList(), null);
     }
 
     @Test
-    public void testCreateReview() {
+    public void testCreateReviewWhenCommerceAndClientExist() {
         // 1. Setup
-        // Base commerce and client are ready.
+        // Base commerce, client and pack from setUp().
 
         // 2. Ejercicio
         final CommerceReview review = commerceReviewDao.createReview(commerceId, clientId, RATING, BODY);
@@ -91,7 +91,7 @@ public class CommerceReviewJdbcDaoTest {
     }
 
     @Test
-    public void testUpdateReview() {
+    public void testUpdateReviewWhenReviewExists() {
         // 1. Setup
         final CommerceReview created = commerceReviewDao.createReview(commerceId, clientId, RATING, BODY);
 
@@ -106,7 +106,7 @@ public class CommerceReviewJdbcDaoTest {
     }
 
     @Test
-    public void testFindByClientAndCommerce() {
+    public void testFindByClientAndCommerceWhenReviewExists() {
         // 1. Setup
         final CommerceReview created = commerceReviewDao.createReview(commerceId, clientId, RATING, BODY);
 
@@ -116,10 +116,11 @@ public class CommerceReviewJdbcDaoTest {
         // 3. Asserts
         assertTrue(found.isPresent());
         assertEquals(created.getId(), found.get().getId());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerce_reviews"));
     }
 
     @Test
-    public void testFindByCommerceId() {
+    public void testFindByCommerceIdWhenOneReviewExists() {
         // 1. Setup
         commerceReviewDao.createReview(commerceId, clientId, RATING, BODY);
 
@@ -129,10 +130,11 @@ public class CommerceReviewJdbcDaoTest {
         // 3. Asserts
         assertEquals(1, reviews.size());
         assertEquals(commerceId, reviews.get(0).getCommerceUserId());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerce_reviews"));
     }
 
     @Test
-    public void testCountByCommerceId() {
+    public void testCountByCommerceIdWhenOneReviewExists() {
         // 1. Setup
         commerceReviewDao.createReview(commerceId, clientId, RATING, BODY);
 
@@ -141,5 +143,37 @@ public class CommerceReviewJdbcDaoTest {
 
         // 3. Asserts
         assertEquals(1, count);
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerce_reviews"));
+    }
+
+    @Test
+    public void testAverageRatingByCommerceIdWhenReviewsExist() {
+        // 1. Setup
+        commerceReviewDao.createReview(commerceId, clientId, 4, BODY);
+        final Long client2Id = userDao.createUser("client2-review@example.com", "pass", "Client2", "456",
+                User.Role.CLIENT).getId();
+        clientDao.createClient(client2Id, "Client2", "Last2", true);
+        commerceReviewDao.createReview(commerceId, client2Id, 2, "Regular.");
+
+        // 2. Ejercicio
+        final Double average = commerceReviewDao.averageRatingByCommerceId(commerceId);
+
+        // 3. Asserts
+        assertNotNull(average);
+        assertEquals(3.0, average, 0.01);
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerce_reviews"));
+    }
+
+    @Test
+    public void testAverageRatingByCommerceIdWhenNoReviews() {
+        // 1. Setup
+        // No reviews inserted for this commerce.
+
+        // 2. Ejercicio
+        final Double average = commerceReviewDao.averageRatingByCommerceId(commerceId);
+
+        // 3. Asserts
+        assertNull(average);
+        assertEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerce_reviews"));
     }
 }

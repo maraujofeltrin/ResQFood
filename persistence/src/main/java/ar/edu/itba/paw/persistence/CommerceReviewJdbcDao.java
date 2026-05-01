@@ -93,4 +93,11 @@ public class CommerceReviewJdbcDao implements CommerceReviewDao {
                 Integer.class, commerceUserId);
         return count == null ? 0 : count;
     }
+
+    @Override
+    public Double averageRatingByCommerceId(final Long commerceUserId) {
+        return jdbcTemplate.queryForObject(
+                "SELECT AVG(CAST(rating AS DOUBLE PRECISION)) FROM commerce_reviews WHERE commerce_user_id = ?",
+                Double.class, commerceUserId);
+    }
 }

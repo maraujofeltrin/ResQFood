@@ -16,4 +16,6 @@ public interface CommerceReviewDao {
     List<CommerceReview> findByCommerceId(Long commerceUserId, int page, int pageSize);
 
     int countByCommerceId(Long commerceUserId);
+
+    Double averageRatingByCommerceId(Long commerceUserId);
 }

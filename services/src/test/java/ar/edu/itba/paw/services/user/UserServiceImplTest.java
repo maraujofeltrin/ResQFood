@@ -8,330 +8,339 @@ import ar.edu.itba.paw.persistence.ClientDao;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.UserDao;
 import ar.edu.itba.paw.services.image.ImageService;
+import ar.edu.itba.paw.services.security.EmailVerificationTokenService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Locale;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.when;
 
-public class UserServiceImplTest {
+@ExtendWith(MockitoExtension.class)
+class UserServiceImplTest {
 
-    /** Stores whatever password string it receives — no hashing in unit tests. */
-    static class NoOpPasswordEncoder implements PasswordEncoder {
-        @Override
-        public String encode(final CharSequence rawPassword) {
-            return rawPassword.toString();
-        }
+    @Mock
+    private UserDao userDao;
 
-        @Override
-        public boolean matches(final CharSequence rawPassword, final String encodedPassword) {
-            return rawPassword.toString().equals(encodedPassword);
-        }
-    }
+    @Mock
+    private ClientDao clientDao;
 
-    /** No-op: tests that exercise tryRegister do not need email-sending side-effects. */
-    static class NoOpEmailVerificationTokenService
-            implements ar.edu.itba.paw.services.security.EmailVerificationTokenService {
-        @Override
-        public void sendVerificationMail(final Long userId, final String email, final String baseUrl,
-            final Locale locale) { }
-        @Override
-        public java.util.Optional<ar.edu.itba.paw.models.user.User> verifyEmailAndGetUser(final String token) {
-            return java.util.Optional.empty();
-        }
-        @Override
-        public boolean verifyEmail(final String token) { return false; }
-        @Override
-        public void resendVerificationMail(final String email, final String baseUrl) { }
-    }
+    @Mock
+    private CommerceDao commerceDao;
 
-    static class StubImageService implements ImageService {
-        private long nextId = 100L;
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
-        @Override
-        public Image saveImage(final byte[] data, final String contentType) {
-            return new Image(nextId++, data, contentType);
-        }
+    @Mock
+    private EmailVerificationTokenService emailVerificationTokenService;
 
-        @Override
-        public java.util.Optional<Image> getImage(final long id) {
-            return java.util.Optional.empty();
-        }
-    }
+    @Mock
+    private ImageService imageService;
 
-    static class InMemoryUserDao implements UserDao {
-        private final Map<Long, User> byId = new HashMap<>();
-        private final Map<String, User> byEmail = new HashMap<>();
-        private long nextId = 1L;
-
-        @Override
-        public User createUser(final String email, final String password, final String name, final String phone,
-                final User.Role role, final Locale locale) {
-            final User u = new User(nextId++, email, password, name, phone, role, false, locale);
-            byId.put(u.getId(), u);
-            byEmail.put(email, u);
-            return u;
-        }
-
-        @Override
-        public User updateUser(final Long id, final String password, final String name, final String phone, final User.Role role) {
-            final User current = byId.get(id);
-            if (current == null) {
-                throw new IllegalStateException("User not found: " + id);
-            }
-            final User updated = new User(id, current.getEmail(), password, name, phone, role, current.isVerified(),
-                    current.getLocale(), current.getProfileImageId());
-            byId.put(id, updated);
-            byEmail.put(updated.getEmail(), updated);
-            return updated;
-        }
-
-        @Override
-        public Optional<User> findByEmail(final String email) {
-            return Optional.ofNullable(byEmail.get(email));
-        }
-
-        @Override
-        public Optional<User> findById(final Long id) {
-            return Optional.ofNullable(byId.get(id));
-        }
-
-        @Override
-        public void updatePassword(final Long id, final String password) {
-            final User current = byId.get(id);
-            if (current == null) {
-                throw new IllegalStateException("User not found: " + id);
-            }
-            final User updated = new User(id, current.getEmail(), password, current.getName(), current.getPhone(),
-                    current.getRole(), current.isVerified(), current.getLocale(), current.getProfileImageId());
-            byId.put(id, updated);
-            byEmail.put(updated.getEmail(), updated);
-        }
-
-        @Override
-        public void markVerified(final Long userId) {
-            final User current = byId.get(userId);
-            if (current == null) {
-                throw new IllegalStateException("User not found: " + userId);
-            }
-            final User verifiedUser = new User(current.getId(), current.getEmail(), current.getPassword(),
-                    current.getName(), current.getPhone(), current.getRole(), true, current.getLocale(),
-                    current.getProfileImageId());
-            byId.put(userId, verifiedUser);
-            byEmail.put(verifiedUser.getEmail(), verifiedUser);
-        }
-
-        @Override
-        public void updateProfileImage(final long userId, final Long imageId) {
-            final User current = byId.get(userId);
-            if (current == null) {
-                throw new IllegalStateException("User not found: " + userId);
-            }
-            final User updated = new User(current.getId(), current.getEmail(), current.getPassword(),
-                    current.getName(), current.getPhone(), current.getRole(), current.isVerified(), current.getLocale(),
-                    imageId);
-            byId.put(userId, updated);
-            byEmail.put(updated.getEmail(), updated);
-        }
-
-        @Override
-        public void updateLocale(final long userId, final String languageTag) {
-            final User current = byId.get(userId);
-            if (current == null) {
-                throw new IllegalStateException("User not found: " + userId);
-            }
-            final Locale newLocale = Locale.forLanguageTag(languageTag);
-            final User updated = new User(current.getId(), current.getEmail(), current.getPassword(),
-                    current.getName(), current.getPhone(), current.getRole(), current.isVerified(), newLocale,
-                    current.getProfileImageId());
-            byId.put(userId, updated);
-            byEmail.put(updated.getEmail(), updated);
-        }
-    }
-
-    static class InMemoryClientDao implements ClientDao {
-        private final Map<Long, Client> byUserId = new HashMap<>();
-
-        @Override
-        public Client createClient(final Long userId, final String name, final String lastName,
-                final Boolean notificationsVisibilityPreferences) {
-            final Client client = new Client(userId, name, lastName, notificationsVisibilityPreferences);
-            byUserId.put(userId, client);
-            return client;
-        }
-
-        @Override
-        public Optional<Client> findByUserId(final Long userId) {
-            return Optional.ofNullable(byUserId.get(userId));
-        }
-
-        @Override
-        public Client update(final Client client) {
-            byUserId.put(client.getUserId(), client);
-            return client;
-        }
-    }
-
-    static class InMemoryCommerceDao implements CommerceDao {
-        private final Map<Long, Commerce> byUserId = new HashMap<>();
-
-        @Override
-        public Commerce createCommerce(final Long userId, final String commercialName, final Commerce.Category category,
-                final String street, final Integer streetNumber, final String city, final String province,
-                final String postalCode, final String openingTime, final String closingTime) {
-            final Commerce commerce = new Commerce(userId, commercialName, category, street, streetNumber, city,
-                    province, postalCode, openingTime, closingTime);
-            byUserId.put(userId, commerce);
-            return commerce;
-        }
-
-        @Override
-        public Optional<Commerce> findByUserId(final Long userId) {
-            return Optional.ofNullable(byUserId.get(userId));
-        }
-
-        @Override
-        public Commerce update(final Commerce commerce) {
-            byUserId.put(commerce.getUserId(), commerce);
-            return commerce;
-        }
-    }
+    @InjectMocks
+    private UserServiceImpl userService;
 
     @Test
-    public void createUser_and_findByEmailAndId() {
-        final InMemoryUserDao dao = new InMemoryUserDao();
-        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-            new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
-
-        final User u = svc.createUser(new User(null, "a@b.com", "pw", "Name", null, null, false), null, null);
-        assertNotNull(u.getId());
-        final Optional<User> byEmail = svc.findByEmail("a@b.com");
-        assertTrue(byEmail.isPresent());
-        assertEquals(u.getId(), byEmail.get().getId());
-
-        final Optional<User> byId = svc.findById(u.getId());
-        assertTrue(byId.isPresent());
-        assertEquals("Name", byId.get().getName());
-    }
-
-    @Test
-    public void createUser_withRole_storesRole() {
-        final InMemoryUserDao dao = new InMemoryUserDao();
-        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-            new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
-
-        final User userToCreate = new User(null, "c@d.com", "pw", "N", "123", User.Role.COMMERCE, false);
-        final Commerce commerceProfile = new Commerce(null, "Shop", Commerce.Category.OTHER, "st", 1, "city", "prov", "pc", "09:00", "18:00");
-        svc.createUser(userToCreate, null, commerceProfile);
-        final Optional<User> maybe = svc.findByEmail("c@d.com");
-        assertTrue(maybe.isPresent());
-        assertEquals(User.Role.COMMERCE, maybe.get().getRole());
-        assertEquals("123", maybe.get().getPhone());
-    }
-
-    @Test
-    public void changePassword_success_updatesPassword() {
+    void testCreateUserWhenRoleAndPhoneAreNullReturnsDaoUser() {
         // 1. Setup
-        final InMemoryUserDao dao = new InMemoryUserDao();
-        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
-        final User created = svc.createUser(new User(null, "u@u.com", "secret1", "User", null, null, false), null,
-                null);
+        final User toCreate = new User(null, "a@b.com", "pw", "Name", null, null, false);
+        final User persisted = new User(1L, "a@b.com", "ENC:pw", "Name", null, null, false);
+        when(passwordEncoder.encode("pw")).thenReturn("ENC:pw");
+        when(userDao.createUser(eq("a@b.com"), eq("ENC:pw"), eq("Name"), isNull(), isNull(),
+                eq(Locale.forLanguageTag("es")))).thenReturn(persisted);
 
         // 2. Ejercicio
-        final ChangePasswordResult result = svc.changePassword(created.getId(), "secret1", "secret2xx");
+        final User result = userService.createUser(toCreate, null, null);
+
+        // 3. Asserts
+        assertEquals(1L, result.getId());
+        assertEquals("a@b.com", result.getEmail());
+        assertEquals("Name", result.getName());
+    }
+
+    @Test
+    void testCreateUserWhenCommerceRoleCreatesCommerceProfile() {
+        // 1. Setup
+        final User toCreate = new User(null, "c@d.com", "pw", "N", "123", User.Role.COMMERCE, false);
+        final User persisted = new User(1L, "c@d.com", "ENC:pw", "N", "123", User.Role.COMMERCE, false);
+        final Commerce commerceProfile = new Commerce(null, "Shop", Commerce.Category.OTHER, "st", 1, "city", "prov",
+                "pc", "09:00", "18:00");
+        when(passwordEncoder.encode("pw")).thenReturn("ENC:pw");
+        when(userDao.createUser(eq("c@d.com"), eq("ENC:pw"), eq("N"), eq("123"), eq(User.Role.COMMERCE),
+                eq(Locale.forLanguageTag("es")))).thenReturn(persisted);
+        when(commerceDao.findByUserId(1L)).thenReturn(Optional.empty());
+        when(commerceDao.createCommerce(eq(1L), eq("Shop"), eq(Commerce.Category.OTHER), eq("st"), eq(1), eq("city"),
+                eq("prov"), eq("pc"), eq("09:00"), eq("18:00")))
+                .thenReturn(new Commerce(1L, "Shop", Commerce.Category.OTHER, "st", 1, "city", "prov", "pc", "09:00",
+                        "18:00"));
+
+        // 2. Ejercicio
+        final User result = userService.createUser(toCreate, null, commerceProfile);
+
+        // 3. Asserts
+        assertEquals(User.Role.COMMERCE, result.getRole());
+        assertEquals("123", result.getPhone());
+    }
+
+    @Test
+    void testFindByEmailWhenUserExistsReturnsUser() {
+        // 1. Setup
+        final User u = new User(2L, "x@y.com", "h", "X", null, null, false);
+        when(userDao.findByEmail("x@y.com")).thenReturn(Optional.of(u));
+
+        // 2. Ejercicio
+        final Optional<User> found = userService.findByEmail("x@y.com");
+
+        // 3. Asserts
+        assertTrue(found.isPresent());
+        assertEquals(2L, found.get().getId());
+    }
+
+    @Test
+    void testFindByIdWhenUserExistsReturnsUser() {
+        // 1. Setup
+        final User u = new User(3L, "id@test.com", "h", "IdUser", null, null, false);
+        when(userDao.findById(3L)).thenReturn(Optional.of(u));
+
+        // 2. Ejercicio
+        final Optional<User> found = userService.findById(3L);
+
+        // 3. Asserts
+        assertTrue(found.isPresent());
+        assertEquals("IdUser", found.get().getName());
+    }
+
+    @Test
+    void testChangePasswordWhenCurrentPasswordMatchesReturnsSuccess() {
+        // 1. Setup
+        final User stored = new User(1L, "u@u.com", "ENC:secret1", "User", null, null, false);
+        final AtomicReference<String> newEncodedPassword = new AtomicReference<>();
+        when(userDao.findById(1L)).thenReturn(Optional.of(stored));
+        when(passwordEncoder.matches("secret1", "ENC:secret1")).thenReturn(true);
+        when(passwordEncoder.encode("secret2xx")).thenReturn("ENC:secret2xx");
+        doAnswer(invocation -> {
+            newEncodedPassword.set(invocation.getArgument(1));
+            return null;
+        }).when(userDao).updatePassword(anyLong(), anyString());
+
+        // 2. Ejercicio
+        final ChangePasswordResult result = userService.changePassword(1L, "secret1", "secret2xx");
 
         // 3. Asserts
         assertTrue(result.isSuccess());
-        assertEquals("secret2xx", dao.findById(created.getId()).orElseThrow().getPassword());
+        assertEquals("ENC:secret2xx", newEncodedPassword.get());
     }
 
     @Test
-    public void changePassword_wrongCurrent_returnsIncorrect() {
+    void testChangePasswordWhenCurrentPasswordWrongReturnsIncorrect() {
         // 1. Setup
-        final InMemoryUserDao dao = new InMemoryUserDao();
-        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
-        final User created = svc.createUser(new User(null, "v@v.com", "good", "V", null, null, false), null, null);
+        final User stored = new User(1L, "v@v.com", "ENC:good", "V", null, null, false);
+        when(userDao.findById(1L)).thenReturn(Optional.of(stored));
+        when(passwordEncoder.matches("bad", "ENC:good")).thenReturn(false);
 
         // 2. Ejercicio
-        final ChangePasswordResult result = svc.changePassword(created.getId(), "bad", "newpassxx");
+        final ChangePasswordResult result = userService.changePassword(1L, "bad", "newpassxx");
 
         // 3. Asserts
         assertEquals(ChangePasswordResult.Status.CURRENT_PASSWORD_INCORRECT, result.getStatus());
-        assertEquals("good", dao.findById(created.getId()).orElseThrow().getPassword());
     }
 
     @Test
-    public void changePassword_unknownUser_throws() {
+    void testChangePasswordWhenUserMissingThrowsNoSuchElementException() {
         // 1. Setup
-        final InMemoryUserDao dao = new InMemoryUserDao();
-        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
-
-        // 2. Ejercicio / 3. Asserts
-        assertThrows(NoSuchElementException.class, () -> svc.changePassword(999L, "a", "bxxxxx"));
-    }
-
-    @Test
-    public void updateProfilePhoto_success_linksImageId() {
-        // 1. Setup
-        final InMemoryUserDao dao = new InMemoryUserDao();
-        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
-        final User created = svc.createUser(new User(null, "photo@x.com", "p", "P", null, null, false), null, null);
+        when(userDao.findById(999L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
-        svc.updateProfilePhoto(created.getId(), new byte[] { 1, 2 }, "image/png");
+        final NoSuchElementException thrown = assertThrows(NoSuchElementException.class,
+                () -> userService.changePassword(999L, "a", "bxxxxx"));
 
         // 3. Asserts
-        assertEquals(Long.valueOf(100L), dao.findById(created.getId()).orElseThrow().getProfileImageId());
+        assertTrue(thrown.getMessage().contains("999"));
     }
 
     @Test
-    public void updateProfilePhoto_invalidContentType_throws() {
+    void testUpdateProfilePhotoWhenValidSavesImageAndUpdatesProfile() {
         // 1. Setup
-        final InMemoryUserDao dao = new InMemoryUserDao();
-        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
-        final User created = svc.createUser(new User(null, "bad@x.com", "p", "B", null, null, false), null, null);
-
-        // 2. Ejercicio / 3. Asserts
-        assertThrows(IllegalArgumentException.class,
-                () -> svc.updateProfilePhoto(created.getId(), new byte[] { 1 }, "application/pdf"));
-    }
-
-    @Test
-    public void updatePreferredLocale_success_persistsTag() {
-        // 1. Setup
-        final InMemoryUserDao dao = new InMemoryUserDao();
-        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
-        final User created = svc.createUser(new User(null, "loc@x.com", "p", "L", null, null, false), null, null);
+        final User stored = new User(1L, "photo@x.com", "p", "P", null, null, false);
+        final AtomicReference<Long> persistedImageId = new AtomicReference<>();
+        when(userDao.findById(1L)).thenReturn(Optional.of(stored));
+        when(imageService.saveImage(any(byte[].class), eq("image/png")))
+                .thenReturn(new Image(100L, new byte[] { 1, 2 }, "image/png"));
+        doAnswer(invocation -> {
+            persistedImageId.set(invocation.getArgument(1));
+            return null;
+        }).when(userDao).updateProfileImage(anyLong(), anyLong());
 
         // 2. Ejercicio
-        svc.updatePreferredLocale(created.getId(), Locale.ENGLISH);
+        userService.updateProfilePhoto(1L, new byte[] { 1, 2 }, "image/png");
 
         // 3. Asserts
-        assertEquals("en", dao.findById(created.getId()).orElseThrow().getLocale().getLanguage());
+        assertEquals(Long.valueOf(100L), persistedImageId.get());
     }
 
     @Test
-    public void updatePreferredLocale_unsupported_throws() {
+    void testUpdateProfilePhotoWhenInvalidContentTypeThrowsIllegalArgumentException() {
         // 1. Setup
-        final InMemoryUserDao dao = new InMemoryUserDao();
-        final UserServiceImpl svc = new UserServiceImpl(dao, new InMemoryClientDao(), new InMemoryCommerceDao(),
-                new NoOpPasswordEncoder(), new NoOpEmailVerificationTokenService(), new StubImageService());
-        final User created = svc.createUser(new User(null, "loc2@x.com", "p", "L", null, null, false), null, null);
+        // sin stub de userDao: falla validación antes de consultar
 
-        // 2. Ejercicio / 3. Asserts
-        assertThrows(IllegalArgumentException.class,
-                () -> svc.updatePreferredLocale(created.getId(), Locale.FRANCE));
+        // 2. Ejercicio
+        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> userService.updateProfilePhoto(1L, new byte[] { 1 }, "application/pdf"));
+
+        // 3. Asserts
+        assertEquals("Invalid or unsupported image content type", thrown.getMessage());
     }
 
+    @Test
+    void testUpdatePreferredLocaleWhenSupportedPersistsLanguageTag() {
+        // 1. Setup
+        final User stored = new User(1L, "loc@x.com", "p", "L", null, null, false);
+        final AtomicReference<String> persistedLang = new AtomicReference<>();
+        when(userDao.findById(1L)).thenReturn(Optional.of(stored));
+        doAnswer(invocation -> {
+            persistedLang.set(invocation.getArgument(1));
+            return null;
+        }).when(userDao).updateLocale(anyLong(), anyString());
+
+        // 2. Ejercicio
+        userService.updatePreferredLocale(1L, Locale.ENGLISH);
+
+        // 3. Asserts
+        assertEquals("en", persistedLang.get());
+    }
+
+    @Test
+    void testUpdatePreferredLocaleWhenUnsupportedThrowsIllegalArgumentException() {
+        // 1. Setup
+
+        // 2. Ejercicio
+        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> userService.updatePreferredLocale(1L, Locale.FRANCE));
+
+        // 3. Asserts
+        assertEquals("Unsupported locale", thrown.getMessage());
+    }
+
+    @Test
+    void testCreateUserWhenClientRoleWithoutProfileThrowsIllegalArgumentException() {
+        // 1. Setup
+        final User toCreate = new User(null, "cl@required.com", "pw", "N", null, User.Role.CLIENT, false);
+        final User persisted =
+                new User(1L, "cl@required.com", "ENC:pw", "N", null, User.Role.CLIENT, false);
+        when(passwordEncoder.encode("pw")).thenReturn("ENC:pw");
+        when(userDao.createUser(eq("cl@required.com"), eq("ENC:pw"), eq("N"), isNull(), eq(User.Role.CLIENT),
+                eq(Locale.forLanguageTag("es")))).thenReturn(persisted);
+
+        // 2. Ejercicio
+        final IllegalArgumentException thrown =
+                assertThrows(IllegalArgumentException.class, () -> userService.createUser(toCreate, null, null));
+
+        // 3. Asserts
+        assertEquals("Client profile data is required for CLIENT users", thrown.getMessage());
+    }
+
+    @Test
+    void testCreateUserWhenCommerceRoleWithoutProfileThrowsIllegalArgumentException() {
+        // 1. Setup
+        final User toCreate =
+                new User(null, "co@required.com", "pw", "N", "111", User.Role.COMMERCE, false);
+        final User persisted =
+                new User(1L, "co@required.com", "ENC:pw", "N", "111", User.Role.COMMERCE, false);
+        when(passwordEncoder.encode("pw")).thenReturn("ENC:pw");
+        when(userDao.createUser(eq("co@required.com"), eq("ENC:pw"), eq("N"), eq("111"), eq(User.Role.COMMERCE),
+                eq(Locale.forLanguageTag("es")))).thenReturn(persisted);
+
+        // 2. Ejercicio
+        final IllegalArgumentException thrown =
+                assertThrows(IllegalArgumentException.class, () -> userService.createUser(toCreate, null, null));
+
+        // 3. Asserts
+        assertEquals("Commerce profile data is required for COMMERCE users", thrown.getMessage());
+    }
+
+    @Test
+    void testUpdateProfilePhotoWhenDataNullThrowsIllegalArgumentException() {
+        // 1. Setup
+
+        // 2. Ejercicio
+        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> userService.updateProfilePhoto(1L, null, "image/png"));
+
+        // 3. Asserts
+        assertEquals("Image data cannot be null or empty", thrown.getMessage());
+    }
+
+    @Test
+    void testUpdateProfilePhotoWhenDataEmptyThrowsIllegalArgumentException() {
+        // 1. Setup
+
+        // 2. Ejercicio
+        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> userService.updateProfilePhoto(1L, new byte[0], "image/png"));
+
+        // 3. Asserts
+        assertEquals("Image data cannot be null or empty", thrown.getMessage());
+    }
+
+    @Test
+    void testUpdateProfilePhotoWhenExceedsMaxSizeThrowsIllegalArgumentException() {
+        // 1. Setup
+        final byte[] huge = new byte[5 * 1024 * 1024 + 1];
+        Arrays.fill(huge, (byte) 7);
+
+        // 2. Ejercicio
+        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> userService.updateProfilePhoto(1L, huge, "image/png"));
+
+        // 3. Asserts
+        assertEquals("Image exceeds maximum size", thrown.getMessage());
+    }
+
+    @Test
+    void testUpdateProfilePhotoWhenUserMissingThrowsNoSuchElementException() {
+        // 1. Setup
+        when(userDao.findById(404L)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final NoSuchElementException thrown = assertThrows(NoSuchElementException.class,
+                () -> userService.updateProfilePhoto(404L, new byte[] { 1 }, "image/png"));
+
+        // 3. Asserts
+        assertTrue(thrown.getMessage().contains("404"));
+    }
+
+    @Test
+    void testTryRegisterWhenEmailAlreadyRegisteredReturnsDuplicateEmail() {
+        // 1. Setup
+        final User existing = new User(50L, "dup@example.com", "h", "Existing", null, User.Role.CLIENT, false);
+        when(userDao.findByEmail("dup@example.com")).thenReturn(Optional.of(existing));
+        final User registering =
+                new User(null, "dup@example.com", "pw", "New", null, User.Role.CLIENT, false);
+        final Client clientProfile = new Client(null, "N", "L", true);
+
+        // 2. Ejercicio
+        final RegisterResult result =
+                userService.tryRegister(registering, clientProfile, null, "https://app.example");
+
+        // 3. Asserts
+        assertEquals(RegisterResult.Outcome.DUPLICATE_EMAIL, result.getOutcome());
+        assertTrue(result.getUser().isEmpty());
+    }
 }

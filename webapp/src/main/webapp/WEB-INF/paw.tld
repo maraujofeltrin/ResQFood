@@ -18,6 +18,7 @@
     <tag-file><name>packCardShell</name><path>/WEB-INF/tags/shared/packCardShell.tag</path></tag-file>
     <tag-file><name>pagination</name><path>/WEB-INF/tags/shared/pagination.tag</path></tag-file>
     <tag-file><name>searchBar</name><path>/WEB-INF/tags/shared/searchBar.tag</path></tag-file>
+    <tag-file><name>inlineFormSelectDropdown</name><path>/WEB-INF/tags/shared/inlineFormSelectDropdown.tag</path></tag-file>
     <tag-file><name>segmentedTripleTabs</name><path>/WEB-INF/tags/shared/segmentedTripleTabs.tag</path></tag-file>
     <tag-file><name>pickupConfirm</name><path>/WEB-INF/tags/shared/pickupConfirm.tag</path></tag-file>
     <tag-file><name>reservationLayout</name><path>/WEB-INF/tags/shared/reservationLayout.tag</path></tag-file>
@@ -40,12 +41,20 @@
     <tag-file><name>commerceDataFields</name><path>/WEB-INF/tags/commerce/commerceDataFields.tag</path></tag-file>
     <tag-file><name>userIdentityFields</name><path>/WEB-INF/tags/commerce/userIdentityFields.tag</path></tag-file>
     <tag-file><name>deletePackModal</name><path>/WEB-INF/tags/commerce/deletePackModal.tag</path></tag-file>
+    <tag-file><name>cancelAuctionModal</name><path>/WEB-INF/tags/commerce/cancelAuctionModal.tag</path></tag-file>
 
     <!-- Reservations -->
     <tag-file><name>reservationCard</name><path>/WEB-INF/tags/reservations/reservationCard.tag</path></tag-file>
     <tag-file><name>clientAuctionParticipationCard</name><path>/WEB-INF/tags/reservations/clientAuctionParticipationCard.tag</path></tag-file>
     <tag-file><name>modal</name><path>/WEB-INF/tags/reservations/modal.tag</path></tag-file>
     <tag-file><name>reservationFeedback</name><path>/WEB-INF/tags/reservations/reservationFeedback.tag</path></tag-file>
+
+    <!-- Reviews -->
+    <tag-file><name>reviewCard</name><path>/WEB-INF/tags/reviews/reviewCard.tag</path></tag-file>
+    <tag-file><name>reviewForm</name><path>/WEB-INF/tags/reviews/reviewForm.tag</path></tag-file>
+    <tag-file><name>reviewList</name><path>/WEB-INF/tags/reviews/reviewList.tag</path></tag-file>
+    <tag-file><name>commerceReviewSummary</name><path>/WEB-INF/tags/reviews/commerceReviewSummary.tag</path></tag-file>
+    <tag-file><name>reviewDashboardCard</name><path>/WEB-INF/tags/reviews/reviewDashboardCard.tag</path></tag-file>
 
     <!-- Landing -->
     <tag-file><name>landingHero</name><path>/WEB-INF/tags/home/landingHero.tag</path></tag-file>

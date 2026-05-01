@@ -1,6 +1,5 @@
 package ar.edu.itba.paw.services.metrics;
 
-import ar.edu.itba.paw.models.CommerceMetrics;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.persistence.PackDao;

@@ -6,15 +6,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class ClientServiceImplTest {
+class ClientServiceImplTest {
 
     @Mock
     private ClientDao clientDao;
@@ -23,16 +26,14 @@ public class ClientServiceImplTest {
     private ClientServiceImpl clientService;
 
     @Test
-    public void testCreateClient() {
+    void testCreateClientWhenDaoReturnsPersistedClient() {
         // 1. Setup
         final Long userId = 10L;
         final String name = "Test";
         final String lastName = "User";
         final Boolean notifPref = true;
         final Client expectedClient = new Client(userId, name, lastName, notifPref);
-        
-        Mockito.when(clientDao.createClient(userId, name, lastName, notifPref))
-               .thenReturn(expectedClient);
+        when(clientDao.createClient(userId, name, lastName, notifPref)).thenReturn(expectedClient);
 
         // 2. Ejercicio
         final Client client = clientService.createClient(userId, name, lastName, notifPref);
@@ -41,14 +42,16 @@ public class ClientServiceImplTest {
         assertNotNull(client);
         assertEquals(userId, client.getUserId());
         assertEquals(name, client.getName());
+        assertEquals(lastName, client.getLastName());
+        assertEquals(notifPref, client.getNotificationsVisibilityPreferences());
     }
 
     @Test
-    public void testFindByUserId_WhenClientExists() {
+    void testFindByUserIdWhenClientExistsReturnsOptionalWithClient() {
         // 1. Setup
         final Long userId = 10L;
         final Client expectedClient = new Client(userId, "Test", "User", true);
-        Mockito.when(clientDao.findByUserId(userId)).thenReturn(Optional.of(expectedClient));
+        when(clientDao.findByUserId(userId)).thenReturn(Optional.of(expectedClient));
 
         // 2. Ejercicio
         final Optional<Client> client = clientService.findByUserId(userId);
@@ -59,10 +62,10 @@ public class ClientServiceImplTest {
     }
 
     @Test
-    public void testFindByUserId_WhenClientDoesNotExist() {
+    void testFindByUserIdWhenClientDoesNotExistReturnsEmpty() {
         // 1. Setup
         final Long userId = 10L;
-        Mockito.when(clientDao.findByUserId(userId)).thenReturn(Optional.empty());
+        when(clientDao.findByUserId(userId)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
         final Optional<Client> client = clientService.findByUserId(userId);
@@ -72,10 +75,10 @@ public class ClientServiceImplTest {
     }
 
     @Test
-    public void testUpdateClient() {
+    void testUpdateWhenDaoReturnsClientReturnsSameData() {
         // 1. Setup
         final Client clientToUpdate = new Client(11L, "NewName", "User", false);
-        Mockito.when(clientDao.update(clientToUpdate)).thenReturn(clientToUpdate);
+        when(clientDao.update(clientToUpdate)).thenReturn(clientToUpdate);
 
         // 2. Ejercicio
         final Client result = clientService.update(clientToUpdate);
@@ -83,5 +86,7 @@ public class ClientServiceImplTest {
         // 3. Asserts
         assertNotNull(result);
         assertEquals("NewName", result.getName());
+        assertEquals("User", result.getLastName());
+        assertEquals(false, result.getNotificationsVisibilityPreferences());
     }
 }

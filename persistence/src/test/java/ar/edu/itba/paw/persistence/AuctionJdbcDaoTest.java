@@ -10,23 +10,26 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.jdbc.JdbcTestUtils;
+import org.springframework.test.annotation.Rollback;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Rollback
+@Transactional
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
-@Sql("classpath:schema.sql")
 public class AuctionJdbcDaoTest {
+
+    private static final LocalDateTime AUCTION_END_TIME = LocalDateTime.of(2030, 6, 15, 18, 0);
 
     @Autowired
     private DataSource dataSource;
@@ -39,7 +42,7 @@ public class AuctionJdbcDaoTest {
 
     @Autowired
     private CommerceJdbcDao commerceDao;
-    
+
     @Autowired
     private ClientJdbcDao clientDao;
 
@@ -56,10 +59,10 @@ public class AuctionJdbcDaoTest {
     public void setUp() {
         jdbcTemplate = new JdbcTemplate(dataSource);
         JdbcTestUtils.deleteFromTables(jdbcTemplate, "bids", "auctions", "reservation_tokens", "pack_tags", "reservations", "client_pack_favorites", "packs", "images", "commerces", "clients", "tokens", "users");
-        
+
         commerceId = userDao.createUser("commerce@example.com", "pass", "Commerce", "123", User.Role.COMMERCE).getId();
         commerceDao.createCommerce(commerceId, "Comm", Commerce.Category.BAKERY, "Street", 123, "City", "Prov", "1000", "08:00", "20:00");
-        
+
         clientId = userDao.createUser("client@example.com", "pass", "Client", "123", User.Role.CLIENT).getId();
         clientDao.createClient(clientId, "Client", "Last", true);
 
@@ -68,78 +71,78 @@ public class AuctionJdbcDaoTest {
     }
 
     @Test
-    public void testCreateAuction() {
+    public void testCreateAuctionWhenPackExists() {
         // 1. Setup
-        LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
+        final double initialPrice = 500.0;
+        final double minInc = 500.0;
 
         // 2. Ejercicio
-        final double minInc = 500.0;
-        Auction auction = auctionDao.createAuction(packId, 500.0, minInc, endTime);
+        final Auction auction = auctionDao.createAuction(packId, initialPrice, minInc, AUCTION_END_TIME);
 
         // 3. Asserts
         assertNotNull(auction);
         assertEquals(packId, auction.getPack().getId());
-        assertEquals(500.0, auction.getInitialPrice());
+        assertEquals(initialPrice, auction.getInitialPrice());
         assertEquals(minInc, auction.getMinBidIncrement());
         assertEquals(Auction.Status.ACTIVE, auction.getStatus());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
     }
 
     @Test
-    public void testFindById() {
+    public void testFindByIdWhenAuctionExists() {
         // 1. Setup
-        LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
-        Auction created = auctionDao.createAuction(packId, 500.0, 500.0, endTime);
+        final Auction created = auctionDao.createAuction(packId, 500.0, 500.0, AUCTION_END_TIME);
 
         // 2. Ejercicio
-        Optional<Auction> found = auctionDao.findById(created.getId());
+        final Optional<Auction> found = auctionDao.findById(created.getId());
 
         // 3. Asserts
         assertTrue(found.isPresent());
         assertEquals(created.getId(), found.get().getId());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
     }
 
     @Test
-    public void testFindActive() {
+    public void testFilterAuctionsWhenOneActiveExists() {
         // 1. Setup
-        LocalDateTime future = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
-        auctionDao.createAuction(packId, 500.0, 500.0, future);
+        auctionDao.createAuction(packId, 500.0, 500.0, AUCTION_END_TIME);
 
         // 2. Ejercicio
-        List<Auction> activeAuctions = auctionDao.filterAuctions(null, null, null, null, null, 1, Integer.MAX_VALUE, false);
+        final List<Auction> activeAuctions = auctionDao.filterAuctions(null, null, null, null, null, 1, Integer.MAX_VALUE, false);
 
         // 3. Asserts
         assertEquals(1, activeAuctions.size());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
     }
 
     @Test
-    public void testUpdateCurrentBid() {
+    public void testUpdateCurrentBidWhenAuctionExists() {
         // 1. Setup
-        LocalDateTime future = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
-        Auction created = auctionDao.createAuction(packId, 500.0, 500.0, future);
+        final Auction created = auctionDao.createAuction(packId, 500.0, 500.0, AUCTION_END_TIME);
 
         // 2. Ejercicio
         auctionDao.updateCurrentBid(created.getId(), 700.0, clientId);
 
         // 3. Asserts
-        Optional<Auction> found = auctionDao.findById(created.getId());
+        final Optional<Auction> found = auctionDao.findById(created.getId());
         assertTrue(found.isPresent());
         assertEquals(700.0, found.get().getCurrentBid());
         assertEquals(clientId, found.get().getCurrentBidderId());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
     }
 
     @Test
-    public void testUpdateStatus() {
+    public void testUpdateStatusWhenAuctionExists() {
         // 1. Setup
-        LocalDateTime future = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
-        Auction created = auctionDao.createAuction(packId, 500.0, 500.0, future);
+        final Auction created = auctionDao.createAuction(packId, 500.0, 500.0, AUCTION_END_TIME);
 
         // 2. Ejercicio
         auctionDao.updateStatus(created.getId(), Auction.Status.FINISHED);
 
         // 3. Asserts
-        Optional<Auction> found = auctionDao.findById(created.getId());
+        final Optional<Auction> found = auctionDao.findById(created.getId());
         assertTrue(found.isPresent());
         assertEquals(Auction.Status.FINISHED, found.get().getStatus());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
     }
 }

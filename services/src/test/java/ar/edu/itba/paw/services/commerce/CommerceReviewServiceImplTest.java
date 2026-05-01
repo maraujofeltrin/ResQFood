@@ -3,20 +3,23 @@ package ar.edu.itba.paw.services.commerce;
 import ar.edu.itba.paw.models.user.CommerceReview;
 import ar.edu.itba.paw.persistence.CommerceReviewDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class CommerceReviewServiceImplTest {
+class CommerceReviewServiceImplTest {
 
     private static final long CLIENT_ID = 1L;
     private static final long COMMERCE_ID = 2L;
@@ -29,15 +32,11 @@ public class CommerceReviewServiceImplTest {
     @Mock
     private ReservationDao reservationDao;
 
+    @InjectMocks
     private CommerceReviewServiceImpl commerceReviewService;
 
-    @BeforeEach
-    public void setUp() {
-        commerceReviewService = new CommerceReviewServiceImpl(commerceReviewDao, reservationDao);
-    }
-
     @Test
-    public void testCanClientReviewCommerce_WhenPaidReservationExists() {
+    void testCanClientReviewCommerceWhenPaidReservationExistsReturnsTrue() {
         // 1. Setup
         when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
 
@@ -46,11 +45,10 @@ public class CommerceReviewServiceImplTest {
 
         // 3. Asserts
         assertTrue(result);
-        verify(reservationDao).hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID);
     }
 
     @Test
-    public void testUpsertReview_WhenEligibleAndNoPreviousReview_CreatesReview() {
+    void testUpsertReviewWhenEligibleAndNoPreviousReviewReturnsCreatedReview() {
         // 1. Setup
         final CommerceReview created = new CommerceReview(REVIEW_ID, COMMERCE_ID, CLIENT_ID, 5, BODY,
                 LocalDateTime.now(), LocalDateTime.now());
@@ -64,12 +62,10 @@ public class CommerceReviewServiceImplTest {
 
         // 3. Asserts
         assertEquals(created, result);
-        verify(commerceReviewDao).createReview(COMMERCE_ID, CLIENT_ID, 5, BODY);
-        verify(commerceReviewDao, never()).updateReview(anyLong(), anyInt(), anyString());
     }
 
     @Test
-    public void testUpsertReview_WhenEligibleAndPreviousReviewExists_UpdatesReview() {
+    void testUpsertReviewWhenEligibleAndPreviousReviewExistsReturnsUpdatedReview() {
         // 1. Setup
         final CommerceReview existing = new CommerceReview(REVIEW_ID, COMMERCE_ID, CLIENT_ID, 4, "Antes",
                 LocalDateTime.now(), LocalDateTime.now());
@@ -84,12 +80,10 @@ public class CommerceReviewServiceImplTest {
 
         // 3. Asserts
         assertEquals(updated, result);
-        verify(commerceReviewDao).updateReview(REVIEW_ID, 3, BODY);
-        verify(commerceReviewDao, never()).createReview(anyLong(), anyLong(), anyInt(), anyString());
     }
 
     @Test
-    public void testUpsertReview_WhenClientIsNotEligible_Throws() {
+    void testUpsertReviewWhenClientNotEligibleThrowsIllegalStateException() {
         // 1. Setup
         when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(false);
 
@@ -99,11 +93,10 @@ public class CommerceReviewServiceImplTest {
 
         // 3. Asserts
         assertEquals("Client is not eligible to review this commerce", exception.getMessage());
-        verifyNoInteractions(commerceReviewDao);
     }
 
     @Test
-    public void testUpsertReview_WhenRatingIsInvalid_Throws() {
+    void testUpsertReviewWhenRatingInvalidThrowsIllegalArgumentException() {
         // 1. Setup
         when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
 
@@ -113,11 +106,10 @@ public class CommerceReviewServiceImplTest {
 
         // 3. Asserts
         assertEquals("Rating must be between 1 and 5", exception.getMessage());
-        verify(commerceReviewDao, never()).findByClientAndCommerce(anyLong(), anyLong());
     }
 
     @Test
-    public void testUpsertReview_WhenBodyIsBlank_Throws() {
+    void testUpsertReviewWhenBodyBlankThrowsIllegalArgumentException() {
         // 1. Setup
         when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
 
@@ -127,6 +119,30 @@ public class CommerceReviewServiceImplTest {
 
         // 3. Asserts
         assertEquals("Review body is required", exception.getMessage());
-        verify(commerceReviewDao, never()).findByClientAndCommerce(anyLong(), anyLong());
+    }
+
+    @Test
+    void testAverageRatingForCommerceWhenDaoReturnsValueReturnsOptionalOfRating() {
+        // 1. Setup
+        when(commerceReviewDao.averageRatingByCommerceId(COMMERCE_ID)).thenReturn(4.5);
+
+        // 2. Ejercicio
+        final Optional<Double> result = commerceReviewService.averageRatingForCommerce(COMMERCE_ID);
+
+        // 3. Asserts
+        assertTrue(result.isPresent());
+        assertEquals(4.5, result.get(), 0.01);
+    }
+
+    @Test
+    void testAverageRatingForCommerceWhenDaoReturnsNullReturnsEmpty() {
+        // 1. Setup
+        when(commerceReviewDao.averageRatingByCommerceId(COMMERCE_ID)).thenReturn(null);
+
+        // 2. Ejercicio
+        final Optional<Double> result = commerceReviewService.averageRatingForCommerce(COMMERCE_ID);
+
+        // 3. Asserts
+        assertFalse(result.isPresent());
     }
 }

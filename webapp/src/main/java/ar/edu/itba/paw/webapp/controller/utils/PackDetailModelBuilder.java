@@ -112,12 +112,15 @@ public class PackDetailModelBuilder {
         mav.addObject("auctionActive", Boolean.valueOf(auctionActive));
         if (auctionPresent) {
             final long auctionId = auctionOpt.get().getId();
+            mav.addObject("auctionId", auctionId);
             final List<Bid> bidHistory = auctionService.getBidHistory(auctionId);
             final List<BidHistoryViewHelper.BidHistoryRow> bidHistoryItems = BidHistoryViewHelper.buildRows(
                     bidHistory, clientService, messageSource, locale);
             mav.addObject("auctionBidHistoryItems", bidHistoryItems);
+            mav.addObject("auctionHasBids", !bidHistory.isEmpty());
         } else {
             mav.addObject("auctionBidHistoryItems", Collections.emptyList());
+            mav.addObject("auctionHasBids", Boolean.FALSE);
         }
 
         boolean auctionClientIsLeading = false;
@@ -215,9 +218,13 @@ public class PackDetailModelBuilder {
 
     private void addCommerceReviewAttributes(final ModelAndView mav, final long commerceId,
             final CommerceReviewForm submittedForm) {
+        final Locale locale = LocaleContextHolder.getLocale();
         final List<CommerceReview> reviews = commerceReviewService.findReviewsForCommerce(commerceId, 1, 5);
-        mav.addObject("commerceReviewItems", CommerceReviewViewHelper.buildRows(reviews, clientService));
+        mav.addObject("commerceReviewItems",
+                CommerceReviewViewHelper.buildRows(reviews, clientService, businessZone, locale));
         mav.addObject("commerceReviewCount", commerceReviewService.countReviewsForCommerce(commerceId));
+        mav.addObject("commerceReviewAverageRating",
+                commerceReviewService.averageRatingForCommerce(commerceId).orElse(null));
 
         final Optional<User> userOpt = authResolver.resolveUserOrEmpty();
         boolean canReview = false;

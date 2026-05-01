@@ -24,9 +24,10 @@
             <paw:packEmptyState icon="inventory_2" title="${emptyTitle}" description="${emptyDesc}" />
             <c:if test="${messagePrefix == 'reservation.my'}">
                 <section class="mt-8 flex items-center justify-center text-center px-6">
-                    <p class="text-xl font-headline font-medium text-primary tracking-tight">
+                    <a href="${pageContext.request.contextPath}/packs"
+                       class="text-xl font-headline font-medium text-primary tracking-tight underline-offset-4 decoration-primary/40 hover:underline hover:decoration-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
                         <spring:message code="reservation.my.empty.centerMessage" />
-                    </p>
+                    </a>
                 </section>
             </c:if>
         </c:when>
@@ -50,29 +51,22 @@
                                     <paw:searchBar value="${searchQuery}" placeholder="${searchPlaceholderCommerce}" classes="relative w-full" />
                                 </div>
                                 <div class="w-full lg:w-48 min-w-0 flex-shrink-0">
-                                    <div class="inline-flex items-center rounded-full py-1.5 px-3 text-sm font-semibold transition-colors duration-200 bg-surface-container-low text-on-surface hover:bg-surface-container-high relative w-full overflow-hidden">
-                                        <span class="material-symbols-outlined text-base mr-1 pointer-events-none shrink-0">swap_vert</span>
-                                        <select name="status"
-                                                class="appearance-none bg-transparent outline-none cursor-pointer text-sm font-semibold text-on-surface w-full pr-8 focus:outline-none focus:ring-0 truncate"
-                                                style="outline: none !important; box-shadow: none !important; border: none !important; text-overflow: ellipsis;">
-                                            <option value=""><spring:message code="${messagePrefix}.filters.status.all" /></option>
-                                            <c:forEach var="statusOption" items="${statusOptions}">
-                                                <option value="${statusOption}" ${selectedStatus == statusOption.name() ? 'selected' : ''}>
-                                                    <spring:message code="reservation.status.${statusOption}" />
-                                                </option>
-                                            </c:forEach>
-                                        </select>
+                                    <paw:inlineFormSelectDropdown
+                                            selectName="status"
+                                            options="${statusOptions}"
+                                            selectedValue="${selectedStatus}"
+                                            emptyOptionMessageCode="${messagePrefix}.filters.status.all"
+                                            optionMessageCodePrefix="reservation.status."
+                                            classes="w-full" />
+                                </div>
+                                <c:if test="${not empty selectedStatus}">
+                                    <div class="w-full lg:w-auto flex flex-row items-center justify-end flex-shrink-0">
+                                        <a href="${pageContext.request.contextPath}/reservations"
+                                           class="px-4 py-2.5 rounded-full bg-surface-container-high text-on-surface font-semibold hover:bg-surface-container-highest transition no-underline whitespace-nowrap inline-flex items-center justify-center">
+                                            <spring:message code="${messagePrefix}.filters.clear" />
+                                        </a>
                                     </div>
-                                </div>
-                                <div class="w-full lg:w-auto flex flex-row items-center justify-end gap-2 flex-shrink-0">
-                                    <button type="submit" class="bg-primary text-on-primary px-5 py-2.5 rounded-full font-semibold hover:brightness-110 transition whitespace-nowrap">
-                                        <spring:message code="${messagePrefix}.filters.apply" />
-                                    </button>
-                                    <a href="${pageContext.request.contextPath}/reservations"
-                                       class="px-4 py-2.5 rounded-full bg-surface-container-high text-on-surface font-semibold hover:bg-surface-container-highest transition no-underline whitespace-nowrap inline-flex items-center justify-center">
-                                        <spring:message code="${messagePrefix}.filters.clear" />
-                                    </a>
-                                </div>
+                                </c:if>
                             </form>
                             <div class="flex items-center gap-4 xl:flex-shrink-0 md:justify-end">
                                 <a href="${pageContext.request.contextPath}/commerce/verify-pickup"
@@ -108,45 +102,35 @@
                             <paw:searchBar value="${searchQuery}" placeholder="${searchPlaceholder}" classes="relative w-full" />
                         </div>
                         <div class="w-full sm:w-44 min-w-0 flex-shrink-0">
-                            <div class="inline-flex items-center rounded-full py-1.5 px-3 text-sm font-semibold transition-colors duration-200 bg-surface-container-low text-on-surface hover:bg-surface-container-high relative w-full overflow-hidden">
-                                <span class="material-symbols-outlined text-base mr-1 pointer-events-none shrink-0">swap_vert</span>
-                                <c:choose>
-                                    <c:when test="${clientAuctionsView}">
-                                        <select name="auctionStatus"
-                                                class="appearance-none bg-transparent outline-none cursor-pointer text-sm font-semibold text-on-surface w-full pr-8 focus:outline-none focus:ring-0 truncate"
-                                                style="outline: none !important; box-shadow: none !important; border: none !important; text-overflow: ellipsis;">
-                                            <option value=""><spring:message code="reservation.my.filters.auctionStatus.all" /></option>
-                                            <c:forEach var="auctionStatusOption" items="${auctionStatusOptions}">
-                                                <option value="${auctionStatusOption}" ${selectedAuctionStatus == auctionStatusOption.name() ? 'selected' : ''}>
-                                                    <spring:message code="auction.status.${auctionStatusOption}" />
-                                                </option>
-                                            </c:forEach>
-                                        </select>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <select name="status"
-                                                class="appearance-none bg-transparent outline-none cursor-pointer text-sm font-semibold text-on-surface w-full pr-8 focus:outline-none focus:ring-0 truncate"
-                                                style="outline: none !important; box-shadow: none !important; border: none !important; text-overflow: ellipsis;">
-                                            <option value=""><spring:message code="${messagePrefix}.filters.status.all" /></option>
-                                            <c:forEach var="statusOption" items="${statusOptions}">
-                                                <option value="${statusOption}" ${selectedStatus == statusOption.name() ? 'selected' : ''}>
-                                                    <spring:message code="reservation.status.${statusOption}" />
-                                                </option>
-                                            </c:forEach>
-                                        </select>
-                                    </c:otherwise>
-                                </c:choose>
+                            <c:choose>
+                                <c:when test="${clientAuctionsView}">
+                                    <paw:inlineFormSelectDropdown
+                                            selectName="auctionStatus"
+                                            options="${auctionStatusOptions}"
+                                            selectedValue="${selectedAuctionStatus}"
+                                            emptyOptionMessageCode="reservation.my.filters.auctionStatus.all"
+                                            optionMessageCodePrefix="auction.status."
+                                            classes="w-full" />
+                                </c:when>
+                                <c:otherwise>
+                                    <paw:inlineFormSelectDropdown
+                                            selectName="status"
+                                            options="${statusOptions}"
+                                            selectedValue="${selectedStatus}"
+                                            emptyOptionMessageCode="${messagePrefix}.filters.status.all"
+                                            optionMessageCodePrefix="reservation.status."
+                                            classes="w-full" />
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+                        <c:if test="${(clientAuctionsView and not empty selectedAuctionStatus) or (not clientAuctionsView and not empty selectedStatus)}">
+                            <div class="w-full sm:w-auto flex flex-row items-center justify-end sm:justify-start flex-shrink-0">
+                                <a href="${pageContext.request.contextPath}/reservations?tab=${clientReservationsTab}"
+                                   class="px-4 py-2.5 rounded-full bg-surface-container-high text-on-surface font-semibold hover:bg-surface-container-highest transition no-underline whitespace-nowrap inline-flex items-center justify-center">
+                                    <spring:message code="${messagePrefix}.filters.clear" />
+                                </a>
                             </div>
-                        </div>
-                        <div class="w-full sm:w-auto flex flex-row items-center justify-end sm:justify-start gap-2 flex-shrink-0">
-                            <button type="submit" class="bg-primary text-on-primary px-5 py-2.5 rounded-full font-semibold hover:brightness-110 transition whitespace-nowrap">
-                                <spring:message code="${messagePrefix}.filters.apply" />
-                            </button>
-                            <a href="${pageContext.request.contextPath}/reservations?tab=${clientReservationsTab}"
-                               class="px-4 py-2.5 rounded-full bg-surface-container-high text-on-surface font-semibold hover:bg-surface-container-highest transition no-underline whitespace-nowrap inline-flex items-center justify-center">
-                                <spring:message code="${messagePrefix}.filters.clear" />
-                            </a>
-                        </div>
+                        </c:if>
                     </form>
                 </div>
             </c:if>

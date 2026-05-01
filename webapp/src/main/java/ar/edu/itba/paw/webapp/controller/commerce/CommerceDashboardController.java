@@ -3,8 +3,12 @@ package ar.edu.itba.paw.webapp.controller.commerce;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
+import ar.edu.itba.paw.models.user.CommerceReview;
 import ar.edu.itba.paw.services.auction.AuctionService;
+import ar.edu.itba.paw.services.auction.CancelAuctionResult;
+import ar.edu.itba.paw.services.commerce.CommerceReviewService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.services.metrics.CommerceMetrics;
 import ar.edu.itba.paw.services.metrics.CommerceMetricsService;
 import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
@@ -12,8 +16,8 @@ import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
 import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.controller.utils.CommerceMetricsFilterHelper;
+import ar.edu.itba.paw.webapp.controller.utils.CommerceReviewViewHelper;
 import ar.edu.itba.paw.webapp.controller.utils.ReservationHistoryViewHelper;
-import ar.edu.itba.paw.models.CommerceMetrics;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -21,11 +25,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -44,10 +51,12 @@ public class CommerceDashboardController {
     private final AuctionService auctionService;
     private final ReservationService reservationService;
     private final CommerceMetricsService commerceMetricsService;
+    private final CommerceReviewService commerceReviewService;
     private final ClientService clientService;
     private final AuthenticatedUserResolver authResolver;
     private final MessageSource messageSource;
     private final CommerceMetricsFilterHelper metricsFilterHelper;
+    private final ZoneId businessZone;
 
     @Autowired
     public CommerceDashboardController(final CommerceService commerceService,
@@ -58,7 +67,9 @@ public class CommerceDashboardController {
                                        final AuthenticatedUserResolver authResolver,
                                        final MessageSource messageSource,
                                        final CommerceMetricsService commerceMetricsService,
-                                       final CommerceMetricsFilterHelper metricsFilterHelper) {
+                                       final CommerceMetricsFilterHelper metricsFilterHelper,
+                                       final CommerceReviewService commerceReviewService,
+                                       final ZoneId businessZone) {
         this.commerceService = commerceService;
         this.packService = packService;
         this.auctionService = auctionService;
@@ -68,6 +79,8 @@ public class CommerceDashboardController {
         this.messageSource = messageSource;
         this.commerceMetricsService = commerceMetricsService;
         this.metricsFilterHelper = metricsFilterHelper;
+        this.commerceReviewService = commerceReviewService;
+        this.businessZone = businessZone;
     }
 
     @GetMapping(value = "")
@@ -94,6 +107,42 @@ public class CommerceDashboardController {
                 ReservationHistoryViewHelper.buildRows(recentReservations, clientService, messageSource, locale);
         mav.addObject("dashboardReservationHistoryItems", recentHistoryItems);
 
+        // -- Recent reviews (last 3) --
+        final List<CommerceReview> recentReviews = commerceReviewService.findReviewsForCommerce(id, 1, DASHBOARD_RECENT_LIMIT);
+        final List<CommerceReviewViewHelper.CommerceReviewRow> recentReviewItems =
+                CommerceReviewViewHelper.buildRows(recentReviews, clientService, businessZone, locale);
+        mav.addObject("dashboardRecentReviews", recentReviewItems);
+        mav.addObject("commerceReviewCount", commerceReviewService.countReviewsForCommerce(id));
+        mav.addObject("commerceReviewAverageRating",
+                commerceReviewService.averageRatingForCommerce(id).orElse(null));
+
+        return mav;
+    }
+
+    @GetMapping(value = "/reviews")
+    public ModelAndView reviews(@AuthenticationPrincipal final AuthUser principal,
+                                @RequestParam(value = "page", defaultValue = "1") final int page) {
+        final long id = authResolver.resolveUser(principal).getId();
+        final Commerce commerce = commerceService.findByUserId(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        final Locale locale = LocaleContextHolder.getLocale();
+
+        final int totalReviews = commerceReviewService.countReviewsForCommerce(id);
+        final int totalPages = Math.max(1, (int) Math.ceil((double) totalReviews / PAGE_SIZE));
+        final int safePage = Math.max(1, Math.min(page, totalPages));
+
+        final List<CommerceReview> reviews = commerceReviewService.findReviewsForCommerce(id, safePage, PAGE_SIZE);
+        final List<CommerceReviewViewHelper.CommerceReviewRow> reviewItems =
+                CommerceReviewViewHelper.buildRows(reviews, clientService, businessZone, locale);
+
+        final ModelAndView mav = new ModelAndView("commerce/reviews");
+        mav.addObject("commerce", commerce);
+        mav.addObject("reviewItems", reviewItems);
+        mav.addObject("reviewCount", totalReviews);
+        mav.addObject("averageRating", commerceReviewService.averageRatingForCommerce(id).orElse(null));
+        mav.addObject("currentPage", safePage);
+        mav.addObject("totalPages", totalPages);
+        mav.addObject("paginationBaseUrl", "/commerce/reviews");
         return mav;
     }
 
@@ -132,6 +181,15 @@ public class CommerceDashboardController {
         final Set<Long> auctionPackIds = commerceAuctions.stream()
                 .map(a -> a.getPack().getId())
                 .collect(Collectors.toSet());
+        final java.util.Map<Long, Long> packIdToAuctionId = new java.util.HashMap<>();
+        final java.util.Map<Long, Boolean> packIdToAuctionActive = new java.util.HashMap<>();
+        final java.util.Map<Long, Boolean> packIdToAuctionHasBids = new java.util.HashMap<>();
+        for (final ar.edu.itba.paw.models.auction.Auction auction : commerceAuctions) {
+            final long packId = auction.getPack().getId();
+            packIdToAuctionId.put(packId, auction.getId());
+            packIdToAuctionActive.put(packId, auction.getStatus() == ar.edu.itba.paw.models.auction.Auction.Status.ACTIVE);
+            packIdToAuctionHasBids.put(packId, !auctionService.getBidHistory(auction.getId()).isEmpty());
+        }
 
         mav.addObject("commerce", commerce);
         mav.addObject("packs", displayedPacks);
@@ -139,6 +197,9 @@ public class CommerceDashboardController {
         mav.addObject("totalPages", totalPages);
         mav.addObject("commerceId", id);
         mav.addObject("auctionPackIds", auctionPackIds);
+        mav.addObject("packIdToAuctionId", packIdToAuctionId);
+        mav.addObject("packIdToAuctionActive", packIdToAuctionActive);
+        mav.addObject("packIdToAuctionHasBids", packIdToAuctionHasBids);
         mav.addObject("currentTab", tab);
         mav.addObject("paginationBaseUrl", "/commerce/products?tab=" + tab);
         mav.addObject("itemsCount", itemsCount);
@@ -171,6 +232,28 @@ public class CommerceDashboardController {
         mav.addObject("bestSellingPackTitle", metrics.getBestSellingPackTitle());
         mav.addObject("acceptanceRatePercent", metrics.getAcceptanceRatePercent());
         return mav;
+    }
+
+    @PostMapping(value = "/auctions/{auctionId}/cancel")
+    public ModelAndView cancelAuction(@PathVariable("auctionId") final long auctionId,
+            @AuthenticationPrincipal final AuthUser principal) {
+        final long userId = authResolver.resolveUser(principal).getId();
+        final CancelAuctionResult result = auctionService.cancelAuction(auctionId, userId);
+
+        switch (result.getOutcome()) {
+            case SUCCESS:
+                return new ModelAndView("redirect:/commerce/products?cancelled=true");
+            case NOT_FOUND:
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            case FORBIDDEN:
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            case HAS_BIDS:
+                return new ModelAndView("redirect:/commerce/products?cancelFailed=true");
+            case NOT_ACTIVE:
+                throw new ResponseStatusException(HttpStatus.CONFLICT);
+            default:
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     private static String buildSalesChartJson(final List<CommerceMetrics.DailySalesPoint> points) {

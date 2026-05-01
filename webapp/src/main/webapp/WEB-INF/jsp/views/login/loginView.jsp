@@ -131,6 +131,14 @@ uri="http://itba.edu.ar/paw/tags" %>
             ><spring:message code="login.link.register"
           /></a>
         </div>
+        <div class="mt-4 text-center text-sm text-secondary">
+          <spring:message code="login.prompt.resendVerification" />
+          <a
+            href="${pageContext.request.contextPath}/verify-email/resend"
+            class="text-primary font-medium hover:underline"
+            ><spring:message code="login.link.resendVerification"
+          /></a>
+        </div>
       </div>
     </main>
     <paw:footer />
