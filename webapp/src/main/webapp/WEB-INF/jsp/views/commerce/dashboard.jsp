@@ -84,9 +84,42 @@
 
                             </section>
 
-                            <%-- ══ SECTION 3: Recent Reservations ══ --%>
-                            <section>
-                                <paw:reservationHistoryCard packId="${0}" items="${dashboardReservationHistoryItems}" />
+                            <%-- ══ SECTION 3: Recent Reservations + Recent Reviews ══ --%>
+                            <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div>
+                                    <paw:reservationHistoryCard packId="${0}" items="${dashboardReservationHistoryItems}" />
+                                </div>
+                                <div class="bg-surface-container-highest p-8 rounded-2xl font-body">
+                                    <div class="flex items-center justify-between gap-2 mb-6">
+                                        <div class="flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-primary text-2xl" aria-hidden="true">rate_review</span>
+                                            <h3 class="text-xl font-bold font-headline text-on-surface"><spring:message code="commerce.dashboard.recentReviews.title"/></h3>
+                                        </div>
+                                        <a href="${pageContext.request.contextPath}/commerce/reviews"
+                                           class="flex items-center justify-center h-10 w-10 text-primary bg-primary/10 hover:bg-primary hover:text-on-primary rounded-full transition-all hover:scale-110 shadow-sm"
+                                           title="<spring:message code='commerce.dashboard.recentReviews.viewAll'/>"
+                                           aria-label="<spring:message code='commerce.dashboard.recentReviews.viewAll'/>">
+                                            <span class="material-symbols-outlined text-[1.25rem]">arrow_forward</span>
+                                        </a>
+                                    </div>
+                                    <c:choose>
+                                        <c:when test="${empty dashboardRecentReviews}">
+                                            <p class="text-sm text-secondary m-0"><spring:message code="commerce.dashboard.recentReviews.empty"/></p>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <div class="space-y-4">
+                                                <c:forEach var="row" items="${dashboardRecentReviews}">
+                                                    <paw:reviewDashboardCard reviewId="${row.review.id}"
+                                                                             clientName="${row.clientName}"
+                                                                             rating="${row.review.rating}"
+                                                                             body="${row.review.body}"
+                                                                             formattedDate="${row.formattedDate}"
+                                                                             edited="${row.edited}"/>
+                                                </c:forEach>
+                                            </div>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </div>
                             </section>
 
                         </main>

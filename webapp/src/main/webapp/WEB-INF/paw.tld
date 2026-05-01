@@ -49,6 +49,13 @@
     <tag-file><name>modal</name><path>/WEB-INF/tags/reservations/modal.tag</path></tag-file>
     <tag-file><name>reservationFeedback</name><path>/WEB-INF/tags/reservations/reservationFeedback.tag</path></tag-file>
 
+    <!-- Reviews -->
+    <tag-file><name>reviewCard</name><path>/WEB-INF/tags/reviews/reviewCard.tag</path></tag-file>
+    <tag-file><name>reviewForm</name><path>/WEB-INF/tags/reviews/reviewForm.tag</path></tag-file>
+    <tag-file><name>reviewList</name><path>/WEB-INF/tags/reviews/reviewList.tag</path></tag-file>
+    <tag-file><name>commerceReviewSummary</name><path>/WEB-INF/tags/reviews/commerceReviewSummary.tag</path></tag-file>
+    <tag-file><name>reviewDashboardCard</name><path>/WEB-INF/tags/reviews/reviewDashboardCard.tag</path></tag-file>
+
     <!-- Landing -->
     <tag-file><name>landingHero</name><path>/WEB-INF/tags/home/landingHero.tag</path></tag-file>
     <tag-file><name>landingPathCard</name><path>/WEB-INF/tags/home/landingPathCard.tag</path></tag-file>

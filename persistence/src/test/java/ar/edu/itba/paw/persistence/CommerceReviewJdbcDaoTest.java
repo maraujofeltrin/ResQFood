@@ -142,4 +142,32 @@ public class CommerceReviewJdbcDaoTest {
         // 3. Asserts
         assertEquals(1, count);
     }
+
+    @Test
+    public void testAverageRatingByCommerceId_WhenReviewsExist() {
+        // 1. Setup
+        commerceReviewDao.createReview(commerceId, clientId, 4, BODY);
+        final Long client2Id = userDao.createUser("client2-review@example.com", "pass", "Client2", "456",
+                ar.edu.itba.paw.models.user.User.Role.CLIENT).getId();
+        clientDao.createClient(client2Id, "Client2", "Last2", true);
+        commerceReviewDao.createReview(commerceId, client2Id, 2, "Regular.");
+
+        // 2. Ejercicio
+        final Double average = commerceReviewDao.averageRatingByCommerceId(commerceId);
+
+        // 3. Asserts
+        assertNotNull(average);
+        assertEquals(3.0, average, 0.01);
+    }
+
+    @Test
+    public void testAverageRatingByCommerceId_WhenNoReviews() {
+        // 1. Setup — no reviews created
+
+        // 2. Ejercicio
+        final Double average = commerceReviewDao.averageRatingByCommerceId(commerceId);
+
+        // 3. Asserts
+        assertNull(average);
+    }
 }

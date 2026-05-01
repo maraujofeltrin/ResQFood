@@ -17,6 +17,10 @@
             <span class="material-symbols-outlined flex-shrink-0">book_online</span>
             <span class="font-bold font-headline opacity-0 group-hover:opacity-100 transition-opacity duration-300"><spring:message code="commerce.sidebar.reservations" /></span>
         </a>
+        <a href="${pageContext.request.contextPath}/commerce/reviews" class="flex items-center gap-4 px-3 py-3 rounded-xl transition-colors whitespace-nowrap overflow-hidden ${activeLink == 'reviews' ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'}" title="<spring:message code='commerce.sidebar.reviews' />">
+            <span class="material-symbols-outlined flex-shrink-0">rate_review</span>
+            <span class="font-bold font-headline opacity-0 group-hover:opacity-100 transition-opacity duration-300"><spring:message code="commerce.sidebar.reviews" /></span>
+        </a>
         <a href="${pageContext.request.contextPath}/commerce/metrics" class="flex items-center gap-4 px-3 py-3 rounded-xl transition-colors whitespace-nowrap overflow-hidden ${activeLink == 'metrics' ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'}" title="<spring:message code='commerce.sidebar.metrics' />">
             <span class="material-symbols-outlined flex-shrink-0">bar_chart</span>
             <span class="font-bold font-headline opacity-0 group-hover:opacity-100 transition-opacity duration-300"><spring:message code="commerce.sidebar.metrics" /></span>

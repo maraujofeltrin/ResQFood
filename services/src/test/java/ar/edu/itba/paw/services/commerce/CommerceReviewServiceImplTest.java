@@ -129,4 +129,31 @@ public class CommerceReviewServiceImplTest {
         assertEquals("Review body is required", exception.getMessage());
         verify(commerceReviewDao, never()).findByClientAndCommerce(anyLong(), anyLong());
     }
+
+    @Test
+    public void testAverageRatingForCommerce_WhenReviewsExist() {
+        // 1. Setup
+        when(commerceReviewDao.averageRatingByCommerceId(COMMERCE_ID)).thenReturn(4.5);
+
+        // 2. Ejercicio
+        final Optional<Double> result = commerceReviewService.averageRatingForCommerce(COMMERCE_ID);
+
+        // 3. Asserts
+        assertTrue(result.isPresent());
+        assertEquals(4.5, result.get(), 0.01);
+        verify(commerceReviewDao).averageRatingByCommerceId(COMMERCE_ID);
+    }
+
+    @Test
+    public void testAverageRatingForCommerce_WhenNoReviews() {
+        // 1. Setup
+        when(commerceReviewDao.averageRatingByCommerceId(COMMERCE_ID)).thenReturn(null);
+
+        // 2. Ejercicio
+        final Optional<Double> result = commerceReviewService.averageRatingForCommerce(COMMERCE_ID);
+
+        // 3. Asserts
+        assertFalse(result.isPresent());
+        verify(commerceReviewDao).averageRatingByCommerceId(COMMERCE_ID);
+    }
 }

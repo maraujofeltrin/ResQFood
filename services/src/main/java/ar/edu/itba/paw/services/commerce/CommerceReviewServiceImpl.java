@@ -57,6 +57,11 @@ public class CommerceReviewServiceImpl implements CommerceReviewService {
                 .orElseGet(() -> commerceReviewDao.createReview(commerceUserId, clientUserId, rating, normalizedBody));
     }
 
+    @Override
+    public Optional<Double> averageRatingForCommerce(final long commerceUserId) {
+        return Optional.ofNullable(commerceReviewDao.averageRatingByCommerceId(commerceUserId));
+    }
+
     private void validateRating(final int rating) {
         if (rating < MIN_RATING || rating > MAX_RATING) {
             throw new IllegalArgumentException("Rating must be between 1 and 5");
