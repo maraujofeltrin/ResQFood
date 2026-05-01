@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.user;
 
 import ar.edu.itba.paw.models.image.Image;
+import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.ClientDao;
@@ -15,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -234,5 +236,111 @@ class UserServiceImplTest {
 
         // 3. Asserts
         assertEquals("Unsupported locale", thrown.getMessage());
+    }
+
+    @Test
+    void testCreateUserWhenClientRoleWithoutProfileThrowsIllegalArgumentException() {
+        // 1. Setup
+        final User toCreate = new User(null, "cl@required.com", "pw", "N", null, User.Role.CLIENT, false);
+        final User persisted =
+                new User(1L, "cl@required.com", "ENC:pw", "N", null, User.Role.CLIENT, false);
+        when(passwordEncoder.encode("pw")).thenReturn("ENC:pw");
+        when(userDao.createUser(eq("cl@required.com"), eq("ENC:pw"), eq("N"), isNull(), eq(User.Role.CLIENT),
+                eq(Locale.forLanguageTag("es")))).thenReturn(persisted);
+
+        // 2. Ejercicio
+        final IllegalArgumentException thrown =
+                assertThrows(IllegalArgumentException.class, () -> userService.createUser(toCreate, null, null));
+
+        // 3. Asserts
+        assertEquals("Client profile data is required for CLIENT users", thrown.getMessage());
+    }
+
+    @Test
+    void testCreateUserWhenCommerceRoleWithoutProfileThrowsIllegalArgumentException() {
+        // 1. Setup
+        final User toCreate =
+                new User(null, "co@required.com", "pw", "N", "111", User.Role.COMMERCE, false);
+        final User persisted =
+                new User(1L, "co@required.com", "ENC:pw", "N", "111", User.Role.COMMERCE, false);
+        when(passwordEncoder.encode("pw")).thenReturn("ENC:pw");
+        when(userDao.createUser(eq("co@required.com"), eq("ENC:pw"), eq("N"), eq("111"), eq(User.Role.COMMERCE),
+                eq(Locale.forLanguageTag("es")))).thenReturn(persisted);
+
+        // 2. Ejercicio
+        final IllegalArgumentException thrown =
+                assertThrows(IllegalArgumentException.class, () -> userService.createUser(toCreate, null, null));
+
+        // 3. Asserts
+        assertEquals("Commerce profile data is required for COMMERCE users", thrown.getMessage());
+    }
+
+    @Test
+    void testUpdateProfilePhotoWhenDataNullThrowsIllegalArgumentException() {
+        // 1. Setup
+
+        // 2. Ejercicio
+        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> userService.updateProfilePhoto(1L, null, "image/png"));
+
+        // 3. Asserts
+        assertEquals("Image data cannot be null or empty", thrown.getMessage());
+    }
+
+    @Test
+    void testUpdateProfilePhotoWhenDataEmptyThrowsIllegalArgumentException() {
+        // 1. Setup
+
+        // 2. Ejercicio
+        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> userService.updateProfilePhoto(1L, new byte[0], "image/png"));
+
+        // 3. Asserts
+        assertEquals("Image data cannot be null or empty", thrown.getMessage());
+    }
+
+    @Test
+    void testUpdateProfilePhotoWhenExceedsMaxSizeThrowsIllegalArgumentException() {
+        // 1. Setup
+        final byte[] huge = new byte[5 * 1024 * 1024 + 1];
+        Arrays.fill(huge, (byte) 7);
+
+        // 2. Ejercicio
+        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> userService.updateProfilePhoto(1L, huge, "image/png"));
+
+        // 3. Asserts
+        assertEquals("Image exceeds maximum size", thrown.getMessage());
+    }
+
+    @Test
+    void testUpdateProfilePhotoWhenUserMissingThrowsNoSuchElementException() {
+        // 1. Setup
+        when(userDao.findById(404L)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final NoSuchElementException thrown = assertThrows(NoSuchElementException.class,
+                () -> userService.updateProfilePhoto(404L, new byte[] { 1 }, "image/png"));
+
+        // 3. Asserts
+        assertTrue(thrown.getMessage().contains("404"));
+    }
+
+    @Test
+    void testTryRegisterWhenEmailAlreadyRegisteredReturnsDuplicateEmail() {
+        // 1. Setup
+        final User existing = new User(50L, "dup@example.com", "h", "Existing", null, User.Role.CLIENT, false);
+        when(userDao.findByEmail("dup@example.com")).thenReturn(Optional.of(existing));
+        final User registering =
+                new User(null, "dup@example.com", "pw", "New", null, User.Role.CLIENT, false);
+        final Client clientProfile = new Client(null, "N", "L", true);
+
+        // 2. Ejercicio
+        final RegisterResult result =
+                userService.tryRegister(registering, clientProfile, null, "https://app.example");
+
+        // 3. Asserts
+        assertEquals(RegisterResult.Outcome.DUPLICATE_EMAIL, result.getOutcome());
+        assertTrue(result.getUser().isEmpty());
     }
 }
