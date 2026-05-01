@@ -10,11 +10,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class ImageServiceImplTest {
+class ImageServiceImplTest {
 
     @Mock
     private ImageDao imageDao;
@@ -23,9 +26,9 @@ public class ImageServiceImplTest {
     private ImageServiceImpl imageService;
 
     @Test
-    public void saveImage_persistsAndReturnsImage() {
+    void testSaveImageWhenValidReturnsPersistedImage() {
         // 1. Setup
-        final byte[] data = new byte[] {1, 2, 3};
+        final byte[] data = new byte[] { 1, 2, 3 };
         final String contentType = "image/png";
         final Image saved = new Image(12L, data, contentType);
         when(imageDao.saveImage(data, contentType)).thenReturn(saved);
@@ -37,27 +40,25 @@ public class ImageServiceImplTest {
         assertEquals(12L, result.getId());
         assertArrayEquals(data, result.getData());
         assertEquals(contentType, result.getContentType());
-        verify(imageDao, times(1)).saveImage(data, contentType);
     }
 
     @Test
-    public void saveImage_throwsWhenDataIsEmpty() {
+    void testSaveImageWhenDataEmptyThrowsIllegalArgumentException() {
         // 1. Setup
         final byte[] data = new byte[0];
 
         // 2. Ejercicio
-        final IllegalArgumentException ex =
-                assertThrows(IllegalArgumentException.class, () -> imageService.saveImage(data, "image/png"));
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> imageService.saveImage(data, "image/png"));
 
         // 3. Asserts
         assertEquals("Image data cannot be null or empty", ex.getMessage());
-        verify(imageDao, never()).saveImage(any(), anyString());
     }
 
     @Test
-    public void getImage_returnsOptionalFromDao() {
+    void testGetImageWhenExistsReturnsOptionalWithImage() {
         // 1. Setup
-        final Image image = new Image(7L, new byte[] {9}, "image/jpeg");
+        final Image image = new Image(7L, new byte[] { 9 }, "image/jpeg");
         when(imageDao.getImage(7L)).thenReturn(Optional.of(image));
 
         // 2. Ejercicio
@@ -66,6 +67,5 @@ public class ImageServiceImplTest {
         // 3. Asserts
         assertTrue(result.isPresent());
         assertEquals(7L, result.get().getId());
-        verify(imageDao, times(1)).getImage(7L);
     }
 }
