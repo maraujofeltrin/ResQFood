@@ -8,6 +8,7 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.BidDao;
 import ar.edu.itba.paw.persistence.PackDao;
+import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,12 +20,22 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class AuctionServiceImplTest {
+class AuctionServiceImplTest {
 
     @Mock
     private AuctionDao auctionDao;
@@ -38,6 +49,9 @@ public class AuctionServiceImplTest {
     @Mock
     private ReservationService reservationService;
 
+    @Mock
+    private CommerceService commerceService;
+
     @InjectMocks
     private AuctionServiceImpl auctionService;
 
@@ -47,122 +61,136 @@ public class AuctionServiceImplTest {
     private static final long COMMERCE_ID = 3L;
 
     @Test
-    public void testCreateAuction_Valid() {
+    void testCreateAuctionWhenPackValidReturnsCreatedAuction() {
         // 1. Setup
-        Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
         when(packDao.findById(PACK_ID)).thenReturn(Optional.of(pack));
         when(auctionDao.findByPackId(PACK_ID)).thenReturn(Optional.empty());
-        
-        LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
+        final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
         final double minInc = 50.0;
-        Auction createdAuction = new Auction(AUCTION_ID, pack, 100.0, minInc, null, null, endTime, Auction.Status.ACTIVE, LocalDateTime.now());
+        final Auction createdAuction = new Auction(AUCTION_ID, pack, 100.0, minInc, null, null, endTime,
+                Auction.Status.ACTIVE, LocalDateTime.now());
         when(auctionDao.createAuction(PACK_ID, 100.0, minInc, endTime)).thenReturn(createdAuction);
 
         // 2. Ejercicio
-        Auction auction = auctionService.createAuction(PACK_ID, 100.0, minInc, endTime);
+        final Auction auction = auctionService.createAuction(PACK_ID, 100.0, minInc, endTime);
 
         // 3. Asserts
         assertNotNull(auction);
         assertEquals(AUCTION_ID, auction.getId());
-        verify(auctionDao).createAuction(PACK_ID, 100.0, minInc, endTime);
+        assertEquals(endTime, auction.getEndTime());
     }
 
     @Test
-    public void testCreateAuction_InactivePack() {
+    void testCreateAuctionWhenPackInactiveThrowsIllegalArgumentException() {
         // 1. Setup
-        Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, false, null); // Inactive
+        final Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, false, null);
         when(packDao.findById(PACK_ID)).thenReturn(Optional.of(pack));
-
-        // 2. Ejercicio & 3. Asserts
-        LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            auctionService.createAuction(PACK_ID, 100.0, 10.0, endTime);
-        });
-        
-        assertTrue(exception.getMessage().contains("inactive pack"));
-        verify(auctionDao, never()).createAuction(anyLong(), anyDouble(), anyDouble(), any(LocalDateTime.class));
-    }
-
-    @Test
-    public void testPlaceBid_Valid() {
-        // 1. Setup
-        Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
-        LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
-        final double minInc = 500.0;
-        Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime, Auction.Status.ACTIVE, LocalDateTime.now());
-        
-        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
-        
-        Bid createdBid = new Bid(1L, AUCTION_ID, CLIENT_ID, 1600.0, LocalDateTime.now());
-        when(bidDao.createBid(AUCTION_ID, CLIENT_ID, 1600.0)).thenReturn(createdBid);
+        lenient().doThrow(new AssertionError("createAuction no debe invocarse")).when(auctionDao)
+                .createAuction(anyLong(), anyDouble(), anyDouble(), any(LocalDateTime.class));
 
         // 2. Ejercicio
-        Bid bid = auctionService.placeBid(AUCTION_ID, CLIENT_ID, 1600.0);
+        final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
+        final IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> auctionService.createAuction(PACK_ID, 100.0, 10.0, endTime));
+
+        // 3. Asserts
+        assertTrue(exception.getMessage().contains("inactive pack"));
+    }
+
+    @Test
+    void testPlaceBidWhenAmountValidReturnsBidAndUpdatesAuctionCurrentBid() {
+        // 1. Setup
+        final Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
+        final double minInc = 500.0;
+        final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime,
+                Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
+        final Bid createdBid = new Bid(1L, AUCTION_ID, CLIENT_ID, 1600.0, LocalDateTime.now());
+        when(bidDao.createBid(AUCTION_ID, CLIENT_ID, 1600.0)).thenReturn(createdBid);
+        final AtomicReference<Double> capturedAmount = new AtomicReference<>();
+        final AtomicReference<Long> capturedBidder = new AtomicReference<>();
+        doAnswer(invocation -> {
+            capturedAmount.set(invocation.getArgument(1));
+            capturedBidder.set(invocation.getArgument(2));
+            return null;
+        }).when(auctionDao).updateCurrentBid(eq(AUCTION_ID), eq(1600.0), eq(CLIENT_ID));
+
+        // 2. Ejercicio
+        final Bid bid = auctionService.placeBid(AUCTION_ID, CLIENT_ID, 1600.0);
 
         // 3. Asserts
         assertNotNull(bid);
         assertEquals(1600.0, bid.getAmount());
-        verify(bidDao).createBid(AUCTION_ID, CLIENT_ID, 1600.0);
-        verify(auctionDao).updateCurrentBid(AUCTION_ID, 1600.0, CLIENT_ID);
+        assertEquals(1600.0, capturedAmount.get());
+        assertEquals(CLIENT_ID, capturedBidder.get().longValue());
     }
 
     @Test
-    public void testPlaceBid_AmountBelowMinimum() {
+    void testPlaceBidWhenAmountBelowMinimumThrowsBidPlacementException() {
         // 1. Setup
-        Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
-        LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
+        final Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
         final double minInc = 500.0;
-        Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime, Auction.Status.ACTIVE, LocalDateTime.now());
-        
+        final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime,
+                Auction.Status.ACTIVE, LocalDateTime.now());
         when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
+        lenient().doThrow(new AssertionError("createBid no debe invocarse")).when(bidDao).createBid(anyLong(),
+                anyLong(), anyDouble());
+        lenient().doThrow(new AssertionError("updateCurrentBid no debe invocarse")).when(auctionDao)
+                .updateCurrentBid(anyLong(), anyDouble(), anyLong());
 
-        // 2. Ejercicio & 3. Asserts
-        BidPlacementException exception = assertThrows(BidPlacementException.class, () -> {
-            auctionService.placeBid(AUCTION_ID, CLIENT_ID, 1200.0); // Minimum is 1500 (1000 + 500)
-        });
-        
+        // 2. Ejercicio
+        final BidPlacementException exception = assertThrows(BidPlacementException.class,
+                () -> auctionService.placeBid(AUCTION_ID, CLIENT_ID, 1200.0));
+
+        // 3. Asserts
         assertEquals(BidFailureReason.AMOUNT_BELOW_MINIMUM, exception.getReason());
-        verify(bidDao, never()).createBid(anyLong(), anyLong(), anyDouble());
     }
 
     @Test
-    public void testPlaceBid_ExpiredAuction() {
+    void testPlaceBidWhenAuctionExpiredThrowsBidPlacementException() {
         // 1. Setup
-        Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
-        LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).minusHours(1); // Expired
+        final Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).minusHours(1);
         final double minInc = 1.0;
-        Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime, Auction.Status.ACTIVE, LocalDateTime.now());
-        
+        final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime,
+                Auction.Status.ACTIVE, LocalDateTime.now());
         when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
+        lenient().doThrow(new AssertionError("createBid no debe invocarse")).when(bidDao).createBid(anyLong(),
+                anyLong(), anyDouble());
 
-        // 2. Ejercicio & 3. Asserts
-        BidPlacementException exception = assertThrows(BidPlacementException.class, () -> {
-            auctionService.placeBid(AUCTION_ID, CLIENT_ID, 2000.0);
-        });
-        
+        // 2. Ejercicio
+        final BidPlacementException exception = assertThrows(BidPlacementException.class,
+                () -> auctionService.placeBid(AUCTION_ID, CLIENT_ID, 2000.0));
+
+        // 3. Asserts
         assertEquals(BidFailureReason.EXPIRED, exception.getReason());
     }
 
     @Test
-    public void testPlaceBid_OwnCommerce() {
+    void testPlaceBidWhenClientIsOwnCommerceThrowsBidPlacementException() {
         // 1. Setup
-        Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
-        LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
+        final Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
         final double minInc = 1.0;
-        Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime, Auction.Status.ACTIVE, LocalDateTime.now());
-        
+        final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime,
+                Auction.Status.ACTIVE, LocalDateTime.now());
         when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
+        lenient().doThrow(new AssertionError("createBid no debe invocarse")).when(bidDao).createBid(anyLong(),
+                anyLong(), anyDouble());
 
-        // 2. Ejercicio & 3. Asserts
-        BidPlacementException exception = assertThrows(BidPlacementException.class, () -> {
-            auctionService.placeBid(AUCTION_ID, COMMERCE_ID, 2000.0); // Client is the commerce
-        });
-        
+        // 2. Ejercicio
+        final BidPlacementException exception = assertThrows(BidPlacementException.class,
+                () -> auctionService.placeBid(AUCTION_ID, COMMERCE_ID, 2000.0));
+
+        // 3. Asserts
         assertEquals(BidFailureReason.OWN_COMMERCE, exception.getReason());
     }
 
     @Test
-    public void testFindParticipatedAuctionsByClientId_MostRecentAuctionFirstAndDistinct() {
+    void testFindParticipatedAuctionsByClientIdWhenMultipleBidsReturnsDistinctOrderedByFirstSeen() {
         // 1. Setup
         final long auctionB = 201L;
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
