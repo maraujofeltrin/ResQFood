@@ -1,6 +1,5 @@
 package ar.edu.itba.paw.persistence;
 
-import org.springframework.stereotype.Repository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import javax.sql.DataSource;
@@ -17,8 +16,14 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Repository;
+
 @Repository
 public class PackJdbcDao implements PackDao {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PackJdbcDao.class);
 
     private static final String PACK_COLS_NO_IMAGE =
             "id, commerce_id, title, description, original_price, final_price, stock, active, deleted, image_id";
@@ -127,7 +132,7 @@ public class PackJdbcDao implements PackDao {
 
     @Override
     public Pack update(Pack pack) {
-        jdbcTemplate.update(
+        final int packRowsUpdated = jdbcTemplate.update(
             "UPDATE packs SET title = ?, description = ?, original_price = ?, final_price = ?, stock = ?, image_id = ? WHERE id = ?",
             pack.getTitle(),
             pack.getDescription(),
@@ -137,6 +142,9 @@ public class PackJdbcDao implements PackDao {
             pack.getImageId(),
             pack.getId()
         );
+        if (packRowsUpdated == 0) {
+            LOGGER.warn("update: no packs row matched for id {}", pack.getId());
+        }
 
         jdbcTemplate.update("DELETE FROM pack_tags WHERE pack_id = ?", pack.getId());
         if (pack.getTags() != null && !pack.getTags().isEmpty()) {
@@ -152,12 +160,18 @@ public class PackJdbcDao implements PackDao {
 
     @Override
     public void softDelete(final Long id) {
-        jdbcTemplate.update("UPDATE packs SET deleted = true WHERE id = ?", id);
+        final int rows = jdbcTemplate.update("UPDATE packs SET deleted = true WHERE id = ?", id);
+        if (rows == 0) {
+            LOGGER.warn("softDelete: no packs row matched for id {}", id);
+        }
     }
 
     @Override
     public void setActive(final Long id, final boolean active) {
-        jdbcTemplate.update("UPDATE packs SET active = ? WHERE id = ?", active, id);
+        final int rows = jdbcTemplate.update("UPDATE packs SET active = ? WHERE id = ?", active, id);
+        if (rows == 0) {
+            LOGGER.warn("setActive: no packs row matched for id {} (active={})", id, active);
+        }
     }
 
     @Override
@@ -168,6 +182,10 @@ public class PackJdbcDao implements PackDao {
         final int updated = jdbcTemplate.update(
                 "UPDATE packs SET stock = stock - ? WHERE id = ? AND stock >= ?",
                 quantity, packId, quantity);
+        if (updated != 1) {
+            LOGGER.debug("decrementStock: expected exactly one updated row, got {} (packId={}, quantity={})", updated,
+                    packId, quantity);
+        }
         return updated == 1;
     }
 
@@ -179,6 +197,10 @@ public class PackJdbcDao implements PackDao {
         final int updated = jdbcTemplate.update(
                 "UPDATE packs SET stock = stock + ? WHERE id = ?",
                 quantity, packId);
+        if (updated != 1) {
+            LOGGER.debug("incrementStock: expected exactly one updated row, got {} (packId={}, quantity={})", updated,
+                    packId, quantity);
+        }
         return updated == 1;
     }
 

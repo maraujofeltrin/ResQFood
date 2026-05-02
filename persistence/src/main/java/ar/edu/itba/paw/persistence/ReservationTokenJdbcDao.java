@@ -11,8 +11,13 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Repository
 public class ReservationTokenJdbcDao implements ReservationTokenDao {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReservationTokenJdbcDao.class);
 
     private static final RowMapper<ReservationToken> ROW_MAPPER = (rs, rowNum) -> new ReservationToken(
             rs.getString("token"),
@@ -56,6 +61,7 @@ public class ReservationTokenJdbcDao implements ReservationTokenDao {
     public void markAsUsed(final String token) {
         final int rows = jdbcTemplate.update("UPDATE reservation_tokens SET used = true WHERE token = ?", token);
         if (rows <= 0) {
+            LOGGER.warn("markAsUsed reservation_token: zero rows updated");
             throw new IllegalArgumentException("Reservation token not found");
         }
     }

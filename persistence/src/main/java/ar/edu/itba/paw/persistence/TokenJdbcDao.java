@@ -12,8 +12,13 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Repository
 public class TokenJdbcDao implements TokenDao {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TokenJdbcDao.class);
 
     private static final RowMapper<Token> ROW_MAPPER = (rs, rowNum) -> new Token(
             rs.getString("token"),
@@ -58,6 +63,7 @@ public class TokenJdbcDao implements TokenDao {
         final int rows = jdbcTemplate.update("UPDATE tokens SET used = true WHERE token = ? AND type = ?", token,
                 type.name());
         if (rows <= 0) {
+            LOGGER.warn("markAsUsed token: zero rows updated for type {}", type);
             throw new IllegalArgumentException("Token not found");
         }
     }
