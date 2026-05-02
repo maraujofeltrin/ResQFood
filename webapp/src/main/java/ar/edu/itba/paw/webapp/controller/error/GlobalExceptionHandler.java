@@ -2,8 +2,11 @@ package ar.edu.itba.paw.webapp.controller.error;
 
 import java.io.IOException;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -14,26 +17,38 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ModelAndView handleMaxUploadSize(final MaxUploadSizeExceededException e,
+            final HttpServletRequest request,
             final RedirectAttributes redirectAttributes) {
+        LOGGER.warn("Max upload size exceeded: {} {}", request.getMethod(), request.getRequestURI());
         return new ModelAndView("redirect:/commerce/create-offer?error=maxUploadSize");
     }
 
     @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
-    public void handleMethodNotSupported(final org.springframework.web.HttpRequestMethodNotSupportedException e, final HttpServletResponse response) throws IOException {
+    public void handleMethodNotSupported(final org.springframework.web.HttpRequestMethodNotSupportedException e,
+            final HttpServletRequest request,
+            final HttpServletResponse response) throws IOException {
+        final java.util.Collection<org.springframework.http.HttpMethod> supported = e.getSupportedHttpMethods();
+        LOGGER.debug("HTTP method not supported: {} {} (supported={})", request.getMethod(), request.getRequestURI(),
+                supported);
         response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
     }
 
     @ExceptionHandler(ResponseStatusException.class)
     public void handleResponseStatus(final ResponseStatusException e,
+            final HttpServletRequest request,
             final HttpServletResponse response) throws IOException {
+        LOGGER.debug("Response status {} for {} {}", Integer.valueOf(e.getStatus().value()), request.getMethod(),
+                request.getRequestURI(), e);
         response.sendError(e.getStatus().value());
     }
 
     @ExceptionHandler(Exception.class)
-    public ModelAndView handleException(final Exception e) {
-        e.printStackTrace();
+    public ModelAndView handleException(final Exception e, final HttpServletRequest request) {
+        LOGGER.error("Unhandled exception handling {} {}", request.getMethod(), request.getRequestURI(), e);
         return new ModelAndView("errors/500");
     }
 }

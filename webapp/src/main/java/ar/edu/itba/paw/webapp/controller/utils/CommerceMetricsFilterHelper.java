@@ -1,5 +1,7 @@
 package ar.edu.itba.paw.webapp.controller.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +15,8 @@ import java.time.format.DateTimeParseException;
 
 @Component
 public class CommerceMetricsFilterHelper {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommerceMetricsFilterHelper.class);
 
     private final ZoneId businessZone;
 
@@ -36,6 +40,7 @@ public class CommerceMetricsFilterHelper {
                     fromDate.toString(), toDate.toString(), null);
             }
         } catch (final DateTimeParseException ex) {
+            LOGGER.debug("Invalid commerce metrics date range fromStr={} toStr={}", fromStr, toStr, ex);
             return defaultResolution(now);
         }
         return defaultResolution(now);

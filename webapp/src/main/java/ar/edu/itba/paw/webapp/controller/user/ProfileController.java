@@ -11,6 +11,8 @@ import ar.edu.itba.paw.services.user.UserService;
 import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.form.ProfileAccountForm;
 import ar.edu.itba.paw.webapp.validation.ProfileAccountFormValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -30,6 +32,8 @@ import java.util.NoSuchElementException;
 
 @Controller
 public class ProfileController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProfileController.class);
 
     private static final String NAV_PROFILE = "profile";
     private static final String NAV_SETTINGS = "settings";
@@ -97,8 +101,11 @@ public class ProfileController {
                     photo,
                     contentType);
         } catch (final IOException ex) {
+            LOGGER.warn("Profile account photo upload rejected while reading multipart bytes userId={}",
+                    Long.valueOf(user.getId()), ex);
             return renderProfilePhotoServiceError(model, profileAccountForm);
         } catch (final ProfileAccountUpdateException ex) {
+            LOGGER.debug("Profile account update service error kind={}", ex.getKind(), ex);
             if (ex.getKind() == ProfileAccountUpdateException.Kind.COMMERCE) {
                 return renderProfileCommerceServiceError(model, profileAccountForm);
             }
@@ -117,12 +124,15 @@ public class ProfileController {
         try {
             resolved = SupportedUserLocales.toLocaleOrThrow(lang);
         } catch (final IllegalArgumentException ex) {
+            LOGGER.debug("Unsupported locale preference submitted: {}", lang, ex);
             redirectAttributes.addFlashAttribute("profileLocaleUpdateError", true);
             return "redirect:/profile/settings";
         }
         try {
             userService.updatePreferredLocale(user.getId(), resolved);
         } catch (final IllegalArgumentException | NoSuchElementException ex) {
+            LOGGER.debug("Could not persist preferred locale userId={} lang={}", Long.valueOf(user.getId()),
+                    resolved, ex);
             redirectAttributes.addFlashAttribute("profileLocaleUpdateError", true);
             return "redirect:/profile/settings";
         }

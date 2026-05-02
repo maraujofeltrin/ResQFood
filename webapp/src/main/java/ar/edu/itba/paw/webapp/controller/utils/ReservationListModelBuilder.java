@@ -13,6 +13,8 @@ import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -41,6 +43,8 @@ import java.util.Set;
  */
 @Component
 public class ReservationListModelBuilder {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReservationListModelBuilder.class);
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
     private static final int PAGE_SIZE = 6;
@@ -378,6 +382,7 @@ public class ReservationListModelBuilder {
         try {
             return Reservation.Status.valueOf(statusValue.trim().toUpperCase(Locale.ROOT));
         } catch (final IllegalArgumentException ex) {
+            LOGGER.debug("Ignoring invalid reservation status filter '{}'", statusValue, ex);
             return null;
         }
     }
@@ -389,6 +394,7 @@ public class ReservationListModelBuilder {
         try {
             return Auction.Status.valueOf(statusValue.trim().toUpperCase(Locale.ROOT));
         } catch (final IllegalArgumentException ex) {
+            LOGGER.debug("Ignoring invalid auction status filter '{}'", statusValue, ex);
             return null;
         }
     }

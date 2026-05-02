@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.webapp.config;
 
 import org.flywaydb.core.Flyway;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -50,6 +51,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @PropertySource("classpath:/env.properties")
 public class WebConfig implements WebMvcConfigurer {
 
+    @Autowired
+    private RequestLoggingInterceptor requestLoggingInterceptor;
+
     static {
         // pgjdbc uses JVM default TimeZone in the startup packet; must be a name PostgreSQL accepts.
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
@@ -75,6 +79,7 @@ public class WebConfig implements WebMvcConfigurer {
         final LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
         interceptor.setParamName("lang");
         registry.addInterceptor(interceptor);
+        registry.addInterceptor(requestLoggingInterceptor);
     }
 
     @Override

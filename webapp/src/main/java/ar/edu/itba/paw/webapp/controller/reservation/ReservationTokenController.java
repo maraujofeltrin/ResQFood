@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -30,6 +32,8 @@ import java.util.Optional;
 @Controller
 @RequestMapping("/reservations")
 public class ReservationTokenController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReservationTokenController.class);
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
 
@@ -232,6 +236,8 @@ public class ReservationTokenController {
         try {
             reservationService.validateReservationBelongsToCommerce(reservationId, commerce.getUserId());
         } catch (final IllegalArgumentException ex) {
+            LOGGER.debug("Token GET ownership check failed commerceUserId={} reservationId={}",
+                    Long.valueOf(commerce.getUserId()), reservationId, ex);
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
     }

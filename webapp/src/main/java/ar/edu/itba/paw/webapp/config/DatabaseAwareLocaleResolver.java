@@ -3,10 +3,14 @@ package ar.edu.itba.paw.webapp.config;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.user.UserService;
 import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 
@@ -23,6 +27,8 @@ import java.util.Locale;
 @Component
 public class DatabaseAwareLocaleResolver implements LocaleResolver {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseAwareLocaleResolver.class);
+
     private final AcceptHeaderLocaleResolver acceptHeaderResolver;
     private final AuthenticatedUserResolver authenticatedUserResolver;
     private final UserService userService;
@@ -37,6 +43,11 @@ public class DatabaseAwareLocaleResolver implements LocaleResolver {
         this.acceptHeaderResolver.setDefaultLocale(Locale.forLanguageTag("es"));
     }
 
+    private static boolean isUnauthorized(final Throwable e) {
+        return e instanceof ResponseStatusException
+                && ((ResponseStatusException) e).getStatus() == HttpStatus.UNAUTHORIZED;
+    }
+
     @Override
     public Locale resolveLocale(final HttpServletRequest request) {
         try {
@@ -46,17 +57,17 @@ public class DatabaseAwareLocaleResolver implements LocaleResolver {
                 return user.getLocale();
             }
         } catch (final Exception e) {
-            // User not authenticated or error retrieving user - fall through
+            if (!isUnauthorized(e)) {
+                LOGGER.warn("Could not resolve locale from authenticated session; falling back to header", e);
+            }
         }
 
-        // Fall back to Accept-Language header
         return acceptHeaderResolver.resolveLocale(request);
     }
 
     @Override
     public void setLocale(final HttpServletRequest request, final HttpServletResponse response,
             final Locale locale) {
-        // Update DB if user is authenticated
         try {
             final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             final User user = authenticatedUserResolver.resolveUser(auth);
@@ -64,7 +75,9 @@ public class DatabaseAwareLocaleResolver implements LocaleResolver {
                 userService.updatePreferredLocale(user.getId(), locale);
             }
         } catch (final Exception e) {
-            // User not authenticated - do nothing
+            if (!isUnauthorized(e)) {
+                LOGGER.warn("Could not persist preferred locale for authenticated user", e);
+            }
         }
     }
 }

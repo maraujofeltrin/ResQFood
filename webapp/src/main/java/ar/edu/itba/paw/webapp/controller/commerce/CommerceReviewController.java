@@ -9,6 +9,8 @@ import ar.edu.itba.paw.webapp.controller.utils.PackDetailModelBuilder;
 import ar.edu.itba.paw.webapp.form.BidForm;
 import ar.edu.itba.paw.webapp.form.CommerceReviewForm;
 import ar.edu.itba.paw.webapp.form.ReservationForm;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -27,6 +29,8 @@ import java.util.Locale;
 
 @Controller
 public class CommerceReviewController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommerceReviewController.class);
 
     private final CommerceReviewService commerceReviewService;
     private final PackService packService;
@@ -71,10 +75,14 @@ public class CommerceReviewController {
             redirectAttributes.addFlashAttribute("commerceReviewAlertMessage",
                     messageSource.getMessage("pack.detail.reviews.alert.success", null, locale));
         } catch (final IllegalStateException ex) {
+            LOGGER.debug("Commerce review rejected (not eligible) clientId={} packId={}", Long.valueOf(currentUser.getId()),
+                    Long.valueOf(packId), ex);
             redirectAttributes.addFlashAttribute("commerceReviewAlertKind", "error");
             redirectAttributes.addFlashAttribute("commerceReviewAlertMessage",
                     messageSource.getMessage("pack.detail.reviews.alert.notEligible", null, locale));
         } catch (final IllegalArgumentException ex) {
+            LOGGER.debug("Commerce review rejected (invalid payload) clientId={} packId={}", Long.valueOf(currentUser.getId()),
+                    Long.valueOf(packId), ex);
             redirectAttributes.addFlashAttribute("commerceReviewAlertKind", "error");
             redirectAttributes.addFlashAttribute("commerceReviewAlertMessage",
                     messageSource.getMessage("pack.detail.reviews.alert.invalid", null, locale));

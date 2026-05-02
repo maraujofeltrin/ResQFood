@@ -12,6 +12,8 @@ import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.pack.PackFavoriteService;
 import ar.edu.itba.paw.services.pack.PackService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.ModelAndView;
@@ -32,6 +34,8 @@ import java.util.Set;
  */
 @Service
 public class PackCatalogUtils {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PackCatalogUtils.class);
 
     private static final int PAGE_SIZE = 6;
     private static final int AUCTION_CAROUSEL_SIZE = 6;
@@ -85,7 +89,8 @@ public class PackCatalogUtils {
             for (final String name : tagNames) {
                 try {
                     selectedTags.add(PackTag.valueOf(name));
-                } catch (final IllegalArgumentException ignored) {
+                } catch (final IllegalArgumentException ex) {
+                    LOGGER.debug("Unknown pack tag in catalog filter query: {}", name, ex);
                 }
             }
         }

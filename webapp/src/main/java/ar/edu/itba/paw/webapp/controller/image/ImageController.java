@@ -2,6 +2,8 @@ package ar.edu.itba.paw.webapp.controller.image;
 
 import ar.edu.itba.paw.models.image.Image;
 import ar.edu.itba.paw.services.image.ImageService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,8 @@ import java.util.Optional;
 
 @Controller
 public class ImageController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ImageController.class);
 
     private final ImageService imageService;
     private final ServletContext servletContext;
@@ -36,7 +40,9 @@ public class ImageController {
                     placeholderBytes = is.readAllBytes();
                     placeholderContentType = "image/svg+xml";
                 }
-            } catch (IOException ignored) {}
+            } catch (final IOException ex) {
+                LOGGER.warn("Could not load pack placeholder image resource", ex);
+            }
             if (placeholderBytes == null) {
                 placeholderBytes = new byte[0];
                 placeholderContentType = "application/octet-stream";
@@ -53,7 +59,8 @@ public class ImageController {
         if (imageOpt.isPresent()) {
             final Image image = imageOpt.get();
             if (image.getData() != null && image.getData().length > 0) {
-                final String contentType = image.getContentType() != null ? image.getContentType() : "application/octet-stream";
+                final String contentType =
+                        image.getContentType() != null ? image.getContentType() : "application/octet-stream";
                 return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType)).body(image.getData());
             }
         }

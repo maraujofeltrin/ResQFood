@@ -8,6 +8,8 @@ import ar.edu.itba.paw.webapp.auth.AuthUser;
 import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.form.CreateOfferForm;
 import ar.edu.itba.paw.webapp.validation.CreateOfferFormValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -29,6 +31,8 @@ import java.util.Collections;
 @Controller
 @RequestMapping("/commerce")
 public class CommerceOfferController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommerceOfferController.class);
 
     private final CommerceOfferService commerceOfferService;
     private final CreateOfferFormValidator createOfferFormValidator;
@@ -81,8 +85,8 @@ public class CommerceOfferController {
                 try {
                     final Image savedImage = imageService.saveImage(image.getBytes(), image.getContentType());
                     form.setExistingImageId(savedImage.getId());
-                } catch (final IOException ignored) {
-                    // Ignore preview persistence failures; validation errors are primary.
+                } catch (final IOException ex) {
+                    LOGGER.warn("Failed to persist uploaded image preview after validation failure", ex);
                 }
             }
 
@@ -121,11 +125,13 @@ public class CommerceOfferController {
             return new ModelAndView("redirect:/commerce/products");
 
         } catch (final IllegalArgumentException e) {
+            LOGGER.debug("Create offer validation failed", e);
             final ModelAndView mav = new ModelAndView("commerce/createOfferView");
             mav.addObject("availableTags", PackTag.values());
             mav.addObject("errorMessage", e.getMessage());
             return mav;
-        } catch (IOException e) {
+        } catch (final IOException e) {
+            LOGGER.warn("Create offer failed while processing image payload", e);
             final ModelAndView mav = new ModelAndView("commerce/createOfferView");
             mav.addObject("availableTags", PackTag.values());
             mav.addObject("errorMessage",

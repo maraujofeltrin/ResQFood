@@ -7,6 +7,8 @@ import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.reservation.ReservationServiceResult;
 import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.controller.utils.ReservationListModelBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -27,6 +29,8 @@ import java.util.Locale;
 @Controller
 @RequestMapping("/reservations")
 public class ReservationListController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReservationListController.class);
 
     private final AuthenticatedUserResolver authResolver;
     private final ReservationListModelBuilder modelBuilder;
@@ -120,7 +124,7 @@ public class ReservationListController {
                 Reservation.Status statusFilter = Reservation.Status.valueOf(status.trim().toUpperCase(Locale.ROOT));
                 baseUrl.append(firstParam ? "?" : "&").append("status=").append(statusFilter.name());
             } catch (final IllegalArgumentException ex) {
-                // invalid status param, skip
+                LOGGER.debug("Ignoring invalid reservations status query param {}", status.trim(), ex);
             }
         }
 

@@ -32,8 +32,13 @@ import ar.edu.itba.paw.webapp.controller.utils.PackDetailModelBuilder;
 import ar.edu.itba.paw.webapp.form.BidForm;
 import ar.edu.itba.paw.webapp.form.ReservationForm;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Controller
 public class ReservationActionController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReservationActionController.class);
 
     private static final Locale LOCALE_AR = Locale.of("es", "AR");
 
@@ -140,6 +145,8 @@ public class ReservationActionController {
                     messageSource.getMessage("reservation.alert.success", null,
                             LocaleContextHolder.getLocale()));
         } catch (final IllegalArgumentException | IllegalStateException ex) {
+            LOGGER.debug("Direct reservation declined for packId={} clientId={}", Long.valueOf(packId),
+                    Long.valueOf(authenticatedUser.getId()), ex);
             redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
                     messageSource.getMessage("reservation.alert.genericError", null,
@@ -226,6 +233,8 @@ public class ReservationActionController {
             }
             redirectAttributes.addFlashAttribute("auctionAlertMessage", alertMessage);
         } catch (final DataIntegrityViolationException ex) {
+            LOGGER.warn("Bid placement data integrity violation packId={} auctionId={} clientId={}",
+                    Long.valueOf(packId), Long.valueOf(auction.getId()), Long.valueOf(user.getId()), ex);
             redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
             redirectAttributes.addFlashAttribute("auctionAlertMessage",
                     messageSource.getMessage("pack.detail.bid.alert.genericError", null, locale));

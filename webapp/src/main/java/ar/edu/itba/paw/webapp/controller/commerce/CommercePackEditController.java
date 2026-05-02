@@ -11,6 +11,8 @@ import ar.edu.itba.paw.webapp.auth.AuthUser;
 import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.form.CreateOfferForm;
 import ar.edu.itba.paw.webapp.validation.CreateOfferFormValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -34,6 +36,8 @@ import java.io.IOException;
 @Controller
 @RequestMapping("/commerce")
 public class CommercePackEditController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommercePackEditController.class);
 
     private final CommerceService commerceService;
     private final PackService packService;
@@ -141,8 +145,8 @@ public class CommercePackEditController {
                 try {
                     final Image savedImage = imageService.saveImage(image.getBytes(), image.getContentType());
                     form.setExistingImageId(savedImage.getId());
-                } catch (final IOException ignored) {
-                    // ignore preview persistence failures
+                } catch (final IOException ex) {
+                    LOGGER.warn("Failed to persist uploaded image preview on edit-pack validation failure", ex);
                 }
             }
 
@@ -174,7 +178,8 @@ public class CommercePackEditController {
 
             return new ModelAndView("redirect:/commerce/products");
 
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
+            LOGGER.debug("Edit pack rejected by validation", e);
             final ModelAndView mav = new ModelAndView("commerce/editPack");
             mav.addObject("editMode", true);
             mav.addObject("commerceId", commerceId);
@@ -182,7 +187,8 @@ public class CommercePackEditController {
             mav.addObject("availableTags", PackTag.values());
             mav.addObject("errorMessage", e.getMessage());
             return mav;
-        } catch (IOException e) {
+        } catch (final IOException e) {
+            LOGGER.warn("Edit pack failed while processing image payload for packId={}", Long.valueOf(packId), e);
             final ModelAndView mav = new ModelAndView("commerce/editPack");
             mav.addObject("editMode", true);
             mav.addObject("commerceId", commerceId);
