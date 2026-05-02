@@ -20,6 +20,7 @@ public final class ProfileSettingsOverview {
     private final String selectedLanguageCode;
     private final List<String> languageCodes;
     private final ProfileCommerceSection commerce;
+    private final Boolean notificationsVisibilityPreferences;
 
     public ProfileSettingsOverview(
             final String fullName,
@@ -29,7 +30,8 @@ public final class ProfileSettingsOverview {
             final String profileImageFileName,
             final String selectedLanguageCode,
             final List<String> languageCodes,
-            final ProfileCommerceSection commerce) {
+            final ProfileCommerceSection commerce,
+            final Boolean notificationsVisibilityPreferences) {
         this.fullName = Objects.requireNonNull(fullName);
         this.phone = Objects.requireNonNull(phone);
         this.email = Objects.requireNonNull(email);
@@ -38,6 +40,7 @@ public final class ProfileSettingsOverview {
         this.selectedLanguageCode = Objects.requireNonNull(selectedLanguageCode);
         this.languageCodes = List.copyOf(languageCodes);
         this.commerce = commerce;
+        this.notificationsVisibilityPreferences = notificationsVisibilityPreferences;
     }
 
     public String getFullName() {
@@ -70,5 +73,9 @@ public final class ProfileSettingsOverview {
 
     public ProfileCommerceSection getCommerce() {
         return commerce;
+    }
+
+    public Boolean getNotificationsVisibilityPreferences() {
+        return notificationsVisibilityPreferences;
     }
 }

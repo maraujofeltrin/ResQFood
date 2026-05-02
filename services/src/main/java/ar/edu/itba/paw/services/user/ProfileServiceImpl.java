@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.user;
 
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,11 +16,13 @@ public class ProfileServiceImpl implements ProfileService {
 
     private final UserService userService;
     private final CommerceService commerceService;
+    private final ClientService clientService;
 
     @Autowired
-    public ProfileServiceImpl(final UserService userService, final CommerceService commerceService) {
+    public ProfileServiceImpl(final UserService userService, final CommerceService commerceService, final ClientService clientService) {
         this.userService = userService;
         this.commerceService = commerceService;
+        this.clientService = clientService;
     }
 
     @Override
@@ -31,6 +34,7 @@ public class ProfileServiceImpl implements ProfileService {
                 ? SupportedUserLocales.CODE_EN
                 : SupportedUserLocales.CODE_ES;
         ProfileCommerceSection commerceSection = null;
+        Boolean notificationsPref = null;
         String displayName = user.getName();
         if (user.getRole() == User.Role.COMMERCE) {
             commerceSection = commerceService.findByUserId(userId)
@@ -39,6 +43,10 @@ public class ProfileServiceImpl implements ProfileService {
             if (commerceSection != null) {
                 displayName = commerceSection.getCommercialName();
             }
+        } else if (user.getRole() == User.Role.CLIENT) {
+            notificationsPref = clientService.findByUserId(userId)
+                    .map(Client::getNotificationsVisibilityPreferences)
+                    .orElse(null);
         }
         return new ProfileSettingsOverview(
                 displayName,
@@ -48,7 +56,8 @@ public class ProfileServiceImpl implements ProfileService {
                 PLACEHOLDER_PROFILE_IMAGE,
                 selectedLang,
                 SupportedUserLocales.languageCodes(),
-                commerceSection);
+                commerceSection,
+                notificationsPref);
     }
 
     @Override
@@ -110,5 +119,13 @@ public class ProfileServiceImpl implements ProfileService {
                 c.getPostalCode(),
                 c.getOpeningTime(),
                 c.getClosingTime());
+    }
+
+    @Override
+    public void updateNotificationsPreference(long userId, boolean wantsNotifications) {
+        final Client client = clientService.findByUserId(userId)
+                .orElseThrow(() -> new NoSuchElementException("Client not found: " + userId));
+        client.setNotificationsVisibilityPreferences(wantsNotifications);
+        clientService.update(client);
     }
 }
