@@ -10,12 +10,14 @@ public class LessOrEqualValidator implements ConstraintValidator<LessOrEqual, Ob
     private String firstFieldName;
     private String secondFieldName;
     private String message;
+    private boolean strict;
 
     @Override
     public void initialize(final LessOrEqual constraintAnnotation) {
         firstFieldName = constraintAnnotation.first();
         secondFieldName = constraintAnnotation.second();
         message = constraintAnnotation.message();
+        strict = constraintAnnotation.strict();
     }
 
     @Override
@@ -44,7 +46,7 @@ public class LessOrEqualValidator implements ConstraintValidator<LessOrEqual, Ob
             return true;
         }
 
-        final boolean valid = firstVal <= secondVal;
+        final boolean valid = strict ? firstVal < secondVal : firstVal <= secondVal;
 
         if (!valid) {
             context.disableDefaultConstraintViolation();

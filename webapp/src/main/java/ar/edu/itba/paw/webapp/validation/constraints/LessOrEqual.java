@@ -27,6 +27,10 @@ public @interface LessOrEqual {
     /** Field to compare against */
     String second();
 
+    /** Whether the comparison should be strictly less than or not */
+    boolean strict() default false;
+
+
     @Target({TYPE, ANNOTATION_TYPE})
     @Retention(RUNTIME)
     @interface List {
