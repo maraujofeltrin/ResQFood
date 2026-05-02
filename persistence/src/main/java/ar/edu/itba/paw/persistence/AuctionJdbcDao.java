@@ -286,4 +286,60 @@ public class AuctionJdbcDao implements AuctionDao {
                 Timestamp.valueOf(LocalDateTime.now(ZoneOffset.UTC))
         );
     }
+
+    @Override
+    public List<Auction> filterParticipatedAuctions(final long clientId, final Auction.Status status,
+                                                     final String query, final int page, final int pageSize) {
+        final StringBuilder sql = new StringBuilder();
+        sql.append("SELECT a.id AS auction_id, a.pack_id, a.initial_price, a.min_bid_increment, a.current_bid, a.current_bidder_id, ")
+           .append("a.end_time, a.status, a.created_at, ")
+           .append("p.commerce_id, p.title, p.description, p.original_price, p.final_price, p.stock, p.active, p.deleted, p.image_id ");
+
+        final List<Object> params = new ArrayList<>();
+        appendParticipatedConditions(sql, params, clientId, status, query);
+
+        sql.append("ORDER BY b_latest.latest_bid DESC ");
+        sql.append("LIMIT ? OFFSET ?");
+        params.add(pageSize);
+        params.add((page - 1) * pageSize);
+
+        return jdbcTemplate.query(sql.toString(), auctionRowMapper, params.toArray());
+    }
+
+    @Override
+    public int countParticipatedAuctions(final long clientId, final Auction.Status status, final String query) {
+        final StringBuilder sql = new StringBuilder("SELECT COUNT(DISTINCT a.id) ");
+        final List<Object> params = new ArrayList<>();
+        appendParticipatedConditions(sql, params, clientId, status, query);
+        final Integer count = jdbcTemplate.queryForObject(sql.toString(), Integer.class, params.toArray());
+        return count != null ? count : 0;
+    }
+
+    private void appendParticipatedConditions(final StringBuilder sql, final List<Object> params,
+                                               final long clientId, final Auction.Status status, final String query) {
+        sql.append("FROM auctions a ")
+           .append("JOIN packs p ON a.pack_id = p.id ")
+           .append("JOIN commerces c ON p.commerce_id = c.user_id ")
+           .append("JOIN (SELECT auction_id, MAX(timestamp) AS latest_bid FROM bids WHERE client_id = ? GROUP BY auction_id) b_latest ")
+           .append("ON a.id = b_latest.auction_id ")
+           .append("WHERE p.deleted = false ");
+        params.add(clientId);
+
+        if (status != null) {
+            sql.append("AND a.status = ? ");
+            params.add(status.name());
+        }
+
+        if (query != null && !query.isBlank()) {
+            final String escaped = query.trim()
+                    .replace("\\", "\\\\")
+                    .replace("%", "\\%")
+                    .replace("_", "\\_");
+            final String pattern = "%" + escaped + "%";
+            sql.append("AND (p.title ILIKE ? ESCAPE '\\' OR p.description ILIKE ? ESCAPE '\\' OR c.commercial_name ILIKE ? ESCAPE '\\') ");
+            params.add(pattern);
+            params.add(pattern);
+            params.add(pattern);
+        }
+    }
 }

@@ -1,4 +1,4 @@
-package ar.edu.itba.paw.webapp.controller.utils;
+package ar.edu.itba.paw.webapp.controller.helpers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -30,9 +30,12 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import ar.edu.itba.paw.models.user.Client;
 
 @Component
 public class PackDetailModelBuilder {
@@ -114,8 +117,10 @@ public class PackDetailModelBuilder {
             final long auctionId = auctionOpt.get().getId();
             mav.addObject("auctionId", auctionId);
             final List<Bid> bidHistory = auctionService.getBidHistory(auctionId);
+            final Map<Long, Client> bidClients = prefetchClients(bidHistory.stream()
+                    .map(Bid::getClientId).distinct().collect(java.util.stream.Collectors.toList()));
             final List<BidHistoryViewHelper.BidHistoryRow> bidHistoryItems = BidHistoryViewHelper.buildRows(
-                    bidHistory, clientService, messageSource, locale);
+                    bidHistory, bidClients, messageSource, locale);
             mav.addObject("auctionBidHistoryItems", bidHistoryItems);
             mav.addObject("auctionHasBids", !bidHistory.isEmpty());
         } else {
@@ -167,8 +172,11 @@ public class PackDetailModelBuilder {
         
         if (isOwner) {
             final List<Reservation> reservations = reservationService.findByPackId(pack.getId());
+            final Map<Long, Client> resClients = prefetchClients(reservations.stream()
+                    .map(Reservation::getCustomerId).filter(java.util.Objects::nonNull)
+                    .distinct().collect(java.util.stream.Collectors.toList()));
             final List<ReservationHistoryViewHelper.ReservationHistoryRow> reservationHistoryItems = 
-                ReservationHistoryViewHelper.buildRows(reservations, clientService, messageSource, locale);
+                ReservationHistoryViewHelper.buildRows(reservations, resClients, messageSource, locale);
             mav.addObject("packReservationHistoryItems", reservationHistoryItems);
         } else {
             mav.addObject("packReservationHistoryItems", Collections.emptyList());
@@ -220,8 +228,10 @@ public class PackDetailModelBuilder {
             final CommerceReviewForm submittedForm) {
         final Locale locale = LocaleContextHolder.getLocale();
         final List<CommerceReview> reviews = commerceReviewService.findReviewsForCommerce(commerceId, 1, 5);
+        final Map<Long, Client> reviewClients = prefetchClients(reviews.stream()
+                .map(CommerceReview::getClientUserId).distinct().collect(java.util.stream.Collectors.toList()));
         mav.addObject("commerceReviewItems",
-                CommerceReviewViewHelper.buildRows(reviews, clientService, businessZone, locale));
+                CommerceReviewViewHelper.buildRows(reviews, reviewClients, businessZone, locale));
         mav.addObject("commerceReviewCount", commerceReviewService.countReviewsForCommerce(commerceId));
         mav.addObject("commerceReviewAverageRating",
                 commerceReviewService.averageRatingForCommerce(commerceId).orElse(null));
@@ -250,5 +260,15 @@ public class PackDetailModelBuilder {
         mav.addObject("commerceReviewForm", form);
         mav.addObject("commerceReviewCanSubmit", Boolean.valueOf(canReview));
         mav.addObject("commerceReviewAlreadySubmitted", Boolean.valueOf(alreadyReviewed));
+    }
+
+    private Map<Long, Client> prefetchClients(final List<Long> userIds) {
+        final Map<Long, Client> map = new HashMap<>();
+        for (final Long userId : userIds) {
+            if (userId != null) {
+                clientService.findByUserId(userId).ifPresent(c -> map.put(userId, c));
+            }
+        }
+        return map;
     }
 }

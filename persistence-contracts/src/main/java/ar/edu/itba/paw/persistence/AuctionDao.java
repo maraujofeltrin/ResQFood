@@ -37,4 +37,13 @@ public interface AuctionDao {
      * Returns auctions that are still marked as ACTIVE but whose {@code end_time} has passed.
      */
     List<Auction> findExpiredActive();
+
+    /**
+     * Paginated auctions in which the given client has placed at least one bid,
+     * optionally filtered by status and/or search query (title/description/commerce name).
+     */
+    List<Auction> filterParticipatedAuctions(long clientId, Auction.Status status, String query,
+                                              int page, int pageSize);
+
+    int countParticipatedAuctions(long clientId, Auction.Status status, String query);
 }

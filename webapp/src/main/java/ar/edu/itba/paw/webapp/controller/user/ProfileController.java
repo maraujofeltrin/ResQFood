@@ -8,7 +8,7 @@ import ar.edu.itba.paw.services.user.ProfileService;
 import ar.edu.itba.paw.services.user.ProfileSettingsOverview;
 import ar.edu.itba.paw.services.user.SupportedUserLocales;
 import ar.edu.itba.paw.services.user.UserService;
-import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
+import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.form.ProfileAccountForm;
 import ar.edu.itba.paw.webapp.validation.ProfileAccountFormValidator;
 import org.slf4j.Logger;

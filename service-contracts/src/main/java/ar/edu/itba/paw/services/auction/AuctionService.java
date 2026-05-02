@@ -76,8 +76,11 @@ public interface AuctionService {
     boolean isClientLeading(long auctionId, long userId);
 
     /**
-     * Auctions in which the client has placed at least one bid, most recently active first
-     * (by the client's latest bid timestamp per auction).
+     * Paginated version of participated auctions with optional status and text filters.
+     * Text search matches pack title, description, or commerce name.
      */
-    List<Auction> findParticipatedAuctionsByClientId(long clientId);
+    List<Auction> filterParticipatedAuctions(long clientId, Auction.Status status, String query,
+                                              int page, int pageSize);
+
+    int countParticipatedAuctions(long clientId, Auction.Status status, String query);
 }

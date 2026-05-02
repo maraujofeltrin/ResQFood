@@ -234,23 +234,15 @@ public class AuctionServiceImpl implements AuctionService {
         return auction.getCurrentBidderId() != null && auction.getCurrentBidderId().equals(userId);
     }
 
+
     @Override
-    public List<Auction> findParticipatedAuctionsByClientId(final long clientId) {
-        final List<Bid> bids = bidDao.findByClientId(clientId);
-        if (bids.isEmpty()) {
-            return List.of();
-        }
-        final Set<Long> seenAuction = new HashSet<>();
-        final List<Long> orderedAuctionIds = new ArrayList<>();
-        for (final Bid bid : bids) {
-            if (seenAuction.add(bid.getAuctionId())) {
-                orderedAuctionIds.add(bid.getAuctionId());
-            }
-        }
-        final List<Auction> result = new ArrayList<>();
-        for (final Long auctionId : orderedAuctionIds) {
-            auctionDao.findById(auctionId).ifPresent(result::add);
-        }
-        return result;
+    public List<Auction> filterParticipatedAuctions(final long clientId, final Auction.Status status,
+                                                     final String query, final int page, final int pageSize) {
+        return auctionDao.filterParticipatedAuctions(clientId, status, query, page, pageSize);
+    }
+
+    @Override
+    public int countParticipatedAuctions(final long clientId, final Auction.Status status, final String query) {
+        return auctionDao.countParticipatedAuctions(clientId, status, query);
     }
 }

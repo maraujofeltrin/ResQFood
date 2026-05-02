@@ -1,4 +1,4 @@
-package ar.edu.itba.paw.webapp.controller.utils;
+package ar.edu.itba.paw.webapp.controller.helpers;
 
 import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.auction.AuctionSortOption;
@@ -15,8 +15,9 @@ import ar.edu.itba.paw.services.pack.PackService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.ModelAndView;
+import ar.edu.itba.paw.webapp.form.CatalogFilterForm;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -32,10 +33,10 @@ import java.util.Set;
 /**
  * Builds the pack/auction catalog page model (search, filters, pagination).
  */
-@Service
-public class PackCatalogUtils {
+@Component
+public class PackCatalogModelBuilder {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PackCatalogUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PackCatalogModelBuilder.class);
 
     private static final int PAGE_SIZE = 6;
     private static final int AUCTION_CAROUSEL_SIZE = 6;
@@ -59,7 +60,7 @@ public class PackCatalogUtils {
     private final AuthenticatedUserResolver authResolver;
 
     @Autowired
-    public PackCatalogUtils(final PackService packService, final CommerceService commerceService,
+    public PackCatalogModelBuilder(final PackService packService, final CommerceService commerceService,
             final AuctionService auctionService,
             final PackFavoriteService packFavoriteService,
             final AuthenticatedUserResolver authResolver) {
@@ -70,15 +71,14 @@ public class PackCatalogUtils {
         this.authResolver = authResolver;
     }
 
-    public ModelAndView buildPackCatalog(
-            final String query,
-            final List<String> tagNames,
-            final String sort,
-            final List<String> types,
-            final String auctionSort,
-            final String locationParam,
-            final List<String> timeRange,
-            final int page) {
+    public ModelAndView buildPackCatalog(final CatalogFilterForm form) {
+
+        final String query = form.getQ();
+        final List<String> tagNames = form.getTags();
+        final String sort = form.getSort();
+        final String auctionSort = form.getAuctionSort();
+        final String locationParam = form.getLocation();
+        final int page = form.getPage();
 
         final ModelAndView mav = new ModelAndView("packs/packCatalogView");
         final PackSortOption sortOption = PackSortOption.fromString(sort);
@@ -98,7 +98,8 @@ public class PackCatalogUtils {
         final Municipality municipality = Municipality.fromString(locationParam);
         final String cityFilter = municipality != null ? municipality.getCityName() : null;
 
-        final List<String> safeTimeRange = normalizeTimeRanges(timeRange);
+        // types and timeRange are already normalised by the form setters
+        final List<String> safeTimeRange = form.getTimeRange() != null ? form.getTimeRange() : Collections.emptyList();
 
         final boolean hasQuery = query != null && !query.trim().isEmpty();
         final String trimmedQuery = hasQuery ? query.trim() : null;
@@ -108,9 +109,8 @@ public class PackCatalogUtils {
         final boolean clientLoggedIn = viewerOpt.filter(u -> u.getRole() == User.Role.CLIENT).isPresent();
         final Long clientUserId = viewerOpt.filter(u -> u.getRole() == User.Role.CLIENT).map(User::getId).orElse(null);
 
-        List<String> selectedTypes = normalizeTypes(types);
+        List<String> selectedTypes = form.getTypes() != null ? new ArrayList<>(form.getTypes()) : new ArrayList<>();
         if (!clientLoggedIn) {
-            selectedTypes = new ArrayList<>(selectedTypes);
             selectedTypes.removeIf(t -> TYPE_FAVORITES.equals(t));
         }
 
@@ -374,38 +374,5 @@ public class PackCatalogUtils {
         return mav;
     }
 
-    private static List<String> normalizeTypes(final List<String> rawTypes) {
-        if (rawTypes == null || rawTypes.isEmpty()) {
-            return Collections.emptyList();
-        }
-        final Set<String> values = new LinkedHashSet<>();
-        for (final String raw : rawTypes) {
-            if (raw == null) {
-                continue;
-            }
-            final String type = raw.trim().toLowerCase(Locale.ROOT);
-            if (TYPE_PACKS.equals(type) || TYPE_AUCTIONS.equals(type) || TYPE_FAVORITES.equals(type)) {
-                values.add(type);
-            }
-        }
-        return new ArrayList<>(values);
-    }
-
-    private static List<String> normalizeTimeRanges(final List<String> rawTimeRanges) {
-        if (rawTimeRanges == null || rawTimeRanges.isEmpty()) {
-            return Collections.emptyList();
-        }
-        final Set<String> values = new LinkedHashSet<>();
-        for (final String raw : rawTimeRanges) {
-            if (raw == null) {
-                continue;
-            }
-            final String value = raw.trim().toLowerCase(Locale.ROOT);
-            if (ALLOWED_TIME_RANGES.contains(value)) {
-                values.add(value);
-            }
-        }
-        return new ArrayList<>(values);
-    }
 
 }

@@ -3,7 +3,7 @@ package ar.edu.itba.paw.webapp.controller.user;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.user.ChangePasswordResult;
 import ar.edu.itba.paw.services.user.UserService;
-import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
+import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.form.ProfileChangePasswordForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;

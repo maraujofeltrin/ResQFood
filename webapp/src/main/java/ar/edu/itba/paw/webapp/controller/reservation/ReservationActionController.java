@@ -27,8 +27,8 @@ import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.pack.DirectReservationCheck;
 import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
-import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
-import ar.edu.itba.paw.webapp.controller.utils.PackDetailModelBuilder;
+import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
+import ar.edu.itba.paw.webapp.controller.helpers.PackDetailModelBuilder;
 import ar.edu.itba.paw.webapp.form.BidForm;
 import ar.edu.itba.paw.webapp.form.ReservationForm;
 

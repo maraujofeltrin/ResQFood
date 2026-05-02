@@ -1,4 +1,4 @@
-package ar.edu.itba.paw.webapp.controller.utils;
+package ar.edu.itba.paw.webapp.controller.helpers;
 
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;

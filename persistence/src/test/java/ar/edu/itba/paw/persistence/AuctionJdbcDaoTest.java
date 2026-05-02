@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -144,5 +145,34 @@ public class AuctionJdbcDaoTest {
         assertTrue(found.isPresent());
         assertEquals(Auction.Status.FINISHED, found.get().getStatus());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
+    }
+
+    @Test
+    public void testFilterParticipatedAuctionsWhenClientHasBidsReturnsAuction() {
+        // 1. Setup
+        final Auction created = auctionDao.createAuction(packId, 500.0, 500.0, AUCTION_END_TIME);
+        jdbcTemplate.update("INSERT INTO bids (id, auction_id, client_id, amount, timestamp) VALUES (?, ?, ?, ?, ?)",
+                1L, created.getId(), clientId, 600.0, LocalDateTime.now(ZoneOffset.UTC));
+
+        // 2. Ejercicio
+        final List<Auction> participated = auctionDao.filterParticipatedAuctions(clientId, null, null, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, participated.size());
+        assertEquals(created.getId(), participated.get(0).getId());
+    }
+
+    @Test
+    public void testCountParticipatedAuctionsWhenClientHasBidsReturnsCount() {
+        // 1. Setup
+        final Auction created = auctionDao.createAuction(packId, 500.0, 500.0, AUCTION_END_TIME);
+        jdbcTemplate.update("INSERT INTO bids (id, auction_id, client_id, amount, timestamp) VALUES (?, ?, ?, ?, ?)",
+                1L, created.getId(), clientId, 600.0, LocalDateTime.now(ZoneOffset.UTC));
+
+        // 2. Ejercicio
+        final int count = auctionDao.countParticipatedAuctions(clientId, null, null);
+
+        // 3. Asserts
+        assertEquals(1, count);
     }
 }

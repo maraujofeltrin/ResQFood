@@ -1,4 +1,4 @@
-package ar.edu.itba.paw.webapp.controller.utils;
+package ar.edu.itba.paw.webapp.controller.helpers;
 
 import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.auction.Bid;
@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
+import ar.edu.itba.paw.webapp.form.ReservationListFilterForm;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -27,11 +28,11 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -74,15 +75,15 @@ public class ReservationListModelBuilder {
 
     // -- Public API -----------------------------------------------------------
 
-    public ModelAndView buildCommerceView(final int page, final String query, final String status,
-            final User currentUser) {
+    public ModelAndView buildCommerceView(final ReservationListFilterForm form, final User currentUser) {
 
         final Commerce commerce = commerceService.findByUserId(currentUser.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN));
         final Long commerceId = commerce.getUserId();
 
-        final String normalizedQuery = normalizeQuery(query);
-        final Reservation.Status statusFilter = parseReservationStatus(status);
+        final String normalizedQuery = form.getQ();
+        final Reservation.Status statusFilter = form.getStatus();
+        final int page = form.getPage();
 
         final int totalItems = reservationService.countFilteredReservations(commerceId, null, normalizedQuery, statusFilter, false);
         final int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
@@ -137,20 +138,19 @@ public class ReservationListModelBuilder {
         return mav;
     }
 
-    public ModelAndView buildClientView(final int page, final String query, final String status,
-            final String auctionStatusParam, final String tabParam, final User currentUser) {
+    public ModelAndView buildClientView(final ReservationListFilterForm form, final User currentUser) {
 
-        final String normalizedQuery = normalizeQuery(query);
-        final Reservation.Status statusFilter = parseReservationStatus(status);
-        final Auction.Status auctionStatusFilter = parseAuctionStatus(auctionStatusParam);
-        final String clientTab = normalizeClientTab(tabParam);
+        final String normalizedQuery = form.getQ();
+        final Reservation.Status statusFilter = form.getStatus();
+        final Auction.Status auctionStatusFilter = form.getAuctionStatus();
+        final String clientTab = form.getTab();
+        final int page = form.getPage();
         final String safeQuery = normalizedQuery == null ? "" : normalizedQuery;
 
         final int itemsCount = reservationService.countFilteredReservations(null, currentUser.getId(), null, null, false);
         final int packsCount = reservationService.countFilteredReservations(null, currentUser.getId(), null, null, true);
 
-        final List<Auction> allParticipatedAuctions = auctionService.findParticipatedAuctionsByClientId(currentUser.getId());
-        final int auctionsCount = allParticipatedAuctions.size();
+        final int auctionsCount = auctionService.countParticipatedAuctions(currentUser.getId(), null, null);
 
         final boolean hasAnyClientActivity = itemsCount > 0 || auctionsCount > 0;
 
@@ -164,7 +164,7 @@ public class ReservationListModelBuilder {
         final ModelAndView mav = new ModelAndView(VIEW_NAME);
 
         if ("auctions".equals(clientTab)) {
-            buildClientAuctionsTab(mav, allParticipatedAuctions, auctionStatusFilter, safeQuery,
+            buildClientAuctionsTab(mav, auctionStatusFilter, safeQuery,
                     page, currentUser);
         } else {
             final boolean excludeAuctions = "packs".equals(clientTab);
@@ -196,32 +196,19 @@ public class ReservationListModelBuilder {
 
     // -- Client tab builders --------------------------------------------------
 
-    private void buildClientAuctionsTab(final ModelAndView mav, final List<Auction> allParticipatedAuctions,
+    private void buildClientAuctionsTab(final ModelAndView mav,
             final Auction.Status auctionStatusFilter, final String safeQuery,
             final int page, final User currentUser) {
 
-        final List<Auction> filteredAuctions = new ArrayList<>();
-        for (final Auction auction : allParticipatedAuctions) {
-            final Pack pack = auction.getPack();
-            final String commerceName = resolveCommerceName(pack);
+        final String queryParam = safeQuery.isBlank() ? null : safeQuery;
 
-            final boolean matchesAuctionStatus = auctionStatusFilter == null
-                    || auctionStatusFilter.equals(auction.getStatus());
-            final boolean matchesQuery = safeQuery.isBlank()
-                    || containsIgnoreCase(pack == null ? null : pack.getTitle(), safeQuery)
-                    || containsIgnoreCase(pack == null ? null : pack.getDescription(), safeQuery)
-                    || containsIgnoreCase(commerceName, safeQuery);
-
-            if (matchesAuctionStatus && matchesQuery) {
-                filteredAuctions.add(auction);
-            }
-        }
-
-        final int totalPages = Math.max(1, (int) Math.ceil((double) filteredAuctions.size() / PAGE_SIZE));
+        final int totalItems = auctionService.countParticipatedAuctions(
+                currentUser.getId(), auctionStatusFilter, queryParam);
+        final int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
         final int safePage = Math.max(1, Math.min(page, totalPages));
-        final int fromIdx = (safePage - 1) * PAGE_SIZE;
-        final int toIdx = Math.min(fromIdx + PAGE_SIZE, filteredAuctions.size());
-        final List<Auction> auctionsPage = filteredAuctions.subList(fromIdx, toIdx);
+
+        final List<Auction> auctionsPage = auctionService.filterParticipatedAuctions(
+                currentUser.getId(), auctionStatusFilter, queryParam, safePage, PAGE_SIZE);
 
         final Map<Long, String> auctionCommerceNames = new HashMap<>();
         final Map<Long, String> auctionEndLabels = new HashMap<>();
@@ -351,10 +338,8 @@ public class ReservationListModelBuilder {
         return ids;
     }
 
-    private static boolean containsIgnoreCase(final String value, final String needle) {
-        return value != null && needle != null
-                && value.toLowerCase(Locale.ROOT).contains(needle.toLowerCase(Locale.ROOT));
-    }
+
+
 
     private static String clientParticipationAuctionBadge(final Auction auction, final boolean leading) {
         if (auction.getStatus() == Auction.Status.CANCELLED) {
@@ -370,45 +355,6 @@ public class ReservationListModelBuilder {
     }
 
     // -- Parsing & URL helpers ------------------------------------------------
-
-    private static String normalizeQuery(final String query) {
-        return (query == null || query.isBlank()) ? null : query.trim();
-    }
-
-    private static Reservation.Status parseReservationStatus(final String statusValue) {
-        if (statusValue == null || statusValue.isBlank()) {
-            return null;
-        }
-        try {
-            return Reservation.Status.valueOf(statusValue.trim().toUpperCase(Locale.ROOT));
-        } catch (final IllegalArgumentException ex) {
-            LOGGER.debug("Ignoring invalid reservation status filter '{}'", statusValue, ex);
-            return null;
-        }
-    }
-
-    private static Auction.Status parseAuctionStatus(final String statusValue) {
-        if (statusValue == null || statusValue.isBlank()) {
-            return null;
-        }
-        try {
-            return Auction.Status.valueOf(statusValue.trim().toUpperCase(Locale.ROOT));
-        } catch (final IllegalArgumentException ex) {
-            LOGGER.debug("Ignoring invalid auction status filter '{}'", statusValue, ex);
-            return null;
-        }
-    }
-
-    private static String normalizeClientTab(final String tab) {
-        if (tab == null) {
-            return "items";
-        }
-        final String t = tab.trim().toLowerCase(Locale.ROOT);
-        if ("packs".equals(t) || "auctions".equals(t)) {
-            return t;
-        }
-        return "items";
-    }
 
     private static String buildCommercePaginationBaseUrl(final String query, final Reservation.Status statusFilter) {
         final StringBuilder baseUrl = new StringBuilder("/reservations");

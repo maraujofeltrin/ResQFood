@@ -1,97 +1,33 @@
-package ar.edu.itba.paw.webapp.controller.utils;
+package ar.edu.itba.paw.webapp.controller.helpers;
 
-import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.user.Client;
-import ar.edu.itba.paw.services.user.ClientService;
 import org.springframework.context.MessageSource;
 
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 
 /**
- * Builds pack-detail reservation history rows (presentation strings for the JSP tag), colocated with the row data holder.
+ * Stateless presentation-formatting utilities shared by view helpers (bid history, reservation history, etc.).
+ * Not instantiable.
  */
-public final class ReservationHistoryViewHelper {
+public final class ViewFormatUtils {
 
     private static final Locale LOCALE_AR = new Locale("es", "AR");
 
-    public static final class ReservationHistoryRow {
-
-        private final String initials;
-        private final String displayName;
-        private final String relativeTimeLabel;
-        private final String amountDisplay;
-        private final String status;
-        private final int index;
-
-        private ReservationHistoryRow(final String initials, final String displayName, final String relativeTimeLabel,
-                final String amountDisplay, final String status, final int index) {
-            this.initials = initials;
-            this.displayName = displayName;
-            this.relativeTimeLabel = relativeTimeLabel;
-            this.amountDisplay = amountDisplay;
-            this.status = status;
-            this.index = index;
-        }
-
-        public String getInitials() {
-            return initials;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
-
-        public String getRelativeTimeLabel() {
-            return relativeTimeLabel;
-        }
-
-        public String getAmountDisplay() {
-            return amountDisplay;
-        }
-
-        public String getStatus() {
-            return status;
-        }
-
-        public int getIndex() {
-            return index;
-        }
+    private ViewFormatUtils() {
     }
 
-    private ReservationHistoryViewHelper() {
-    }
-
-    public static List<ReservationHistoryRow> buildRows(final List<Reservation> reservations, final ClientService clientService,
-            final MessageSource messageSource, final Locale locale) {
-        final List<ReservationHistoryRow> rows = new ArrayList<>();
-        for (int i = 0; i < reservations.size(); i++) {
-            final Reservation reservation = reservations.get(i);
-            final Optional<Client> clientOpt = clientService.findByUserId(reservation.getCustomerId());
-            final String displayName = shortDisplayName(clientOpt.orElse(null), messageSource, locale);
-            final String initials = initialsFor(clientOpt.orElse(null), messageSource, locale);
-            final String amountDisplay = formatMoney(reservation.getFinalPrice());
-            final String relative = formatRelativeTime(reservation.getReservationDate(), messageSource, locale);
-            final String statusStr = reservation.getStatus() != null ? reservation.getStatus().name() : "";
-            rows.add(new ReservationHistoryRow(initials, displayName, relative, amountDisplay, statusStr, i));
-        }
-        return rows;
-    }
-
-    private static String formatMoney(final Double amount) {
+    public static String formatMoney(final Double amount) {
         if (amount == null) {
             return "—";
         }
         return NumberFormat.getCurrencyInstance(LOCALE_AR).format(amount);
     }
 
-    private static String initialsFor(final Client client, final MessageSource messageSource, final Locale locale) {
+    public static String initialsFor(final Client client, final MessageSource messageSource, final Locale locale) {
         if (client == null) {
             return messageSource.getMessage("pack.detail.bidHistory.initialsUnknown", null, locale);
         }
@@ -108,7 +44,7 @@ public final class ReservationHistoryViewHelper {
         return !a.isEmpty() ? a : b;
     }
 
-    private static String shortDisplayName(final Client client, final MessageSource messageSource, final Locale locale) {
+    public static String shortDisplayName(final Client client, final MessageSource messageSource, final Locale locale) {
         if (client == null) {
             return messageSource.getMessage("pack.detail.bidHistory.anonymous", null, locale);
         }
@@ -126,7 +62,7 @@ public final class ReservationHistoryViewHelper {
         return first + " " + last.charAt(0) + ".";
     }
 
-    private static String formatRelativeTime(final LocalDateTime timeUtc, final MessageSource messageSource,
+    public static String formatRelativeTime(final LocalDateTime timeUtc, final MessageSource messageSource,
             final Locale locale) {
         if (timeUtc == null) {
             return messageSource.getMessage("pack.detail.bidHistory.relativeUnknown", null, locale);

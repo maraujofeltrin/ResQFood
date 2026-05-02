@@ -5,8 +5,9 @@ import ar.edu.itba.paw.models.reservation.ReservationRejectionError;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.reservation.ReservationServiceResult;
-import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
-import ar.edu.itba.paw.webapp.controller.utils.ReservationListModelBuilder;
+import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
+import ar.edu.itba.paw.webapp.controller.helpers.ReservationListModelBuilder;
+import ar.edu.itba.paw.webapp.form.ReservationListFilterForm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,20 +48,16 @@ public class ReservationListController {
 
     @GetMapping
     public ModelAndView reservations(
-            @RequestParam(value = "page", defaultValue = "1") final int page,
-            @RequestParam(value = "q", required = false) final String query,
-            @RequestParam(value = "status", required = false) final String status,
-            @RequestParam(value = "auctionStatus", required = false) final String auctionStatusParam,
-            @RequestParam(value = "tab", required = false) final String tabParam,
+            final ReservationListFilterForm form,
             final Authentication authentication) {
 
         final User currentUser = authResolver.resolveUser(authentication);
 
         if (currentUser.getRole() == User.Role.CLIENT) {
-            return modelBuilder.buildClientView(page, query, status, auctionStatusParam, tabParam, currentUser);
+            return modelBuilder.buildClientView(form, currentUser);
         }
         if (currentUser.getRole() == User.Role.COMMERCE) {
-            return modelBuilder.buildCommerceView(page, query, status, currentUser);
+            return modelBuilder.buildCommerceView(form, currentUser);
         }
 
         throw new ResponseStatusException(HttpStatus.FORBIDDEN);

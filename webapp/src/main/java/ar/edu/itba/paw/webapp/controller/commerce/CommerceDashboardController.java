@@ -14,10 +14,10 @@ import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
-import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
-import ar.edu.itba.paw.webapp.controller.utils.CommerceMetricsFilterHelper;
-import ar.edu.itba.paw.webapp.controller.utils.CommerceReviewViewHelper;
-import ar.edu.itba.paw.webapp.controller.utils.ReservationHistoryViewHelper;
+import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
+import ar.edu.itba.paw.webapp.controller.helpers.CommerceMetricsFilterHelper;
+import ar.edu.itba.paw.webapp.controller.helpers.CommerceReviewViewHelper;
+import ar.edu.itba.paw.webapp.controller.helpers.ReservationHistoryViewHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -33,11 +33,14 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.time.ZoneId;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import ar.edu.itba.paw.models.user.Client;
 
 @Controller
 @RequestMapping("/commerce")
@@ -103,14 +106,19 @@ public class CommerceDashboardController {
         final List<Reservation> recentReservations = reservationService.filterReservations(
                 id, null, null, null, false, 1, DASHBOARD_RECENT_LIMIT);
         final Locale locale = LocaleContextHolder.getLocale();
+        final Map<Long, Client> resClients = prefetchClients(recentReservations.stream()
+                .map(Reservation::getCustomerId).filter(java.util.Objects::nonNull)
+                .distinct().collect(Collectors.toList()));
         final List<ReservationHistoryViewHelper.ReservationHistoryRow> recentHistoryItems =
-                ReservationHistoryViewHelper.buildRows(recentReservations, clientService, messageSource, locale);
+                ReservationHistoryViewHelper.buildRows(recentReservations, resClients, messageSource, locale);
         mav.addObject("dashboardReservationHistoryItems", recentHistoryItems);
 
         // -- Recent reviews (last 3) --
         final List<CommerceReview> recentReviews = commerceReviewService.findReviewsForCommerce(id, 1, DASHBOARD_RECENT_LIMIT);
+        final Map<Long, Client> reviewClients = prefetchClients(recentReviews.stream()
+                .map(CommerceReview::getClientUserId).distinct().collect(Collectors.toList()));
         final List<CommerceReviewViewHelper.CommerceReviewRow> recentReviewItems =
-                CommerceReviewViewHelper.buildRows(recentReviews, clientService, businessZone, locale);
+                CommerceReviewViewHelper.buildRows(recentReviews, reviewClients, businessZone, locale);
         mav.addObject("dashboardRecentReviews", recentReviewItems);
         mav.addObject("commerceReviewCount", commerceReviewService.countReviewsForCommerce(id));
         mav.addObject("commerceReviewAverageRating",
@@ -132,8 +140,10 @@ public class CommerceDashboardController {
         final int safePage = Math.max(1, Math.min(page, totalPages));
 
         final List<CommerceReview> reviews = commerceReviewService.findReviewsForCommerce(id, safePage, PAGE_SIZE);
+        final Map<Long, Client> reviewClients = prefetchClients(reviews.stream()
+                .map(CommerceReview::getClientUserId).distinct().collect(Collectors.toList()));
         final List<CommerceReviewViewHelper.CommerceReviewRow> reviewItems =
-                CommerceReviewViewHelper.buildRows(reviews, clientService, businessZone, locale);
+                CommerceReviewViewHelper.buildRows(reviews, reviewClients, businessZone, locale);
 
         final ModelAndView mav = new ModelAndView("commerce/reviews");
         mav.addObject("commerce", commerce);
@@ -272,5 +282,15 @@ public class CommerceDashboardController {
         }
         sb.append(']');
         return sb.toString();
+    }
+
+    private Map<Long, Client> prefetchClients(final List<Long> userIds) {
+        final Map<Long, Client> map = new HashMap<>();
+        for (final Long userId : userIds) {
+            if (userId != null) {
+                clientService.findByUserId(userId).ifPresent(c -> map.put(userId, c));
+            }
+        }
+        return map;
     }
 }

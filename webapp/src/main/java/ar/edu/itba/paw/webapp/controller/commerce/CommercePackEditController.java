@@ -8,7 +8,7 @@ import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.image.ImageService;
 import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
-import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
+import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.form.CreateOfferForm;
 import ar.edu.itba.paw.webapp.validation.CreateOfferFormValidator;
 import org.slf4j.Logger;

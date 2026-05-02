@@ -1,6 +1,6 @@
 package ar.edu.itba.paw.webapp.controller.advice;
 
-import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
+import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;

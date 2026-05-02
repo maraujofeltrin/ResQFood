@@ -2,7 +2,7 @@ package ar.edu.itba.paw.webapp.controller.pack;
 
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.pack.PackFavoriteService;
-import ar.edu.itba.paw.webapp.controller.utils.AuthenticatedUserResolver;
+import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
