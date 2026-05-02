@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.services.user;
 
+import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.commerce.CommerceService;
@@ -40,6 +41,9 @@ class ProfileServiceImplTest {
     @Mock
     private CommerceService commerceService;
 
+    @Mock
+    private ClientService clientService;
+
     @InjectMocks
     private ProfileServiceImpl profileService;
 
@@ -49,6 +53,7 @@ class ProfileServiceImplTest {
         when(userService.findById(1L)).thenReturn(Optional.of(
                 new User(1L, "a@b.com", "hash", "Nombre", "+99", User.Role.CLIENT, true,
                         Locale.forLanguageTag("en"), null)));
+        when(clientService.findByUserId(1L)).thenReturn(Optional.of(new Client(1L, "Nombre", null, true)));
 
         // 2. Ejercicio
         final ProfileSettingsOverview overview = profileService.getSettingsOverview(1L);
@@ -64,6 +69,7 @@ class ProfileServiceImplTest {
         assertEquals(2, overview.getLanguageCodes().size());
         assertTrue(overview.getLanguageCodes().contains("en"));
         assertTrue(overview.getLanguageCodes().contains("es"));
+        assertEquals(true, overview.getNotificationsVisibilityPreferences());
     }
 
     @Test
@@ -94,6 +100,7 @@ class ProfileServiceImplTest {
         // 1. Setup
         when(userService.findById(3L)).thenReturn(Optional.of(
                 new User(3L, "e@f.com", "h", "Fr", null, User.Role.CLIENT, true, Locale.FRANCE, null)));
+        when(clientService.findByUserId(3L)).thenReturn(Optional.of(new Client(3L, "Fr", null, false)));
 
         // 2. Ejercicio
         final ProfileSettingsOverview overview = profileService.getSettingsOverview(3L);
@@ -108,6 +115,7 @@ class ProfileServiceImplTest {
         when(userService.findById(4L)).thenReturn(Optional.of(
                 new User(4L, "img@test.com", "h", "Con foto", null, User.Role.CLIENT, true,
                         Locale.forLanguageTag("es"), 99L)));
+        when(clientService.findByUserId(4L)).thenReturn(Optional.of(new Client(4L, "Con foto", null, true)));
 
         // 2. Ejercicio
         final ProfileSettingsOverview overview = profileService.getSettingsOverview(4L);
@@ -222,5 +230,27 @@ class ProfileServiceImplTest {
 
         // 3. Asserts
         assertEquals(ProfileAccountUpdateException.Kind.COMMERCE, ex.getKind());
+    }
+
+    @Test
+    void testUpdateNotificationsPreferenceWhenClientExistsUpdatesAndSavesClient() {
+        // 1. Setup
+        final Client client = new Client(10L, "Nombre", "Apellido", true);
+        when(clientService.findByUserId(10L)).thenReturn(Optional.of(client));
+
+        // 2. Ejercicio
+        profileService.updateNotificationsPreference(10L, false);
+
+        // 3. Asserts
+        assertEquals(false, client.getNotificationsVisibilityPreferences());
+    }
+
+    @Test
+    void testUpdateNotificationsPreferenceWhenClientMissingThrowsNoSuchElementException() {
+        // 1. Setup
+        when(clientService.findByUserId(99L)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        assertThrows(NoSuchElementException.class, () -> profileService.updateNotificationsPreference(99L, true));
     }
 }

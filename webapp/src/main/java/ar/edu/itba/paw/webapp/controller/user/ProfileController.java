@@ -130,6 +130,20 @@ public class ProfileController {
         return "redirect:/profile/settings";
     }
 
+    @PostMapping("/profile/settings/notifications")
+    public String updateNotificationsPreference(
+            @RequestParam(value = "notificationsVisibilityPreferences", required = false) final boolean wantsNotifications,
+            final RedirectAttributes redirectAttributes) {
+        final User user = authenticatedUserResolver.resolveUser();
+        try {
+            profileService.updateNotificationsPreference(user.getId(), wantsNotifications);
+            redirectAttributes.addFlashAttribute("profileNotificationsUpdateSuccess", true);
+        } catch (final NoSuchElementException ex) {
+            redirectAttributes.addFlashAttribute("profileNotificationsUpdateError", true);
+        }
+        return "redirect:/profile/settings";
+    }
+
     private String renderProfileWithAccountErrors(
             final Model model,
             final ProfileAccountForm profileAccountForm,

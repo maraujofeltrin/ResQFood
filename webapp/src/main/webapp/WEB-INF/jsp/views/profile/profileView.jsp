@@ -45,6 +45,18 @@
                 <spring:message code="profile.locale.flashError"/>
             </div>
         </c:if>
+        <c:if test="${not empty profileNotificationsUpdateSuccess}">
+            <div class="mb-8 max-w-2xl mx-auto lg:mx-0 rounded-2xl bg-primary-container/50 px-4 py-3 text-on-primary-container font-body text-sm font-medium text-center lg:text-left"
+                 role="status">
+                <spring:message code="profile.notifications.flashSuccess"/>
+            </div>
+        </c:if>
+        <c:if test="${not empty profileNotificationsUpdateError}">
+            <div class="mb-8 max-w-2xl mx-auto lg:mx-0 rounded-2xl bg-error-container/40 px-4 py-3 text-on-error-container font-body text-sm font-medium text-center lg:text-left"
+                 role="alert">
+                <spring:message code="profile.notifications.flashError"/>
+            </div>
+        </c:if>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
             <!-- Sidebar -->
@@ -136,6 +148,36 @@
                                     <spring:message code="profile.settings.saveLanguage"/>
                                 </button>
                             </form>
+
+                            <c:if test="${empty profile.commerce}">
+                                <hr class="my-8 border-outline-variant/30 max-w-xl mx-auto sm:mx-0" />
+                                <h3 class="text-lg font-headline font-bold text-on-surface mb-2 max-w-xl mx-auto sm:mx-0">
+                                    <spring:message code="profile.section.notifications"/>
+                                </h3>
+                                <p class="text-secondary text-sm font-body mb-6 max-w-xl mx-auto sm:mx-0 text-center sm:text-left">
+                                    <spring:message code="profile.section.notificationsHint"/>
+                                </p>
+                                <form action="${pageContext.request.contextPath}/profile/settings/notifications" method="post" class="space-y-4 max-w-xl mx-auto m-0">
+                                    <div class="flex items-start gap-3 justify-center sm:justify-start text-left">
+                                        <div class="flex items-center h-5 mt-1 shrink-0">
+                                            <input id="notificationsVisibilityPreferences" name="notificationsVisibilityPreferences" type="checkbox" value="true" ${profile.notificationsVisibilityPreferences ? 'checked' : ''} class="w-5 h-5 rounded border-outline text-primary focus:ring-primary focus:ring-2 bg-surface-container-low cursor-pointer" />
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <label for="notificationsVisibilityPreferences" class="text-sm font-bold text-on-surface cursor-pointer">
+                                                <spring:message code="profile.notifications.emails"/>
+                                            </label>
+                                            <p class="text-xs text-on-surface-variant leading-relaxed font-body mt-1">
+                                                <spring:message code="profile.notifications.emailsHelp"/>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="pt-2 flex justify-center sm:justify-start">
+                                        <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-primary text-on-primary font-semibold shadow-soft hover:brightness-110 transition-colors border-0 cursor-pointer font-headline">
+                                            <spring:message code="profile.notifications.save"/>
+                                        </button>
+                                    </div>
+                                </form>
+                            </c:if>
                         </section>
                     </c:when>
                     <c:otherwise>

@@ -101,6 +101,9 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     @Override
     public void sendReservationCodeToClient(final Reservation reservation, final String clientEmail,
             final String pickupDateStr, final Locale locale) {
+        if (!clientWantsNonCriticalEmails(reservation.getCustomerId())) {
+            return;
+        }
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
         final String subject = mailMessages.getMessage("mail.subject.clientPickupCode",
                 new Object[]{packMailInfo.localName()}, locale);
@@ -112,6 +115,9 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     @Override
     public void sendAuctionWinnerCodeToClient(final Reservation reservation, final String clientEmail,
             final String pickupDateStr, final Locale locale) {
+        if (!clientWantsNonCriticalEmails(reservation.getCustomerId())) {
+            return;
+        }
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
         final String subject = mailMessages.getMessage("mail.subject.auctionWinnerClient",
                 new Object[]{packMailInfo.localName()}, locale);
@@ -137,6 +143,9 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     @Override
     public void sendReservationRejectedToClient(final Reservation reservation, final String clientEmail,
             final Locale locale) {
+        if (!clientWantsNonCriticalEmails(reservation.getCustomerId())) {
+            return;
+        }
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
         final String subject = mailMessages.getMessage("mail.subject.clientRejected",
                 new Object[]{packMailInfo.localName()}, locale);
@@ -242,6 +251,15 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         final String fullName = (client.getName() == null ? "" : client.getName())
                 + (client.getLastName() == null ? "" : (" " + client.getLastName()));
         return fullName.trim().isEmpty() ? fallbackClientName : fullName.trim();
+    }
+
+    private boolean clientWantsNonCriticalEmails(final Long customerId) {
+        if (customerId == null) {
+            return true;
+        }
+        return clientService.findByUserId(customerId)
+                .map(client -> client.getNotificationsVisibilityPreferences() == null || client.getNotificationsVisibilityPreferences())
+                .orElse(true);
     }
 
     private void sendHtmlMail(final String toEmail, final String subject, final String html,
