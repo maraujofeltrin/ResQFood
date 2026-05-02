@@ -60,7 +60,4 @@
     <tag-file><name>landingHero</name><path>/WEB-INF/tags/home/landingHero.tag</path></tag-file>
     <tag-file><name>landingPathCard</name><path>/WEB-INF/tags/home/landingPathCard.tag</path></tag-file>
     <tag-file><name>landingValueCard</name><path>/WEB-INF/tags/home/landingValueCard.tag</path></tag-file>
-
-    <!-- Demo view -->
-    <tag-file><name>title</name><path>/WEB-INF/tags/helloworld/title.tag</path></tag-file>
 </taglib>
