@@ -61,7 +61,7 @@ public class CommerceReviewJdbcDaoTest {
 
         commerceId = userDao.createUser("commerce-review@example.com", "pass", "Commerce", "123",
                 User.Role.COMMERCE).getId();
-        commerceDao.createCommerce(commerceId, "Comm", Commerce.Category.BAKERY, "Street", 123, "City", "Prov",
+        commerceDao.createCommerce(commerceId, "Comm", Commerce.Category.BAKERY, "Street", 123, ar.edu.itba.paw.models.pack.Municipality.AVELLANEDA, "Prov",
                 "1000", "08:00", "20:00");
 
         clientId = userDao.createUser("client-review@example.com", "pass", "Client", "123", User.Role.CLIENT)

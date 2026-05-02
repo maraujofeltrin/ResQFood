@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.webapp.form;
 
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.pack.Municipality;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
@@ -27,9 +28,8 @@ public class CommerceProfileForm {
     @Max(value = 99999, message = "{register.validation.streetNumber.max}")
     private Integer streetNumber;
 
-    @NotBlank(message = "{register.validation.city.notEmpty}")
-    @Size(max = 255, message = "{register.validation.city.size}")
-    private String city;
+    @NotNull(message = "{register.validation.city.notNull}")
+    private Municipality city;
 
     @NotBlank(message = "{register.validation.province.notEmpty}")
     @Size(max = 255, message = "{register.validation.province.size}")
@@ -80,11 +80,11 @@ public class CommerceProfileForm {
         this.streetNumber = streetNumber;
     }
 
-    public String getCity() {
+    public Municipality getCity() {
         return city;
     }
 
-    public void setCity(final String city) {
+    public void setCity(final Municipality city) {
         this.city = city;
     }
 

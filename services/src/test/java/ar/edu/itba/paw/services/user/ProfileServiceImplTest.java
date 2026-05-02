@@ -2,6 +2,7 @@ package ar.edu.itba.paw.services.user;
 
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import org.junit.jupiter.api.Test;
@@ -79,7 +80,7 @@ class ProfileServiceImplTest {
                 new User(2L, "c@d.com", "h", "Solo", null, User.Role.COMMERCE, false,
                         Locale.forLanguageTag("es"), null)));
         when(commerceService.findByUserId(2L)).thenReturn(Optional.of(
-                new Commerce(2L, "El Almacén", Commerce.Category.BAKERY, "Rivadavia", 100, "Morón", "BA",
+                new Commerce(2L, "El Almacén", Commerce.Category.BAKERY, "Rivadavia", 100, Municipality.MORON, "BA",
                         "1708", "08:30", "20:00")));
 
         // 2. Ejercicio
@@ -144,7 +145,7 @@ class ProfileServiceImplTest {
         final AtomicReference<Commerce.Category> capturedCategory = new AtomicReference<>();
         final AtomicReference<String> capturedStreet = new AtomicReference<>();
         final AtomicReference<Integer> capturedStreetNumber = new AtomicReference<>();
-        final AtomicReference<String> capturedCity = new AtomicReference<>();
+        final AtomicReference<Municipality> capturedCity = new AtomicReference<>();
         final AtomicReference<String> capturedProvince = new AtomicReference<>();
         final AtomicReference<String> capturedPostal = new AtomicReference<>();
         final AtomicReference<String> capturedOpening = new AtomicReference<>();
@@ -160,7 +161,7 @@ class ProfileServiceImplTest {
             capturedOpening.set(invocation.getArgument(7));
             capturedClosing.set(invocation.getArgument(8));
             return null;
-        }).when(commerceService).updateProfileFields(anyLong(), any(), anyString(), any(), anyString(), anyString(),
+        }).when(commerceService).updateProfileFields(anyLong(), any(), anyString(), any(), any(), anyString(),
                 anyString(), anyString(), anyString());
         final AtomicInteger photoCalls = new AtomicInteger();
         lenient().doAnswer(invocation -> {
@@ -169,7 +170,7 @@ class ProfileServiceImplTest {
         }).when(userService).updateProfilePhoto(anyLong(), any(), any());
 
         // 2. Ejercicio
-        profileService.updateProfileAccount(5L, User.Role.COMMERCE, "RESTAURANT", "Av. Siempre Viva", "42", "Ituzaingó",
+        profileService.updateProfileAccount(5L, User.Role.COMMERCE, "RESTAURANT", "Av. Siempre Viva", "42", Municipality.MORON,
                 "BA", "1714", "09:00", "18:00", null, null);
 
         // 3. Asserts
@@ -177,7 +178,7 @@ class ProfileServiceImplTest {
         assertEquals(Commerce.Category.RESTAURANT, capturedCategory.get());
         assertEquals("Av. Siempre Viva", capturedStreet.get());
         assertEquals(Integer.valueOf(42), capturedStreetNumber.get());
-        assertEquals("Ituzaingó", capturedCity.get());
+        assertEquals(Municipality.MORON, capturedCity.get());
         assertEquals("BA", capturedProvince.get());
         assertEquals("1714", capturedPostal.get());
         assertEquals("09:00", capturedOpening.get());
@@ -202,7 +203,7 @@ class ProfileServiceImplTest {
         lenient().doAnswer(invocation -> {
             commerceUpdateCalls.incrementAndGet();
             return null;
-        }).when(commerceService).updateProfileFields(anyLong(), any(), anyString(), any(), anyString(), anyString(),
+        }).when(commerceService).updateProfileFields(anyLong(), any(), anyString(), any(), any(), anyString(),
                 anyString(), anyString(), anyString());
 
         // 2. Ejercicio
@@ -220,12 +221,12 @@ class ProfileServiceImplTest {
     void testUpdateProfileAccountWhenCommerceUpdateFailsThrowsProfileAccountUpdateExceptionWithCommerceKind() {
         // 1. Setup
         doThrow(new NoSuchElementException("Commerce not found for user: 7")).when(commerceService)
-                .updateProfileFields(eq(7L), eq(Commerce.Category.OTHER), eq("Calle"), eq(1), eq("Ciudad"), eq("P"),
+                .updateProfileFields(eq(7L), eq(Commerce.Category.OTHER), eq("Calle"), eq(1), eq(Municipality.AVELLANEDA), eq("P"),
                         eq("pc"), eq("09:00"), eq("18:00"));
 
         // 2. Ejercicio
         final ProfileAccountUpdateException ex = assertThrows(ProfileAccountUpdateException.class,
-                () -> profileService.updateProfileAccount(7L, User.Role.COMMERCE, "OTHER", "Calle", "1", "Ciudad", "P",
+                () -> profileService.updateProfileAccount(7L, User.Role.COMMERCE, "OTHER", "Calle", "1", Municipality.AVELLANEDA, "P",
                         "pc", "09:00", "18:00", null, null));
 
         // 3. Asserts

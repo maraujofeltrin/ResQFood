@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.user;
 
 import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.models.pack.Municipality;
 
 public interface ProfileService {
 
@@ -21,7 +22,7 @@ public interface ProfileService {
             String category,
             String street,
             String streetNumber,
-            String city,
+            Municipality city,
             String province,
             String postalCode,
             String openingTime,

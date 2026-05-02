@@ -476,7 +476,7 @@ uri="http://itba.edu.ar/paw/tags" %>
                 >
                   <form:option value="" label="${cityPlaceholder}" />
                   <c:forEach var="muni" items="${availableMunicipalities}">
-                    <form:option value="${muni.cityName}">
+                    <form:option value="${muni.name()}">
                       <spring:message
                         code="pack.catalog.filter.location.municipality.${muni.name()}"
                       />

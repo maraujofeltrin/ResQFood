@@ -59,7 +59,7 @@ public class PackJdbcDaoTest {
                 "users");
 
         commerceId = userDao.createUser("commerce@example.com", "pass", "Commerce", "123", User.Role.COMMERCE).getId();
-        commerceDao.createCommerce(commerceId, "Comm", Commerce.Category.BAKERY, "Street", 123, "City", "Prov", "1000", "08:00", "20:00");
+        commerceDao.createCommerce(commerceId, "Comm", Commerce.Category.BAKERY, "Street", 123, ar.edu.itba.paw.models.pack.Municipality.AVELLANEDA, "Prov", "1000", "08:00", "20:00");
     }
 
     @Test
@@ -112,7 +112,7 @@ public class PackJdbcDaoTest {
         // 1. Setup
         packDao.createPack(commerceId, "Title1", "Desc1", 1000.0, 500.0, 10, null, null);
         final Long otherCommerceId = userDao.createUser("other@example.com", "pass", "Other", "123", User.Role.COMMERCE).getId();
-        commerceDao.createCommerce(otherCommerceId, "Other Comm", Commerce.Category.BAKERY, "Street", 123, "City", "Prov", "1000", "08:00", "20:00");
+        commerceDao.createCommerce(otherCommerceId, "Other Comm", Commerce.Category.BAKERY, "Street", 123, ar.edu.itba.paw.models.pack.Municipality.AVELLANEDA, "Prov", "1000", "08:00", "20:00");
         packDao.createPack(otherCommerceId, "Title2", "Desc2", 2000.0, 1000.0, 5, null, null);
 
         // 2. Ejercicio

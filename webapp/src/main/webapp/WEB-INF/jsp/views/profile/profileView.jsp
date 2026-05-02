@@ -290,8 +290,13 @@
                                                     <form:label path="city" cssClass="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label block">
                                                         <spring:message code="register.label.city"/>
                                                     </form:label>
-                                                    <form:input path="city" type="text"
-                                                                cssClass="w-full bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/25 text-on-surface font-medium outline-none focus:ring-2 focus:ring-primary"/>
+                                                    <form:select path="city" cssClass="w-full bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/25 text-on-surface font-medium outline-none focus:ring-2 focus:ring-primary">
+                                                        <c:forEach var="muni" items="${availableMunicipalities}">
+                                                            <form:option value="${muni.name()}">
+                                                                <spring:message code="pack.catalog.filter.location.municipality.${muni.name()}"/>
+                                                            </form:option>
+                                                        </c:forEach>
+                                                    </form:select>
                                                     <form:errors path="city" cssClass="text-xs text-error font-body block" element="p"/>
                                                 </div>
                                                 <div class="space-y-1.5">

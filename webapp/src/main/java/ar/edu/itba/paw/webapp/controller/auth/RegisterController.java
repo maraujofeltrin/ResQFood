@@ -32,7 +32,6 @@ import java.util.Locale;
 public class RegisterController {
 
     private static final String REGISTER_VIEW = "login/register";
-    private static final String FIXED_PROVINCE = "Buenos Aires";
 
     private final UserService userService;
     private final AuthenticationHelper authenticationHelper;
@@ -60,14 +59,14 @@ public class RegisterController {
     @ModelAttribute("registerForm")
     public RegisterForm registerForm() {
         final RegisterForm registerForm = new RegisterForm();
-        registerForm.getCommerceProfile().setProvince(FIXED_PROVINCE);
+        registerForm.getCommerceProfile().setProvince(Commerce.PROVINCE_BUENOS_AIRES);
         return registerForm;
     }
 
     @GetMapping
     public ModelAndView showForm() {
         final RegisterForm registerForm = new RegisterForm();
-        registerForm.getCommerceProfile().setProvince(FIXED_PROVINCE);
+        registerForm.getCommerceProfile().setProvince(Commerce.PROVINCE_BUENOS_AIRES);
         return registerView(registerForm);
     }
 

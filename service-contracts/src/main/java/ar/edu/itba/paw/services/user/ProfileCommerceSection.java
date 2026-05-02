@@ -1,5 +1,7 @@
 package ar.edu.itba.paw.services.user;
 
+import ar.edu.itba.paw.models.pack.Municipality;
+
 import java.util.Objects;
 
 /** Datos del comercio mostrados y editables en el perfil (usuario rol COMMERCE). */
@@ -9,7 +11,7 @@ public final class ProfileCommerceSection {
     private final String category;
     private final String street;
     private final Integer streetNumber;
-    private final String city;
+    private final Municipality city;
     private final String province;
     private final String postalCode;
     private final String openingTime;
@@ -20,7 +22,7 @@ public final class ProfileCommerceSection {
             final String category,
             final String street,
             final Integer streetNumber,
-            final String city,
+            final Municipality city,
             final String province,
             final String postalCode,
             final String openingTime,
@@ -52,7 +54,7 @@ public final class ProfileCommerceSection {
         return streetNumber;
     }
 
-    public String getCity() {
+    public Municipality getCity() {
         return city;
     }
 

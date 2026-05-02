@@ -91,8 +91,8 @@ public class UserServiceImpl implements UserService {
             if (commerceProfile == null) {
                 throw new IllegalArgumentException("Commerce profile data is required for COMMERCE users");
             }
-            if (!"Buenos Aires".equalsIgnoreCase(commerceProfile.getProvince())) {
-                throw new IllegalArgumentException("Commerce province must be Buenos Aires");
+            if (!Commerce.PROVINCE_BUENOS_AIRES.equalsIgnoreCase(commerceProfile.getProvince())) {
+                throw new IllegalArgumentException("Commerce province must be " + Commerce.PROVINCE_BUENOS_AIRES);
             }
             final Commerce commerceToPersist = new Commerce(
                     user.getId(),

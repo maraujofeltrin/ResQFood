@@ -73,7 +73,7 @@ public class ProfileAccountFormValidator implements Validator {
             errors.rejectValue("street", "error.street.required",
                     messageSource.getMessage("profile.commerce.validation.street.required", null, locale));
         }
-        if (form.getCity() == null || form.getCity().isBlank()) {
+        if (form.getCity() == null) {
             errors.rejectValue("city", "error.city.required",
                     messageSource.getMessage("profile.commerce.validation.city.required", null, locale));
         }

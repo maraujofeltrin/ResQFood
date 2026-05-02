@@ -57,7 +57,7 @@ public class PackFavoriteJdbcDaoTest {
                 "users");
 
         commerceUserId = userDao.createUser("c@test.com", "p", "C", "1", User.Role.COMMERCE).getId();
-        commerceDao.createCommerce(commerceUserId, "Shop", Commerce.Category.BAKERY, "St", 1, "City", "P", "1000", "09:00", "18:00");
+        commerceDao.createCommerce(commerceUserId, "Shop", Commerce.Category.BAKERY, "St", 1, ar.edu.itba.paw.models.pack.Municipality.AVELLANEDA, "P", "1000", "09:00", "18:00");
 
         clientUserId = userDao.createUser("cl@test.com", "p", "Cl", "2", User.Role.CLIENT).getId();
         clientDao.createClient(clientUserId, "A", "B", true);

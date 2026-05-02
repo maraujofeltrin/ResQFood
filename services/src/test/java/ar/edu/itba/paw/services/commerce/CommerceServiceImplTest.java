@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.commerce;
 
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,7 +33,7 @@ class CommerceServiceImplTest {
     void testUpdateProfileFieldsWhenCommerceExistsKeepsCommercialNameAndUpdatesRest() {
         // 1. Setup
         when(commerceDao.findByUserId(5L)).thenReturn(Optional.of(
-                new Commerce(5L, "Panadería Sur", Commerce.Category.BAKERY, "Old", 1, "Lanús", "Buenos Aires", "1824",
+                new Commerce(5L, "Panadería Sur", Commerce.Category.BAKERY, "Old", 1, Municipality.AVELLANEDA, "Buenos Aires", "1824",
                         "08:00", "18:00")));
         final AtomicReference<Commerce> captured = new AtomicReference<>();
         doAnswer(invocation -> {
@@ -41,7 +42,7 @@ class CommerceServiceImplTest {
         }).when(commerceDao).update(any(Commerce.class));
 
         // 2. Ejercicio
-        commerceService.updateProfileFields(5L, Commerce.Category.RESTAURANT, "Nueva", 99, "Quilmes", "Buenos Aires", "1878",
+        commerceService.updateProfileFields(5L, Commerce.Category.RESTAURANT, "Nueva", 99, Municipality.QUILMES, "Buenos Aires", "1878",
                 "10:00", "22:00");
 
         // 3. Asserts
@@ -50,7 +51,7 @@ class CommerceServiceImplTest {
         assertEquals(Commerce.Category.RESTAURANT, saved.getCategory());
         assertEquals("Nueva", saved.getStreet());
         assertEquals(Integer.valueOf(99), saved.getStreetNumber());
-        assertEquals("Quilmes", saved.getCity());
+        assertEquals(Municipality.QUILMES, saved.getCity());
         assertEquals("10:00", saved.getOpeningTime());
         assertEquals("22:00", saved.getClosingTime());
     }
@@ -62,7 +63,7 @@ class CommerceServiceImplTest {
 
         // 2. Ejercicio
         final NoSuchElementException thrown = assertThrows(NoSuchElementException.class,
-                () -> commerceService.updateProfileFields(1L, Commerce.Category.OTHER, "S", null, "C", null, null, "09:00",
+                () -> commerceService.updateProfileFields(1L, Commerce.Category.OTHER, "S", null, Municipality.AVELLANEDA, "Buenos Aires", null, "09:00",
                         "17:00"));
 
         // 3. Asserts
@@ -75,7 +76,7 @@ class CommerceServiceImplTest {
 
         // 2. Ejercicio
         final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
-                () -> commerceService.updateProfileFields(1L, null, "S", 1, "C", null, null, "09:00", "17:00"));
+                () -> commerceService.updateProfileFields(1L, null, "S", 1, Municipality.AVELLANEDA, "Buenos Aires", null, "09:00", "17:00"));
 
         // 3. Asserts
         assertEquals("Category is required", thrown.getMessage());

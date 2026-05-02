@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.webapp.controller.user;
 
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.user.ProfileAccountUpdateException;
 import ar.edu.itba.paw.services.user.ProfileCommerceSection;
@@ -94,7 +95,7 @@ public class ProfileController {
                     profileAccountForm.getStreet(),
                     profileAccountForm.getStreetNumber(),
                     profileAccountForm.getCity(),
-                    "Buenos Aires",
+                    Commerce.PROVINCE_BUENOS_AIRES,
                     profileAccountForm.getPostalCode(),
                     profileAccountForm.getOpeningTime(),
                     profileAccountForm.getClosingTime(),
@@ -180,6 +181,7 @@ public class ProfileController {
         final ProfileSettingsOverview overview = profileService.getSettingsOverview(user.getId());
         model.addAttribute("profile", overview);
         model.addAttribute("commerceCategories", Commerce.Category.values());
+        model.addAttribute("availableMunicipalities", Municipality.values());
         model.addAttribute("profileNavSection", profileNavSection);
         if (!model.containsAttribute("profileAccountForm")) {
             final ProfileAccountForm form = new ProfileAccountForm();

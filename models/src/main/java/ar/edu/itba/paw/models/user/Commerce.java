@@ -1,5 +1,7 @@
 package ar.edu.itba.paw.models.user;
 
+import ar.edu.itba.paw.models.pack.Municipality;
+
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -17,19 +19,21 @@ public class Commerce {
         OTHER
     }
 
+    public static final String PROVINCE_BUENOS_AIRES = "Buenos Aires";
+
     private final Long userId;
     private String commercialName;
     private Category category;
     private String street;
     private Integer streetNumber;
-    private String city;
+    private Municipality city;
     private String province;
     private String postalCode;
     private String openingTime;
     private String closingTime;
 
     public Commerce(Long userId, String commercialName, Category category, String street, Integer streetNumber,
-            String city, String province, String postalCode, String openingTime, String closingTime) {
+            Municipality city, String province, String postalCode, String openingTime, String closingTime) {
         this.userId = userId;
         this.commercialName = commercialName;
         this.category = category;
@@ -62,7 +66,7 @@ public class Commerce {
         return streetNumber;
     }
 
-    public String getCity() {
+    public Municipality getCity() {
         return city;
     }
 
@@ -106,8 +110,8 @@ public class Commerce {
      */
     public String getCityProvincePostal() {
         final List<String> parts = new ArrayList<>(3);
-        if (city != null && !city.isBlank()) {
-            parts.add(city.trim());
+        if (city != null) {
+            parts.add(city.getCityName().trim());
         }
         if (province != null && !province.isBlank()) {
             parts.add(province.trim());

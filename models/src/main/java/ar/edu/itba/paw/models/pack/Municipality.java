@@ -59,4 +59,21 @@ public enum Municipality {
             return null;
         }
     }
+
+    /**
+     * Maps a database city name string back to the corresponding Municipality enum.
+     * Returns {@code null} if no match is found.
+     */
+    public static Municipality fromCityName(final String cityName) {
+        if (cityName == null || cityName.isBlank()) {
+            return null;
+        }
+        final String search = cityName.trim();
+        for (Municipality m : Municipality.values()) {
+            if (m.getCityName().equalsIgnoreCase(search)) {
+                return m;
+            }
+        }
+        return null;
+    }
 }

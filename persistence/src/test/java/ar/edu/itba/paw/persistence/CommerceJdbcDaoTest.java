@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.persistence;
 
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +34,7 @@ public class CommerceJdbcDaoTest {
     private static final Commerce.Category CATEGORY = Commerce.Category.BAKERY;
     private static final String STREET = "Av. Siempre Viva";
     private static final Integer STREET_NUMBER = 742;
-    private static final String CITY = "Springfield";
+    private static final Municipality CITY = Municipality.AVELLANEDA;
     private static final String PROVINCE = "Buenos Aires";
     private static final String POSTAL_CODE = "1000";
     private static final String OPENING_TIME = "08:00";

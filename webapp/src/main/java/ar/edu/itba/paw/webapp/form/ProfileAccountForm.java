@@ -1,13 +1,14 @@
 package ar.edu.itba.paw.webapp.form;
 
 import org.springframework.web.multipart.MultipartFile;
+import ar.edu.itba.paw.models.pack.Municipality;
 
 public class ProfileAccountForm {
 
     private MultipartFile photo;
     private String street;
     private String streetNumber;
-    private String city;
+    private Municipality city;
     private String province;
     private String postalCode;
     private String category;
@@ -38,11 +39,11 @@ public class ProfileAccountForm {
         this.streetNumber = streetNumber;
     }
 
-    public String getCity() {
+    public Municipality getCity() {
         return city;
     }
 
-    public void setCity(final String city) {
+    public void setCity(final Municipality city) {
         this.city = city;
     }
 

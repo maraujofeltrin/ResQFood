@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.user;
 
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.commerce.CommerceService;
@@ -71,7 +72,7 @@ public class ProfileServiceImpl implements ProfileService {
             final String category,
             final String street,
             final String streetNumber,
-            final String city,
+            final Municipality city,
             final String province,
             final String postalCode,
             final String openingTime,
@@ -87,7 +88,7 @@ public class ProfileServiceImpl implements ProfileService {
                         cat,
                         street != null ? street.trim() : "",
                         streetNum,
-                        city != null ? city.trim() : "",
+                        city,
                         province,
                         postalCode,
                         openingTime != null ? openingTime.trim() : "",

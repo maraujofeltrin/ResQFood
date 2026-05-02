@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.persistence;
 
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.user.Commerce;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -24,7 +25,7 @@ public class CommerceJdbcDao implements CommerceDao {
             rs.getString("category") == null ? null : Commerce.Category.valueOf(rs.getString("category")),
             rs.getString("street"),
             rs.getObject("street_number", Integer.class),
-            rs.getString("city"),
+            Municipality.fromCityName(rs.getString("city")),
             rs.getString("province"),
             rs.getString("postal_code"),
             rs.getString("opening_time"),
@@ -40,7 +41,7 @@ public class CommerceJdbcDao implements CommerceDao {
 
     @Override
     public Commerce createCommerce(final Long userId, final String commercialName, final Commerce.Category category,
-            final String street, final Integer streetNumber, final String city, final String province,
+            final String street, final Integer streetNumber, final Municipality city, final String province,
             final String postalCode, final String openingTime, final String closingTime) {
         final Map<String, Object> parameters = new HashMap<>();
         parameters.put("user_id", userId);
@@ -48,7 +49,7 @@ public class CommerceJdbcDao implements CommerceDao {
         parameters.put("category", category == null ? null : category.name());
         parameters.put("street", street);
         parameters.put("street_number", streetNumber);
-        parameters.put("city", city);
+        parameters.put("city", city == null ? null : city.getCityName());
         parameters.put("province", province);
         parameters.put("postal_code", postalCode);
         parameters.put("opening_time", openingTime);
@@ -73,7 +74,7 @@ public class CommerceJdbcDao implements CommerceDao {
                 commerce.getCategory() == null ? null : commerce.getCategory().name(),
                 commerce.getStreet(),
                 commerce.getStreetNumber(),
-                commerce.getCity(),
+                commerce.getCity() == null ? null : commerce.getCity().getCityName(),
                 commerce.getProvince(),
                 commerce.getPostalCode(),
                 commerce.getOpeningTime(),
