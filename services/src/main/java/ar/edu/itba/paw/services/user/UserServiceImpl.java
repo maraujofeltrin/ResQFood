@@ -8,6 +8,8 @@ import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.UserDao;
 import ar.edu.itba.paw.services.image.ImageService;
 import ar.edu.itba.paw.services.security.EmailVerificationTokenService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,8 @@ import java.util.Set;
 
 @Service
 public class UserServiceImpl implements UserService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserServiceImpl.class);
 
     private static final long MAX_PROFILE_IMAGE_BYTES = 5L * 1024L * 1024L;
     private static final Set<String> ALLOWED_PROFILE_IMAGE_TYPES = Set.of(
@@ -173,7 +177,10 @@ public class UserServiceImpl implements UserService {
         if (contentType == null || contentType.isEmpty() || !ALLOWED_PROFILE_IMAGE_TYPES.contains(contentType)) {
             throw new IllegalArgumentException("Invalid or unsupported image content type");
         }
-        userDao.findById(userId).orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
+        userDao.findById(userId).orElseThrow(() -> {
+            LOGGER.warn("updateProfilePhoto: user not found userId={}", userId);
+            return new NoSuchElementException("User not found: " + userId);
+        });
         final long imageId = imageService.saveImage(data, contentType).getId();
         userDao.updateProfileImage(userId, imageId);
     }

@@ -12,6 +12,8 @@ import ar.edu.itba.paw.persistence.BidDao;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,8 @@ import java.util.Set;
 
 @Service
 public class AuctionServiceImpl implements AuctionService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuctionServiceImpl.class);
 
     private final AuctionDao auctionDao;
     private final BidDao bidDao;
@@ -159,14 +163,22 @@ public class AuctionServiceImpl implements AuctionService {
             closed++;
 
             if (auction.getCurrentBidderId() != null && auction.getCurrentBid() != null) {
-                reservationService.createReservation(
-                        auction.getPack().getId(),
-                        auction.getCurrentBidderId(),
-                        1,
-                        auction.getCurrentBid(),
-                        null,
-                        ""
-                );
+                try {
+                    reservationService.createReservation(
+                            auction.getPack().getId(),
+                            auction.getCurrentBidderId(),
+                            1,
+                            auction.getCurrentBid(),
+                            null,
+                            ""
+                    );
+                } catch (final RuntimeException e) {
+                    final Long packId = auction.getPack() != null ? auction.getPack().getId() : null;
+                    LOGGER.error(
+                            "closeExpiredAuctions: reservation creation failed auctionId={} packId={} bidderUserId={}",
+                            auction.getId(), packId, auction.getCurrentBidderId(), e);
+                    throw e;
+                }
             }
 
         }

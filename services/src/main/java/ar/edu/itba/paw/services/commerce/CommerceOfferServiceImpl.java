@@ -4,6 +4,8 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.pack.PackService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,11 +16,14 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.List;
 
 @Service
 public class CommerceOfferServiceImpl implements CommerceOfferService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommerceOfferServiceImpl.class);
 
     private final PackService packService;
     private final AuctionService auctionService;
@@ -55,10 +60,15 @@ public class CommerceOfferServiceImpl implements CommerceOfferService {
     }
 
     private LocalDateTime parseAuctionEndAsUtc(final String endDate, final String endTime) {
-        final LocalDate date = LocalDate.parse(endDate.trim());
-        final LocalTime time = LocalTime.parse(endTime.trim());
-        return ZonedDateTime.of(date, time, businessZone)
-                .withZoneSameInstant(ZoneOffset.UTC)
-                .toLocalDateTime();
+        try {
+            final LocalDate date = LocalDate.parse(endDate.trim());
+            final LocalTime time = LocalTime.parse(endTime.trim());
+            return ZonedDateTime.of(date, time, businessZone)
+                    .withZoneSameInstant(ZoneOffset.UTC)
+                    .toLocalDateTime();
+        } catch (final DateTimeParseException e) {
+            LOGGER.warn("Invalid auction end date/time format");
+            throw new IllegalArgumentException("Invalid auction end date or time", e);
+        }
     }
 }

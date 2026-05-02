@@ -4,7 +4,10 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.persistence.PackDao;
+import ar.edu.itba.paw.services.mail.MailMessageResolver;
 import ar.edu.itba.paw.services.user.ClientService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.support.ResourceBundleMessageSource;
@@ -16,7 +19,6 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
-import ar.edu.itba.paw.services.mail.MailMessageResolver;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -30,6 +32,8 @@ import java.util.Optional;
 
 @Service
 public class ReservationMailServiceImpl implements ReservationMailService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReservationMailServiceImpl.class);
 
     private static final DateTimeFormatter MAIL_DATE_FORMATTER = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
     private static final TemplateEngine templateEngine;
@@ -273,6 +277,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
             helper.setText(html, true);
             mailSender.send(message);
         } catch (final MessagingException | UnsupportedEncodingException e) {
+            LOGGER.error("Failed to send reservation mail: {}", errorMessage, e);
             throw new IllegalStateException(errorMessage, e);
         }
     }
@@ -288,9 +293,11 @@ public class ReservationMailServiceImpl implements ReservationMailService {
             final ZonedDateTime zonedDateTime = ZonedDateTime.of(dt, ZoneOffset.UTC).withZoneSameInstant(displayZone);
             return zonedDateTime.format(MAIL_DATE_FORMATTER);
         } catch (final Exception e) {
+            LOGGER.debug("formatToLocal: zone conversion fallback", e);
             try {
                 return dt.format(MAIL_DATE_FORMATTER);
             } catch (final Exception ex) {
+                LOGGER.debug("formatToLocal: plain datetime format fallback", ex);
                 return "-";
             }
         }

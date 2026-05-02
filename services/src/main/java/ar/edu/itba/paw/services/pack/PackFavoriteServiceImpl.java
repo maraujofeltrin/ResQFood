@@ -3,6 +3,8 @@ package ar.edu.itba.paw.services.pack;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.PackFavoriteDao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +13,8 @@ import java.util.List;
 
 @Service
 public class PackFavoriteServiceImpl implements PackFavoriteService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PackFavoriteServiceImpl.class);
 
     private final PackFavoriteDao packFavoriteDao;
     private final PackDao packDao;
@@ -50,8 +54,12 @@ public class PackFavoriteServiceImpl implements PackFavoriteService {
             packFavoriteDao.delete(clientUserId, packId);
             return;
         }
-        final Pack pack = packDao.findById(packId).orElseThrow(() -> new IllegalArgumentException("Pack not found: " + packId));
+        final Pack pack = packDao.findById(packId).orElseThrow(() -> {
+            LOGGER.warn("Favorite toggle rejected: pack not found packId={} clientUserId={}", packId, clientUserId);
+            return new IllegalArgumentException("Pack not found: " + packId);
+        });
         if (!Boolean.TRUE.equals(pack.getActive()) || Boolean.TRUE.equals(pack.getDeleted())) {
+            LOGGER.warn("Favorite toggle rejected: pack unavailable packId={} clientUserId={}", packId, clientUserId);
             throw new IllegalArgumentException("Pack is not available for favorites: " + packId);
         }
         packFavoriteDao.insert(clientUserId, packId);

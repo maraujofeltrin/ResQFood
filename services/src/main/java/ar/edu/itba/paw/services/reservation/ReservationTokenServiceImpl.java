@@ -6,6 +6,8 @@ import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,8 @@ import java.util.Optional;
 
 @Service
 public class ReservationTokenServiceImpl implements ReservationTokenService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReservationTokenServiceImpl.class);
 
     private final ReservationTokenDao reservationTokenDao;
     private final ReservationDao reservationDao;
@@ -65,6 +69,7 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
         final String storedCode = reservation.getPickupCode() == null ? ""
                 : reservation.getPickupCode().trim().toUpperCase(Locale.ROOT);
         if (!inputCode.equals(storedCode)) {
+            LOGGER.debug("Accept reservation token: pickup code mismatch reservationId={}", reservation.getId());
             return ReservationServiceResult.failure(ReservationTokenActionError.INVALID_PICKUP_CODE, reservation);
         }
 

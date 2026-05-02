@@ -2,6 +2,8 @@ package ar.edu.itba.paw.services.commerce;
 
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.persistence.CommerceDao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +13,8 @@ import java.util.Optional;
 
 @Service
 public class CommerceServiceImpl implements CommerceService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommerceServiceImpl.class);
 
     private final CommerceDao commerceDao;
 
@@ -43,7 +47,10 @@ public class CommerceServiceImpl implements CommerceService {
             throw new IllegalArgumentException("Street and city are required");
         }
         final Commerce current = commerceDao.findByUserId(userId)
-                .orElseThrow(() -> new NoSuchElementException("Commerce not found for user: " + userId));
+                .orElseThrow(() -> {
+                    LOGGER.warn("updateProfileFields: commerce not found userId={}", userId);
+                    return new NoSuchElementException("Commerce not found for user: " + userId);
+                });
         final Commerce updated = new Commerce(
                 userId,
                 current.getCommercialName(),

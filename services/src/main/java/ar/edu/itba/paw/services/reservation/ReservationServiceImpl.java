@@ -16,6 +16,8 @@ import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.pack.DirectReservationCheck;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.services.user.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +37,8 @@ import java.util.UUID;
 
 @Service
 public class ReservationServiceImpl implements ReservationService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReservationServiceImpl.class);
 
     private static final int PICKUP_WINDOW_MAX_LEN = 512;
 
@@ -160,6 +164,7 @@ public class ReservationServiceImpl implements ReservationService {
                 return code;
             }
         }
+        LOGGER.error("Could not allocate unique pickup code after {} attempts", PICKUP_CODE_MAX_ATTEMPTS);
         throw new IllegalStateException("Could not allocate unique pickup code after " + PICKUP_CODE_MAX_ATTEMPTS
                 + " attempts");
     }
@@ -221,6 +226,7 @@ public class ReservationServiceImpl implements ReservationService {
                     .withZoneSameInstant(displayZone)
                     .toLocalDate();
         } catch (final Exception e) {
+            LOGGER.debug("computePickupDateStr: timezone conversion fallback reservationId={}", reservation.getId(), e);
             pickupDate = reservation.getReservationDate().toLocalDate();
         }
 
@@ -243,14 +249,16 @@ public class ReservationServiceImpl implements ReservationService {
                                     pickupDate = pickupDate.plusDays(1);
                                 }
                             } catch (final Exception e) {
-                                // parse error, fallback to same-day
+                                LOGGER.debug("computePickupDateStr: closing time parse fallback reservationId={} packId={}",
+                                        reservation.getId(), reservation.getPackId(), e);
                             }
                         }
                     }
                 }
             }
         } catch (final Exception e) {
-            // any issue, fallback to same-day
+            LOGGER.debug("computePickupDateStr: commerce/pack lookup fallback reservationId={}",
+                    reservation.getId(), e);
         }
 
         return pickupDate.format(DATE_ONLY_FORMATTER);

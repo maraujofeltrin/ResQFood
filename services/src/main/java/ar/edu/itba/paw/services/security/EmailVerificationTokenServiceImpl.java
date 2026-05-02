@@ -5,6 +5,8 @@ import ar.edu.itba.paw.models.security.TokenType;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.TokenDao;
 import ar.edu.itba.paw.persistence.UserDao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +16,8 @@ import java.util.Optional;
 
 @Service
 public class EmailVerificationTokenServiceImpl implements EmailVerificationTokenService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(EmailVerificationTokenServiceImpl.class);
 
     private final TokenDao tokenDao;
     private final UserDao userDao;
@@ -39,6 +43,7 @@ public class EmailVerificationTokenServiceImpl implements EmailVerificationToken
     public Optional<User> verifyEmailAndGetUser(final String token) {
         final Optional<Token> maybeToken = tokenDao.findByTokenAndType(token, TokenType.EMAIL_VERIFICATION);
         if (maybeToken.isEmpty() || !isValid(maybeToken.get())) {
+            LOGGER.debug("Email verification rejected: missing, used, or expired token");
             return Optional.empty();
         }
 

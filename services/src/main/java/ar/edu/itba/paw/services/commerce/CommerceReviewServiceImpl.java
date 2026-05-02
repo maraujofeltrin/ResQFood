@@ -3,6 +3,8 @@ package ar.edu.itba.paw.services.commerce;
 import ar.edu.itba.paw.models.user.CommerceReview;
 import ar.edu.itba.paw.persistence.CommerceReviewDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +14,8 @@ import java.util.Optional;
 
 @Service
 public class CommerceReviewServiceImpl implements CommerceReviewService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommerceReviewServiceImpl.class);
 
     private final CommerceReviewDao commerceReviewDao;
     private final ReservationDao reservationDao;
@@ -47,6 +51,8 @@ public class CommerceReviewServiceImpl implements CommerceReviewService {
     public CommerceReview upsertReview(final long clientUserId, final long commerceUserId, final int rating,
             final String body) {
         if (!canClientReviewCommerce(clientUserId, commerceUserId)) {
+            LOGGER.warn("Review rejected: clientUserId={} not eligible for commerceUserId={}", clientUserId,
+                    commerceUserId);
             throw new IllegalStateException("Client is not eligible to review this commerce");
         }
         validateRating(rating);

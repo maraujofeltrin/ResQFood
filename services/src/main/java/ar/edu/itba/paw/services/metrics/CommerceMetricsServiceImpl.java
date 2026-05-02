@@ -4,6 +4,8 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +25,8 @@ import java.util.Optional;
 @Service
 public class CommerceMetricsServiceImpl implements CommerceMetricsService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommerceMetricsServiceImpl.class);
+
     private final ReservationDao reservationDao;
     private final PackDao packDao;
     private final ZoneId displayZone;
@@ -37,6 +41,7 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
 
     @Override
     public CommerceMetrics getCommerceMetrics(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
+        LOGGER.debug("getCommerceMetrics commerceId={}", commerceId);
         final List<Object[]> rows = reservationDao.countPaidReservationsPerDay(commerceId, from, to);
         final Map<LocalDate, Long> countsByDate = new HashMap<>();
         for (final Object[] row : rows) {

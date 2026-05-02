@@ -5,6 +5,8 @@ import ar.edu.itba.paw.models.security.TokenType;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.TokenDao;
 import ar.edu.itba.paw.persistence.UserDao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,8 @@ import java.util.Optional;
 
 @Service
 public class PasswordResetTokenServiceImpl implements PasswordResetTokenService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PasswordResetTokenServiceImpl.class);
 
     private final TokenDao tokenDao;
     private final UserDao userDao;
@@ -53,12 +57,19 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
     @Override
     public void resetPassword(final String token, final String rawPassword) {
         final Token resetToken = tokenDao.findByTokenAndType(token, TokenType.PASSWORD_RESET)
-                .orElseThrow(() -> new IllegalStateException("Password reset failed"));
+                .orElseThrow(() -> {
+                    LOGGER.warn("Password reset failed: token not found");
+                    return new IllegalStateException("Password reset failed");
+                });
         if (!isValid(resetToken)) {
+            LOGGER.warn("Password reset failed: invalid or expired token userId={}", resetToken.getUserId());
             throw new IllegalStateException("Password reset failed");
         }
         final User user = userDao.findById(resetToken.getUserId())
-                .orElseThrow(() -> new IllegalStateException("Password reset failed"));
+                .orElseThrow(() -> {
+                    LOGGER.warn("Password reset failed: user not found userId={}", resetToken.getUserId());
+                    return new IllegalStateException("Password reset failed");
+                });
         final String encodedPassword = passwordEncoder.encode(rawPassword);
         userDao.updatePassword(user.getId(), encodedPassword);
         tokenDao.markAsUsed(token, TokenType.PASSWORD_RESET);

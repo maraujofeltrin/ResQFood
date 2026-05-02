@@ -8,6 +8,8 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommercePackAccess;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,8 @@ import java.util.Optional;
 
 @Service
 public class PackServiceImpl implements PackService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PackServiceImpl.class);
 
     private final PackDao packDao;
     private final AuctionService auctionService;
@@ -83,7 +87,10 @@ public class PackServiceImpl implements PackService {
                            Double finalPrice, Integer stock, List<PackTag> tags,
                            Long imageId) {
         final Pack packToUpdate = packDao.findById(packId)
-                .orElseThrow(() -> new IllegalArgumentException("Pack not found"));
+                .orElseThrow(() -> {
+                    LOGGER.warn("updatePack: pack not found packId={}", packId);
+                    return new IllegalArgumentException("Pack not found");
+                });
 
         packToUpdate.setTitle(title);
         packToUpdate.setDescription(description);

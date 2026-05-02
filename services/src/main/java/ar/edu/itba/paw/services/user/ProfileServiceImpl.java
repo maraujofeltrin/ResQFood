@@ -4,6 +4,8 @@ import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.commerce.CommerceService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +13,8 @@ import java.util.NoSuchElementException;
 
 @Service
 public class ProfileServiceImpl implements ProfileService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProfileServiceImpl.class);
 
     private static final String PLACEHOLDER_PROFILE_IMAGE = "profile-avatar-placeholder.svg";
 
@@ -89,6 +93,7 @@ public class ProfileServiceImpl implements ProfileService {
                         openingTime != null ? openingTime.trim() : "",
                         closingTime != null ? closingTime.trim() : "");
             } catch (final IllegalArgumentException | NoSuchElementException e) {
+                LOGGER.debug("Commerce profile update rejected userId={}", userId, e);
                 throw new ProfileAccountUpdateException(ProfileAccountUpdateException.Kind.COMMERCE, e);
             }
         }
@@ -96,6 +101,7 @@ public class ProfileServiceImpl implements ProfileService {
             try {
                 userService.updateProfilePhoto(userId, profilePhoto, profilePhotoContentType);
             } catch (final IllegalArgumentException | NoSuchElementException e) {
+                LOGGER.debug("Profile photo update rejected userId={}", userId, e);
                 throw new ProfileAccountUpdateException(ProfileAccountUpdateException.Kind.PHOTO, e);
             }
         }
