@@ -299,7 +299,8 @@
                                                         <spring:message code="register.label.province"/>
                                                     </form:label>
                                                     <form:input path="province" type="text"
-                                                                cssClass="w-full bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/25 text-on-surface font-medium outline-none focus:ring-2 focus:ring-primary"/>
+                                                                cssClass="w-full bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/25 text-on-surface font-medium outline-none cursor-not-allowed opacity-90"
+                                                                readonly="true" disabled="true"/>
                                                     <form:errors path="province" cssClass="text-xs text-error font-body block" element="p"/>
                                                 </div>
                                             </div>

@@ -94,7 +94,7 @@ public class ProfileController {
                     profileAccountForm.getStreet(),
                     profileAccountForm.getStreetNumber(),
                     profileAccountForm.getCity(),
-                    profileAccountForm.getProvince(),
+                    "Buenos Aires",
                     profileAccountForm.getPostalCode(),
                     profileAccountForm.getOpeningTime(),
                     profileAccountForm.getClosingTime(),

@@ -508,10 +508,11 @@ uri="http://itba.edu.ar/paw/tags" %>
                 <form:input
                   type="text"
                   path="commerceProfile.province"
-                  cssClass="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
+                  cssClass="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none cursor-not-allowed bg-surface-variant/50"
                   placeholder="${provincePlaceholder}"
                   readonly="true"
-                  data-required="true"
+                  disabled="true"
+                  data-always-disabled="true"
                 />
                 <form:errors
                   path="commerceProfile.province"
@@ -644,7 +645,7 @@ uri="http://itba.edu.ar/paw/tags" %>
 
           section.style.display = active ? "block" : "none";
 
-          const allFields = section.querySelectorAll("input, select, textarea");
+          const allFields = section.querySelectorAll("input:not([data-always-disabled]), select, textarea");
           allFields.forEach(function (field) {
             field.disabled = !active;
           });

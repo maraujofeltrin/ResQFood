@@ -51,6 +51,9 @@ public class CommerceServiceImpl implements CommerceService {
                     LOGGER.warn("updateProfileFields: commerce not found userId={}", userId);
                     return new NoSuchElementException("Commerce not found for user: " + userId);
                 });
+        if (province == null || !"Buenos Aires".equalsIgnoreCase(province.trim())) {
+            throw new IllegalArgumentException("Commerce province must be Buenos Aires");
+        }
         final Commerce updated = new Commerce(
                 userId,
                 current.getCommercialName(),
@@ -58,7 +61,7 @@ public class CommerceServiceImpl implements CommerceService {
                 st,
                 streetNumber,
                 c,
-                province == null || province.isBlank() ? null : province.trim(),
+                "Buenos Aires",
                 postalCode == null || postalCode.isBlank() ? null : postalCode.trim(),
                 open,
                 close);

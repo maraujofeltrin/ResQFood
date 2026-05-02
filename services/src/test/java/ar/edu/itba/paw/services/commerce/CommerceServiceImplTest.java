@@ -32,7 +32,7 @@ class CommerceServiceImplTest {
     void testUpdateProfileFieldsWhenCommerceExistsKeepsCommercialNameAndUpdatesRest() {
         // 1. Setup
         when(commerceDao.findByUserId(5L)).thenReturn(Optional.of(
-                new Commerce(5L, "Panadería Sur", Commerce.Category.BAKERY, "Old", 1, "Lanús", "BA", "1824",
+                new Commerce(5L, "Panadería Sur", Commerce.Category.BAKERY, "Old", 1, "Lanús", "Buenos Aires", "1824",
                         "08:00", "18:00")));
         final AtomicReference<Commerce> captured = new AtomicReference<>();
         doAnswer(invocation -> {
@@ -41,7 +41,7 @@ class CommerceServiceImplTest {
         }).when(commerceDao).update(any(Commerce.class));
 
         // 2. Ejercicio
-        commerceService.updateProfileFields(5L, Commerce.Category.RESTAURANT, "Nueva", 99, "Quilmes", "BA", "1878",
+        commerceService.updateProfileFields(5L, Commerce.Category.RESTAURANT, "Nueva", 99, "Quilmes", "Buenos Aires", "1878",
                 "10:00", "22:00");
 
         // 3. Asserts

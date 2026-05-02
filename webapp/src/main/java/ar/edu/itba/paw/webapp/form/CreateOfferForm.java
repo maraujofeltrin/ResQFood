@@ -22,8 +22,8 @@ import ar.edu.itba.paw.webapp.validation.constraints.LessOrEqual;
  * required (see {@link ar.edu.itba.paw.webapp.validation.CreateOfferFormValidator}).
  */
 @LessOrEqual.List({
-    @LessOrEqual(first = "finalPrice", second = "originalPrice", message = "commerce.createPack.validation.finalPrice.exceedsOriginal"),
-    @LessOrEqual(first = "initialPrice", second = "originalPrice", message = "commerce.createAuction.validation.initialPrice.exceedsOriginal")
+    @LessOrEqual(first = "finalPrice", second = "originalPrice", message = "{commerce.createPack.validation.finalPrice.exceedsOriginal}"),
+    @LessOrEqual(first = "initialPrice", second = "originalPrice", message = "{commerce.createAuction.validation.initialPrice.exceedsOriginal}")
 })
 public class CreateOfferForm {
 

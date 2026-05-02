@@ -80,15 +80,15 @@ class UserServiceImplTest {
         // 1. Setup
         final User toCreate = new User(null, "c@d.com", "pw", "N", "123", User.Role.COMMERCE, false);
         final User persisted = new User(1L, "c@d.com", "ENC:pw", "N", "123", User.Role.COMMERCE, false);
-        final Commerce commerceProfile = new Commerce(null, "Shop", Commerce.Category.OTHER, "st", 1, "city", "prov",
+        final Commerce commerceProfile = new Commerce(null, "Shop", Commerce.Category.OTHER, "st", 1, "city", "Buenos Aires",
                 "pc", "09:00", "18:00");
         when(passwordEncoder.encode("pw")).thenReturn("ENC:pw");
         when(userDao.createUser(eq("c@d.com"), eq("ENC:pw"), eq("N"), eq("123"), eq(User.Role.COMMERCE),
                 eq(Locale.forLanguageTag("es")))).thenReturn(persisted);
         when(commerceDao.findByUserId(1L)).thenReturn(Optional.empty());
         when(commerceDao.createCommerce(eq(1L), eq("Shop"), eq(Commerce.Category.OTHER), eq("st"), eq(1), eq("city"),
-                eq("prov"), eq("pc"), eq("09:00"), eq("18:00")))
-                .thenReturn(new Commerce(1L, "Shop", Commerce.Category.OTHER, "st", 1, "city", "prov", "pc", "09:00",
+                eq("Buenos Aires"), eq("pc"), eq("09:00"), eq("18:00")))
+                .thenReturn(new Commerce(1L, "Shop", Commerce.Category.OTHER, "st", 1, "city", "Buenos Aires", "pc", "09:00",
                         "18:00"));
 
         // 2. Ejercicio
