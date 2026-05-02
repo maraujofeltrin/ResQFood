@@ -6,10 +6,14 @@
   <appender name="ERRORS" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
       <!-- Daily rollover -->
-      <fileNamePattern>logs/paw-2026a-03.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <fileNamePattern>logs/paw-2026a-03-errors.%d{yyyy-MM-dd}.log</fileNamePattern>
       <!-- Keep 5 days of logs -->
       <maxHistory>5</maxHistory>
     </rollingPolicy>
+    <!-- Solo capturar logs con nivel WARN o superior -->
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>WARN</level>
+    </filter>
     <encoder>
       <pattern>${logFormat}</pattern>
     </encoder>
@@ -18,7 +22,7 @@
   <appender name="GENERAL" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
       <!-- Daily rollover -->
-      <fileNamePattern>logs/paw-2026a-03.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <fileNamePattern>logs/paw-2026a-03-app.%d{yyyy-MM-dd}.log</fileNamePattern>
       <!-- Keep 5 days of logs -->
       <maxHistory>5</maxHistory>
     </rollingPolicy>

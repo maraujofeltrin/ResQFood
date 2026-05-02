@@ -52,6 +52,7 @@ public class PackFavoriteServiceImpl implements PackFavoriteService {
     public void toggleFavorite(final long clientUserId, final long packId) {
         if (packFavoriteDao.exists(clientUserId, packId)) {
             packFavoriteDao.delete(clientUserId, packId);
+            LOGGER.info("User {} removed pack {} from favorites", clientUserId, packId);
             return;
         }
         final Pack pack = packDao.findById(packId).orElseThrow(() -> {
@@ -63,5 +64,6 @@ public class PackFavoriteServiceImpl implements PackFavoriteService {
             throw new IllegalArgumentException("Pack is not available for favorites: " + packId);
         }
         packFavoriteDao.insert(clientUserId, packId);
+        LOGGER.info("User {} added pack {} to favorites", clientUserId, packId);
     }
 }

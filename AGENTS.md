@@ -66,3 +66,8 @@ When generating code or modifying the repository, strictly follow these instruct
    - **Services Layer:** Tests must be completely isolated from Spring or the database. Use **JUnit 5 + Mockito** (`@ExtendWith(MockitoExtension.class)`, `@InjectMocks`, `@Mock`).
    - **Persistence Layer:** Tests must run against an in-memory **HSQLDB** database. Use `@ExtendWith(SpringExtension.class)`, `@ContextConfiguration(classes = TestConfig.class)`, and `@Sql("classpath:schema.sql")`. Manage state using `JdbcTestUtils` in a `@BeforeEach` method instead of mock objects.
    - **Structure:** All tests MUST be visually divided into `// 1. Setup`, `// 2. Ejercicio`, and `// 3. Asserts`.
+18. **Logging Practices:** 
+   - Always instantiate loggers per class using SLF4J: `private static final Logger LOGGER = LoggerFactory.getLogger(MyClass.class);`.
+   - **Always use placeholders `{}`** for parameters (e.g., `LOGGER.debug("User: {}", user);`). **Never** use string concatenation in logs to avoid unnecessary evaluation.
+   - Keep logs concise, meaningful, and contextual. Avoid excessive `INFO` logging that generates noise in production. Use `DEBUG` for development details and `WARN`/`ERROR` for actual problems.
+   - Do not use `try/catch` blocks merely to log exceptions without handling them or adding context. Avoid logging as a substitute for business logic or control flow.
