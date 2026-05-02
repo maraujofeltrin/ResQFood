@@ -67,7 +67,7 @@ public class ReservationListController {
     public String rejectReservationFromCard(@PathVariable("id") final Long reservationId,
             @RequestParam(value = "page", required = false) final Integer page,
             @RequestParam(value = "q", required = false) final String query,
-            @RequestParam(value = "status", required = false) final String status,
+            @RequestParam(value = "status", required = false) final Reservation.Status status,
             final Authentication authentication,
             final RedirectAttributes redirectAttributes) {
         final User currentUser = authResolver.requireRole(authentication, User.Role.COMMERCE);
@@ -102,7 +102,7 @@ public class ReservationListController {
         }
     }
 
-    private static String buildReservationsRedirectUrl(final Integer page, final String query, final String status) {
+    private static String buildReservationsRedirectUrl(final Integer page, final String query, final Reservation.Status status) {
         final StringBuilder baseUrl = new StringBuilder("/reservations");
         boolean firstParam = true;
 
@@ -116,13 +116,8 @@ public class ReservationListController {
             firstParam = false;
         }
 
-        if (status != null && !status.isBlank()) {
-            try {
-                Reservation.Status statusFilter = Reservation.Status.valueOf(status.trim().toUpperCase(Locale.ROOT));
-                baseUrl.append(firstParam ? "?" : "&").append("status=").append(statusFilter.name());
-            } catch (final IllegalArgumentException ex) {
-                LOGGER.debug("Ignoring invalid reservations status query param {}", status.trim(), ex);
-            }
+        if (status != null) {
+            baseUrl.append(firstParam ? "?" : "&").append("status=").append(status.name());
         }
 
         return baseUrl.toString();

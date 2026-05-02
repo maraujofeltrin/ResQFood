@@ -1,5 +1,10 @@
 package ar.edu.itba.paw.webapp.form;
 
+import ar.edu.itba.paw.models.auction.AuctionSortOption;
+import ar.edu.itba.paw.models.pack.Municipality;
+import ar.edu.itba.paw.models.pack.PackSortOption;
+import ar.edu.itba.paw.models.pack.PackTag;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -18,11 +23,11 @@ public class CatalogFilterForm {
     private static final Set<String> ALLOWED_TIME_RANGES = Set.of("morning", "afternoon", "evening");
 
     private String q;
-    private List<String> tags;
-    private String sort;
+    private List<PackTag> tags;
+    private PackSortOption sort;
     private List<String> types;
-    private String auctionSort;
-    private String location;
+    private AuctionSortOption auctionSort;
+    private Municipality location;
     private List<String> timeRange;
     private int page = 1;
 
@@ -32,11 +37,11 @@ public class CatalogFilterForm {
         return q;
     }
 
-    public List<String> getTags() {
+    public List<PackTag> getTags() {
         return tags;
     }
 
-    public String getSort() {
+    public PackSortOption getSort() {
         return sort;
     }
 
@@ -44,11 +49,11 @@ public class CatalogFilterForm {
         return types;
     }
 
-    public String getAuctionSort() {
+    public AuctionSortOption getAuctionSort() {
         return auctionSort;
     }
 
-    public String getLocation() {
+    public Municipality getLocation() {
         return location;
     }
 
@@ -66,11 +71,11 @@ public class CatalogFilterForm {
         this.q = q;
     }
 
-    public void setTags(final List<String> tags) {
+    public void setTags(final List<PackTag> tags) {
         this.tags = tags;
     }
 
-    public void setSort(final String sort) {
+    public void setSort(final PackSortOption sort) {
         this.sort = sort;
     }
 
@@ -78,11 +83,11 @@ public class CatalogFilterForm {
         this.types = normalizeList(rawTypes, ALLOWED_TYPES);
     }
 
-    public void setAuctionSort(final String auctionSort) {
+    public void setAuctionSort(final AuctionSortOption auctionSort) {
         this.auctionSort = auctionSort;
     }
 
-    public void setLocation(final String location) {
+    public void setLocation(final Municipality location) {
         this.location = location;
     }
 

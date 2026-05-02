@@ -49,12 +49,12 @@ public class ReservationListFilterForm {
         this.q = (q == null || q.isBlank()) ? null : q.trim();
     }
 
-    public void setStatus(final String statusValue) {
-        this.status = parseEnum(Reservation.Status.class, statusValue);
+    public void setStatus(final Reservation.Status status) {
+        this.status = status;
     }
 
-    public void setAuctionStatus(final String statusValue) {
-        this.auctionStatus = parseEnum(Auction.Status.class, statusValue);
+    public void setAuctionStatus(final Auction.Status auctionStatus) {
+        this.auctionStatus = auctionStatus;
     }
 
     public void setTab(final String tab) {
@@ -70,16 +70,4 @@ public class ReservationListFilterForm {
         this.page = page;
     }
 
-    // -- Helpers ----------------------------------------------------------------
-
-    private static <E extends Enum<E>> E parseEnum(final Class<E> enumType, final String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        try {
-            return Enum.valueOf(enumType, value.trim().toUpperCase(Locale.ROOT));
-        } catch (final IllegalArgumentException ignored) {
-            return null;
-        }
-    }
 }

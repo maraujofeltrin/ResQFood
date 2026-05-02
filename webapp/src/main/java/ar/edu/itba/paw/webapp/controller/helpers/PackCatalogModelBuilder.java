@@ -74,28 +74,15 @@ public class PackCatalogModelBuilder {
     public ModelAndView buildPackCatalog(final CatalogFilterForm form) {
 
         final String query = form.getQ();
-        final List<String> tagNames = form.getTags();
-        final String sort = form.getSort();
-        final String auctionSort = form.getAuctionSort();
-        final String locationParam = form.getLocation();
         final int page = form.getPage();
 
         final ModelAndView mav = new ModelAndView("packs/packCatalogView");
-        final PackSortOption sortOption = PackSortOption.fromString(sort);
-        final AuctionSortOption auctionSortOption = AuctionSortOption.fromString(auctionSort);
+        final PackSortOption sortOption = form.getSort() != null ? form.getSort() : PackSortOption.DATE_DESC;
+        final AuctionSortOption auctionSortOption = form.getAuctionSort() != null ? form.getAuctionSort() : AuctionSortOption.TIME_REMAINING_DESC;
 
-        final List<PackTag> selectedTags = new ArrayList<>();
-        if (tagNames != null) {
-            for (final String name : tagNames) {
-                try {
-                    selectedTags.add(PackTag.valueOf(name));
-                } catch (final IllegalArgumentException ex) {
-                    LOGGER.debug("Unknown pack tag in catalog filter query: {}", name, ex);
-                }
-            }
-        }
+        final List<PackTag> selectedTags = form.getTags() != null ? new ArrayList<>(form.getTags()) : new ArrayList<>();
 
-        final Municipality municipality = Municipality.fromString(locationParam);
+        final Municipality municipality = form.getLocation();
         final String cityFilter = municipality != null ? municipality.getCityName() : null;
 
         // types and timeRange are already normalised by the form setters
@@ -261,7 +248,7 @@ public class PackCatalogModelBuilder {
             baseUrlBuilder.append(firstParam ? "?" : "&").append("types=").append(selectedType);
             firstParam = false;
         }
-        if (catalogMode != CatalogMode.AUCTIONS && sort != null && !sort.isBlank()) {
+        if (catalogMode != CatalogMode.AUCTIONS && sortOption != PackSortOption.DATE_DESC) {
             baseUrlBuilder.append(firstParam ? "?" : "&").append("sort=").append(sortOption.name());
             firstParam = false;
         }
@@ -329,7 +316,7 @@ public class PackCatalogModelBuilder {
                 favViewFirst = false;
             }
         }
-        if (sort != null && !sort.isBlank()) {
+        if (sortOption != PackSortOption.DATE_DESC) {
             favoritesViewAllBuilder.append(favViewFirst ? "?" : "&").append("sort=").append(sortOption.name());
             favViewFirst = false;
         }
