@@ -74,3 +74,41 @@
   font-size: 0.78rem;
   line-height: 1.2;
 }
+
+/* ── Password toggle (show/hide eye icon) ────────────────── */
+
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper input {
+  padding-right: 2.75rem; /* room for the icon button */
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.625rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #707973;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: #059669;
+  background-color: rgba(5, 150, 105, 0.08);
+}
+
+.password-toggle .material-symbols-outlined {
+  font-size: 1.25rem;
+}

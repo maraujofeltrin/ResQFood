@@ -39,14 +39,19 @@ uri="http://itba.edu.ar/paw/tags" %>
               code="passwordReset.change.placeholder.newPassword"
               var="newPasswordPlaceholder"
             />
-            <form:password
-              id="newPassword"
-              path="newPassword"
-              required="required"
-              showPassword="false"
-              cssClass="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
-              placeholder="${newPasswordPlaceholder}"
-            />
+            <div class="password-wrapper">
+              <form:password
+                id="newPassword"
+                path="newPassword"
+                required="required"
+                showPassword="false"
+                cssClass="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
+                placeholder="${newPasswordPlaceholder}"
+              />
+              <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                <span class="material-symbols-outlined">visibility</span>
+              </button>
+            </div>
             <form:errors
               path="newPassword"
               cssClass="text-error text-sm mt-1 block"
@@ -63,14 +68,19 @@ uri="http://itba.edu.ar/paw/tags" %>
               code="passwordReset.change.placeholder.confirmPassword"
               var="confirmPasswordPlaceholder"
             />
-            <form:password
-              id="confirmPassword"
-              path="confirmPassword"
-              required="required"
-              showPassword="false"
-              cssClass="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
-              placeholder="${confirmPasswordPlaceholder}"
-            />
+            <div class="password-wrapper">
+              <form:password
+                id="confirmPassword"
+                path="confirmPassword"
+                required="required"
+                showPassword="false"
+                cssClass="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
+                placeholder="${confirmPasswordPlaceholder}"
+              />
+              <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                <span class="material-symbols-outlined">visibility</span>
+              </button>
+            </div>
             <form:errors
               path="confirmPassword"
               cssClass="text-error text-sm mt-1 block"
@@ -86,5 +96,6 @@ uri="http://itba.edu.ar/paw/tags" %>
       </div>
     </main>
     <paw:footer />
+    <script src="${pageContext.request.contextPath}/js/password-toggle.js"></script>
   </body>
 </html>

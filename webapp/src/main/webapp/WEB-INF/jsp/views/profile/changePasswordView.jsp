@@ -28,9 +28,14 @@
                     <spring:message code="profile.changePassword.label.current"/>
                 </label>
                 <spring:message code="profile.changePassword.placeholder.current" var="currentPwdPh"/>
-                <form:password id="currentPassword" path="currentPassword" autocomplete="current-password"
-                               cssClass="w-full px-4 py-3 rounded-xl border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
-                               placeholder="${currentPwdPh}"/>
+                <div class="password-wrapper">
+                    <form:password id="currentPassword" path="currentPassword" autocomplete="current-password"
+                                   cssClass="w-full px-4 py-3 rounded-xl border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
+                                   placeholder="${currentPwdPh}"/>
+                    <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                        <span class="material-symbols-outlined">visibility</span>
+                    </button>
+                </div>
                 <form:errors path="currentPassword" cssClass="text-error text-sm mt-1 block"/>
             </div>
             <div>
@@ -38,9 +43,14 @@
                     <spring:message code="profile.changePassword.label.new"/>
                 </label>
                 <spring:message code="passwordReset.change.placeholder.newPassword" var="newPwdPh"/>
-                <form:password id="newPassword" path="newPassword" autocomplete="new-password"
-                               cssClass="w-full px-4 py-3 rounded-xl border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
-                               placeholder="${newPwdPh}"/>
+                <div class="password-wrapper">
+                    <form:password id="newPassword" path="newPassword" autocomplete="new-password"
+                                   cssClass="w-full px-4 py-3 rounded-xl border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
+                                   placeholder="${newPwdPh}"/>
+                    <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                        <span class="material-symbols-outlined">visibility</span>
+                    </button>
+                </div>
                 <form:errors path="newPassword" cssClass="text-error text-sm mt-1 block"/>
             </div>
             <div>
@@ -48,9 +58,14 @@
                     <spring:message code="profile.changePassword.label.confirm"/>
                 </label>
                 <spring:message code="passwordReset.change.placeholder.confirmPassword" var="confirmPwdPh"/>
-                <form:password id="confirmPassword" path="confirmPassword" autocomplete="new-password"
-                               cssClass="w-full px-4 py-3 rounded-xl border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
-                               placeholder="${confirmPwdPh}"/>
+                <div class="password-wrapper">
+                    <form:password id="confirmPassword" path="confirmPassword" autocomplete="new-password"
+                                   cssClass="w-full px-4 py-3 rounded-xl border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
+                                   placeholder="${confirmPwdPh}"/>
+                    <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                        <span class="material-symbols-outlined">visibility</span>
+                    </button>
+                </div>
                 <form:errors path="confirmPassword" cssClass="text-error text-sm mt-1 block"/>
             </div>
             <button type="submit"
@@ -68,5 +83,6 @@
 </main>
 
 <paw:footer/>
+<script src="${pageContext.request.contextPath}/js/password-toggle.js"></script>
 </body>
 </html>

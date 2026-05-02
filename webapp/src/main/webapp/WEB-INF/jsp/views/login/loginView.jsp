@@ -82,14 +82,19 @@ uri="http://itba.edu.ar/paw/tags" %>
               code="login.placeholder.password"
               var="passwordPlaceholder"
             />
-            <input
-              type="password"
-              id="password"
-              name="password"
-              required
-              class="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
-              placeholder="${passwordPlaceholder}"
-            />
+            <div class="password-wrapper">
+              <input
+                type="password"
+                id="password"
+                name="password"
+                required
+                class="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
+                placeholder="${passwordPlaceholder}"
+              />
+              <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                <span class="material-symbols-outlined">visibility</span>
+              </button>
+            </div>
             <div class="mt-2 text-right">
               <a
                 href="${pageContext.request.contextPath}/password-reset/request"
@@ -165,5 +170,6 @@ uri="http://itba.edu.ar/paw/tags" %>
         emailInput.dispatchEvent(new Event("input"));
       })();
     </script>
+    <script src="${pageContext.request.contextPath}/js/password-toggle.js"></script>
   </body>
 </html>

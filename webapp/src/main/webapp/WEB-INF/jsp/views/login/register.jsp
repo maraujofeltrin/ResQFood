@@ -127,12 +127,17 @@ uri="http://itba.edu.ar/paw/tags" %>
               var="passwordPlaceholder"
               text="••••••••"
             />
-            <form:password
-              path="credentials.password"
-              showPassword="false"
-              cssClass="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
-              placeholder="${passwordPlaceholder}"
-            />
+            <div class="password-wrapper">
+              <form:password
+                path="credentials.password"
+                showPassword="false"
+                cssClass="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
+                placeholder="${passwordPlaceholder}"
+              />
+              <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                <span class="material-symbols-outlined">visibility</span>
+              </button>
+            </div>
             <form:errors
               path="credentials.password"
               cssClass="text-error text-sm mt-1"
@@ -155,12 +160,17 @@ uri="http://itba.edu.ar/paw/tags" %>
               var="repeatPlaceholder"
               text="••••••••"
             />
-            <form:password
-              path="credentials.repeatPassword"
-              showPassword="false"
-              cssClass="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
-              placeholder="${repeatPlaceholder}"
-            />
+            <div class="password-wrapper">
+              <form:password
+                path="credentials.repeatPassword"
+                showPassword="false"
+                cssClass="w-full px-4 py-3 rounded-lg border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-surface-container-lowest text-on-surface outline-none"
+                placeholder="${repeatPlaceholder}"
+              />
+              <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                <span class="material-symbols-outlined">visibility</span>
+              </button>
+            </div>
             <form:errors
               path="credentials.repeatPassword"
               cssClass="text-error text-sm mt-1"
@@ -678,5 +688,6 @@ uri="http://itba.edu.ar/paw/tags" %>
         }
       })();
     </script>
+    <script src="${pageContext.request.contextPath}/js/password-toggle.js"></script>
   </body>
 </html>
