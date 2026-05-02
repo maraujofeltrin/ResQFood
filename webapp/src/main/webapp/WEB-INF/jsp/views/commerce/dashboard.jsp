@@ -22,7 +22,8 @@
                                 <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 px-8 py-10 md:px-12 md:py-12 relative z-10">
                                     <div class="flex-1">
                                         <h1 class="text-3xl md:text-4xl font-headline font-extrabold text-white tracking-tight mb-3">
-                                            <spring:message code="commerce.dashboard.welcome" arguments="${commerce.commercialName}" />
+                                            <c:set var="escapedName"><c:out value="${commerce.commercialName}" /></c:set>
+                                            <spring:message code="commerce.dashboard.welcome" arguments="${escapedName}" />
                                         </h1>
                                         <p class="text-primary-fixed/80 font-body text-base md:text-lg max-w-xl">
                                             <spring:message code="commerce.dashboard.heroSubtitle" />
