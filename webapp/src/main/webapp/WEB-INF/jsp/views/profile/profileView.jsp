@@ -247,12 +247,13 @@
                                     <c:choose>
                                         <c:when test="${not empty profile.commerce}">
                                             <div class="space-y-1.5">
-                                                <p class="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label">
+                                                <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label"
+                                                       for="profile-commercial-name">
                                                     <spring:message code="profile.commerce.label.commercialName"/>
-                                                </p>
-                                                <p class="w-full bg-surface-container-low px-4 py-3 rounded-xl text-on-surface font-medium m-0">
-                                                    <c:out value="${profile.commerce.commercialName}"/>
-                                                </p>
+                                                </label>
+                                                <input id="profile-commercial-name"
+                                                       class="w-full bg-surface-container-low px-4 py-3 rounded-xl border-none text-on-surface font-medium outline-none cursor-not-allowed opacity-90"
+                                                       type="text" value="<c:out value='${profile.commerce.commercialName}'/>" readonly tabindex="-1"/>
                                             </div>
                                             <div class="space-y-1.5">
                                                 <form:label path="category" cssClass="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label block">
@@ -336,12 +337,13 @@
                                                 </div>
                                             </div>
                                             <div class="space-y-1.5">
-                                                <p class="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label">
+                                                <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1 font-label"
+                                                       for="profile-email">
                                                     <spring:message code="profile.label.email"/>
-                                                </p>
-                                                <p class="w-full bg-surface-container-low px-4 py-3 rounded-xl text-on-surface font-medium m-0 opacity-90">
-                                                    <c:out value="${profile.email}"/>
-                                                </p>
+                                                </label>
+                                                <input id="profile-email"
+                                                       class="w-full bg-surface-container-low px-4 py-3 rounded-xl border-none text-on-surface font-medium outline-none cursor-not-allowed opacity-90"
+                                                       type="email" value="<c:out value='${profile.email}'/>" readonly tabindex="-1"/>
                                             </div>
                                         </c:when>
                                         <c:otherwise>
