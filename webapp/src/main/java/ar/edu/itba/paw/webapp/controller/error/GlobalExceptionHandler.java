@@ -46,6 +46,14 @@ public class GlobalExceptionHandler {
         response.sendError(e.getStatus().value());
     }
 
+    @ExceptionHandler(org.springframework.beans.TypeMismatchException.class)
+    public void handleTypeMismatch(final org.springframework.beans.TypeMismatchException e,
+            final HttpServletRequest request,
+            final HttpServletResponse response) throws IOException {
+        LOGGER.debug("Type mismatch for {} {}: {}", request.getMethod(), request.getRequestURI(), e.getMessage());
+        response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ModelAndView handleException(final Exception e, final HttpServletRequest request) {
         LOGGER.error("Unhandled exception handling {} {}", request.getMethod(), request.getRequestURI(), e);
