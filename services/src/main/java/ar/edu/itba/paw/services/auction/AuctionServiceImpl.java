@@ -194,13 +194,13 @@ public class AuctionServiceImpl implements AuctionService {
     public CancelAuctionResult cancelAuction(final long auctionId, final long requestingUserId) {
         final Auction auction = auctionDao.findById(auctionId).orElse(null);
         if (auction == null) {
-            LOGGER.warn("Failed to cancel auction: auctionId={}, result={}", auctionId, CancelAuctionResult.notFound().name());
+            LOGGER.warn("Failed to cancel auction: auctionId={}, result={}", auctionId, CancelAuctionResult.notFound().getOutcome().name());
             return CancelAuctionResult.notFound();
         }
 
         // Check if auction is active
         if (auction.getStatus() != Auction.Status.ACTIVE) {
-            LOGGER.warn("Failed to cancel auction: auctionId={}, result={}", auctionId, CancelAuctionResult.notActive().name());
+            LOGGER.warn("Failed to cancel auction: auctionId={}, result={}", auctionId, CancelAuctionResult.notActive().getOutcome().name());
             return CancelAuctionResult.notActive();
         }
 
@@ -210,13 +210,13 @@ public class AuctionServiceImpl implements AuctionService {
                 .map(c -> c.getUserId().equals(commerceId))
                 .orElse(false);
         if (!isOwner) {
-            LOGGER.warn("Failed to cancel auction: auctionId={}, result={}", auctionId, CancelAuctionResult.forbidden().name());
+            LOGGER.warn("Failed to cancel auction: auctionId={}, result={}", auctionId, CancelAuctionResult.forbidden().getOutcome().name());
             return CancelAuctionResult.forbidden();
         }
 
         final int bidCount = bidDao.countByAuctionId(auctionId);
         if (bidCount > 0) {
-            LOGGER.warn("Failed to cancel auction: auctionId={}, result={}", auctionId, CancelAuctionResult.hasBids().name());
+            LOGGER.warn("Failed to cancel auction: auctionId={}, result={}", auctionId, CancelAuctionResult.hasBids().getOutcome().name());
             return CancelAuctionResult.hasBids();
         }
 
