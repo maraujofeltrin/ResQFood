@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.pack;
 
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.pack.FavoriteToggleException;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.PackFavoriteDao;
 import org.slf4j.Logger;
@@ -49,7 +50,7 @@ public class PackFavoriteServiceImpl implements PackFavoriteService {
 
     @Transactional
     @Override
-    public void toggleFavorite(final long clientUserId, final long packId) {
+    public void toggleFavorite(final long clientUserId, final long packId) throws FavoriteToggleException {
         if (packFavoriteDao.exists(clientUserId, packId)) {
             packFavoriteDao.delete(clientUserId, packId);
             LOGGER.info("User {} removed pack {} from favorites", clientUserId, packId);
@@ -57,11 +58,11 @@ public class PackFavoriteServiceImpl implements PackFavoriteService {
         }
         final Pack pack = packDao.findById(packId).orElseThrow(() -> {
             LOGGER.warn("Favorite toggle rejected: pack not found packId={} clientUserId={}", packId, clientUserId);
-            return new IllegalArgumentException("Pack not found: " + packId);
+            return new FavoriteToggleException(FavoriteToggleException.Reason.PACK_NOT_FOUND, "Pack not found: " + packId);
         });
         if (!Boolean.TRUE.equals(pack.getActive()) || Boolean.TRUE.equals(pack.getDeleted())) {
             LOGGER.warn("Favorite toggle rejected: pack unavailable packId={} clientUserId={}", packId, clientUserId);
-            throw new IllegalArgumentException("Pack is not available for favorites: " + packId);
+            throw new FavoriteToggleException(FavoriteToggleException.Reason.PACK_UNAVAILABLE, "Pack is not available for favorites: " + packId);
         }
         packFavoriteDao.insert(clientUserId, packId);
         LOGGER.info("User {} added pack {} to favorites", clientUserId, packId);

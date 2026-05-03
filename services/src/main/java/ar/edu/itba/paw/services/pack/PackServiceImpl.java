@@ -63,8 +63,13 @@ public class PackServiceImpl implements PackService {
 
     @Transactional
     @Override
-    public void deletePack(Long id) {
-        packDao.softDelete(id);
+    public CommercePackAccess deletePack(long packId, long commerceUserId) {
+        CommercePackAccess access = resolvePackForDirectEdit(packId, commerceUserId);
+        if (!(access instanceof CommercePackAccess.Granted)) {
+            return access;
+        }
+        packDao.softDelete(packId);
+        return access;
     }
 
     @Override
@@ -89,14 +94,14 @@ public class PackServiceImpl implements PackService {
 
     @Transactional
     @Override
-    public Pack updatePack(long packId, String title, String description, Double originalPrice,
+    public CommercePackAccess updatePack(long packId, long commerceUserId, String title, String description, Double originalPrice,
                            Double finalPrice, Integer stock, List<PackTag> tags,
                            Long imageId) {
-        final Pack packToUpdate = packDao.findById(packId)
-                .orElseThrow(() -> {
-                    LOGGER.warn("updatePack: pack not found packId={}", packId);
-                    return new IllegalArgumentException("Pack not found");
-                });
+        CommercePackAccess access = resolvePackForDirectEdit(packId, commerceUserId);
+        if (!(access instanceof CommercePackAccess.Granted)) {
+            return access;
+        }
+        final Pack packToUpdate = ((CommercePackAccess.Granted) access).pack();
 
         packToUpdate.setTitle(title);
         packToUpdate.setDescription(description);
@@ -109,7 +114,7 @@ public class PackServiceImpl implements PackService {
             packToUpdate.setImageId(imageId);
         }
 
-        return packDao.update(packToUpdate);
+        return new CommercePackAccess.Granted(packDao.update(packToUpdate));
     }
 
     @Override

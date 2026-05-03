@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.commerce;
 
 import ar.edu.itba.paw.models.user.CommerceReview;
+import ar.edu.itba.paw.models.user.CommerceReviewException;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +20,10 @@ public interface CommerceReviewService {
 
     int countReviewsForCommerce(long commerceUserId);
 
-    CommerceReview upsertReview(long clientUserId, long commerceUserId, int rating, String body);
+    /**
+     * @throws CommerceReviewException if the client is not eligible or the payload is invalid
+     */
+    CommerceReview upsertReview(long clientUserId, long commerceUserId, int rating, String body) throws CommerceReviewException;
 
     Optional<Double> averageRatingForCommerce(long commerceUserId);
 }

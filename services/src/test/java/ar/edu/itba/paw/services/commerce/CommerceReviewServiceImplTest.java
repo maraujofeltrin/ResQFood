@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.commerce;
 
 import ar.edu.itba.paw.models.user.CommerceReview;
+import ar.edu.itba.paw.models.user.CommerceReviewException;
 import ar.edu.itba.paw.persistence.CommerceReviewDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import org.junit.jupiter.api.Test;
@@ -88,11 +89,11 @@ class CommerceReviewServiceImplTest {
         when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(false);
 
         // 2. Ejercicio
-        final IllegalStateException exception = assertThrows(IllegalStateException.class,
+        final CommerceReviewException exception = assertThrows(CommerceReviewException.class,
                 () -> commerceReviewService.upsertReview(CLIENT_ID, COMMERCE_ID, 5, BODY));
 
         // 3. Asserts
-        assertEquals("Client is not eligible to review this commerce", exception.getMessage());
+        assertEquals(CommerceReviewException.Reason.NOT_ELIGIBLE, exception.getReason());
     }
 
     @Test
@@ -101,11 +102,11 @@ class CommerceReviewServiceImplTest {
         when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
 
         // 2. Ejercicio
-        final IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        final CommerceReviewException exception = assertThrows(CommerceReviewException.class,
                 () -> commerceReviewService.upsertReview(CLIENT_ID, COMMERCE_ID, 6, BODY));
 
         // 3. Asserts
-        assertEquals("Rating must be between 1 and 5", exception.getMessage());
+        assertEquals(CommerceReviewException.Reason.INVALID_RATING, exception.getReason());
     }
 
     @Test
@@ -114,11 +115,11 @@ class CommerceReviewServiceImplTest {
         when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
 
         // 2. Ejercicio
-        final IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        final CommerceReviewException exception = assertThrows(CommerceReviewException.class,
                 () -> commerceReviewService.upsertReview(CLIENT_ID, COMMERCE_ID, 5, "   "));
 
         // 3. Asserts
-        assertEquals("Review body is required", exception.getMessage());
+        assertEquals(CommerceReviewException.Reason.INVALID_BODY, exception.getReason());
     }
 
     @Test

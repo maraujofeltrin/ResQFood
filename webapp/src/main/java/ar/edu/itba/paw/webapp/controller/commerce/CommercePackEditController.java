@@ -129,9 +129,6 @@ public class CommercePackEditController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        final Pack packToUpdate = resolveEditPack(packId, commerceId,
-                "commerce.editPack.error.auctionForbidden.editadas");
-
         if (bindingResult.hasErrors()) {
             final ModelAndView mav = new ModelAndView("commerce/editPack");
             mav.addObject("editMode", true);
@@ -161,8 +158,9 @@ public class CommercePackEditController {
                 imageId = savedImage.getId();
             }
 
-            packService.updatePack(
-                    packToUpdate.getId(),
+            CommercePackAccess access = packService.updatePack(
+                    packId,
+                    commerceId,
                     form.getTitle(),
                     form.getDescription(),
                     form.getOriginalPrice(),
@@ -171,6 +169,14 @@ public class CommercePackEditController {
                     form.getTags(),
                     imageId
             );
+
+            if (access instanceof CommercePackAccess.NotFound) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            }
+            if (access instanceof CommercePackAccess.ForbiddenAuction) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        messageSource.getMessage("commerce.editPack.error.auctionForbidden.editadas", null, LocaleContextHolder.getLocale()));
+            }
 
             redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
             redirectAttributes.addFlashAttribute("dashboardAlertMessage",
@@ -213,8 +219,14 @@ public class CommercePackEditController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        resolveEditPack(packId, commerceId, "commerce.editPack.error.auctionForbidden.eliminadas");
-        packService.deletePack(packId);
+        CommercePackAccess access = packService.deletePack(packId, commerceId);
+        if (access instanceof CommercePackAccess.NotFound) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        if (access instanceof CommercePackAccess.ForbiddenAuction) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    messageSource.getMessage("commerce.editPack.error.auctionForbidden.eliminadas", null, LocaleContextHolder.getLocale()));
+        }
 
         redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
         redirectAttributes.addFlashAttribute("dashboardAlertMessage",

@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.webapp.controller.pack;
 
 import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.models.pack.FavoriteToggleException;
 import ar.edu.itba.paw.services.pack.PackFavoriteService;
 import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
 import org.slf4j.Logger;
@@ -35,9 +36,9 @@ public class PackFavoriteController {
         final User user = authResolver.resolveUser(authentication);
         try {
             packFavoriteService.toggleFavorite(user.getId(), packId);
-        } catch (final IllegalArgumentException ex) {
-            LOGGER.debug("Favorite toggle rejected clientId={} packId={}", Long.valueOf(user.getId()),
-                    Long.valueOf(packId), ex);
+        } catch (final FavoriteToggleException ex) {
+            LOGGER.debug("Favorite toggle rejected clientId={} packId={} reason={}", Long.valueOf(user.getId()),
+                    Long.valueOf(packId), ex.getReason(), ex);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
         return "redirect:/packs/" + packId;

@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.pack;
 
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.pack.FavoriteToggleException;
 
 import java.util.List;
 
@@ -17,5 +18,8 @@ public interface PackFavoriteService {
 
     boolean isFavorite(long clientUserId, long packId);
 
-    void toggleFavorite(long clientUserId, long packId);
+    /**
+     * @throws FavoriteToggleException if the pack is not found or unavailable
+     */
+    void toggleFavorite(long clientUserId, long packId) throws FavoriteToggleException;
 }

@@ -2,6 +2,7 @@ package ar.edu.itba.paw.webapp.controller.commerce;
 
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.models.user.CommerceReviewException;
 import ar.edu.itba.paw.services.commerce.CommerceReviewService;
 import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
@@ -71,18 +72,17 @@ public class CommerceReviewController {
             redirectAttributes.addFlashAttribute("commerceReviewAlertKind", "success");
             redirectAttributes.addFlashAttribute("commerceReviewAlertMessage",
                     messageSource.getMessage("pack.detail.reviews.alert.success", null, locale));
-        } catch (final IllegalStateException ex) {
-            LOGGER.debug("Commerce review rejected (not eligible) clientId={} packId={}", Long.valueOf(currentUser.getId()),
-                    Long.valueOf(packId), ex);
+        } catch (final CommerceReviewException ex) {
+            LOGGER.debug("Commerce review rejected clientId={} packId={} reason={}", Long.valueOf(currentUser.getId()),
+                    Long.valueOf(packId), ex.getReason(), ex);
             redirectAttributes.addFlashAttribute("commerceReviewAlertKind", "error");
-            redirectAttributes.addFlashAttribute("commerceReviewAlertMessage",
-                    messageSource.getMessage("pack.detail.reviews.alert.notEligible", null, locale));
-        } catch (final IllegalArgumentException ex) {
-            LOGGER.debug("Commerce review rejected (invalid payload) clientId={} packId={}", Long.valueOf(currentUser.getId()),
-                    Long.valueOf(packId), ex);
-            redirectAttributes.addFlashAttribute("commerceReviewAlertKind", "error");
-            redirectAttributes.addFlashAttribute("commerceReviewAlertMessage",
-                    messageSource.getMessage("pack.detail.reviews.alert.invalid", null, locale));
+            if (ex.getReason() == CommerceReviewException.Reason.NOT_ELIGIBLE) {
+                redirectAttributes.addFlashAttribute("commerceReviewAlertMessage",
+                        messageSource.getMessage("pack.detail.reviews.alert.notEligible", null, locale));
+            } else {
+                redirectAttributes.addFlashAttribute("commerceReviewAlertMessage",
+                        messageSource.getMessage("pack.detail.reviews.alert.invalid", null, locale));
+            }
         }
 
         return new ModelAndView("redirect:/packs/" + packId + "#commerce-reviews");

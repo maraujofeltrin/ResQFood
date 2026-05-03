@@ -82,8 +82,11 @@ class PackServiceImplTest {
             return null;
         }).when(packDao).softDelete(1L);
 
+        when(packDao.findById(1L)).thenReturn(Optional.of(pack));
+        when(auctionService.findByPackId(1L)).thenReturn(Optional.empty());
+
         // 2. Ejercicio
-        packService.deletePack(1L);
+        packService.deletePack(1L, 1L);
 
         // 3. Asserts
         assertTrue(pack.getDeleted());
@@ -286,11 +289,10 @@ class PackServiceImplTest {
         when(packDao.findById(999L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
-        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
-                () -> packService.updatePack(999L, "t", "d", 1.0, 1.0, 1, Collections.emptyList(), null));
+        final CommercePackAccess result = packService.updatePack(999L, 1L, "t", "d", 1.0, 1.0, 1, Collections.emptyList(), null);
 
         // 3. Asserts
-        assertEquals("Pack not found", thrown.getMessage());
+        assertTrue(result instanceof CommercePackAccess.NotFound);
     }
 
     @Test
@@ -303,10 +305,12 @@ class PackServiceImplTest {
         final List<PackTag> tags = Collections.singletonList(PackTag.VEGAN);
 
         // 2. Ejercicio
-        final Pack result =
-                packService.updatePack(3L, "NewTitle", "NewDesc", 10.0, 8.0, 12, tags, 77L);
+        final CommercePackAccess access =
+                packService.updatePack(3L, 5L, "NewTitle", "NewDesc", 10.0, 8.0, 12, tags, 77L);
 
         // 3. Asserts
+        assertTrue(access instanceof CommercePackAccess.Granted);
+        final Pack result = ((CommercePackAccess.Granted) access).pack();
         assertEquals("NewTitle", result.getTitle());
         assertEquals("NewDesc", result.getDescription());
         assertEquals(12, result.getStock());
@@ -323,10 +327,12 @@ class PackServiceImplTest {
         when(packDao.update(any(Pack.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // 2. Ejercicio
-        final Pack result =
-                packService.updatePack(4L, "x", "y", 1.0, 1.0, 2, null, null);
+        final CommercePackAccess access =
+                packService.updatePack(4L, 2L, "x", "y", 1.0, 1.0, 2, null, null);
 
         // 3. Asserts
+        assertTrue(access instanceof CommercePackAccess.Granted);
+        final Pack result = ((CommercePackAccess.Granted) access).pack();
         assertTrue(result.getTags().isEmpty());
     }
 
@@ -339,10 +345,12 @@ class PackServiceImplTest {
         when(packDao.update(any(Pack.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // 2. Ejercicio
-        final Pack result =
-                packService.updatePack(5L, "x2", "y2", 2.0, 2.0, 3, Collections.emptyList(), null);
+        final CommercePackAccess access =
+                packService.updatePack(5L, 2L, "x2", "y2", 2.0, 2.0, 3, Collections.emptyList(), null);
 
         // 3. Asserts
+        assertTrue(access instanceof CommercePackAccess.Granted);
+        final Pack result = ((CommercePackAccess.Granted) access).pack();
         assertEquals(99L, result.getImageId());
     }
 

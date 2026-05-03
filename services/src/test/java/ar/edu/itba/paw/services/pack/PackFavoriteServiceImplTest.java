@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.pack;
 
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.pack.FavoriteToggleException;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.PackFavoriteDao;
 import org.junit.jupiter.api.Test;
@@ -94,10 +95,10 @@ class PackFavoriteServiceImplTest {
         when(packDao.findById(10L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
-        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+        final FavoriteToggleException thrown = assertThrows(FavoriteToggleException.class,
                 () -> packFavoriteService.toggleFavorite(5L, 10L));
 
         // 3. Asserts
-        assertTrue(thrown.getMessage().contains("not available"));
+        assertEquals(FavoriteToggleException.Reason.PACK_UNAVAILABLE, thrown.getReason());
     }
 }

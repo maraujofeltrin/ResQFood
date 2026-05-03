@@ -14,7 +14,7 @@ public interface PackService {
     List<Pack> findAll();
     List<Pack> findByCommerceId(Long commerceId);
     Pack update(Pack pack);
-    void deletePack(Long id);
+    CommercePackAccess deletePack(long packId, long commerceUserId);
 
     /**
      * Returns a pack visible on its public detail page.
@@ -26,7 +26,7 @@ public interface PackService {
     /**
      * Updates an existing pack. If imageData is provided, it updates the image too.
      */
-    Pack updatePack(long packId, String title, String description, Double originalPrice,
+    CommercePackAccess updatePack(long packId, long commerceUserId, String title, String description, Double originalPrice,
                     Double finalPrice, Integer stock, List<PackTag> tags,
                     Long imageId);
 

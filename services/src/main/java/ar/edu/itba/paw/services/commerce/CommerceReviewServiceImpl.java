@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.commerce;
 
 import ar.edu.itba.paw.models.user.CommerceReview;
+import ar.edu.itba.paw.models.user.CommerceReviewException;
 import ar.edu.itba.paw.persistence.CommerceReviewDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import org.slf4j.Logger;
@@ -49,11 +50,11 @@ public class CommerceReviewServiceImpl implements CommerceReviewService {
     @Transactional
     @Override
     public CommerceReview upsertReview(final long clientUserId, final long commerceUserId, final int rating,
-            final String body) {
+            final String body) throws CommerceReviewException {
         if (!canClientReviewCommerce(clientUserId, commerceUserId)) {
             LOGGER.warn("Review rejected: clientUserId={} not eligible for commerceUserId={}", clientUserId,
                     commerceUserId);
-            throw new IllegalStateException("Client is not eligible to review this commerce");
+            throw new CommerceReviewException(CommerceReviewException.Reason.NOT_ELIGIBLE, "Client is not eligible to review this commerce");
         }
         validateRating(rating);
         final String normalizedBody = normalizeBody(body);
@@ -68,19 +69,19 @@ public class CommerceReviewServiceImpl implements CommerceReviewService {
         return Optional.ofNullable(commerceReviewDao.averageRatingByCommerceId(commerceUserId));
     }
 
-    private void validateRating(final int rating) {
+    private void validateRating(final int rating) throws CommerceReviewException {
         if (rating < MIN_RATING || rating > MAX_RATING) {
-            throw new IllegalArgumentException("Rating must be between 1 and 5");
+            throw new CommerceReviewException(CommerceReviewException.Reason.INVALID_RATING, "Rating must be between 1 and 5");
         }
     }
 
-    private String normalizeBody(final String body) {
+    private String normalizeBody(final String body) throws CommerceReviewException {
         final String normalized = body == null ? "" : body.trim();
         if (normalized.isEmpty()) {
-            throw new IllegalArgumentException("Review body is required");
+            throw new CommerceReviewException(CommerceReviewException.Reason.INVALID_BODY, "Review body is required");
         }
         if (normalized.length() > MAX_BODY_LENGTH) {
-            throw new IllegalArgumentException("Review body is too long");
+            throw new CommerceReviewException(CommerceReviewException.Reason.INVALID_BODY, "Review body is too long");
         }
         return normalized;
     }
