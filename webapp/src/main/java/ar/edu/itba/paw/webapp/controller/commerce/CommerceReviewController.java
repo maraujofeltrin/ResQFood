@@ -59,9 +59,6 @@ public class CommerceReviewController {
         final Locale locale = LocaleContextHolder.getLocale();
 
         final User currentUser = authResolver.resolveUser();
-        if (currentUser.getRole() != User.Role.CLIENT) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
 
         if (bindingResult.hasErrors()) {
             return packDetailModelBuilder.buildPackDetailModel(pack, createDefaultReservationForm(), new BidForm(),

@@ -107,28 +107,5 @@ public class AuthenticatedUserResolver {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
-    /**
-     * Asserts the authenticated user has the given role.
-     *
-     * @throws ResponseStatusException 403 if role doesn't match
-     */
-    public User requireRole(final Authentication authentication, final User.Role requiredRole) {
-        final User user = resolveUser(authentication);
-        if (user.getRole() != requiredRole) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-        return user;
-    }
 
-    /**
-     * Asserts the authenticated user is a commerce and owns the pack identified by {@code commerceUserId}.
-     *
-     * @throws ResponseStatusException 403 if not the owner
-     */
-    public void requireCommerceOwnership(final Authentication authentication, final long expectedCommerceUserId) {
-        final User user = requireRole(authentication, User.Role.COMMERCE);
-        if (user.getId() != expectedCommerceUserId) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-    }
 }

@@ -70,7 +70,7 @@ public class ReservationListController {
             @RequestParam(value = "status", required = false) final Reservation.Status status,
             final Authentication authentication,
             final RedirectAttributes redirectAttributes) {
-        final User currentUser = authResolver.requireRole(authentication, User.Role.COMMERCE);
+        final User currentUser = authResolver.resolveUser(authentication);
 
         final ReservationServiceResult<ReservationRejectionError> result =
                 reservationService.tryRejectReservationForCommerce(reservationId, currentUser.getId());

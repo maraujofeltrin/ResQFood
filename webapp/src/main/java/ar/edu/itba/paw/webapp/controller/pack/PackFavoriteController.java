@@ -32,7 +32,7 @@ public class PackFavoriteController {
     public String toggleFavorite(
             @PathVariable("packId") final long packId,
             final Authentication authentication) {
-        final User user = authResolver.requireRole(authentication, User.Role.CLIENT);
+        final User user = authResolver.resolveUser(authentication);
         try {
             packFavoriteService.toggleFavorite(user.getId(), packId);
         } catch (final IllegalArgumentException ex) {
