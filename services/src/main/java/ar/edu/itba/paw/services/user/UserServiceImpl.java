@@ -132,6 +132,7 @@ public class UserServiceImpl implements UserService {
         return userDao.findById(id);
     }
 
+    @Transactional
     @Override
     public void updatePassword(final Long userId, final String encodedPassword) {
         userDao.updatePassword(userId, encodedPassword);
@@ -149,6 +150,7 @@ public class UserServiceImpl implements UserService {
         return ChangePasswordResult.success();
     }
 
+    @Transactional
     @Override
     public void markVerified(final Long userId) {
         userDao.markVerified(userId);

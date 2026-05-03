@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.NoSuchElementException;
 
@@ -65,6 +66,7 @@ public class ProfileServiceImpl implements ProfileService {
                 notificationsPref);
     }
 
+    @Transactional
     @Override
     public void updateProfileAccount(
             final long userId,
@@ -128,6 +130,7 @@ public class ProfileServiceImpl implements ProfileService {
                 c.getClosingTime());
     }
 
+    @Transactional
     @Override
     public void updateNotificationsPreference(long userId, boolean wantsNotifications) {
         final Client client = clientService.findByUserId(userId)

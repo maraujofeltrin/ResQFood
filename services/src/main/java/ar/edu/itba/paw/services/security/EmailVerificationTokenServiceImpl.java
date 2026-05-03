@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
@@ -31,6 +32,7 @@ public class EmailVerificationTokenServiceImpl implements EmailVerificationToken
         this.emailVerificationMailService = emailVerificationMailService;
     }
 
+    @Transactional
     @Override
     public void sendVerificationMail(final Long userId, final String email, final String baseUrl,
             final Locale locale) {
@@ -39,6 +41,7 @@ public class EmailVerificationTokenServiceImpl implements EmailVerificationToken
         emailVerificationMailService.sendVerificationMail(email, verificationUrl, locale);
     }
 
+    @Transactional
     @Override
     public Optional<User> verifyEmailAndGetUser(final String token) {
         final Optional<Token> maybeToken = tokenDao.findByTokenAndType(token, TokenType.EMAIL_VERIFICATION);
@@ -59,6 +62,7 @@ public class EmailVerificationTokenServiceImpl implements EmailVerificationToken
         return verifyEmailAndGetUser(token).isPresent();
     }
 
+    @Transactional
     @Override
     public void resendVerificationMail(final String email, final String baseUrl) {
         final Optional<User> maybeUser = userDao.findByEmail(email);

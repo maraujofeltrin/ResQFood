@@ -4,6 +4,7 @@ import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.persistence.ClientDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -17,6 +18,7 @@ public class ClientServiceImpl implements ClientService {
         this.clientDao = clientDao;
     }
 
+    @Transactional
     @Override
     public Client createClient(final Long userId, final String name, final String lastName,
             final Boolean notificationsVisibilityPreferences) {
@@ -28,6 +30,7 @@ public class ClientServiceImpl implements ClientService {
         return clientDao.findByUserId(userId);
     }
 
+    @Transactional
     @Override
     public Client update(final Client client) {
         return clientDao.update(client);

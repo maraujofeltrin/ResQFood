@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +31,7 @@ public class PackServiceImpl implements PackService {
         this.auctionService = auctionService;
     }
 
+    @Transactional
     @Override
     public Pack createPack(Long commerceId, String title, String description, Double originalPrice,
                            Double finalPrice, Integer stock, List<PackTag> tags,
@@ -37,6 +39,7 @@ public class PackServiceImpl implements PackService {
         return packDao.createPack(commerceId, title, description, originalPrice, finalPrice, stock, tags, imageId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<Pack> findById(Long id) {
         return packDao.findById(id);
@@ -52,11 +55,13 @@ public class PackServiceImpl implements PackService {
         return packDao.findByCommerceId(commerceId);
     }
 
+    @Transactional
     @Override
     public Pack update(Pack pack) {
         return packDao.update(pack);
     }
 
+    @Transactional
     @Override
     public void deletePack(Long id) {
         packDao.softDelete(id);
@@ -82,6 +87,7 @@ public class PackServiceImpl implements PackService {
         return Optional.empty();
     }
 
+    @Transactional
     @Override
     public Pack updatePack(long packId, String title, String description, Double originalPrice,
                            Double finalPrice, Integer stock, List<PackTag> tags,

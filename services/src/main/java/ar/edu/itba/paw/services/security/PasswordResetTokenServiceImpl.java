@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
@@ -34,6 +35,7 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
         this.passwordEncoder = passwordEncoder;
     }
 
+    @Transactional
     @Override
     public void requestPasswordReset(final String email, final String baseUrl) {
         final Optional<User> user = userDao.findByEmail(email);
@@ -54,6 +56,7 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
         return maybeToken.isPresent() && isValid(maybeToken.get());
     }
 
+    @Transactional
     @Override
     public void resetPassword(final String token, final String rawPassword) {
         final Token resetToken = tokenDao.findByTokenAndType(token, TokenType.PASSWORD_RESET)
