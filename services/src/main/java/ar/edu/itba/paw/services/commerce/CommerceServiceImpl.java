@@ -66,5 +66,6 @@ public class CommerceServiceImpl implements CommerceService {
                 open,
                 close);
         commerceDao.update(updated);
+        LOGGER.info("Commerce profile updated for userId={}", userId);
     }
 }

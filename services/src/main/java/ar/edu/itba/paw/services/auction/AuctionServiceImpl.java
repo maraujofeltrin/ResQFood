@@ -73,7 +73,9 @@ public class AuctionServiceImpl implements AuctionService {
             throw new IllegalArgumentException("End time must be in the future");
         }
 
-        return auctionDao.createAuction(packId, initialPrice, minBidIncrement, endTime);
+        final Auction createdAuction = auctionDao.createAuction(packId, initialPrice, minBidIncrement, endTime);
+        LOGGER.info("Auction created: auctionId={}, packId={}", createdAuction.getId(), packId);
+        return createdAuction;
     }
 
     @Override
@@ -148,6 +150,7 @@ public class AuctionServiceImpl implements AuctionService {
         //     notificationService.notifyOutbid(previousBidderId, auctionId, amount);
         // }
 
+        LOGGER.info("Bid placed: auctionId={}, clientId={}, amount={}", auctionId, clientId, amount);
         return bid;
     }
 
@@ -191,11 +194,13 @@ public class AuctionServiceImpl implements AuctionService {
     public CancelAuctionResult cancelAuction(final long auctionId, final long requestingUserId) {
         final Auction auction = auctionDao.findById(auctionId).orElse(null);
         if (auction == null) {
+            LOGGER.warn("Failed to cancel auction: auctionId={}, result={}", auctionId, CancelAuctionResult.notFound().name());
             return CancelAuctionResult.notFound();
         }
 
         // Check if auction is active
         if (auction.getStatus() != Auction.Status.ACTIVE) {
+            LOGGER.warn("Failed to cancel auction: auctionId={}, result={}", auctionId, CancelAuctionResult.notActive().name());
             return CancelAuctionResult.notActive();
         }
 
@@ -205,17 +210,20 @@ public class AuctionServiceImpl implements AuctionService {
                 .map(c -> c.getUserId().equals(commerceId))
                 .orElse(false);
         if (!isOwner) {
+            LOGGER.warn("Failed to cancel auction: auctionId={}, result={}", auctionId, CancelAuctionResult.forbidden().name());
             return CancelAuctionResult.forbidden();
         }
 
         final int bidCount = bidDao.countByAuctionId(auctionId);
         if (bidCount > 0) {
+            LOGGER.warn("Failed to cancel auction: auctionId={}, result={}", auctionId, CancelAuctionResult.hasBids().name());
             return CancelAuctionResult.hasBids();
         }
 
         auctionDao.updateStatus(auctionId, Auction.Status.CANCELLED);
         packDao.setActive(pack.getId(), false);
 
+        LOGGER.info("Auction cancelled: auctionId={}, requestingUserId={}", auctionId, requestingUserId);
         return CancelAuctionResult.success();
     }
 

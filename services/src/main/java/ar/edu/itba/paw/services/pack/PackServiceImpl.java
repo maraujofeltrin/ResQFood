@@ -36,7 +36,9 @@ public class PackServiceImpl implements PackService {
     public Pack createPack(Long commerceId, String title, String description, Double originalPrice,
                            Double finalPrice, Integer stock, List<PackTag> tags,
                            Long imageId) {
-        return packDao.createPack(commerceId, title, description, originalPrice, finalPrice, stock, tags, imageId);
+        final Pack createdPack = packDao.createPack(commerceId, title, description, originalPrice, finalPrice, stock, tags, imageId);
+        LOGGER.info("Pack created: packId={}, commerceId={}", createdPack.getId(), commerceId);
+        return createdPack;
     }
 
     @Transactional(readOnly = true)
@@ -66,9 +68,11 @@ public class PackServiceImpl implements PackService {
     public CommercePackAccess deletePack(long packId, long commerceUserId) {
         CommercePackAccess access = resolvePackForDirectEdit(packId, commerceUserId);
         if (!(access instanceof CommercePackAccess.Granted)) {
+            LOGGER.warn("Failed to soft-delete pack: packId={}, accessType={}", packId, access.getClass().getSimpleName());
             return access;
         }
         packDao.softDelete(packId);
+        LOGGER.info("Pack soft-deleted: packId={}, commerceUserId={}", packId, commerceUserId);
         return access;
     }
 
@@ -99,6 +103,7 @@ public class PackServiceImpl implements PackService {
                            Long imageId) {
         CommercePackAccess access = resolvePackForDirectEdit(packId, commerceUserId);
         if (!(access instanceof CommercePackAccess.Granted)) {
+            LOGGER.warn("Failed to update pack: packId={}, accessType={}", packId, access.getClass().getSimpleName());
             return access;
         }
         final Pack packToUpdate = ((CommercePackAccess.Granted) access).pack();
@@ -114,7 +119,9 @@ public class PackServiceImpl implements PackService {
             packToUpdate.setImageId(imageId);
         }
 
-        return new CommercePackAccess.Granted(packDao.update(packToUpdate));
+        final Pack updatedPack = packDao.update(packToUpdate);
+        LOGGER.info("Pack updated: packId={}, commerceUserId={}", packId, commerceUserId);
+        return new CommercePackAccess.Granted(updatedPack);
     }
 
     @Override

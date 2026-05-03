@@ -154,6 +154,7 @@ public class ReservationServiceImpl implements ReservationService {
                 user.getLocale());
         }
 
+        LOGGER.info("Reservation created: reservationId={}, packId={}, userId={}", reservation.getId(), packId, userId);
         return reservation;
     }
 
@@ -272,7 +273,9 @@ public class ReservationServiceImpl implements ReservationService {
         if (reservation.getStatus() != Reservation.Status.RESERVED) {
             throw new IllegalStateException("Cannot confirm pickup: reservation status is " + reservation.getStatus());
         }
-        return reservationDao.confirmPickup(id, LocalDateTime.now(ZoneOffset.UTC));
+        final Reservation confirmed = reservationDao.confirmPickup(id, LocalDateTime.now(ZoneOffset.UTC));
+        LOGGER.info("Pickup confirmed for reservationId={}", id);
+        return confirmed;
     }
 
     @Transactional
@@ -305,26 +308,32 @@ public class ReservationServiceImpl implements ReservationService {
         final Reservation reservation = reservationDao.findById(reservationId)
                 .orElse(null);
         if (reservation == null) {
+            LOGGER.warn("Failed to reject reservation: reservationId={}, error={}", reservationId, ReservationRejectionError.RESERVATION_NOT_FOUND);
             return ReservationServiceResult.failure(ReservationRejectionError.RESERVATION_NOT_FOUND);
         }
 
         final Reservation.Status status = reservation.getStatus();
         if (status == Reservation.Status.CANCELED) {
+            LOGGER.warn("Failed to reject reservation: reservationId={}, error={}", reservationId, ReservationRejectionError.ALREADY_CANCELED);
             return ReservationServiceResult.failure(ReservationRejectionError.ALREADY_CANCELED);
         }
         if (status == Reservation.Status.PAID) {
+            LOGGER.warn("Failed to reject reservation: reservationId={}, error={}", reservationId, ReservationRejectionError.ALREADY_COMPLETED);
             return ReservationServiceResult.failure(ReservationRejectionError.ALREADY_COMPLETED);
         }
         if (status != Reservation.Status.RESERVED) {
+            LOGGER.warn("Failed to reject reservation: reservationId={}, error={}", reservationId, ReservationRejectionError.INVALID_STATUS);
             return ReservationServiceResult.failure(ReservationRejectionError.INVALID_STATUS);
         }
 
         if (reservation.getPackId() == null) {
+            LOGGER.warn("Failed to reject reservation: reservationId={}, error={}", reservationId, ReservationRejectionError.PACK_NOT_FOUND);
             return ReservationServiceResult.failure(ReservationRejectionError.PACK_NOT_FOUND);
         }
 
         final int quantity = reservation.getQuantity() == null ? 1 : reservation.getQuantity();
         if (!packDao.incrementStock(reservation.getPackId(), quantity)) {
+            LOGGER.warn("Failed to reject reservation: reservationId={}, error={}", reservationId, ReservationRejectionError.STOCK_RESTORE_FAILED);
             return ReservationServiceResult.failure(ReservationRejectionError.STOCK_RESTORE_FAILED);
         }
 
@@ -336,6 +345,7 @@ public class ReservationServiceImpl implements ReservationService {
 
         reservationMailService.sendReservationRejectedToClient(canceledReservation, clientEmail,
             clientUser.getLocale());
+        LOGGER.info("Reservation canceled: reservationId={}", reservationId);
         return ReservationServiceResult.success(canceledReservation);
     }
 

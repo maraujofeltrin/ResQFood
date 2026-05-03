@@ -61,6 +61,7 @@ public class UserServiceImpl implements UserService {
                 user.getLocale());
 
         persistProfileByRole(createdUser, clientProfile, commerceProfile);
+        LOGGER.info("User created: userId={}, role={}", createdUser.getId(), createdUser.getRole());
         return createdUser;
     }
 
@@ -144,9 +145,11 @@ public class UserServiceImpl implements UserService {
         final User user = userDao.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            LOGGER.warn("Password change rejected: incorrect current password for userId={}", userId);
             return ChangePasswordResult.currentPasswordIncorrect();
         }
         userDao.updatePassword(userId, passwordEncoder.encode(newPassword));
+        LOGGER.info("Password changed for userId={}", userId);
         return ChangePasswordResult.success();
     }
 
@@ -160,8 +163,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public RegisterResult tryRegister(final User user, final Client clientProfile, final Commerce commerceProfile,
             final String appBaseUrl) {
+        LOGGER.debug("Registration initiated for email={}", user.getEmail());
         final Optional<User> existingUser = findByEmail(user.getEmail());
         if (existingUser.isPresent()) {
+            LOGGER.warn("Registration rejected: duplicate email={}", user.getEmail());
             return RegisterResult.duplicateEmail();
         }
         final User created = createUser(user, clientProfile, commerceProfile);
@@ -197,5 +202,6 @@ public class UserServiceImpl implements UserService {
         final String lang = locale.getLanguage().toLowerCase(Locale.ROOT);
         userDao.findById(userId).orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
         userDao.updateLocale(userId, lang);
+        LOGGER.debug("Updated preferred locale to {} for userId={}", lang, userId);
     }
 }
