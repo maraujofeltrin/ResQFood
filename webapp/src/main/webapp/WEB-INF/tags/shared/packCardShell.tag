@@ -24,6 +24,8 @@
 <%@ attribute name="rescueLabel" required="false" %>
 <%@ attribute name="imageOverlay" fragment="true" required="false" %>
 
+<%@ attribute name="badgeError" type="java.lang.Boolean" required="false" %>
+
 <c:if test="${empty manageable}">
     <c:set var="manageable" value="false" />
 </c:if>
@@ -36,6 +38,9 @@
 <c:if test="${empty auction}">
     <c:set var="auction" value="false" />
 </c:if>
+<c:if test="${empty badgeError}">
+    <c:set var="badgeError" value="false" />
+</c:if>
 
 <c:set var="resolvedAlt" value="${not empty imageAlt ? imageAlt : title}" />
 <c:set var="resolvedRescueLabel" value="${not empty rescueLabel ? rescueLabel : ''}" />
@@ -43,6 +48,19 @@
 <c:set var="imgHClass" value="${smallSize ? 'h-36 sm:h-44' : 'h-48 sm:h-56'}" />
 
 <c:choose>
+  <c:when test="${badgeError == true}">
+    <c:set var="badgeChipClass" value="bg-error-container/95 backdrop-blur text-on-error-container px-3 py-1 rounded-full text-xs font-bold shadow-sm"/>
+    <c:choose>
+        <c:when test="${auction == true}">
+            <c:set var="priceLabelClass" value="text-auction text-xs font-bold uppercase tracking-widest mb-1"/>
+            <c:set var="priceValueClass" value="text-2xl font-extrabold text-auction"/>
+        </c:when>
+        <c:otherwise>
+            <c:set var="priceLabelClass" value="text-outline text-xs font-bold uppercase tracking-widest mb-1"/>
+            <c:set var="priceValueClass" value="text-2xl font-extrabold text-primary"/>
+        </c:otherwise>
+    </c:choose>
+  </c:when>
   <c:when test="${auction == true}">
     <c:set var="badgeChipClass" value="bg-auction-container/95 backdrop-blur text-on-auction-container px-3 py-1 rounded-full text-xs font-bold shadow-sm"/>
     <c:set var="priceLabelClass" value="text-auction text-xs font-bold uppercase tracking-widest mb-1"/>

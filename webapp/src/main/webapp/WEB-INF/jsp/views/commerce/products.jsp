@@ -170,11 +170,26 @@ uri="http://itba.edu.ar/paw/tags" %>
                   currencyCode="ARS"
                   var="formattedOldPrice"
                 />
-                <spring:message
-                  code="commerce.dashboard.pack.stock"
-                  arguments="${pack.stock}"
-                  var="stockLabel"
-                />
+                <c:set var="isAuction" value="${auctionPackIds.contains(pack.id)}" />
+                <c:set var="auctionActive" value="${isAuction ? packIdToAuctionActive[pack.id] : false}" />
+                <c:set var="isEndedAuction" value="${isAuction and not auctionActive}" />
+                <c:set var="isOutOfStockPack" value="${not isAuction and pack.stock == 0}" />
+
+                <c:choose>
+                    <c:when test="${isEndedAuction}">
+                        <spring:message code="commerce.dashboard.auction.ended" var="badgeText" />
+                        <c:set var="badgeError" value="true" />
+                    </c:when>
+                    <c:when test="${isOutOfStockPack}">
+                        <spring:message code="commerce.dashboard.pack.outOfStock" var="badgeText" />
+                        <c:set var="badgeError" value="true" />
+                    </c:when>
+                    <c:otherwise>
+                        <spring:message code="commerce.dashboard.pack.stock" arguments="${pack.stock}" var="badgeText" />
+                        <c:set var="badgeError" value="false" />
+                    </c:otherwise>
+                </c:choose>
+
                 <spring:message
                   code="commerce.dashboard.pack.finalPriceLabel"
                   var="finalPriceLabel"
@@ -186,7 +201,8 @@ uri="http://itba.edu.ar/paw/tags" %>
                   subtitle="${pack.description}"
                   price="${formattedPrice}"
                   oldPrice="${formattedOldPrice}"
-                  badgeText="Stock: ${pack.stock}"
+                  badgeText="${badgeText}"
+                  badgeError="${badgeError}"
                   rescueLabel="${finalPriceLabel}"
                   manageable="${not auctionPackIds.contains(pack.id)}"
                   commerceId="${commerceId}"

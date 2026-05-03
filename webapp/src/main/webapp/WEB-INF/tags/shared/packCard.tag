@@ -17,6 +17,7 @@
 <%@ attribute name="auctionActive" type="java.lang.Boolean" required="false" %>
 <%@ attribute name="auctionHasBids" type="java.lang.Boolean" required="false" %>
 <%@ attribute name="unavailable" type="java.lang.Boolean" required="false" %>
+<%@ attribute name="badgeError" type="java.lang.Boolean" required="false" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="paw" uri="http://itba.edu.ar/paw/tags" %>
@@ -24,7 +25,7 @@
 <c:set var="resolvedRescueLabel" value="${not empty rescueLabel ? rescueLabel : 'Rescue For'}"/>
 
 <paw:packCardShell packId="${packId}" imageId="${imageId}" title="${title}" subtitle="${subtitle}" imageAlt="${imageAlt}"
-    badgeText="${badgeText}" commerceName="${commerceName}" manageable="${manageable}" smallSize="${smallSize}"
+    badgeText="${badgeText}" badgeError="${badgeError}" commerceName="${commerceName}" manageable="${manageable}" smallSize="${smallSize}"
     auction="${auction}" auctionId="${auctionId}" auctionActive="${auctionActive}"
     auctionHasBids="${auctionHasBids}" unavailable="${unavailable}" asLink="true" showPriceFooter="true"
     price="${price}" oldPrice="${oldPrice}" rescueLabel="${resolvedRescueLabel}">
