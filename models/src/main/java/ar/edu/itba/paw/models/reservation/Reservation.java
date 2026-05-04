@@ -6,8 +6,7 @@ public class Reservation {
     public enum Status {
         RESERVED,
         PAID,
-        CANCELED,
-        EXPIRED
+        CANCELED
     }
 
     private final Long id;

@@ -409,23 +409,4 @@ class ReservationServiceImplTest {
         assertEquals(ReservationRejectionError.ALREADY_COMPLETED, result.error().orElseThrow());
     }
 
-    @Test
-    void testTryRejectReservationForCommerceWhenExpiredReturnsInvalidStatusError() {
-        // 1. Setup
-        final long packId = 720L;
-        final long commerceId = 721L;
-        final long reservationId = 46L;
-        final Reservation reservation = new Reservation(reservationId, 105L, packId, LocalDateTime.now(), 25.0,
-                Reservation.Status.EXPIRED, "LLLLL", null, 1, null);
-        when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
-        when(packDao.findById(packId)).thenReturn(Optional.of(
-                new Pack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
-
-        // 2. Ejercicio
-        final ReservationServiceResult<ReservationRejectionError> result =
-                reservationService.tryRejectReservationForCommerce(reservationId, commerceId);
-
-        // 3. Asserts
-        assertEquals(ReservationRejectionError.INVALID_STATUS, result.error().orElseThrow());
-    }
 }
