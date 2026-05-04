@@ -176,12 +176,12 @@
     <jsp:doBody/>
     <c:if test="${showPriceFooter}">
     <div class="flex items-center justify-between pt-4 border-t border-surface-container-low mt-auto">
-      <div>
+      <div class="min-w-0">
         <p class="${priceLabelClass}"><c:out value="${resolvedRescueLabel}"/></p>
-        <div class="flex items-baseline gap-2">
-          <span class="${priceValueClass}"><c:out value="${price}"/></span>
+        <div class="flex flex-wrap items-baseline gap-2 min-w-0">
+          <span class="${priceValueClass} break-words leading-tight"><c:out value="${price}"/></span>
           <c:if test="${not empty oldPrice}">
-             <span class="text-sm text-outline line-through"><c:out value="${oldPrice}"/></span>
+             <span class="text-sm text-outline line-through break-words"><c:out value="${oldPrice}"/></span>
           </c:if>
         </div>
       </div>
