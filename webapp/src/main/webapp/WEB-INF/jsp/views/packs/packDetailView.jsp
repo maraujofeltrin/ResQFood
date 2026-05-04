@@ -18,7 +18,7 @@
     <spring:message code="pack.detail.favorite.toggleAria" var="packDetailFavoriteToggleAria"/>
     <main class="pack-detail-main">
         <div class="flex items-center gap-2 mb-8 text-secondary">
-            <a href="${packCatalogUrl}" class="group flex items-center font-bold">
+            <a href="${packCatalogUrl}" onclick="if (window.history.length > 1 && document.referrer.indexOf(window.location.host) !== -1) { window.history.back(); return false; }" class="group flex items-center font-bold">
                 <span class="material-symbols-outlined text-xl mr-1">arrow_back</span>
                 <span class="group-hover:underline"><spring:message code="pack.detail.back"/></span>
             </a>
