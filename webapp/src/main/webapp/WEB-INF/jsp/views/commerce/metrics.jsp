@@ -73,15 +73,15 @@ uri="http://itba.edu.ar/paw/tags" %>
             <spring:message code="commerce.metrics.filter.apply" />
           </button>
         </form>
-        <div class="flex flex-col gap-1 mt-2 md:mt-0">
+        <div class="flex flex-col gap-2 mt-3 md:mt-0 md:max-w-md">
           <form:errors
             path="metricsFilterForm.fromDate"
-            cssClass="text-sm text-danger"
+            cssClass="pack-feedback pack-feedback--error pack-form-errors"
             element="div"
           />
           <form:errors
             path="metricsFilterForm.toDate"
-            cssClass="text-sm text-danger"
+            cssClass="pack-feedback pack-feedback--error pack-form-errors"
             element="div"
           />
         </div>
