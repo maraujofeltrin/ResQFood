@@ -7,6 +7,7 @@ import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommercePackAccess;
+import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -39,6 +40,9 @@ class PackServiceImplTest {
 
     @Mock
     private AuctionService auctionService;
+
+    @Mock
+    private ReservationService reservationService;
 
     @InjectMocks
     private PackServiceImpl packService;

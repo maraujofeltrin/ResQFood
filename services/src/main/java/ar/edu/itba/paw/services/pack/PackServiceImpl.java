@@ -7,6 +7,7 @@ import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.services.auction.AuctionService;
+import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.commerce.CommercePackAccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,11 +25,13 @@ public class PackServiceImpl implements PackService {
 
     private final PackDao packDao;
     private final AuctionService auctionService;
+    private final ReservationService reservationService;
 
     @Autowired
-    public PackServiceImpl(final PackDao packDao, final AuctionService auctionService) {
+    public PackServiceImpl(final PackDao packDao, final AuctionService auctionService, final ReservationService reservationService) {
         this.packDao = packDao;
         this.auctionService = auctionService;
+        this.reservationService = reservationService;
     }
 
     @Transactional
@@ -90,7 +93,7 @@ public class PackServiceImpl implements PackService {
         if (Boolean.TRUE.equals(pack.getActive())) {
             return Optional.of(pack);
         }
-        if (viewerUserId != null && viewerUserId.equals(pack.getCommerceId())) {
+        if (viewerUserId != null && (viewerUserId.equals(pack.getCommerceId()) || reservationService.hasActiveReservation(packId, viewerUserId))) {
             return Optional.of(pack);
         }
         return Optional.empty();
