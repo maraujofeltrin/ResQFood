@@ -41,6 +41,9 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
 
     @Override
     public CommerceMetrics getCommerceMetrics(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
+        if (from.isAfter(to)) {
+            throw new IllegalArgumentException("from must be <= to");
+        }
         LOGGER.debug("getCommerceMetrics commerceId={}", commerceId);
         final List<Object[]> rows = reservationDao.countPaidReservationsPerDay(commerceId, from, to);
         final Map<LocalDate, Long> countsByDate = new HashMap<>();

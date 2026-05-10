@@ -18,13 +18,17 @@ import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.controller.helpers.CommerceMetricsFilterHelper;
 import ar.edu.itba.paw.webapp.controller.helpers.CommerceReviewViewHelper;
 import ar.edu.itba.paw.webapp.controller.helpers.ReservationHistoryViewHelper;
+import ar.edu.itba.paw.webapp.form.MetricsFilterForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
+import javax.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -220,18 +224,33 @@ public class CommerceDashboardController {
 
     @GetMapping(value = "/metrics")
     public ModelAndView metrics(@AuthenticationPrincipal final AuthUser principal,
-        @RequestParam(value = "from", required = false) final String fromStr,
-        @RequestParam(value = "to", required = false) final String toStr,
+        @Valid @ModelAttribute("metricsFilterForm") final MetricsFilterForm filter,
+        final BindingResult bindingResult,
         @RequestParam(value = "days", required = false) final Integer days) {
         final long userId = authResolver.resolveUser(principal).getId();
         final Commerce commerce = commerceService.findByUserId(userId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (bindingResult.hasErrors()) {
+            final ModelAndView mav = new ModelAndView("commerce/metrics");
+            mav.addObject("commerce", commerce);
+            mav.addObject("metricsFilterForm", filter);
+            mav.addObject("days", days);
+            mav.addObject("from", filter.getFromDate());
+            mav.addObject("to", filter.getToDate());
+            mav.addObject("salesChartJson", "[]");
+            mav.addObject("totalRevenue", 0);
+            mav.addObject("totalReservations", 0);
+            mav.addObject("bestSellingPackTitle", null);
+            mav.addObject("acceptanceRatePercent", 0);
+            return mav;
+        }
         final CommerceMetricsFilterHelper.MetricsFilterResolution resolution = metricsFilterHelper
-            .resolve(fromStr, toStr, days);
+            .resolve(filter.getFromDate(), filter.getToDate(), days);
         final CommerceMetrics metrics = commerceMetricsService.getCommerceMetrics(
             commerce.getUserId(), resolution.getFrom(), resolution.getTo());
         final ModelAndView mav = new ModelAndView("commerce/metrics");
         mav.addObject("commerce", commerce);
+        mav.addObject("metricsFilterForm", filter);
         mav.addObject("days", resolution.getDaysValue());
         mav.addObject("from", resolution.getFromValue());
         mav.addObject("to", resolution.getToValue());

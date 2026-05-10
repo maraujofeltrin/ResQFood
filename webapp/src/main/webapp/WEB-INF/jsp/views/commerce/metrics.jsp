@@ -1,7 +1,8 @@
 <%@ page contentType="text/html;charset=UTF-8" %> <%@ taglib prefix="c"
 uri="http://java.sun.com/jsp/jstl/core" %> <%@ taglib prefix="spring"
 uri="http://www.springframework.org/tags" %> <%@ taglib prefix="fmt"
-uri="http://java.sun.com/jsp/jstl/fmt" %> <%@ taglib prefix="paw"
+uri="http://java.sun.com/jsp/jstl/fmt" %> <%@ taglib prefix="form"
+uri="http://www.springframework.org/tags/form" %> <%@ taglib prefix="paw"
 uri="http://itba.edu.ar/paw/tags" %>
 <!DOCTYPE html>
 <html class="light" lang="${pageContext.response.locale.language}">
@@ -72,6 +73,18 @@ uri="http://itba.edu.ar/paw/tags" %>
             <spring:message code="commerce.metrics.filter.apply" />
           </button>
         </form>
+        <div class="flex flex-col gap-1 mt-2 md:mt-0">
+          <form:errors
+            path="metricsFilterForm.fromDate"
+            cssClass="text-sm text-danger"
+            element="div"
+          />
+          <form:errors
+            path="metricsFilterForm.toDate"
+            cssClass="text-sm text-danger"
+            element="div"
+          />
+        </div>
       </header>
 
       <section>
