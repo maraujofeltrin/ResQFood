@@ -93,10 +93,19 @@ public class PackServiceImpl implements PackService {
         if (Boolean.TRUE.equals(pack.getActive())) {
             return Optional.of(pack);
         }
-        if (viewerUserId != null && (viewerUserId.equals(pack.getCommerceId()) || reservationService.hasActiveReservation(packId, viewerUserId))) {
+        if (viewerUserId != null && (viewerUserId.equals(pack.getCommerceId())
+                || reservationService.hasActiveReservation(packId, viewerUserId)
+                || hasParticipatedInPackAuction(packId, viewerUserId))) {
             return Optional.of(pack);
         }
         return Optional.empty();
+    }
+
+    private boolean hasParticipatedInPackAuction(final Long packId, final Long viewerUserId) {
+        return auctionService.findByPackId(packId)
+                .map(auction -> auctionService.getBidHistory(auction.getId()).stream()
+                        .anyMatch(bid -> viewerUserId.equals(bid.getClientId())))
+                .orElse(false);
     }
 
     @Transactional

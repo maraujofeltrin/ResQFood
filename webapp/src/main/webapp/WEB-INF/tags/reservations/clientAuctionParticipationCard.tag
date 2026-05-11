@@ -16,7 +16,7 @@
 <spring:message code="reservation.my.auction.card.currentPrice" var="priceFooterLabel" />
 
 <paw:packCardShell packId="${pack.id}" imageId="${pack.imageId}" title="${pack.title}" subtitle="${pack.description}"
-    commerceName="${commerceName}" auction="true" asLink="false"
+    commerceName="${commerceName}" auction="true" asLink="true"
     participationBadgeCode="${badgeCode}"
     showPriceFooter="true" price="${formattedEffective}" rescueLabel="${priceFooterLabel}">
     <jsp:attribute name="imageOverlay"></jsp:attribute>

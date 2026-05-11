@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.pack;
 
 import ar.edu.itba.paw.models.auction.Auction;
+import ar.edu.itba.paw.models.auction.Bid;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
@@ -145,12 +146,34 @@ class PackServiceImplTest {
         // 1. Setup
         final Pack pack = new Pack(9L, 12L, "inactive", "d", 2.0, 1.0, 2, false, false, Collections.emptyList(), null);
         when(packDao.findById(9L)).thenReturn(Optional.of(pack));
+        when(reservationService.hasActiveReservation(9L, 99L)).thenReturn(false);
+        when(auctionService.findByPackId(9L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
         final Optional<Pack> result = packService.findVisibleForDetail(9L, 99L);
 
         // 3. Asserts
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testFindVisibleForDetailWhenPackInactiveReturnsPackForAuctionParticipant() {
+        // 1. Setup
+        final Pack pack = new Pack(11L, 12L, "auction", "d", 2.0, 1.0, 0, false, false, Collections.emptyList(), null);
+        final Auction auction = new Auction(20L, pack, 1.0, 1.0, 5.0, 99L,
+                LocalDateTime.now(ZoneOffset.UTC).minusHours(1), Auction.Status.FINISHED, LocalDateTime.now(ZoneOffset.UTC).minusDays(1));
+        final Bid bid = new Bid(30L, 20L, 99L, 5.0, LocalDateTime.now(ZoneOffset.UTC).minusHours(2));
+        when(packDao.findById(11L)).thenReturn(Optional.of(pack));
+        when(reservationService.hasActiveReservation(11L, 99L)).thenReturn(false);
+        when(auctionService.findByPackId(11L)).thenReturn(Optional.of(auction));
+        when(auctionService.getBidHistory(20L)).thenReturn(Collections.singletonList(bid));
+
+        // 2. Ejercicio
+        final Optional<Pack> result = packService.findVisibleForDetail(11L, 99L);
+
+        // 3. Asserts
+        assertTrue(result.isPresent());
+        assertEquals(11L, result.get().getId());
     }
 
     @Test
