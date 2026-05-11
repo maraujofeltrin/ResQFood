@@ -195,29 +195,27 @@
                                     <p class="text-xs font-bold uppercase tracking-wider text-on-surface-variant font-label mb-3 text-center sm:text-left w-full">
                                         <spring:message code="profile.label.profilePhoto"/>
                                     </p>
-                                    <spring:message code="profile.avatar.alt" var="profileAvatarAlt"/>
-                                    <div class="w-36 h-36 md:w-40 md:h-40 rounded-2xl overflow-hidden shadow-soft bg-surface-container">
-                                        <c:choose>
-                                            <c:when test="${not empty profile.profileImageId}">
-                                                <img src="${pageContext.request.contextPath}/images/${profile.profileImageId}"
-                                                     alt="${profileAvatarAlt}"
-                                                     class="w-full h-full object-cover pointer-events-none select-none"
-                                                     width="160"
-                                                     height="160"
-                                                     loading="lazy"
-                                                     draggable="false"/>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <img src="${pageContext.request.contextPath}/images/${profile.profileImageFileName}"
-                                                     alt="${profileAvatarAlt}"
-                                                     class="w-full h-full object-cover pointer-events-none select-none"
-                                                     width="160"
-                                                     height="160"
-                                                     loading="lazy"
-                                                     draggable="false"/>
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </div>
+
+                                    <c:set var="profileExistingImageUrl" value="${pageContext.request.contextPath}/images/${not empty profile.profileImageId ? profile.profileImageId : profile.profileImageFileName}" />
+
+                                    <paw:imageUpload path="photo"
+                                        inputId="profile-photo-input"
+                                        existingImageUrl="${profileExistingImageUrl}"
+                                        containerClass="w-36 h-36 md:w-40 md:h-40 rounded-2xl overflow-hidden shadow-soft bg-surface-container"
+                                        containerMinHeight="0"
+                                        imgClass="object-cover pointer-events-none select-none"
+                                        imgAltCode="profile.avatar.alt"
+                                        compactButtons="true"
+                                        primaryActionBelow="true"
+                                        hintCode="profile.photo.emptyStateHint"
+                                        belowHintCode="profile.avatar.viewOnlyNote"
+                                        selectBtnCode="profile.form.photo.choose"
+                                        changeBtnCode="commerce.createPack.form.image.button.change"
+                                        removeBtnCode="commerce.createPack.form.image.button.remove"
+                                        maxSizeErrorCode="profile.photo.maxSize"
+                                        invalidTypeErrorCode="profile.photo.invalidType"
+                                        errorsClass="mt-3 text-xs text-error font-body max-w-[14rem] text-center sm:text-left block" />
+
                                     <c:if test="${not empty profilePhotoUpdateError}">
                                         <p class="mt-3 text-xs text-error font-body max-w-[14rem] text-center sm:text-left leading-relaxed" role="alert">
                                             <spring:message code="profile.photo.updateFailed"/>
@@ -228,19 +226,6 @@
                                             <spring:message code="profile.commerce.updateFailed"/>
                                         </p>
                                     </c:if>
-                                    <spring:hasBindErrors name="profileAccountForm">
-                                        <form:errors path="photo" cssClass="mt-3 text-xs text-error font-body max-w-[14rem] text-center sm:text-left block" element="p"/>
-                                    </spring:hasBindErrors>
-                                    <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant font-label sr-only"
-                                           for="profile-photo-input">
-                                        <spring:message code="profile.label.profilePhoto"/>
-                                    </label>
-                                    <input id="profile-photo-input" type="file" name="photo"
-                                           accept="image/jpeg,image/png,image/webp,image/gif"
-                                           class="mt-4 block w-full max-w-[14rem] text-xs text-on-surface file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-primary file:text-on-primary file:font-semibold file:cursor-pointer cursor-pointer"/>
-                                    <p class="mt-3 text-xs text-on-surface-variant font-body max-w-[14rem] text-center sm:text-left leading-relaxed">
-                                        <spring:message code="profile.avatar.viewOnlyNote"/>
-                                    </p>
                                 </div>
 
                                 <div class="space-y-6 flex-1 w-full min-w-0">
