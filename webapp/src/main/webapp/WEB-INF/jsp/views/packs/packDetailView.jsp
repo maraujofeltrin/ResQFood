@@ -233,7 +233,7 @@
                                             <spring:message code="pack.detail.bid.amount.placeholder" var="phBidAmount"/>
                                             <spring:bind path="amount">
                                                 <paw:input id="bid-amount" label="${labelBidAmount}" type="number"
-                                                           name="${status.expression}" value="${status.value}"
+                                                           name="${status.expression}" value="${not empty status.value ? status.value : bidAmountMin}"
                                                            error="${status.errorMessages[0]}"
                                                            placeholder="${phBidAmount}"
                                                            min="${bidAmountMin}" step="0.01"

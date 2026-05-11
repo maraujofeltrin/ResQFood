@@ -23,6 +23,12 @@ dist/
 target/
 dist/
 
+# Eclipse / Java Language Server (generated locally; Maven pom.xml is source of truth)
+**/.classpath
+**/.project
+**/.settings/
+**/.factorypath
+
 # JetBrains IDE
 .idea/
 
