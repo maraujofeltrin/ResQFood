@@ -1,6 +1,15 @@
 package ar.edu.itba.paw.models.user;
 
 import ar.edu.itba.paw.models.pack.Municipality;
+import ar.edu.itba.paw.models.pack.MunicipalityConverter;
+
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -11,6 +20,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+@Entity
+@Table(name = "commerces")
 public class Commerce {
     public enum Category {
         BAKERY,
@@ -21,16 +32,40 @@ public class Commerce {
 
     public static final String PROVINCE_BUENOS_AIRES = "Buenos Aires";
 
-    private final Long userId;
+    @Id
+    @Column(name = "user_id")
+    private Long userId;
+    
+    @Column(name = "commercial_name", nullable = false)
     private String commercialName;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Category category;
+    
+    @Column(nullable = false)
     private String street;
+    
+    @Column(name = "street_number", nullable = false)
     private Integer streetNumber;
+    
+    @Convert(converter = MunicipalityConverter.class)
+    @Column(nullable = false)
     private Municipality city;
+    
+    @Column(nullable = false)
     private String province;
+    
+    @Column(name = "postal_code", nullable = false)
     private String postalCode;
+    
+    @Column(name = "opening_time", nullable = false)
     private String openingTime;
+    
+    @Column(name = "closing_time", nullable = false)
     private String closingTime;
+
+    protected Commerce() {}
 
     public Commerce(Long userId, String commercialName, Category category, String street, Integer streetNumber,
             Municipality city, String province, String postalCode, String openingTime, String closingTime) {

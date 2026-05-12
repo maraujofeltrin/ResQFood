@@ -1,10 +1,24 @@
 package ar.edu.itba.paw.models.user;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "clients")
 public class Client {
-    private final Long userId;
+    @Id
+    @Column(name = "user_id")
+    private Long userId;
+    @Column(nullable = false)
     private String name;
+    @Column(nullable = false, name = "last_name")
     private String lastName;
+    @Column(nullable = false, name = "notifications_visibility_preferences")
     private Boolean notificationsVisibilityPreferences;
+
+    protected Client() {}
 
     public Client(Long userId, String name, String lastName, Boolean notificationsVisibilityPreferences) {
         this.userId = userId;

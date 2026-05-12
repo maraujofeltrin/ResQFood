@@ -2,23 +2,55 @@ package ar.edu.itba.paw.models.user;
 
 import java.util.Locale;
 
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "users")
 public class User {
     public enum Role {
         CLIENT,
         COMMERCE
     }
 
+    @Column(nullable = false, unique = true)
     private String email;
+    @Column(nullable = false)
     private String password;
+    @Column(nullable = false)
     private String name;
+    @Column(nullable = false)
     private String phone;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Role role;
-    private final boolean verified;
-    private final Locale locale;
+    @Column(nullable = false)
+    private boolean verified;
+    
+    @Convert(converter = LocaleConverter.class)
+    @Column(nullable = false)
+    private Locale locale;
+    
     /** FK opcional a {@code images}; null si el usuario usa solo el avatar por defecto. */
-    private final Long profileImageId;
+    @Column(name = "profile_image_id")
+    private Long profileImageId;
 
-    private final Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "users_id_seq")
+    @SequenceGenerator(sequenceName = "users_id_seq", name = "users_id_seq", allocationSize = 1)
+    private Long id;
+
+    protected User() {
+        // Just for Hibernate
+    }
 
     public User(final Long id, final String email, final String password, final String name) {
         this(id, email, password, name, null, null, false, Locale.forLanguageTag("es"));

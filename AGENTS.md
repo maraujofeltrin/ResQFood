@@ -17,7 +17,7 @@ This project is a web platform designed to reduce food waste in gastronomic esta
 - **Language:** Java 21
 - **Build Tool:** Maven (Multi-module project)
 - **Architecture:** MVC (Model-View-Controller)
-- **Back-end Frameworks:** Spring Framework 5.3.x (Web MVC, Context, JDBC, TX), Spring Security (authentication and HTTP authorization in the `webapp` module).
+- **Back-end Frameworks:** Spring Framework 5.3.x (Web MVC, Context, ORM, JDBC, TX), Spring Security (authentication and HTTP authorization in the `webapp` module). **[NOTE: The project is currently undergoing a phased migration from Spring JDBC to JPA/Hibernate. Both data access paradigms currently coexist.]**
 - **Database:** PostgreSQL with Flyway for database migrations.
 - **Testing:** JUnit 5
 

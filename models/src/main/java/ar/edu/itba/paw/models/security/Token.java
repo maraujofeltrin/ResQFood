@@ -2,14 +2,33 @@ package ar.edu.itba.paw.models.security;
 
 import java.time.LocalDateTime;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "tokens")
 public class Token {
 
-    private final String token;
-    private final Long userId;
-    private final boolean used;
-    private final TokenType type;
-    private final LocalDateTime createdAt;
-    private final LocalDateTime expiresAt;
+    @Id
+    @Column(nullable = false)
+    private String token;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+    @Column(nullable = false)
+    private boolean used;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TokenType type;
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+    @Column(name = "expires_at", nullable = false)
+    private LocalDateTime expiresAt;
+
+    protected Token() {}
 
     public Token(final String token, final Long userId, final boolean used, final TokenType type,
             final LocalDateTime createdAt, final LocalDateTime expiresAt) {

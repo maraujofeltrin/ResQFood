@@ -2,15 +2,36 @@ package ar.edu.itba.paw.models.user;
 
 import java.time.LocalDateTime;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "commerce_reviews")
 public class CommerceReview {
 
-    private final Long id;
-    private final Long commerceUserId;
-    private final Long clientUserId;
-    private final Integer rating;
-    private final String body;
-    private final LocalDateTime createdAt;
-    private final LocalDateTime updatedAt;
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "commerce_reviews_id_seq")
+    @SequenceGenerator(sequenceName = "commerce_reviews_id_seq", name = "commerce_reviews_id_seq", allocationSize = 1)
+    private Long id;
+    @Column(name = "commerce_user_id", nullable = false)
+    private Long commerceUserId;
+    @Column(name = "client_user_id", nullable = false)
+    private Long clientUserId;
+    @Column(nullable = false)
+    private Integer rating;
+    @Column
+    private String body;
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    protected CommerceReview() {}
 
     public CommerceReview(final Long id, final Long commerceUserId, final Long clientUserId, final Integer rating,
             final String body, final LocalDateTime createdAt, final LocalDateTime updatedAt) {
