@@ -43,7 +43,11 @@ public class PackJpaDao implements PackDao {
 
     @Override
     public Optional<Pack> findById(final Long id) {
-        return Optional.ofNullable(em.find(Pack.class, id));
+        return em.createQuery("SELECT DISTINCT p FROM Pack p LEFT JOIN FETCH p.tags WHERE p.id = :id", Pack.class)
+                .setParameter("id", id)
+                .getResultList()
+                .stream()
+                .findFirst();
     }
 
     @Override
@@ -60,7 +64,7 @@ public class PackJpaDao implements PackDao {
 
     @Override
     public Pack update(final Pack pack) {
-        return pack;
+        return em.merge(pack);
     }
 
     @Override
