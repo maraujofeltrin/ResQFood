@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.reservation.ReservationToken;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
@@ -8,6 +9,7 @@ import javax.persistence.PersistenceContext;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+@Primary
 @Repository("reservationTokenJpaDao")
 public class ReservationTokenJpaDao implements ReservationTokenDao {
 

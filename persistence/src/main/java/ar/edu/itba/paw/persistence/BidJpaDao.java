@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.auction.Bid;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
@@ -10,6 +11,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
+@Primary
 @Repository("bidJpaDao")
 public class BidJpaDao implements BidDao {
 
@@ -33,10 +35,11 @@ public class BidJpaDao implements BidDao {
     @Override
     public Optional<Bid> findHighestBid(final long auctionId) {
         return em.createQuery("FROM Bid b WHERE b.auctionId = :auctionId ORDER BY b.amount DESC", Bid.class)
-                .setParameter("auctionId", auctionId)
-                .setMaxResults(1)
-                .getResultStream()
-                .findFirst();
+            .setParameter("auctionId", auctionId)
+            .setMaxResults(1)
+            .getResultList()
+            .stream()
+            .findFirst();
     }
 
     @Override

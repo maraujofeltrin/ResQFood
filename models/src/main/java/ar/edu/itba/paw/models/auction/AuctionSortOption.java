@@ -8,7 +8,9 @@ package ar.edu.itba.paw.models.auction;
  */
 public enum AuctionSortOption {
     TIME_REMAINING_DESC("a.end_time DESC, a.id DESC"),
-    TIME_REMAINING_ASC("a.end_time ASC, a.id ASC");
+    TIME_REMAINING_ASC("a.end_time ASC, a.id ASC"),
+    PRICE_ASC("COALESCE(a.current_bid, a.initial_price) ASC, a.id ASC"),
+    PRICE_DESC("COALESCE(a.current_bid, a.initial_price) DESC, a.id DESC");
 
     private final String orderByClause;
 

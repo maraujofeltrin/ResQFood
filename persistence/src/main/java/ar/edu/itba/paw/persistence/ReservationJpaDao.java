@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.reservation.Reservation;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
 
+@Primary
 @Repository("reservationJpaDao")
 public class ReservationJpaDao implements ReservationDao {
 
@@ -87,9 +89,10 @@ public class ReservationJpaDao implements ReservationDao {
     @Override
     public Optional<Reservation> findByPickupCode(final String pickupCode) {
         return em.createQuery("FROM Reservation r WHERE r.pickupCode = :code", Reservation.class)
-                .setParameter("code", pickupCode)
-                .getResultStream()
-                .findFirst();
+            .setParameter("code", pickupCode)
+            .getResultList()
+            .stream()
+            .findFirst();
     }
 
     private void appendReservationFilters(StringBuilder hql, List<Object> params, Long commerceId, Long customerId, String query, Reservation.Status status, boolean excludeAuctionPacks) {
@@ -234,12 +237,13 @@ public class ReservationJpaDao implements ReservationDao {
     public Optional<Long> findBestSellingPackId(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to) {
         return em.createQuery("SELECT r.packId FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = 'PAID' AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY r.packId ORDER BY COUNT(r.id) DESC", Long.class)
-                .setParameter("commerceId", commerceId)
-                .setParameter("start", from)
-                .setParameter("end", to)
-                .setMaxResults(1)
-                .getResultStream()
-                .findFirst();
+            .setParameter("commerceId", commerceId)
+            .setParameter("start", from)
+            .setParameter("end", to)
+            .setMaxResults(1)
+            .getResultList()
+            .stream()
+            .findFirst();
     }
 
     @Override

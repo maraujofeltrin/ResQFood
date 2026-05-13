@@ -5,6 +5,7 @@ import ar.edu.itba.paw.models.auction.AuctionSortOption;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackTag;
 import org.springframework.stereotype.Repository;
+import org.springframework.context.annotation.Primary;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Primary
 @Repository("auctionJpaDao")
 public class AuctionJpaDao implements AuctionDao {
 
@@ -31,17 +33,19 @@ public class AuctionJpaDao implements AuctionDao {
     @Override
     public Optional<Auction> findById(final long id) {
         return em.createQuery("SELECT a FROM Auction a JOIN FETCH a.pack p WHERE a.id = :id", Auction.class)
-                .setParameter("id", id)
-                .getResultStream()
-                .findFirst();
+            .setParameter("id", id)
+            .getResultList()
+            .stream()
+            .findFirst();
     }
 
     @Override
     public Optional<Auction> findByPackId(final long packId) {
         return em.createQuery("SELECT a FROM Auction a JOIN FETCH a.pack p WHERE p.id = :packId", Auction.class)
-                .setParameter("packId", packId)
-                .getResultStream()
-                .findFirst();
+            .setParameter("packId", packId)
+            .getResultList()
+            .stream()
+            .findFirst();
     }
 
     private void appendFilterJoinsAndConditions(StringBuilder hql, List<Object> params, String query, List<PackTag> tags, String city, List<String> timeRanges, boolean requirePositiveStock) {
