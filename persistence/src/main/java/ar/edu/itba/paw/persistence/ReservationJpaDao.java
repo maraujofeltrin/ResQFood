@@ -214,12 +214,20 @@ public class ReservationJpaDao implements ReservationDao {
     @Override
     public List<Object[]> countPaidReservationsPerDay(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to) {
-        // HQL function call DATE() depends on dialect, assuming it works or we use Hibernate specific syntax
-        return em.createQuery("SELECT FUNCTION('DATE', r.reservationDate) as day, COUNT(r) as cnt FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = 'PAID' AND r.reservationDate >= :start AND r.reservationDate < :end GROUP BY FUNCTION('DATE', r.reservationDate) ORDER BY day ASC", Object[].class)
-                .setParameter("commerceId", commerceId)
-                .setParameter("start", from)
-                .setParameter("end", to)
-                .getResultList();
+        // Use native SQL to group by date to avoid HQL function typing issues across dialects
+        final String sql = "SELECT DATE(r.reservation_date) AS day, COUNT(r.*) AS cnt "
+            + "FROM reservations r JOIN packs p ON p.id = r.pack_id "
+            + "WHERE p.commerce_id = :commerceId AND r.status = 'PAID' "
+            + "AND r.reservation_date >= :start AND r.reservation_date < :end "
+            + "GROUP BY DATE(r.reservation_date) ORDER BY day ASC";
+
+        final javax.persistence.Query q = em.createNativeQuery(sql);
+        q.setParameter("commerceId", commerceId);
+        q.setParameter("start", java.sql.Timestamp.valueOf(from));
+        q.setParameter("end", java.sql.Timestamp.valueOf(to));
+        @SuppressWarnings("unchecked")
+        final List<Object[]> results = q.getResultList();
+        return results;
     }
 
     @Override
