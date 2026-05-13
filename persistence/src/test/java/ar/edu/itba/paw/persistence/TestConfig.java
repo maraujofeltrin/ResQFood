@@ -51,7 +51,7 @@ public class TestConfig {
 
         final Properties properties = new Properties();
         properties.setProperty("hibernate.dialect", "org.hibernate.dialect.HSQLDialect");
-        properties.setProperty("hibernate.show_sql", "true");
+        properties.setProperty("hibernate.show_sql", "false");
         properties.setProperty("format_sql", "true");
         factoryBean.setJpaProperties(properties);
 
