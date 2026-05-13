@@ -49,7 +49,7 @@ public class AuctionJpaDao implements AuctionDao {
     }
 
     private void appendFilterJoinsAndConditions(StringBuilder hql, List<Object> params, String query, List<PackTag> tags, String city, List<String> timeRanges, boolean requirePositiveStock) {
-        hql.append("FROM Auction a JOIN a.pack p ");
+        hql.append("FROM Auction a JOIN FETCH a.pack p ");
         // Note: As Pack is not yet mapped with Commerce in this snippet, we assume standard properties.
         // But we need commerce to filter by city and query. We can join Commerce if mapped, or use subqueries.
         // Assuming we can join commerce:
@@ -156,7 +156,13 @@ public class AuctionJpaDao implements AuctionDao {
         typedQuery.setMaxResults(pageSize);
         typedQuery.setFirstResult((page - 1) * pageSize);
 
-        return typedQuery.getResultList();
+        List<Auction> auctions = typedQuery.getResultList();
+        for (final Auction auction : auctions) {
+            if (auction.getPack() != null) {
+                auction.getPack().getCommerceId();
+            }
+        }
+        return auctions;
     }
 
     @Override
