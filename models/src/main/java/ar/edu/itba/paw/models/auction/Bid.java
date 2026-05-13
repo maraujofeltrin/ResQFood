@@ -1,14 +1,32 @@
 package ar.edu.itba.paw.models.auction;
 
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "bids")
 public class Bid {
 
-    private final Long id;
-    private final Long auctionId;
-    private final Long clientId;
-    private final Double amount;
-    private final LocalDateTime timestamp;
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "bids_id_seq")
+    @SequenceGenerator(sequenceName = "bids_id_seq", name = "bids_id_seq", allocationSize = 1)
+    private Long id;
+
+    @Column(name = "auction_id", nullable = false)
+    private Long auctionId;
+
+    @Column(name = "client_id", nullable = false)
+    private Long clientId;
+
+    @Column(nullable = false)
+    private Double amount;
+
+    @Column(nullable = false)
+    private LocalDateTime timestamp;
+
+    protected Bid() {
+        // Just for Hibernate
+    }
 
     public Bid(Long id, Long auctionId, Long clientId, Double amount, LocalDateTime timestamp) {
         this.id = id;

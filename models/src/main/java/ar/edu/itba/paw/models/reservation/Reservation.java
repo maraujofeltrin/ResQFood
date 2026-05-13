@@ -1,7 +1,13 @@
 package ar.edu.itba.paw.models.reservation;
 
+import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.user.Client;
+
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "reservations")
 public class Reservation {
     public enum Status {
         RESERVED,
@@ -9,16 +15,50 @@ public class Reservation {
         CANCELED
     }
 
-    private final Long id;
-    private final Long customerId;
-    private final Long packId;
-    private final LocalDateTime reservationDate;
-    private final Double finalPrice;
-    private final Status status;
-    private final String pickupCode;
-    private final LocalDateTime pickupConfirmationDate;
-    private final Integer quantity;
-    private final String pickupWindow;
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "reservations_id_seq")
+    @SequenceGenerator(sequenceName = "reservations_id_seq", name = "reservations_id_seq", allocationSize = 1)
+    private Long id;
+
+    @Column(name = "customer_id")
+    private Long customerId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id", insertable = false, updatable = false)
+    private Client customer;
+
+    @Column(name = "pack_id")
+    private Long packId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pack_id", insertable = false, updatable = false)
+    private Pack pack;
+
+    @Column(name = "reservation_date")
+    private LocalDateTime reservationDate;
+
+    @Column(name = "final_price")
+    private Double finalPrice;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50)
+    private Status status;
+
+    @Column(name = "pickup_code", unique = true, length = 255)
+    private String pickupCode;
+
+    @Column(name = "pickup_confirmation_date")
+    private LocalDateTime pickupConfirmationDate;
+
+    @Column(nullable = false)
+    private Integer quantity;
+
+    @Column(name = "pickup_window", length = 512)
+    private String pickupWindow;
+
+    protected Reservation() {
+        // Just for Hibernate
+    }
 
     public Reservation(Long id, Long customerId, Long packId, LocalDateTime reservationDate, Double finalPrice,
             Status status, String pickupCode, LocalDateTime pickupConfirmationDate, Integer quantity,
@@ -43,8 +83,16 @@ public class Reservation {
         return customerId;
     }
 
+    public Client getCustomer() {
+        return customer;
+    }
+
     public Long getPackId() {
         return packId;
+    }
+
+    public Pack getPack() {
+        return pack;
     }
 
     public LocalDateTime getReservationDate() {

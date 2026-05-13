@@ -1,7 +1,10 @@
 package ar.edu.itba.paw.models.reservation;
 
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "reservation_tokens")
 public class ReservationToken {
 
     public enum Action {
@@ -9,12 +12,29 @@ public class ReservationToken {
         REJECT
     }
 
-    private final String token;
-    private final Long reservationId;
-    private final Action action;
-    private final boolean used;
-    private final LocalDateTime createdAt;
-    private final LocalDateTime expiresAt;
+    @Id
+    @Column(length = 255)
+    private String token;
+
+    @Column(name = "reservation_id", nullable = false)
+    private Long reservationId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50, nullable = false)
+    private Action action;
+
+    @Column(nullable = false)
+    private boolean used;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "expires_at", nullable = false)
+    private LocalDateTime expiresAt;
+
+    protected ReservationToken() {
+        // Just for Hibernate
+    }
 
     public ReservationToken(final String token, final Long reservationId, final Action action, final boolean used,
             final LocalDateTime createdAt, final LocalDateTime expiresAt) {

@@ -2,9 +2,12 @@ package ar.edu.itba.paw.models.auction;
 
 import ar.edu.itba.paw.models.pack.Pack;
 
+import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
+@Entity
+@Table(name = "auctions")
 public class Auction {
 
     public enum Status {
@@ -13,15 +16,40 @@ public class Auction {
         CANCELLED
     }
 
-    private final Long id;
-    private final Pack pack;
-    private final Double initialPrice;
-    private final Double minBidIncrement;
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "auctions_id_seq")
+    @SequenceGenerator(sequenceName = "auctions_id_seq", name = "auctions_id_seq", allocationSize = 1)
+    private Long id;
+
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "pack_id")
+    private Pack pack;
+
+    @Column(name = "initial_price", nullable = false)
+    private Double initialPrice;
+
+    @Column(name = "min_bid_increment", nullable = false)
+    private Double minBidIncrement;
+
+    @Column(name = "current_bid")
     private Double currentBid;
+
+    @Column(name = "current_bidder_id")
     private Long currentBidderId;
-    private final LocalDateTime endTime;
+
+    @Column(name = "end_time", nullable = false)
+    private LocalDateTime endTime;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
     private Status status;
-    private final LocalDateTime createdAt;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    protected Auction() {
+        // Just for Hibernate
+    }
 
     public Auction(Long id, Pack pack, Double initialPrice, Double minBidIncrement, Double currentBid, Long currentBidderId,
                    LocalDateTime endTime, Status status, LocalDateTime createdAt) {
