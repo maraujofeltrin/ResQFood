@@ -28,14 +28,29 @@ public class CommerceMetrics {
     private final long totalReservations;
     private final String bestSellingPackTitle;
     private final int acceptanceRatePercent;
+    private final long canceledReservations;
+    private final BigDecimal averageTicket;
+    private final long uniqueClients;
+    private final List<TopPackEntry> topPacks;
+    private final List<TopClientEntry> topClients;
+    private final ClientRetention clientRetention;
 
     public CommerceMetrics(final List<DailySalesPoint> dailySales, final BigDecimal totalRevenue,
-            final long totalReservations, final String bestSellingPackTitle, final int acceptanceRatePercent) {
+            final long totalReservations, final String bestSellingPackTitle, final int acceptanceRatePercent,
+            final long canceledReservations, final BigDecimal averageTicket, final long uniqueClients,
+            final List<TopPackEntry> topPacks, final List<TopClientEntry> topClients,
+            final ClientRetention clientRetention) {
         this.dailySales = dailySales;
         this.totalRevenue = totalRevenue;
         this.totalReservations = totalReservations;
         this.bestSellingPackTitle = bestSellingPackTitle;
         this.acceptanceRatePercent = acceptanceRatePercent;
+        this.canceledReservations = canceledReservations;
+        this.averageTicket = averageTicket;
+        this.uniqueClients = uniqueClients;
+        this.topPacks = topPacks;
+        this.topClients = topClients;
+        this.clientRetention = clientRetention;
     }
 
     public List<DailySalesPoint> getDailySales() {
@@ -57,4 +72,29 @@ public class CommerceMetrics {
     public int getAcceptanceRatePercent() {
         return acceptanceRatePercent;
     }
+
+    public long getCanceledReservations() {
+        return canceledReservations;
+    }
+
+    public BigDecimal getAverageTicket() {
+        return averageTicket;
+    }
+
+    public long getUniqueClients() {
+        return uniqueClients;
+    }
+
+    public List<TopPackEntry> getTopPacks() {
+        return topPacks;
+    }
+
+    public List<TopClientEntry> getTopClients() {
+        return topClients;
+    }
+
+    public ClientRetention getClientRetention() {
+        return clientRetention;
+    }
 }
+

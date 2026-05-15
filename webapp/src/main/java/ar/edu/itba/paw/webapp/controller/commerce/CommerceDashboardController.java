@@ -45,6 +45,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import ar.edu.itba.paw.models.user.Client;
+import java.util.ArrayList;
 
 @Controller
 @RequestMapping("/commerce")
@@ -242,6 +243,12 @@ public class CommerceDashboardController {
             mav.addObject("totalReservations", 0);
             mav.addObject("bestSellingPackTitle", null);
             mav.addObject("acceptanceRatePercent", 0);
+            mav.addObject("canceledReservations", 0);
+            mav.addObject("averageTicket", 0);
+            mav.addObject("uniqueClients", 0);
+            mav.addObject("topPacks", new ArrayList<>());
+            mav.addObject("topClients", new ArrayList<>());
+            mav.addObject("clientRetention", null);
             return mav;
         }
         final CommerceMetricsFilterHelper.MetricsFilterResolution resolution = metricsFilterHelper
@@ -260,6 +267,12 @@ public class CommerceDashboardController {
         mav.addObject("totalReservations", metrics.getTotalReservations());
         mav.addObject("bestSellingPackTitle", metrics.getBestSellingPackTitle());
         mav.addObject("acceptanceRatePercent", metrics.getAcceptanceRatePercent());
+        mav.addObject("canceledReservations", metrics.getCanceledReservations());
+        mav.addObject("averageTicket", metrics.getAverageTicket());
+        mav.addObject("uniqueClients", metrics.getUniqueClients());
+        mav.addObject("topPacks", metrics.getTopPacks());
+        mav.addObject("topClients", metrics.getTopClients());
+        mav.addObject("clientRetention", metrics.getClientRetention());
         return mav;
     }
 
