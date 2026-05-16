@@ -309,4 +309,42 @@ public class ReservationJdbcDao implements ReservationDao {
                 Timestamp.valueOf(to));
         return count == null ? 0L : count.longValue();
     }
+
+    @Override
+    public long countCanceledReservationsInPeriod(final Long commerceId, final LocalDateTime from,
+            final LocalDateTime to) {
+                return 0;
+            }
+    
+    @Override
+    public BigDecimal averageTicketInPeriod(final Long commerceId, final LocalDateTime from,
+            final LocalDateTime to) {
+                return BigDecimal.ZERO;
+            }
+
+    @Override
+    public long countUniqueClientsInPeriod(final Long commerceId, final LocalDateTime from,
+            final LocalDateTime to) {
+                return 0;
+            }
+    
+    @Override
+    public List<Object[]> findTopSellingPacks(final Long commerceId, final LocalDateTime from,
+            final LocalDateTime to, final int limit) {
+                return List.of();   
+            }
+
+    @Override
+    public List<Object[]> findTopClientsByPaidReservations(final Long commerceId, final LocalDateTime from,
+            final LocalDateTime to, final int limit) {
+                return List.of();
+            }
+    
+    @Override
+    public long countNewClientsInPeriod(final Long commerceId, final LocalDateTime from,
+            final LocalDateTime to) {
+                return 0;
+            }
+    
+            
 }

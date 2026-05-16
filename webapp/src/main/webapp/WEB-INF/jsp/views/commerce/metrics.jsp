@@ -232,9 +232,11 @@ uri="http://java.sun.com/jsp/jstl/functions" %>
                     />
                   </c:when>
                   <c:otherwise>
-                    <div
-                      class="w-full h-40 bg-surface-container-lowest rounded-xl"
-                    ></div>
+                    <img
+                      src="${pageContext.request.contextPath}/images/pack-placeholder.svg"
+                      alt="Top pack"
+                      class="w-full h-40 object-cover rounded-xl"
+                    />
                   </c:otherwise>
                 </c:choose>
               </div>
