@@ -225,7 +225,7 @@ public class ReservationJpaDao implements ReservationDao {
         q.setParameter("commerceId", commerceId);
         q.setParameter("start", java.sql.Timestamp.valueOf(from));
         q.setParameter("end", java.sql.Timestamp.valueOf(to));
-        @SuppressWarnings("unchecked")
+
         final List<Object[]> results = q.getResultList();
         return results;
     }

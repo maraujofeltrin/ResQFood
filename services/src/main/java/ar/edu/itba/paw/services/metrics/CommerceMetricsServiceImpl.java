@@ -82,8 +82,8 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
         }
 
         final List<CommerceMetrics.DailySalesPoint> daily = new ArrayList<>();
-        final LocalDate startDate = from.toLocalDate();
-        final LocalDate endDate = to.toLocalDate();
+        final LocalDate startDate = from.atZone(ZoneOffset.UTC).withZoneSameInstant(displayZone).toLocalDate();
+        final LocalDate endDate = to.atZone(ZoneOffset.UTC).withZoneSameInstant(displayZone).toLocalDate();
         final int days = (int) ChronoUnit.DAYS.between(startDate, endDate) + 1;
         for (int i = 0; i < days; i++) {
             final LocalDate d = startDate.plusDays(i);

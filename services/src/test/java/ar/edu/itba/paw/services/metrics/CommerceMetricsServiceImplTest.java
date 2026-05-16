@@ -63,11 +63,13 @@ class CommerceMetricsServiceImplTest {
         final CommerceMetrics result = commerceMetricsService.getCommerceMetrics(COMMERCE_ID, from, to);
 
         // 3. Asserts
-        assertEquals(2, result.getDailySales().size());
+        assertEquals(3, result.getDailySales().size());
         assertEquals("2030-01-01", result.getDailySales().get(0).getDate());
         assertEquals(5L, result.getDailySales().get(0).getCount());
         assertEquals("2030-01-02", result.getDailySales().get(1).getDate());
         assertEquals(0L, result.getDailySales().get(1).getCount());
+        assertEquals("2030-01-03", result.getDailySales().get(2).getDate());
+        assertEquals(0L, result.getDailySales().get(2).getCount());
     }
 
     @Test
