@@ -43,16 +43,6 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
         this.displayZone = businessZone;
     }
 
-    /**
-     * Backwards-compatible constructor used by tests that do not provide a ClientService.
-     */
-    public CommerceMetricsServiceImpl(final ReservationDao reservationDao, final PackDao packDao,
-                                      final ZoneId businessZone) {
-        this.reservationDao = reservationDao;
-        this.packDao = packDao;
-        this.clientService = null;
-        this.displayZone = businessZone;
-    }
 
     @Override
     public CommerceMetrics getCommerceMetrics(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {

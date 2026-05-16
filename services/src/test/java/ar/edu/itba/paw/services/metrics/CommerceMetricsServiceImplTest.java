@@ -4,6 +4,7 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
+import ar.edu.itba.paw.services.user.ClientService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,11 +37,14 @@ class CommerceMetricsServiceImplTest {
     @Mock
     private PackDao packDao;
 
+    @Mock
+    private ClientService clientService;
+
     private CommerceMetricsServiceImpl commerceMetricsService;
 
     @BeforeEach
     void setUp() {
-        commerceMetricsService = new CommerceMetricsServiceImpl(reservationDao, packDao, BUSINESS_ZONE);
+        commerceMetricsService = new CommerceMetricsServiceImpl(reservationDao, packDao, clientService, BUSINESS_ZONE);
     }
 
     @Test
