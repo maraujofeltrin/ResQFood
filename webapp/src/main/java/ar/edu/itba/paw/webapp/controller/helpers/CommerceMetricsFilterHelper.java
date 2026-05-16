@@ -29,9 +29,11 @@ public class CommerceMetricsFilterHelper {
         final ZonedDateTime now = ZonedDateTime.now(businessZone);
         try {
             if (days != null && days > 0) {
-                final LocalDate fromDate = now.toLocalDate().minusDays(days);
-                return new MetricsFilterResolution(toUtcStartOfDay(fromDate),
-                    now.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime(), "", "", days);
+                final int effectiveDays = Math.max(1, days);
+                final LocalDate toDate = now.toLocalDate();
+                final LocalDate fromDate = toDate.minusDays(effectiveDays - 1L);
+                return new MetricsFilterResolution(toUtcStartOfDay(fromDate), toUtcEndOfDay(toDate),
+                    "", "", effectiveDays);
             }
             if (fromStr != null && !fromStr.isEmpty() && toStr != null && !toStr.isEmpty()) {
                 final LocalDate fromDate = LocalDate.parse(fromStr);
@@ -47,9 +49,9 @@ public class CommerceMetricsFilterHelper {
     }
 
     private MetricsFilterResolution defaultResolution(final ZonedDateTime now) {
-        final LocalDate fromDate = now.toLocalDate().minusDays(7);
-        return new MetricsFilterResolution(toUtcStartOfDay(fromDate),
-            now.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime(), "", "", 7);
+        final LocalDate toDate = now.toLocalDate();
+        final LocalDate fromDate = toDate.minusDays(6);
+        return new MetricsFilterResolution(toUtcStartOfDay(fromDate), toUtcEndOfDay(toDate), "", "", 7);
     }
 
     private LocalDateTime toUtcStartOfDay(final LocalDate date) {

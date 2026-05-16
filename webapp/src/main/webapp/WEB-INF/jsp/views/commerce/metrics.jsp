@@ -249,25 +249,6 @@ uri="http://java.sun.com/jsp/jstl/functions" %>
           <div class="bg-surface-container-lowest rounded-xl p-6">
             <div class="flex items-center gap-3">
               <div
-                class="w-10 h-10 rounded-lg bg-error-container p-2 text-on-error-container"
-              >
-                <span class="material-symbols-outlined">cancel</span>
-              </div>
-              <div>
-                <div class="text-sm text-secondary">
-                  <spring:message
-                    code="commerce.metrics.canceledReservations"
-                  />
-                </div>
-                <div class="text-xl font-headline font-bold text-primary">
-                  <c:out value="${canceledReservations}" />
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="bg-surface-container-lowest rounded-xl p-6">
-            <div class="flex items-center gap-3">
-              <div
                 class="w-10 h-10 rounded-lg bg-surface-container p-2 text-on-surface-variant"
               >
                 <span class="material-symbols-outlined">receipt_long</span>
@@ -302,6 +283,25 @@ uri="http://java.sun.com/jsp/jstl/functions" %>
                 </div>
                 <div class="text-xl font-headline font-bold text-primary">
                   <c:out value="${uniqueClients}" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-surface-container-lowest rounded-xl p-6">
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-lg bg-surface-container p-2 text-on-surface-variant"
+              >
+                <span class="material-symbols-outlined">cancel</span>
+              </div>
+              <div>
+                <div class="text-sm text-secondary">
+                  <spring:message
+                    code="commerce.metrics.canceledReservations"
+                  />
+                </div>
+                <div class="text-xl font-headline font-bold text-primary">
+                  <c:out value="${canceledReservations}" />
                 </div>
               </div>
             </div>
@@ -349,7 +349,7 @@ uri="http://java.sun.com/jsp/jstl/functions" %>
                 <div class="text-sm text-secondary">
                   <spring:message code="commerce.metrics.new" />
                 </div>
-                <div class="font-bold text-primary">
+                <div class="font-bold" style="color: #6fdc8a">
                   <c:out value="${clientRetention.newClients}" /> (<c:out
                     value="${clientRetention.newPercent}"
                   />%)
@@ -359,7 +359,7 @@ uri="http://java.sun.com/jsp/jstl/functions" %>
                 <div class="text-sm text-secondary">
                   <spring:message code="commerce.metrics.returning" />
                 </div>
-                <div class="font-bold text-primary-fixed">
+                <div class="font-bold text-primary">
                   <c:out value="${clientRetention.returningClients}" /> (<c:out
                     value="${clientRetention.returningPercent}"
                   />%)
