@@ -141,4 +141,32 @@ public class CommerceJpaDaoTest {
         assertEquals(newCategory, updatedCommerce.getCategory());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerces"));
     }
+
+    @Test
+    public void testFilterCommerces() {
+        // 1. Setup
+        commerceDao.createCommerce(userId, COMMERCIAL_NAME, CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+        em.flush();
+
+        // 2. Ejercicio
+        final java.util.List<Commerce> commerces = commerceDao.filterCommerces("Test", null, 1, 10);
+
+        // 3. Asserts
+        assertFalse(commerces.isEmpty());
+        assertEquals(1, commerces.size());
+        assertEquals(COMMERCIAL_NAME, commerces.get(0).getCommercialName());
+    }
+
+    @Test
+    public void testCountFilteredCommerces() {
+        // 1. Setup
+        commerceDao.createCommerce(userId, COMMERCIAL_NAME, CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+        em.flush();
+
+        // 2. Ejercicio
+        final int count = commerceDao.countFilteredCommerces(null, CITY.getCityName());
+
+        // 3. Asserts
+        assertEquals(1, count);
+    }
 }

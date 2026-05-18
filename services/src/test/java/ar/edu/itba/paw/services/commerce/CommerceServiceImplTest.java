@@ -81,4 +81,29 @@ class CommerceServiceImplTest {
         // 3. Asserts
         assertEquals("Category is required", thrown.getMessage());
     }
+
+    @Test
+    void testFilterCommercesUsesDefaultPageAndSizeWhenInvalid() {
+        // 1. Setup
+        when(commerceDao.filterCommerces("query", "city", 1, 12)).thenReturn(java.util.Collections.emptyList());
+
+        // 2. Ejercicio
+        commerceService.filterCommerces("query", "city", -5, 0);
+
+        // 3. Asserts
+        org.mockito.Mockito.verify(commerceDao).filterCommerces("query", "city", 1, 12);
+    }
+
+    @Test
+    void testCountFilteredCommercesDelegatesToDao() {
+        // 1. Setup
+        when(commerceDao.countFilteredCommerces("query", "city")).thenReturn(10);
+
+        // 2. Ejercicio
+        int count = commerceService.countFilteredCommerces("query", "city");
+
+        // 3. Asserts
+        assertEquals(10, count);
+        org.mockito.Mockito.verify(commerceDao).countFilteredCommerces("query", "city");
+    }
 }
