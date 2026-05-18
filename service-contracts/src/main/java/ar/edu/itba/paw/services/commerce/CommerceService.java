@@ -12,4 +12,8 @@ public interface CommerceService {
      */
     void updateProfileFields(long userId, Commerce.Category category, String street, Integer streetNumber,
             Municipality city, String province, String postalCode, String openingTime, String closingTime);
+
+    java.util.List<Commerce> filterCommerces(String query, String cityFilter, int page, int pageSize);
+
+    int countFilteredCommerces(String query, String cityFilter);
 }

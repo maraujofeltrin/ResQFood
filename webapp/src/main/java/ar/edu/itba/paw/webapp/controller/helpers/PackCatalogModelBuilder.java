@@ -10,8 +10,10 @@ import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.services.commerce.CommerceReviewService;
 import ar.edu.itba.paw.services.pack.PackFavoriteService;
 import ar.edu.itba.paw.services.pack.PackService;
+import ar.edu.itba.paw.services.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,16 +43,19 @@ public class PackCatalogModelBuilder {
     private static final int PAGE_SIZE = 6;
     private static final int AUCTION_CAROUSEL_SIZE = 6;
     private static final int FAVORITES_CAROUSEL_SIZE = 6;
+    private static final int COMMERCES_CAROUSEL_SIZE = 4;
     private static final String TYPE_PACKS = "packs";
     private static final String TYPE_AUCTIONS = "auctions";
     private static final String TYPE_FAVORITES = "favorites";
+    private static final String TYPE_COMMERCES = "commerces";
     private static final Set<String> ALLOWED_TIME_RANGES = Set.of("morning", "afternoon", "evening");
 
     private enum CatalogMode {
         ALL,
         PACKS,
         AUCTIONS,
-        FAVORITES
+        FAVORITES,
+        COMMERCES
     }
 
     private final PackService packService;
@@ -58,17 +63,23 @@ public class PackCatalogModelBuilder {
     private final AuctionService auctionService;
     private final PackFavoriteService packFavoriteService;
     private final AuthenticatedUserResolver authResolver;
+    private final CommerceReviewService commerceReviewService;
+    private final UserService userService;
 
     @Autowired
     public PackCatalogModelBuilder(final PackService packService, final CommerceService commerceService,
             final AuctionService auctionService,
             final PackFavoriteService packFavoriteService,
-            final AuthenticatedUserResolver authResolver) {
+            final AuthenticatedUserResolver authResolver,
+            final CommerceReviewService commerceReviewService,
+            final UserService userService) {
         this.packService = packService;
         this.commerceService = commerceService;
         this.auctionService = auctionService;
         this.packFavoriteService = packFavoriteService;
         this.authResolver = authResolver;
+        this.commerceReviewService = commerceReviewService;
+        this.userService = userService;
     }
 
     public ModelAndView buildPackCatalog(final CatalogFilterForm form) {
@@ -104,20 +115,25 @@ public class PackCatalogModelBuilder {
         final boolean favoritesSelected = clientLoggedIn && selectedTypes.contains(TYPE_FAVORITES);
         final boolean packsSelected = selectedTypes.contains(TYPE_PACKS);
         final boolean auctionsSelected = selectedTypes.contains(TYPE_AUCTIONS);
+        final boolean commercesSelected = selectedTypes.contains(TYPE_COMMERCES);
 
         final CatalogMode catalogMode;
+        final int activeTypesCount = (packsSelected ? 1 : 0) + (auctionsSelected ? 1 : 0) + (commercesSelected ? 1 : 0);
         if (favoritesSelected) {
             catalogMode = CatalogMode.FAVORITES;
-        } else if ((packsSelected && auctionsSelected) || (!packsSelected && !auctionsSelected)) {
+        } else if (activeTypesCount == 0 || activeTypesCount > 1) {
             catalogMode = CatalogMode.ALL;
         } else if (packsSelected) {
             catalogMode = CatalogMode.PACKS;
-        } else {
+        } else if (auctionsSelected) {
             catalogMode = CatalogMode.AUCTIONS;
+        } else {
+            catalogMode = CatalogMode.COMMERCES;
         }
 
         final boolean showAuctionsList = catalogMode == CatalogMode.AUCTIONS;
         final boolean showAuctionsCarousel = catalogMode == CatalogMode.ALL;
+        final boolean showCommercesCarousel = catalogMode == CatalogMode.ALL;
 
         final boolean catalogDirectSaleGridRequiresPositiveStock =
                 catalogMode == CatalogMode.ALL || catalogMode == CatalogMode.PACKS;
@@ -132,6 +148,7 @@ public class PackCatalogModelBuilder {
         int totalItems = 0;
         List<Pack> packs = Collections.emptyList();
         List<Auction> auctions = Collections.emptyList();
+        List<Commerce> commerces = Collections.emptyList();
 
         if (catalogMode == CatalogMode.FAVORITES) {
             totalItems = clientUserId != null ? packFavoriteService.countActiveFavoritePacks(clientUserId) : 0;
@@ -142,6 +159,8 @@ public class PackCatalogModelBuilder {
                     cityFilter,
                     safeTimeRange.isEmpty() ? null : safeTimeRange,
                     catalogAuctionListingRequiresPositiveStock);
+        } else if (catalogMode == CatalogMode.COMMERCES) {
+            totalItems = commerceService.countFilteredCommerces(trimmedQuery, cityFilter);
         } else {
             totalItems = packService.countFilteredPacks(
                     trimmedQuery,
@@ -168,6 +187,8 @@ public class PackCatalogModelBuilder {
                     safePage,
                     PAGE_SIZE,
                     catalogAuctionListingRequiresPositiveStock);
+        } else if (catalogMode == CatalogMode.COMMERCES) {
+            commerces = commerceService.filterCommerces(trimmedQuery, cityFilter, safePage, PAGE_SIZE);
         } else {
             packs = packService.filterPacks(
                     trimmedQuery,
@@ -191,6 +212,11 @@ public class PackCatalogModelBuilder {
                     1,
                     AUCTION_CAROUSEL_SIZE,
                     catalogAuctionListingRequiresPositiveStock);
+        }
+
+        List<Commerce> carouselCommerces = Collections.emptyList();
+        if (showCommercesCarousel) {
+            carouselCommerces = commerceService.filterCommerces(trimmedQuery, cityFilter, 1, COMMERCES_CAROUSEL_SIZE);
         }
 
         final Map<Long, String> commerceNames = new HashMap<>();
@@ -231,6 +257,15 @@ public class PackCatalogModelBuilder {
                             .orElse("—"));
         }
 
+        final Map<Long, Double> commerceRatings = new HashMap<>();
+        final Map<Long, Long> commerceImages = new HashMap<>();
+        final List<Commerce> commercesForEnrichment = new ArrayList<>(commerces);
+        commercesForEnrichment.addAll(carouselCommerces);
+        for (final Commerce c : commercesForEnrichment) {
+            commerceRatings.putIfAbsent(c.getUserId(), commerceReviewService.averageRatingForCommerce(c.getUserId()).orElse(0.0));
+            userService.findById(c.getUserId()).map(User::getProfileImageId).ifPresent(img -> commerceImages.putIfAbsent(c.getUserId(), img));
+        }
+
         final StringBuilder baseUrlBuilder = new StringBuilder("/packs");
         boolean firstParam = true;
         if (hasQuery) {
@@ -248,7 +283,7 @@ public class PackCatalogModelBuilder {
             baseUrlBuilder.append(firstParam ? "?" : "&").append("types=").append(selectedType);
             firstParam = false;
         }
-        if (catalogMode != CatalogMode.AUCTIONS && sortOption != PackSortOption.DATE_DESC) {
+        if (catalogMode != CatalogMode.AUCTIONS && catalogMode != CatalogMode.COMMERCES && sortOption != PackSortOption.DATE_DESC) {
             baseUrlBuilder.append(firstParam ? "?" : "&").append("sort=").append(sortOption.name());
             firstParam = false;
         }
@@ -322,9 +357,26 @@ public class PackCatalogModelBuilder {
         }
         favoritesViewAllBuilder.append(favViewFirst ? "?" : "&").append("types=").append(TYPE_FAVORITES);
 
+        final StringBuilder commercesViewAllBuilder = new StringBuilder("/packs");
+        boolean commViewFirst = true;
+        if (hasQuery) {
+            commercesViewAllBuilder.append(commViewFirst ? "?" : "&").append("q=")
+                    .append(java.net.URLEncoder.encode(trimmedQuery, StandardCharsets.UTF_8));
+            commViewFirst = false;
+        }
+        if (municipality != null) {
+            commercesViewAllBuilder.append(commViewFirst ? "?" : "&").append("location=").append(municipality.name());
+            commViewFirst = false;
+        }
+        commercesViewAllBuilder.append(commViewFirst ? "?" : "&").append("types=").append(TYPE_COMMERCES);
+
         mav.addObject("packs", packs);
         mav.addObject("auctions", auctions);
         mav.addObject("auctionsCarousel", carouselAuctions);
+        mav.addObject("commerces", commerces);
+        mav.addObject("commercesCarousel", carouselCommerces);
+        mav.addObject("commerceRatings", commerceRatings);
+        mav.addObject("commerceImages", commerceImages);
         mav.addObject("catalogMode", catalogMode.name());
         mav.addObject("commerceNames", commerceNames);
         mav.addObject("availableTags", PackTag.values());
@@ -342,6 +394,7 @@ public class PackCatalogModelBuilder {
         mav.addObject("paginationBaseUrl", baseUrlBuilder.toString());
         mav.addObject("auctionsViewAllUrl", auctionsViewAllBuilder.toString());
         mav.addObject("favoritesViewAllUrl", favoritesViewAllBuilder.toString());
+        mav.addObject("commercesViewAllUrl", commercesViewAllBuilder.toString());
 
         final Map<Long, Auction> favoritePackActiveAuctions = new HashMap<>();
         final List<Pack> favoritePacksForAuctionEnrichment = new ArrayList<>();

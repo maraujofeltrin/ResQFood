@@ -19,7 +19,7 @@ import java.util.Set;
  */
 public class CatalogFilterForm {
 
-    private static final Set<String> ALLOWED_TYPES = Set.of("packs", "auctions", "favorites");
+    private static final Set<String> ALLOWED_TYPES = Set.of("packs", "auctions", "favorites", "commerces");
     private static final Set<String> ALLOWED_TIME_RANGES = Set.of("morning", "afternoon", "evening");
 
     private String q;

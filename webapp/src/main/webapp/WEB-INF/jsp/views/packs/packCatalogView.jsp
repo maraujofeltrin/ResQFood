@@ -122,12 +122,40 @@
                 </section>
             </c:if>
 
+            <c:if test="${catalogMode eq 'ALL' and not empty commercesCarousel}">
+                <section class="mb-14">
+                    <div class="flex items-center justify-between gap-4 mb-6">
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-2xl font-headline font-bold text-on-surface"><spring:message code="pack.catalog.commerces.title" text="Explora por Comercio"/></h2>
+                        </div>
+                        <a href="${pageContext.request.contextPath}${commercesViewAllUrl}" class="text-sm font-semibold text-primary hover:underline">
+                            <spring:message code="pack.catalog.lastChance.viewAll"/>
+                        </a>
+                    </div>
+
+                    <div class="flex gap-6 overflow-x-auto pb-2 snap-x snap-mandatory hide-scrollbar">
+                        <c:forEach var="commerce" items="${commercesCarousel}">
+                            <div class="min-w-[280px] max-w-[320px] snap-start flex-shrink-0">
+                                <paw:commerceCard
+                                    commerceId="${commerce.userId}"
+                                    commerceName="${commerce.commercialName}"
+                                    category="${commerce.category}"
+                                    rating="${commerceRatings[commerce.userId]}"
+                                    imageId="${commerceImages[commerce.userId]}"
+                                />
+                            </div>
+                        </c:forEach>
+                    </div>
+                </section>
+            </c:if>
+
             <!-- Main Grid: All Available Packs -->
             <section>
                 <div class="flex items-center gap-3 mb-8">
                     <h2 class="text-2xl font-headline font-bold text-on-surface">
                         <c:choose>
                             <c:when test="${catalogMode eq 'FAVORITES'}"><spring:message code="pack.catalog.allFavorites"/></c:when>
+                            <c:when test="${catalogMode eq 'COMMERCES'}"><spring:message code="pack.catalog.allCommerces" text="Todos los comercios"/></c:when>
                             <c:when test="${not empty param.q}">
                                 <spring:message code="pack.catalog.searchResults" arguments="${fn:escapeXml(param.q)}"/>
                             </c:when>
@@ -158,7 +186,21 @@
                             </c:otherwise>
                         </c:choose>
                     </c:when>
-                    <c:when test="${catalogMode ne 'AUCTIONS' and catalogMode ne 'FAVORITES' and empty packs}">
+                    <c:when test="${catalogMode eq 'COMMERCES' and empty commerces}">
+                        <c:choose>
+                            <c:when test="${not empty param.q or not empty selectedTags}">
+                                <spring:message var="emptyTitle" code="pack.catalog.empty.search.commerces.title" text="No hay comercios para tu búsqueda"/>
+                                <spring:message var="emptyDesc"  code="pack.catalog.empty.search.commerces.description" text="Prueba con otros términos o filtros."/>
+                                <paw:packEmptyState icon="storefront" title="${emptyTitle}" description="${emptyDesc}" />
+                            </c:when>
+                            <c:otherwise>
+                                <spring:message var="emptyTitle" code="pack.catalog.empty.commerces.title" text="No hay comercios disponibles"/>
+                                <spring:message var="emptyDesc"  code="pack.catalog.empty.commerces.description" text="Vuelve a intentarlo más tarde."/>
+                                <paw:packEmptyState icon="storefront" title="${emptyTitle}" description="${emptyDesc}" />
+                            </c:otherwise>
+                        </c:choose>
+                    </c:when>
+                    <c:when test="${catalogMode ne 'AUCTIONS' and catalogMode ne 'FAVORITES' and catalogMode ne 'COMMERCES' and empty packs}">
                         <c:choose>
                             <c:when test="${not empty param.q or not empty selectedTags}">
                                 <spring:message var="emptyTitle" code="pack.catalog.empty.search.title"/>
@@ -223,6 +265,17 @@
                                             oldPrice="$${auction.pack.originalPrice}"
                                             commerceName="${commerceNames[auction.pack.id]}"
                                             auction="${true}"
+                                        />
+                                    </c:forEach>
+                                </c:when>
+                                <c:when test="${catalogMode eq 'COMMERCES'}">
+                                    <c:forEach var="commerce" items="${commerces}">
+                                        <paw:commerceCard
+                                            commerceId="${commerce.userId}"
+                                            commerceName="${commerce.commercialName}"
+                                            category="${commerce.category}"
+                                            rating="${commerceRatings[commerce.userId]}"
+                                            imageId="${commerceImages[commerce.userId]}"
                                         />
                                     </c:forEach>
                                 </c:when>
