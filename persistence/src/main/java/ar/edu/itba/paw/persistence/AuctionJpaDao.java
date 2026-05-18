@@ -2,6 +2,7 @@ package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.auction.AuctionSortOption;
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackTag;
 import org.springframework.stereotype.Repository;
@@ -48,13 +49,56 @@ public class AuctionJpaDao implements AuctionDao {
             .findFirst();
     }
 
-    private void appendFilterJoinsAndConditions(StringBuilder hql, List<Object> params, String query, List<PackTag> tags, String city, List<String> timeRanges, boolean requirePositiveStock) {
-        hql.append("FROM Auction a JOIN FETCH a.pack p ");
-        // Note: As Pack is not yet mapped with Commerce in this snippet, we assume standard properties.
-        // But we need commerce to filter by city and query. We can join Commerce if mapped, or use subqueries.
-        // Assuming we can join commerce:
-        // For now, let's use standard JPQL based on the assumption that Pack has a commerce mapped, or we just join the Commerce entity explicitly.
-        hql.append(", ar.edu.itba.paw.models.user.Commerce c WHERE p.commerceId = c.id ");
+    private void appendCityFilter(final StringBuilder hql, final List<Object> params, final String city) {
+        final Municipality municipality = Municipality.fromCityName(city);
+        if (municipality != null) {
+            hql.append("AND c.city = ?").append(params.size() + 1).append(" ");
+            params.add(municipality);
+        }
+    }
+
+    private void appendQueryFilter(final StringBuilder hql, final List<Object> params, final String query) {
+        if (query == null || query.isBlank()) {
+            return;
+        }
+        final String escapedQuery = query.trim()
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
+        final String pattern = "%" + escapedQuery + "%";
+        hql.append("AND (LOWER(p.title) LIKE LOWER(?").append(params.size() + 1).append(") ESCAPE '\\' OR LOWER(c.commercialName) LIKE LOWER(?").append(params.size() + 2).append(") ESCAPE '\\') ");
+        params.add(pattern);
+        params.add(pattern);
+    }
+
+    private void appendTimeRangeFilter(final StringBuilder hql, final List<String> timeRanges) {
+        if (timeRanges == null || timeRanges.isEmpty()) {
+            return;
+        }
+        final List<String> timeConditions = new ArrayList<>();
+        for (final String range : timeRanges) {
+            switch (range) {
+                case "morning":
+                    timeConditions.add("CAST(SUBSTRING(c.openingTime, 1, LOCATE(':', c.openingTime) - 1) AS int) < 12");
+                    break;
+                case "afternoon":
+                    timeConditions.add("(CAST(SUBSTRING(c.openingTime, 1, LOCATE(':', c.openingTime) - 1) AS int) >= 12 AND CAST(SUBSTRING(c.openingTime, 1, LOCATE(':', c.openingTime) - 1) AS int) < 17)");
+                    break;
+                case "evening":
+                    timeConditions.add("CAST(SUBSTRING(c.openingTime, 1, LOCATE(':', c.openingTime) - 1) AS int) >= 17");
+                    break;
+                default:
+                    break;
+            }
+        }
+        if (!timeConditions.isEmpty()) {
+            hql.append("AND (").append(String.join(" OR ", timeConditions)).append(") ");
+        }
+    }
+
+    private void appendFilterJoinsAndConditions(StringBuilder hql, List<Object> params, String query, List<PackTag> tags, String city, List<String> timeRanges, boolean requirePositiveStock, boolean fetchPack) {
+        hql.append("FROM Auction a ").append(fetchPack ? "JOIN FETCH" : "JOIN").append(" a.pack p ");
+        hql.append(", ar.edu.itba.paw.models.user.Commerce c WHERE p.commerceId = c.userId ");
 
         if (tags != null && !tags.isEmpty()) {
             hql.append("AND EXISTS (SELECT 1 FROM p.tags t WHERE t IN (?").append(params.size() + 1).append(")) ");
@@ -69,41 +113,9 @@ public class AuctionJpaDao implements AuctionDao {
             hql.append("AND p.stock > 0 ");
         }
 
-        if (query != null && !query.isBlank()) {
-            final String escapedQuery = query.trim()
-                    .replace("\\", "\\\\")
-                    .replace("%", "\\%")
-                    .replace("_", "\\_");
-            final String pattern = "%" + escapedQuery + "%";
-            hql.append("AND (LOWER(p.title) LIKE LOWER(?").append(params.size() + 1).append(") ESCAPE '\\' OR LOWER(c.commercialName) LIKE LOWER(?").append(params.size() + 2).append(") ESCAPE '\\') ");
-            params.add(pattern);
-            params.add(pattern);
-        }
-
-        if (city != null && !city.isBlank()) {
-            hql.append("AND c.city = ?").append(params.size() + 1).append(" ");
-            params.add(city);
-        }
-
-        if (timeRanges != null && !timeRanges.isEmpty()) {
-            List<String> timeConditions = new ArrayList<>();
-            for (String range : timeRanges) {
-                switch (range) {
-                    case "morning":
-                        timeConditions.add("CAST(SUBSTRING(c.openingTime, 1, LOCATE(':', c.openingTime) - 1) AS int) < 12");
-                        break;
-                    case "afternoon":
-                        timeConditions.add("(CAST(SUBSTRING(c.openingTime, 1, LOCATE(':', c.openingTime) - 1) AS int) >= 12 AND CAST(SUBSTRING(c.openingTime, 1, LOCATE(':', c.openingTime) - 1) AS int) < 17)");
-                        break;
-                    case "evening":
-                        timeConditions.add("CAST(SUBSTRING(c.openingTime, 1, LOCATE(':', c.openingTime) - 1) AS int) >= 17");
-                        break;
-                }
-            }
-            if (!timeConditions.isEmpty()) {
-                hql.append("AND (").append(String.join(" OR ", timeConditions)).append(") ");
-            }
-        }
+        appendQueryFilter(hql, params, query);
+        appendCityFilter(hql, params, city);
+        appendTimeRangeFilter(hql, timeRanges);
     }
 
     @Override
@@ -114,26 +126,20 @@ public class AuctionJpaDao implements AuctionDao {
                                         final boolean requirePositiveStock) {
         StringBuilder hql = new StringBuilder("SELECT a ");
         List<Object> params = new ArrayList<>();
-        appendFilterJoinsAndConditions(hql, params, query, tags, city, timeRanges, requirePositiveStock);
+        appendFilterJoinsAndConditions(hql, params, query, tags, city, timeRanges, requirePositiveStock, true);
 
         if (tags != null && !tags.isEmpty()) {
             // Need all tags to match, not just one.
-            hql = new StringBuilder("SELECT a FROM Auction a JOIN a.pack p, ar.edu.itba.paw.models.user.Commerce c JOIN p.tags t WHERE p.commerceId = c.id ");
+            hql = new StringBuilder("SELECT a FROM Auction a JOIN a.pack p, ar.edu.itba.paw.models.user.Commerce c JOIN p.tags t WHERE p.commerceId = c.userId ");
             hql.append("AND a.status = 'ACTIVE' AND a.endTime > ?1 AND p.active = true AND p.deleted = false ");
             params.clear();
             params.add(LocalDateTime.now(ZoneOffset.UTC));
-            if (requirePositiveStock) hql.append("AND p.stock > 0 ");
-            // Append other query/city/time conditions here for tags
-            if (query != null && !query.isBlank()) {
-                final String pattern = "%" + query.trim().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
-                hql.append("AND (LOWER(p.title) LIKE LOWER(?2) ESCAPE '\\' OR LOWER(c.commercialName) LIKE LOWER(?3) ESCAPE '\\') ");
-                params.add(pattern);
-                params.add(pattern);
+            if (requirePositiveStock) {
+                hql.append("AND p.stock > 0 ");
             }
-            if (city != null && !city.isBlank()) {
-                hql.append("AND c.city = ?").append(params.size() + 1).append(" ");
-                params.add(city);
-            }
+            appendQueryFilter(hql, params, query);
+            appendCityFilter(hql, params, city);
+            appendTimeRangeFilter(hql, timeRanges);
             // Group by to enforce ALL tags
             hql.append("AND t IN (?").append(params.size() + 1).append(") GROUP BY a HAVING COUNT(DISTINCT t) = ?").append(params.size() + 2).append(" ");
             params.add(tags);
@@ -171,24 +177,19 @@ public class AuctionJpaDao implements AuctionDao {
                                      final boolean requirePositiveStock) {
         StringBuilder hql = new StringBuilder("SELECT COUNT(DISTINCT a.id) ");
         List<Object> params = new ArrayList<>();
-        appendFilterJoinsAndConditions(hql, params, query, tags, city, timeRanges, requirePositiveStock);
+        appendFilterJoinsAndConditions(hql, params, query, tags, city, timeRanges, requirePositiveStock, false);
 
         if (tags != null && !tags.isEmpty()) {
-            hql = new StringBuilder("SELECT COUNT(DISTINCT a.id) FROM Auction a JOIN a.pack p, ar.edu.itba.paw.models.user.Commerce c JOIN p.tags t WHERE p.commerceId = c.id ");
+            hql = new StringBuilder("SELECT COUNT(DISTINCT a.id) FROM Auction a JOIN a.pack p, ar.edu.itba.paw.models.user.Commerce c JOIN p.tags t WHERE p.commerceId = c.userId ");
             hql.append("AND a.status = 'ACTIVE' AND a.endTime > ?1 AND p.active = true AND p.deleted = false ");
             params.clear();
             params.add(LocalDateTime.now(ZoneOffset.UTC));
-            if (requirePositiveStock) hql.append("AND p.stock > 0 ");
-            if (query != null && !query.isBlank()) {
-                final String pattern = "%" + query.trim().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
-                hql.append("AND (LOWER(p.title) LIKE LOWER(?2) ESCAPE '\\' OR LOWER(c.commercialName) LIKE LOWER(?3) ESCAPE '\\') ");
-                params.add(pattern);
-                params.add(pattern);
+            if (requirePositiveStock) {
+                hql.append("AND p.stock > 0 ");
             }
-            if (city != null && !city.isBlank()) {
-                hql.append("AND c.city = ?").append(params.size() + 1).append(" ");
-                params.add(city);
-            }
+            appendQueryFilter(hql, params, query);
+            appendCityFilter(hql, params, city);
+            appendTimeRangeFilter(hql, timeRanges);
             // For count, JPA can't count grouped easily, we might need a subquery for exact tag match
             hql.append("AND (SELECT COUNT(DISTINCT t2) FROM p.tags t2 WHERE t2 IN (?").append(params.size() + 1).append(")) = ?").append(params.size() + 2).append(" ");
             params.add(tags);
@@ -242,7 +243,7 @@ public class AuctionJpaDao implements AuctionDao {
     }
 
     private void appendParticipatedConditions(StringBuilder hql, List<Object> params, long clientId, Auction.Status status, String query) {
-        hql.append("FROM Auction a JOIN a.pack p, ar.edu.itba.paw.models.user.Commerce c WHERE p.commerceId = c.id ");
+        hql.append("FROM Auction a JOIN a.pack p, ar.edu.itba.paw.models.user.Commerce c WHERE p.commerceId = c.userId ");
         hql.append("AND p.deleted = false ");
         hql.append("AND a.id IN (SELECT b.auctionId FROM Bid b WHERE b.clientId = ?").append(params.size() + 1).append(") ");
         params.add(clientId);
@@ -266,7 +267,7 @@ public class AuctionJpaDao implements AuctionDao {
     public List<Auction> filterParticipatedAuctions(final long clientId, final Auction.Status status, final String query, final int page, final int pageSize) {
         // We do 1+1 query for participated auctions to sort by latest bid
         StringBuilder idHql = new StringBuilder("SELECT a.id, MAX(b.timestamp) ");
-        idHql.append("FROM Auction a JOIN a.pack p, ar.edu.itba.paw.models.user.Commerce c, Bid b WHERE p.commerceId = c.id AND a.id = b.auctionId ");
+        idHql.append("FROM Auction a JOIN a.pack p, ar.edu.itba.paw.models.user.Commerce c, Bid b WHERE p.commerceId = c.userId AND a.id = b.auctionId ");
         idHql.append("AND p.deleted = false AND b.clientId = ?1 ");
         
         List<Object> params = new ArrayList<>();

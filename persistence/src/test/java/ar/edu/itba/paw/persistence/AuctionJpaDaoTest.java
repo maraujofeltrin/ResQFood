@@ -2,7 +2,9 @@ package ar.edu.itba.paw.persistence;
 
 import javax.persistence.PersistenceContext;
 import ar.edu.itba.paw.models.auction.Auction;
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -114,6 +116,36 @@ public class AuctionJpaDaoTest {
         assertTrue(found.isPresent());
         assertEquals(created.getId(), found.get().getId());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
+    }
+
+    @Test
+    public void testFilterAuctionsWhenCityNameMatchesReturnsAuction() {
+        // 1. Setup
+        auctionDao.createAuction(packId, 500.0, 500.0, AUCTION_END_TIME);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Auction> filtered = auctionDao.filterAuctions(null, null, Municipality.AVELLANEDA.getCityName(),
+                null, null, 1, 10, false);
+
+        // 3. Asserts
+        assertEquals(1, filtered.size());
+    }
+
+    @Test
+    public void testFilterAuctionsWhenCityNameAndTagsMatchReturnsAuction() {
+        // 1. Setup
+        final Pack taggedPack = packDao.createPack(commerceId, "Vegan Pack", "Desc", 1000.0, 500.0, 1,
+                Collections.singletonList(PackTag.VEGAN), null);
+        auctionDao.createAuction(taggedPack.getId(), 500.0, 500.0, AUCTION_END_TIME);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Auction> filtered = auctionDao.filterAuctions(null, Collections.singletonList(PackTag.VEGAN),
+                Municipality.AVELLANEDA.getCityName(), Collections.singletonList("morning"), null, 1, 10, false);
+
+        // 3. Asserts
+        assertEquals(1, filtered.size());
     }
 
     @Test
