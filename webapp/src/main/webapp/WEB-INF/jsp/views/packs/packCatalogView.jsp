@@ -215,7 +215,8 @@
                         </c:choose>
                     </c:when>
                     <c:otherwise>
-                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                        <c:set var="gridClasses" value="${catalogMode eq 'COMMERCES' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8'}" />
+                        <div class="grid ${gridClasses}">
                             <c:choose>
                                 <c:when test="${catalogMode eq 'FAVORITES'}">
                                     <c:forEach var="pack" items="${packs}">
@@ -270,13 +271,15 @@
                                 </c:when>
                                 <c:when test="${catalogMode eq 'COMMERCES'}">
                                     <c:forEach var="commerce" items="${commerces}">
-                                        <paw:commerceCard
-                                            commerceId="${commerce.userId}"
-                                            commerceName="${commerce.commercialName}"
-                                            category="${commerce.category}"
-                                            rating="${commerceRatings[commerce.userId]}"
-                                            imageId="${commerceImages[commerce.userId]}"
-                                        />
+                                        <div class="max-w-[320px] mx-auto w-full h-full">
+                                            <paw:commerceCard
+                                                commerceId="${commerce.userId}"
+                                                commerceName="${commerce.commercialName}"
+                                                category="${commerce.category}"
+                                                rating="${commerceRatings[commerce.userId]}"
+                                                imageId="${commerceImages[commerce.userId]}"
+                                            />
+                                        </div>
                                     </c:forEach>
                                 </c:when>
                                 <c:otherwise>
