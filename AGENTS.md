@@ -17,7 +17,22 @@ This project is a web platform designed to reduce food waste in gastronomic esta
 - **Language:** Java 21
 - **Build Tool:** Maven (Multi-module project)
 - **Architecture:** MVC (Model-View-Controller)
-- **Back-end Frameworks:** Spring Framework 5.3.x (Web MVC, Context, ORM, JDBC, TX), Spring Security (authentication and HTTP authorization in the `webapp` module). **[NOTE: The project is currently undergoing a phased migration from Spring JDBC to JPA/Hibernate. Both data access paradigms currently coexist.]**
+- **Back-end Frameworks:** Spring Framework 5.3.x (Web MVC, Context, ORM, JDBC, TX), Spring Security (authentication and HTTP authorization in the `webapp` module). **[NOTE: The migration to JPA/Hibernate is now complete; the project uses JPA/Hibernate as the primary data access layer.]**
+
+### JPA/Hibernate Guidelines
+- Use `@Entity` annotated classes for domain models; place them in `ar.edu.itba.paw.models.<domain>` subpackages.
+- Define repository interfaces in `*-contracts` (e.g., `UserDao`) extending `JpaRepository` or custom DAO contracts.
+- Implement DAOs in the `persistence` module using Spring Data JPA or `EntityManager` for custom queries.
+- Apply `@Transactional` at the **service layer**; DAOs should be free of transaction boundaries.
+- Prefer JPQL or Criteria API; avoid native SQL unless performance‑critical and wrapped in a repository.
+- Configure naming strategy (`hibernate.ejb.naming_strategy`) to enforce **snake_case** column names.
+- Manage lazy loading carefully: use `EntityGraph` or fetch joins when necessary, and fetch collections eagerly only when required.
+- Leverage DTOs (or projection interfaces) to transfer data to the presentation layer, keeping entities encapsulated.
+- Use `@Version` on entities for optimistic locking where concurrent updates are possible.
+- Utilize Spring Data pagination (`Pageable`) for large result sets.
+- Use `@EntityListeners` (e.g., a `AuditingEntityListener`) to set creation/modification timestamps based on the `businessZone` bean.
+- Align entity timestamps with the `businessZone` bean for consistent time zones.
+- Write integration tests with `@DataJpaTest` (HSQLDB) to validate mappings and repository behavior.
 - **Database:** PostgreSQL with Flyway for database migrations.
 - **Testing:** JUnit 5
 
