@@ -34,7 +34,7 @@ public class BidJpaDao implements BidDao {
 
     @Override
     public Optional<Bid> findHighestBid(final long auctionId) {
-        return em.createQuery("FROM Bid b WHERE b.auctionId = :auctionId ORDER BY b.amount DESC", Bid.class)
+        return em.createQuery("FROM Bid b WHERE b.auctionId = :auctionId ORDER BY b.amount DESC, b.timestamp ASC", Bid.class)
             .setParameter("auctionId", auctionId)
             .setMaxResults(1)
             .getResultList()
