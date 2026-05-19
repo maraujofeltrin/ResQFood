@@ -38,27 +38,21 @@ public class BidJpaDaoTest {
     private DataSource dataSource;
 
     @Autowired
-    
     private BidDao bidDao;
 
     @Autowired
-    
     private UserDao userDao;
 
     @Autowired
-    
     private ClientDao clientDao;
 
     @Autowired
-    
     private CommerceDao commerceDao;
 
     @Autowired
-    private PackDao packDao; // Assuming Phase 2 might have changed this, but it doesn't have a qualifier in
-                             // the plan for persistence-contracts yet
+    private PackDao packDao;
 
     @Autowired
-    
     private AuctionDao auctionDao;
 
     @PersistenceContext
@@ -74,8 +68,9 @@ public class BidJpaDaoTest {
     @BeforeEach
     public void setUp() {
         jdbcTemplate = new JdbcTemplate(dataSource);
-        JdbcTestUtils.deleteFromTables(jdbcTemplate, "bids", "auctions", "reservation_tokens", "pack_tags",
-                "reservations", "client_pack_favorites", "packs", "images", "commerces", "clients", "tokens", "users");
+        JdbcTestUtils.deleteFromTables(jdbcTemplate, "commerce_reviews", "bids", "auctions", "reservation_tokens",
+                "pack_tags", "reservations", "client_pack_favorites", "packs", "images", "commerces", "clients",
+                "tokens", "users");
 
         commerceId = userDao.createUser("commerce@example.com", "pass", "Commerce", "123", User.Role.COMMERCE).getId();
         commerceDao.createCommerce(commerceId, "Comm", Commerce.Category.BAKERY, "Street", 123,
@@ -124,6 +119,25 @@ public class BidJpaDaoTest {
         assertTrue(highestBid.isPresent());
         assertEquals(700.0, highestBid.get().getAmount());
         assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "bids"));
+    }
+
+    @Test
+    public void testFindHighestBidWhenSameAmountUsesEarliestTimestamp() {
+        // 1. Setup
+        final LocalDateTime earlier = LocalDateTime.of(2030, 1, 1, 10, 0);
+        final LocalDateTime later = LocalDateTime.of(2030, 1, 1, 11, 0);
+        em.persist(new Bid(null, auctionId, clientId, 700.0, earlier));
+        em.persist(new Bid(null, auctionId, clientId, 700.0, later));
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final Optional<Bid> highestBid = bidDao.findHighestBid(auctionId);
+
+        // 3. Asserts
+        assertTrue(highestBid.isPresent());
+        assertEquals(earlier, highestBid.get().getTimestamp());
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "bids"));
     }
 
     @Test

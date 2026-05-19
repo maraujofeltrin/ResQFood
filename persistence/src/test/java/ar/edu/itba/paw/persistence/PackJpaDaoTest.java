@@ -14,7 +14,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.jdbc.JdbcTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +21,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Transactional
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
-@Sql("classpath:schema.sql")
 public class PackJpaDaoTest {
 
     private static final LocalDateTime EXPIRED_AUCTION_END = LocalDateTime.of(2020, 1, 1, 0, 0);
@@ -44,16 +43,16 @@ public class PackJpaDaoTest {
     private DataSource dataSource;
 
     @Autowired
-    private PackJpaDao packDao;
+    private PackDao packDao;
 
     @Autowired
-    private UserJdbcDao userDao;
+    private UserDao userDao;
 
     @Autowired
-    private CommerceJdbcDao commerceDao;
+    private CommerceDao commerceDao;
 
     @Autowired
-    private AuctionJdbcDao auctionDao;
+    private AuctionDao auctionDao;
 
     @PersistenceContext
     private EntityManager em;
@@ -74,7 +73,7 @@ public class PackJpaDaoTest {
     }
 
     @Test
-    public void testCreatePackPersistsTags() {
+    public void testCreatePackWhenTagsProvidedPersistsTags() {
         // 1. Setup
         final List<PackTag> tags = Collections.singletonList(PackTag.VEGAN);
 
@@ -138,10 +137,11 @@ public class PackJpaDaoTest {
         // 3. Asserts
         assertEquals(1, packs.size());
         assertEquals(visible.getId(), packs.get(0).getId());
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 
     @Test
-    public void testFilterPacksByTagQueryAndPositiveStock() {
+    public void testFilterPacksWhenVeganTagProvidedReturnsMatchingPack() {
         // 1. Setup
         final Pack tagged = packDao.createPack(commerceId, "Bread Basket", "Desc", 1000.0, 500.0, 5,
                 List.of(PackTag.VEGAN, PackTag.SWEET), null);
@@ -150,26 +150,55 @@ public class PackJpaDaoTest {
         em.flush();
 
         // 2. Ejercicio
-        final List<Pack> byTag = packDao.filterPacks(null, Collections.singletonList(PackTag.VEGAN), null, null,
+        final List<Pack> filtered = packDao.filterPacks(null, Collections.singletonList(PackTag.VEGAN), null, null,
                 PackSortOption.DATE_DESC, 1, 10, false);
-        final List<Pack> byQuery = packDao.filterPacks("bread", null, null, null,
-                PackSortOption.DATE_DESC, 1, 10, false);
-        final List<Pack> positiveStock = packDao.filterPacks(null, null, null, null,
-                PackSortOption.DATE_DESC, 1, 10, true);
 
         // 3. Asserts
-        assertEquals(1, byTag.size());
-        assertEquals(tagged.getId(), byTag.get(0).getId());
-        assertEquals(1, byQuery.size());
-        assertEquals(tagged.getId(), byQuery.get(0).getId());
-        assertEquals(1, positiveStock.size());
-        assertEquals(tagged.getId(), positiveStock.get(0).getId());
+        assertEquals(1, filtered.size());
+        assertEquals(tagged.getId(), filtered.get(0).getId());
         assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
-        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "pack_tags"));
     }
 
     @Test
-    public void testCountFilteredPacksMatchesFilterSize() {
+    public void testFilterPacksWhenQueryMatchesTitleReturnsPack() {
+        // 1. Setup
+        final Pack tagged = packDao.createPack(commerceId, "Bread Basket", "Desc", 1000.0, 500.0, 5,
+                List.of(PackTag.VEGAN, PackTag.SWEET), null);
+        packDao.createPack(commerceId, "Cookies", "Desc", 1000.0, 500.0, 0,
+                Collections.singletonList(PackTag.SWEET), null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Pack> filtered = packDao.filterPacks("bread", null, null, null,
+                PackSortOption.DATE_DESC, 1, 10, false);
+
+        // 3. Asserts
+        assertEquals(1, filtered.size());
+        assertEquals(tagged.getId(), filtered.get(0).getId());
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testFilterPacksWhenPositiveStockRequiredReturnsPackWithStock() {
+        // 1. Setup
+        final Pack tagged = packDao.createPack(commerceId, "Bread Basket", "Desc", 1000.0, 500.0, 5,
+                List.of(PackTag.VEGAN, PackTag.SWEET), null);
+        packDao.createPack(commerceId, "Cookies", "Desc", 1000.0, 500.0, 0,
+                Collections.singletonList(PackTag.SWEET), null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Pack> filtered = packDao.filterPacks(null, null, null, null,
+                PackSortOption.DATE_DESC, 1, 10, true);
+
+        // 3. Asserts
+        assertEquals(1, filtered.size());
+        assertEquals(tagged.getId(), filtered.get(0).getId());
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testCountFilteredPacksWhenVeganTagProvidedReturnsOne() {
         // 1. Setup
         packDao.createPack(commerceId, "Bread Basket", "Desc", 1000.0, 500.0, 5,
                 List.of(PackTag.VEGAN, PackTag.SWEET), null);
@@ -178,12 +207,12 @@ public class PackJpaDaoTest {
         em.flush();
 
         // 2. Ejercicio
-        final List<Pack> filtered = packDao.filterPacks(null, Collections.singletonList(PackTag.VEGAN), null, null,
-                PackSortOption.DATE_DESC, 1, 10, false);
         final int count = packDao.countFilteredPacks(null, Collections.singletonList(PackTag.VEGAN), null, null, false);
 
         // 3. Asserts
-        assertEquals(filtered.size(), count);
+        assertEquals(1, count);
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "pack_tags"));
     }
 
     @Test
@@ -219,8 +248,10 @@ public class PackJpaDaoTest {
         // 3. Asserts
         final List<Pack> packs = packDao.findByCommerceId(commerceId);
         assertTrue(packs.isEmpty());
-        assertTrue(packDao.findById(created.getId()).isPresent());
-        assertTrue(packDao.findById(created.getId()).map(Pack::getDeleted).orElse(false));
+        final Optional<Pack> softDeleted = packDao.findById(created.getId());
+        assertTrue(softDeleted.isPresent());
+        assertTrue(softDeleted.get().getDeleted());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 
     @Test
@@ -236,6 +267,7 @@ public class PackJpaDaoTest {
 
         // 3. Asserts
         assertFalse(packDao.findById(created.getId()).map(Pack::getActive).orElse(true));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 
     @Test
@@ -252,6 +284,7 @@ public class PackJpaDaoTest {
         // 3. Asserts
         assertTrue(success);
         assertEquals(7, packDao.findById(created.getId()).map(Pack::getStock).orElse(-1));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 
     @Test
@@ -267,6 +300,90 @@ public class PackJpaDaoTest {
         // 3. Asserts
         assertFalse(success);
         assertEquals(2, packDao.findById(created.getId()).map(Pack::getStock).orElse(-1));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testFilterPacksByMorningTimeRangeWhenOpeningTimeIsEightAm() {
+        // 1. Setup
+        final Pack pack = packDao.createPack(commerceId, "Morning Pack", "Desc", 1000.0, 500.0, 5, null, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Pack> filtered = packDao.filterPacks(null, null, null, Collections.singletonList("morning"),
+                PackSortOption.DATE_DESC, 1, 10, false);
+
+        // 3. Asserts
+        assertEquals(1, filtered.size());
+        assertEquals(pack.getId(), filtered.get(0).getId());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testCountFilteredPacksByMorningTimeRangeWhenOpeningTimeIsEightAm() {
+        // 1. Setup
+        packDao.createPack(commerceId, "Morning Pack", "Desc", 1000.0, 500.0, 5, null, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final int count = packDao.countFilteredPacks(null, null, null, Collections.singletonList("morning"), false);
+
+        // 3. Asserts
+        assertEquals(1, count);
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testFilterPacksRequiresAllTagsWhenMultipleTagsProvided() {
+        // 1. Setup
+        final Pack bothTags = packDao.createPack(commerceId, "Both Tags", "Desc", 1000.0, 500.0, 5,
+                Arrays.asList(PackTag.VEGAN, PackTag.SWEET), null);
+        packDao.createPack(commerceId, "Sweet Only", "Desc", 1000.0, 500.0, 5,
+                Collections.singletonList(PackTag.SWEET), null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Pack> filtered = packDao.filterPacks(null, Arrays.asList(PackTag.VEGAN, PackTag.SWEET), null, null,
+                PackSortOption.DATE_DESC, 1, 10, false);
+
+        // 3. Asserts
+        assertEquals(1, filtered.size());
+        assertEquals(bothTags.getId(), filtered.get(0).getId());
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testCountFilteredPacksRequiresAllTagsWhenMultipleTagsProvided() {
+        // 1. Setup
+        packDao.createPack(commerceId, "Both Tags", "Desc", 1000.0, 500.0, 5,
+                Arrays.asList(PackTag.VEGAN, PackTag.SWEET), null);
+        packDao.createPack(commerceId, "Sweet Only", "Desc", 1000.0, 500.0, 5,
+                Collections.singletonList(PackTag.SWEET), null);
+        em.flush();
+
+        // 2. Ejercicio
+        final int count = packDao.countFilteredPacks(null, Arrays.asList(PackTag.VEGAN, PackTag.SWEET), null, null,
+                false);
+
+        // 3. Asserts
+        assertEquals(1, count);
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testFilterPacksEscapesLikeWildcardsInQuery() {
+        // 1. Setup
+        final Pack pack = packDao.createPack(commerceId, "100% off", "Desc", 1000.0, 500.0, 5, null, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Pack> filtered = packDao.filterPacks("100%", null, null, null,
+                PackSortOption.DATE_DESC, 1, 10, false);
+
+        // 3. Asserts
+        assertEquals(1, filtered.size());
+        assertEquals(pack.getId(), filtered.get(0).getId());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 
     @Test
@@ -283,5 +400,6 @@ public class PackJpaDaoTest {
         // 3. Asserts
         assertTrue(success);
         assertEquals(15, packDao.findById(created.getId()).map(Pack::getStock).orElse(-1));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 }

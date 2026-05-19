@@ -121,6 +121,27 @@ public class UserJpaDaoTest {
     }
 
     @Test
+    public void testUpdateUserWhenUserExistsPersistsChanges() {
+        // 1. Setup
+        final User user = userDao.createUser(EMAIL, PASSWORD, NAME, PHONE, ROLE);
+        em.flush();
+
+        // 2. Ejercicio
+        final User updated = userDao.updateUser(user.getId(), "newpass", "Updated Name", "999", User.Role.COMMERCE);
+        em.flush();
+        em.clear();
+
+        // 3. Asserts
+        assertNotNull(updated);
+        assertEquals("Updated Name", updated.getName());
+        final Optional<User> loaded = userDao.findById(user.getId());
+        assertTrue(loaded.isPresent());
+        assertEquals("Updated Name", loaded.get().getName());
+        assertEquals(User.Role.COMMERCE, loaded.get().getRole());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "users"));
+    }
+
+    @Test
     public void testUpdateLocaleWhenUserExists() {
         // 1. Setup
         final User user = userDao.createUser(EMAIL, PASSWORD, NAME, PHONE, ROLE, Locale.forLanguageTag("es"));

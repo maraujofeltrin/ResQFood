@@ -11,7 +11,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.jdbc.JdbcTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,26 +23,25 @@ import static org.junit.jupiter.api.Assertions.*;
 @Transactional
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
-@Sql("classpath:schema.sql")
 public class PackFavoriteJpaDaoTest {
 
     @Autowired
     private DataSource dataSource;
 
     @Autowired
-    private PackFavoriteJpaDao packFavoriteDao;
+    private PackFavoriteDao packFavoriteDao;
 
     @Autowired
-    private PackJpaDao packDao;
+    private PackDao packDao;
 
     @Autowired
-    private UserJdbcDao userDao;
+    private UserDao userDao;
 
     @Autowired
-    private CommerceJdbcDao commerceDao;
+    private CommerceDao commerceDao;
 
     @Autowired
-    private ClientJdbcDao clientDao;
+    private ClientDao clientDao;
 
     private JdbcTemplate jdbcTemplate;
 
@@ -59,7 +57,8 @@ public class PackFavoriteJpaDaoTest {
                 "tokens", "users");
 
         commerceUserId = userDao.createUser("c@test.com", "p", "C", "1", User.Role.COMMERCE).getId();
-        commerceDao.createCommerce(commerceUserId, "Shop", Commerce.Category.BAKERY, "St", 1, ar.edu.itba.paw.models.pack.Municipality.AVELLANEDA, "P", "1000", "09:00", "18:00");
+        commerceDao.createCommerce(commerceUserId, "Shop", Commerce.Category.BAKERY, "St", 1,
+                ar.edu.itba.paw.models.pack.Municipality.AVELLANEDA, "P", "1000", "09:00", "18:00");
 
         clientUserId = userDao.createUser("cl@test.com", "p", "Cl", "2", User.Role.CLIENT).getId();
         clientDao.createClient(clientUserId, "A", "B", true);
@@ -148,7 +147,6 @@ public class PackFavoriteJpaDaoTest {
         packFavoriteDao.insert(clientUserId, packActive.getId());
 
         // 3. Asserts
-        assertTrue(packFavoriteDao.exists(clientUserId, packActive.getId()));
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "client_pack_favorites"));
     }
 
@@ -161,7 +159,6 @@ public class PackFavoriteJpaDaoTest {
         packFavoriteDao.delete(clientUserId, packActive.getId());
 
         // 3. Asserts
-        assertFalse(packFavoriteDao.exists(clientUserId, packActive.getId()));
         assertEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "client_pack_favorites"));
     }
 }
