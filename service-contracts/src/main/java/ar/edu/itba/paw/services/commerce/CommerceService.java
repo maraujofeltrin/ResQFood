@@ -19,6 +19,7 @@ public interface CommerceService {
 
     /**
      * Active catalog offers (direct-sale packs and live auctions) visible on the public commerce profile.
+     * The caller must ensure the commerce exists; {@code packPage} is clamped to the valid range.
      */
     CommercePublicOffers getPublicOffers(long commerceUserId, int packPage, int packPageSize);
 }

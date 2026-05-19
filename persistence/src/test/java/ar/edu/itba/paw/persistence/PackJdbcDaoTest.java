@@ -198,7 +198,7 @@ public class PackJdbcDaoTest {
 
         // 2. Ejercicio
         final List<Pack> filtered = packDao.filterPacks(
-                null, null, null, null, PackSortOption.DATE_DESC, 1, 10, false);
+                null, null, null, null, PackSortOption.DATE_DESC, 1, 10, false, null);
 
         // 3. Asserts
         assertEquals(1, filtered.size());
@@ -215,7 +215,7 @@ public class PackJdbcDaoTest {
         packDao.createPack(commerceId, "DirectPack", "Desc2", 100.0, 50.0, 1, null, null);
 
         // 2. Ejercicio
-        final int count = packDao.countFilteredPacks(null, null, null, null, false);
+        final int count = packDao.countFilteredPacks(null, null, null, null, false, null);
 
         // 3. Asserts
         assertEquals(1, count);
@@ -231,7 +231,7 @@ public class PackJdbcDaoTest {
 
         // 2. Ejercicio
         final List<Pack> withFilter = packDao.filterPacks(
-                null, null, null, null, PackSortOption.DATE_DESC, 1, 10, true);
+                null, null, null, null, PackSortOption.DATE_DESC, 1, 10, true, null);
 
         // 3. Asserts
         assertEquals(1, withFilter.size());
@@ -246,7 +246,7 @@ public class PackJdbcDaoTest {
         packDao.createPack(commerceId, "InStock", "D2", 100.0, 50.0, 3, null, null);
 
         // 2. Ejercicio
-        final int countWith = packDao.countFilteredPacks(null, null, null, null, true);
+        final int countWith = packDao.countFilteredPacks(null, null, null, null, true, null);
 
         // 3. Asserts
         assertEquals(1, countWith);
@@ -261,7 +261,7 @@ public class PackJdbcDaoTest {
 
         // 2. Ejercicio
         final List<Pack> withoutFilter = packDao.filterPacks(
-                null, null, null, null, PackSortOption.DATE_DESC, 1, 10, false);
+                null, null, null, null, PackSortOption.DATE_DESC, 1, 10, false, null);
 
         // 3. Asserts
         assertEquals(2, withoutFilter.size());

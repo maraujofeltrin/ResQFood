@@ -9,8 +9,8 @@ import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
+import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
-import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.services.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +60,7 @@ class ReservationServiceImplTest {
     @Mock
     private ReservationMailService reservationMailService;
     @Mock
-    private CommerceService commerceService;
+    private CommerceDao commerceDao;
     @Mock
     private AuctionDao auctionDao;
 
@@ -75,7 +75,7 @@ class ReservationServiceImplTest {
                 reservationTokenDao,
                 packDao,
                 reservationMailService,
-                commerceService,
+                commerceDao,
                 auctionDao,
                 TEST_ZONE);
     }

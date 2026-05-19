@@ -100,15 +100,13 @@ public class CommerceServiceImpl implements CommerceService {
 
     @Override
     public CommercePublicOffers getPublicOffers(final long commerceUserId, final int packPage, final int packPageSize) {
-        commerceDao.findByUserId(commerceUserId).orElseThrow(() -> {
-            LOGGER.warn("getPublicOffers: commerce not found userId={}", commerceUserId);
-            return new NoSuchElementException("Commerce not found for user: " + commerceUserId);
-        });
-
         final Long commerceFilter = Long.valueOf(commerceUserId);
-        final List<Pack> directPacks = packService.filterPacks(null, null, null, null, PackSortOption.DATE_DESC,
-                packPage, packPageSize, true, commerceFilter);
         final int directPacksTotal = packService.countFilteredPacks(null, null, null, null, true, commerceFilter);
+        final int normalizedPageSize = packPageSize < 1 ? 12 : packPageSize;
+        final int totalPages = Math.max(1, (int) Math.ceil((double) directPacksTotal / normalizedPageSize));
+        final int safePackPage = Math.max(1, Math.min(packPage < 1 ? 1 : packPage, totalPages));
+        final List<Pack> directPacks = packService.filterPacks(null, null, null, null, PackSortOption.DATE_DESC,
+                safePackPage, normalizedPageSize, true, commerceFilter);
         final List<Auction> activeAuctions = auctionService.filterAuctions(null, null, null, null,
                 AuctionSortOption.TIME_REMAINING_ASC, 1, PUBLIC_PROFILE_AUCTION_CAP, true, commerceFilter);
         final int activeAuctionsTotal = auctionService.countFilteredAuctions(null, null, null, null, true,

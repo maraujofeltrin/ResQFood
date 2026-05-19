@@ -127,7 +127,7 @@ public class AuctionJpaDaoTest {
 
         // 2. Ejercicio
         final List<Auction> filtered = auctionDao.filterAuctions(null, null, Municipality.AVELLANEDA.getCityName(),
-                null, null, 1, 10, false);
+                null, null, 1, 10, false, null);
 
         // 3. Asserts
         assertEquals(1, filtered.size());
@@ -144,7 +144,7 @@ public class AuctionJpaDaoTest {
 
         // 2. Ejercicio
         final List<Auction> filtered = auctionDao.filterAuctions(null, Collections.singletonList(PackTag.VEGAN),
-                Municipality.AVELLANEDA.getCityName(), Collections.singletonList("morning"), null, 1, 10, false);
+                Municipality.AVELLANEDA.getCityName(), Collections.singletonList("morning"), null, 1, 10, false, null);
 
         // 3. Asserts
         assertEquals(1, filtered.size());
@@ -159,7 +159,7 @@ public class AuctionJpaDaoTest {
 
         // 2. Ejercicio
         final List<Auction> activeAuctions = auctionDao.filterAuctions(null, null, null, null, null, 1,
-                Integer.MAX_VALUE, false);
+                Integer.MAX_VALUE, false, null);
 
         // 3. Asserts
         assertEquals(1, activeAuctions.size());
@@ -233,7 +233,7 @@ public class AuctionJpaDaoTest {
 
         // 2. Ejercicio
         final List<Auction> filtered = auctionDao.filterAuctions(null, Arrays.asList(PackTag.VEGAN, PackTag.SWEET),
-                null, null, null, 1, 10, false);
+                null, null, null, 1, 10, false, null);
 
         // 3. Asserts
         assertEquals(1, filtered.size());
@@ -254,7 +254,7 @@ public class AuctionJpaDaoTest {
 
         // 2. Ejercicio
         final int count = auctionDao.countFilteredAuctions(null, Arrays.asList(PackTag.VEGAN, PackTag.SWEET),
-                null, null, false);
+                null, null, false, null);
 
         // 3. Asserts
         assertEquals(1, count);
@@ -276,7 +276,7 @@ public class AuctionJpaDaoTest {
 
         // 2. Ejercicio
         final List<Auction> pageTwo = auctionDao.filterAuctions(null, null, null, null,
-                AuctionSortOption.TIME_REMAINING_ASC, 2, 1, false);
+                AuctionSortOption.TIME_REMAINING_ASC, 2, 1, false, null);
 
         // 3. Asserts
         assertEquals(1, pageTwo.size());
@@ -298,7 +298,7 @@ public class AuctionJpaDaoTest {
         em.flush();
 
         // 2. Ejercicio
-        final int count = auctionDao.countFilteredAuctions(null, null, null, null, false);
+        final int count = auctionDao.countFilteredAuctions(null, null, null, null, false, null);
 
         // 3. Asserts
         assertEquals(3, count);

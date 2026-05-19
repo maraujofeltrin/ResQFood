@@ -1,14 +1,21 @@
 package ar.edu.itba.paw.services.commerce;
 
+import ar.edu.itba.paw.models.auction.Auction;
+import ar.edu.itba.paw.models.auction.AuctionSortOption;
+import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.persistence.CommerceDao;
+import ar.edu.itba.paw.services.auction.AuctionService;
+import ar.edu.itba.paw.services.pack.PackService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -17,7 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,6 +35,12 @@ class CommerceServiceImplTest {
 
     @Mock
     private CommerceDao commerceDao;
+
+    @Mock
+    private PackService packService;
+
+    @Mock
+    private AuctionService auctionService;
 
     @InjectMocks
     private CommerceServiceImpl commerceService;
@@ -92,6 +108,57 @@ class CommerceServiceImplTest {
 
         // 3. Asserts
         org.mockito.Mockito.verify(commerceDao).filterCommerces("query", "city", 1, 12);
+    }
+
+    @Test
+    void testGetPublicOffersWhenCommerceExistsDelegatesToPackAndAuctionServices() {
+        // 1. Setup
+        final long commerceUserId = 7L;
+        final Pack pack = new Pack(1L, commerceUserId, "Pack", "d", 10.0, 8.0, 2, true, false, null, null);
+        final Auction auction = new Auction(2L, pack, 10.0, 1.0, null, null,
+                LocalDateTime.now().plusDays(1), Auction.Status.ACTIVE, LocalDateTime.now());
+        when(packService.filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1), eq(12),
+                eq(true), eq(commerceUserId))).thenReturn(java.util.Collections.singletonList(pack));
+        when(packService.countFilteredPacks(isNull(), isNull(), isNull(), isNull(), eq(true), eq(commerceUserId)))
+                .thenReturn(1);
+        when(auctionService.filterAuctions(isNull(), isNull(), isNull(), isNull(),
+                eq(AuctionSortOption.TIME_REMAINING_ASC), eq(1), eq(50), eq(true), eq(commerceUserId)))
+                .thenReturn(java.util.Collections.singletonList(auction));
+        when(auctionService.countFilteredAuctions(isNull(), isNull(), isNull(), isNull(), eq(true),
+                eq(commerceUserId))).thenReturn(1);
+
+        // 2. Ejercicio
+        final CommercePublicOffers offers = commerceService.getPublicOffers(commerceUserId, 1, 12);
+
+        // 3. Asserts
+        assertEquals(1, offers.getDirectPacks().size());
+        assertEquals(1, offers.getDirectPacksTotal());
+        assertEquals(1, offers.getActiveAuctions().size());
+        assertEquals(1, offers.getActiveAuctionsTotal());
+        verify(packService).filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1),
+                eq(12), eq(true), eq(commerceUserId));
+    }
+
+    @Test
+    void testGetPublicOffersWhenPackPageOutOfRangeClampsBeforeFilter() {
+        // 1. Setup
+        final long commerceUserId = 7L;
+        when(packService.countFilteredPacks(isNull(), isNull(), isNull(), isNull(), eq(true), eq(commerceUserId)))
+                .thenReturn(1);
+        when(packService.filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1), eq(12),
+                eq(true), eq(commerceUserId))).thenReturn(java.util.Collections.emptyList());
+        when(auctionService.filterAuctions(isNull(), isNull(), isNull(), isNull(),
+                eq(AuctionSortOption.TIME_REMAINING_ASC), eq(1), eq(50), eq(true), eq(commerceUserId)))
+                .thenReturn(java.util.Collections.emptyList());
+        when(auctionService.countFilteredAuctions(isNull(), isNull(), isNull(), isNull(), eq(true),
+                eq(commerceUserId))).thenReturn(0);
+
+        // 2. Ejercicio
+        commerceService.getPublicOffers(commerceUserId, 99, 12);
+
+        // 3. Asserts
+        verify(packService).filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1),
+                eq(12), eq(true), eq(commerceUserId));
     }
 
     @Test

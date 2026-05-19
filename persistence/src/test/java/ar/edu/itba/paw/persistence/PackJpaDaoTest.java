@@ -151,7 +151,7 @@ public class PackJpaDaoTest {
 
         // 2. Ejercicio
         final List<Pack> filtered = packDao.filterPacks(null, Collections.singletonList(PackTag.VEGAN), null, null,
-                PackSortOption.DATE_DESC, 1, 10, false);
+                PackSortOption.DATE_DESC, 1, 10, false, null);
 
         // 3. Asserts
         assertEquals(1, filtered.size());
@@ -170,7 +170,7 @@ public class PackJpaDaoTest {
 
         // 2. Ejercicio
         final List<Pack> filtered = packDao.filterPacks("bread", null, null, null,
-                PackSortOption.DATE_DESC, 1, 10, false);
+                PackSortOption.DATE_DESC, 1, 10, false, null);
 
         // 3. Asserts
         assertEquals(1, filtered.size());
@@ -189,7 +189,7 @@ public class PackJpaDaoTest {
 
         // 2. Ejercicio
         final List<Pack> filtered = packDao.filterPacks(null, null, null, null,
-                PackSortOption.DATE_DESC, 1, 10, true);
+                PackSortOption.DATE_DESC, 1, 10, true, null);
 
         // 3. Asserts
         assertEquals(1, filtered.size());
@@ -207,7 +207,7 @@ public class PackJpaDaoTest {
         em.flush();
 
         // 2. Ejercicio
-        final int count = packDao.countFilteredPacks(null, Collections.singletonList(PackTag.VEGAN), null, null, false);
+        final int count = packDao.countFilteredPacks(null, Collections.singletonList(PackTag.VEGAN), null, null, false, null);
 
         // 3. Asserts
         assertEquals(1, count);
@@ -225,7 +225,7 @@ public class PackJpaDaoTest {
         em.flush();
 
         // 2. Ejercicio
-        final List<Pack> filtered = packDao.filterPacks(null, null, null, null, PackSortOption.DATE_DESC, 1, 10, false);
+        final List<Pack> filtered = packDao.filterPacks(null, null, null, null, PackSortOption.DATE_DESC, 1, 10, false, null);
 
         // 3. Asserts
         assertEquals(1, filtered.size());
@@ -311,7 +311,7 @@ public class PackJpaDaoTest {
 
         // 2. Ejercicio
         final List<Pack> filtered = packDao.filterPacks(null, null, null, Collections.singletonList("morning"),
-                PackSortOption.DATE_DESC, 1, 10, false);
+                PackSortOption.DATE_DESC, 1, 10, false, null);
 
         // 3. Asserts
         assertEquals(1, filtered.size());
@@ -326,7 +326,7 @@ public class PackJpaDaoTest {
         em.flush();
 
         // 2. Ejercicio
-        final int count = packDao.countFilteredPacks(null, null, null, Collections.singletonList("morning"), false);
+        final int count = packDao.countFilteredPacks(null, null, null, Collections.singletonList("morning"), false, null);
 
         // 3. Asserts
         assertEquals(1, count);
@@ -344,7 +344,7 @@ public class PackJpaDaoTest {
 
         // 2. Ejercicio
         final List<Pack> filtered = packDao.filterPacks(null, Arrays.asList(PackTag.VEGAN, PackTag.SWEET), null, null,
-                PackSortOption.DATE_DESC, 1, 10, false);
+                PackSortOption.DATE_DESC, 1, 10, false, null);
 
         // 3. Asserts
         assertEquals(1, filtered.size());
@@ -363,11 +363,31 @@ public class PackJpaDaoTest {
 
         // 2. Ejercicio
         final int count = packDao.countFilteredPacks(null, Arrays.asList(PackTag.VEGAN, PackTag.SWEET), null, null,
-                false);
+                false, null);
 
         // 3. Asserts
         assertEquals(1, count);
         assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testFilterPacksWhenCommerceUserIdProvidedReturnsOnlyThatCommercePacks() {
+        // 1. Setup
+        final Long otherCommerceId = userDao.createUser("other@example.com", "pass", "Other", "456", User.Role.COMMERCE)
+                .getId();
+        commerceDao.createCommerce(otherCommerceId, "Other Comm", Commerce.Category.RESTAURANT, "Other St", 1,
+                Municipality.QUILMES, "Prov", "1000", "09:00", "21:00");
+        final Pack ownPack = packDao.createPack(commerceId, "Own Pack", "Desc", 100.0, 50.0, 3, null, null);
+        packDao.createPack(otherCommerceId, "Other Pack", "Desc", 100.0, 50.0, 3, null, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Pack> filtered = packDao.filterPacks(null, null, null, null, PackSortOption.DATE_DESC, 1, 10, false,
+                commerceId);
+
+        // 3. Asserts
+        assertEquals(1, filtered.size());
+        assertEquals(ownPack.getId(), filtered.get(0).getId());
     }
 
     @Test
@@ -378,7 +398,7 @@ public class PackJpaDaoTest {
 
         // 2. Ejercicio
         final List<Pack> filtered = packDao.filterPacks("100%", null, null, null,
-                PackSortOption.DATE_DESC, 1, 10, false);
+                PackSortOption.DATE_DESC, 1, 10, false, null);
 
         // 3. Asserts
         assertEquals(1, filtered.size());

@@ -259,11 +259,11 @@ class PackServiceImplTest {
         final int pageSize = 20;
         final Pack filtered = new Pack(30L, 2L, "Vegan", "d", 10.0, 8.0, 4, true, false, tags, null);
         when(packDao.filterPacks(eq(query), eq(tags), eq(city), eq(timeRanges), eq(sort), eq(page), eq(pageSize),
-                eq(true))).thenReturn(Collections.singletonList(filtered));
+                eq(true), isNull())).thenReturn(Collections.singletonList(filtered));
 
         // 2. Ejercicio
         final List<Pack> result =
-                packService.filterPacks(query, tags, city, timeRanges, sort, page, pageSize, true);
+                packService.filterPacks(query, tags, city, timeRanges, sort, page, pageSize, true, null);
 
         // 3. Asserts
         assertEquals(1, result.size());
@@ -274,11 +274,11 @@ class PackServiceImplTest {
     @Test
     void testCountFilteredPacksWhenDaoReturnsCountReturnsValue() {
         // 1. Setup
-        when(packDao.countFilteredPacks(eq("q"), eq(Collections.emptyList()), isNull(), isNull(), eq(false)))
+        when(packDao.countFilteredPacks(eq("q"), eq(Collections.emptyList()), isNull(), isNull(), eq(false), isNull()))
                 .thenReturn(42);
 
         // 2. Ejercicio
-        final int count = packService.countFilteredPacks("q", Collections.emptyList(), null, null, false);
+        final int count = packService.countFilteredPacks("q", Collections.emptyList(), null, null, false, null);
 
         // 3. Asserts
         assertEquals(42, count);
