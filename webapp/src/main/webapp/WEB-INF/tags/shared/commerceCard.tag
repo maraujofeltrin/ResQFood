@@ -10,7 +10,7 @@
 
 <c:set var="resolvedAlt" value="${commerceName} logo" />
 
-<a href="${pageContext.request.contextPath}/commerce/${commerceId}" class="bg-surface-container-high rounded-xl p-6 text-center hover:bg-surface-container-highest transition-colors cursor-pointer group text-inherit no-underline flex flex-col h-full">
+<a href="${pageContext.request.contextPath}/commerces/${commerceId}" class="bg-surface-container-high rounded-xl p-6 text-center hover:bg-surface-container-highest transition-colors cursor-pointer group text-inherit no-underline flex flex-col h-full">
     <div class="w-20 h-20 bg-surface-container-lowest rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden border-2 border-outline-variant flex-shrink-0">
         <c:choose>
             <c:when test="${not empty imageId}">

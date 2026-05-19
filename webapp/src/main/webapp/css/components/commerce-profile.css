@@ -1,0 +1,101 @@
+/* ── Public commerce profile ───────────────────────────── */
+
+.commerce-profile-main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 6rem 1.5rem 4rem;
+  width: 100%;
+}
+
+.commerce-profile-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  padding: 2rem 1.5rem;
+  background-color: #F3F5F3;
+  border-radius: 0.75rem;
+}
+
+.commerce-profile-hero__logo {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 9999px;
+  overflow: hidden;
+  background-color: #E8EBE8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #C4C9C4;
+}
+
+.commerce-profile-hero__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.commerce-profile-hero__name {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #191C1A;
+  letter-spacing: -0.025em;
+}
+
+.commerce-profile-hero__category {
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #5C635E;
+}
+
+.commerce-profile-section {
+  margin-bottom: 3rem;
+}
+
+.commerce-profile-section__title {
+  margin: 0 0 1.25rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #191C1A;
+}
+
+.commerce-profile-offers-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .commerce-profile-offers-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .commerce-profile-offers-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.commerce-profile-info-wrap {
+  max-width: 42rem;
+}
+
+.commerce-profile-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 2rem;
+  font-weight: 700;
+  color: #059669;
+  text-decoration: none;
+}
+
+.commerce-profile-back:hover {
+  text-decoration: underline;
+}

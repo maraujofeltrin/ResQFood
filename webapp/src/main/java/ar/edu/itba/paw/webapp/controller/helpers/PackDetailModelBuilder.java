@@ -49,12 +49,15 @@ public class PackDetailModelBuilder {
     private final ZoneId businessZone;
     private final AuthenticatedUserResolver authResolver;
     private final PackFavoriteService packFavoriteService;
+    private final CommerceDetailAttributesHelper commerceDetailAttributesHelper;
     private static final Locale LOCALE_AR = new Locale("es", "AR");
 
     @Autowired
     public PackDetailModelBuilder(final CommerceService commerceService, final AuctionService auctionService,
-            final CommerceReviewService commerceReviewService, final ClientService clientService, final ReservationService reservationService, final MessageSource messageSource, final ZoneId businessZone,
-            final AuthenticatedUserResolver authResolver, final PackFavoriteService packFavoriteService) {
+            final CommerceReviewService commerceReviewService, final ClientService clientService,
+            final ReservationService reservationService, final MessageSource messageSource, final ZoneId businessZone,
+            final AuthenticatedUserResolver authResolver, final PackFavoriteService packFavoriteService,
+            final CommerceDetailAttributesHelper commerceDetailAttributesHelper) {
         this.commerceService = commerceService;
         this.auctionService = auctionService;
         this.commerceReviewService = commerceReviewService;
@@ -64,28 +67,12 @@ public class PackDetailModelBuilder {
         this.businessZone = businessZone;
         this.authResolver = authResolver;
         this.packFavoriteService = packFavoriteService;
+        this.commerceDetailAttributesHelper = commerceDetailAttributesHelper;
     }
 
     private static String formatPrice(final Double amount) {
         if (amount == null) return "—";
         return NumberFormat.getCurrencyInstance(LOCALE_AR).format(amount);
-    }
-
-    private static String dashIfBlank(final String value) {
-        if (value == null || value.isBlank()) return "—";
-        return value.trim();
-    }
-
-    private void addCommerceDetailAttributes(final ModelAndView mav, final Optional<Commerce> commerceOpt) {
-        final Commerce commerce = commerceOpt.orElse(null);
-        final String commercialName = commerce != null && commerce.getCommercialName() != null && !commerce.getCommercialName().isBlank()
-                ? commerce.getCommercialName().trim() : "—";
-        mav.addObject("commerceCommercialName", commercialName);
-        mav.addObject("commerceStreetLine", commerce != null ? commerce.getFullStreetLine() : "—");
-        mav.addObject("commerceLocationLine", commerce != null ? commerce.getCityProvincePostal() : "—");
-        mav.addObject("commerceOpeningTime", commerce != null ? dashIfBlank(commerce.getOpeningTime()) : "—");
-        mav.addObject("commerceClosingTime", commerce != null ? dashIfBlank(commerce.getClosingTime()) : "—");
-        mav.addObject("commerceOpenNow", Boolean.valueOf(commerce != null && commerce.isOpenNow(businessZone)));
     }
 
     private String formatAuctionEndForDisplay(final LocalDateTime endUtc, final Locale locale) {
@@ -162,7 +149,7 @@ public class PackDetailModelBuilder {
         mav.addObject("pageTitle", pageTitle);
         mav.addObject("packTitle", title);
         mav.addObject("packDescription", pack.getDescription() != null ? pack.getDescription() : "");
-        addCommerceDetailAttributes(mav, commerceOpt);
+        commerceDetailAttributesHelper.addCommerceDetailAttributes(mav, commerceOpt);
         final boolean isOwner = authResolver.resolveUserOrEmpty()
                 .map(u -> u.getRole() == User.Role.COMMERCE && u.getId().equals(pack.getCommerceId()))
                 .orElse(false);

@@ -158,7 +158,8 @@ public class PackCatalogModelBuilder {
                     selectedTags.isEmpty() ? null : selectedTags,
                     cityFilter,
                     safeTimeRange.isEmpty() ? null : safeTimeRange,
-                    catalogAuctionListingRequiresPositiveStock);
+                    catalogAuctionListingRequiresPositiveStock,
+                    null);
         } else if (catalogMode == CatalogMode.COMMERCES) {
             totalItems = commerceService.countFilteredCommerces(trimmedQuery, cityFilter);
         } else {
@@ -167,7 +168,8 @@ public class PackCatalogModelBuilder {
                     selectedTags.isEmpty() ? null : selectedTags,
                     cityFilter,
                     safeTimeRange.isEmpty() ? null : safeTimeRange,
-                    catalogDirectSaleGridRequiresPositiveStock);
+                    catalogDirectSaleGridRequiresPositiveStock,
+                    null);
         }
 
         final int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
@@ -186,7 +188,8 @@ public class PackCatalogModelBuilder {
                     auctionSortOption,
                     safePage,
                     PAGE_SIZE,
-                    catalogAuctionListingRequiresPositiveStock);
+                    catalogAuctionListingRequiresPositiveStock,
+                    null);
         } else if (catalogMode == CatalogMode.COMMERCES) {
             commerces = commerceService.filterCommerces(trimmedQuery, cityFilter, safePage, PAGE_SIZE);
         } else {
@@ -198,7 +201,8 @@ public class PackCatalogModelBuilder {
                     sortOption,
                     safePage,
                     PAGE_SIZE,
-                    catalogDirectSaleGridRequiresPositiveStock);
+                    catalogDirectSaleGridRequiresPositiveStock,
+                    null);
         }
 
         List<Auction> carouselAuctions = Collections.emptyList();
@@ -211,7 +215,8 @@ public class PackCatalogModelBuilder {
                     AuctionSortOption.TIME_REMAINING_ASC,
                     1,
                     AUCTION_CAROUSEL_SIZE,
-                    catalogAuctionListingRequiresPositiveStock);
+                    catalogAuctionListingRequiresPositiveStock,
+                    null);
         }
 
         List<Commerce> carouselCommerces = Collections.emptyList();

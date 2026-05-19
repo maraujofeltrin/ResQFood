@@ -7,7 +7,7 @@
 <%@ attribute name="items" required="true" type="java.util.List" %>
 <%@ attribute name="reviewCount" required="true" type="java.lang.Integer" %>
 <%@ attribute name="averageRating" required="false" type="java.lang.Double" %>
-<%@ attribute name="packId" required="true" type="java.lang.Long" %>
+<%@ attribute name="packId" required="false" type="java.lang.Long" %>
 <%@ attribute name="canSubmit" required="false" type="java.lang.Boolean" %>
 <%@ attribute name="alreadySubmitted" required="false" type="java.lang.Boolean" %>
 <%@ attribute name="alertKind" required="false" type="java.lang.String" %>
@@ -49,23 +49,25 @@
         </c:choose>
     </div>
 
-    <sec:authorize access="hasRole('CLIENT')">
-        <c:choose>
-            <c:when test="${canSubmit}">
-                <paw:reviewForm packId="${packId}" alreadySubmitted="${alreadySubmitted}"/>
-            </c:when>
-            <c:otherwise>
-                <p class="commerce-reviews-card__hint"><spring:message code="pack.detail.reviews.notEligible"/></p>
-            </c:otherwise>
-        </c:choose>
-    </sec:authorize>
-    <sec:authorize access="isAnonymous()">
-        <p class="commerce-reviews-card__hint">
-            <spring:message code="pack.detail.reviews.loginPrompt"/>
-            <c:url var="reviewLoginUrl" value="/login"/>
-            <a href="${reviewLoginUrl}" class="commerce-reviews-card__link"><spring:message code="pack.detail.reviews.loginLink"/></a>
-        </p>
-    </sec:authorize>
+    <c:if test="${not empty packId}">
+        <sec:authorize access="hasRole('CLIENT')">
+            <c:choose>
+                <c:when test="${canSubmit}">
+                    <paw:reviewForm packId="${packId}" alreadySubmitted="${alreadySubmitted}"/>
+                </c:when>
+                <c:otherwise>
+                    <p class="commerce-reviews-card__hint"><spring:message code="pack.detail.reviews.notEligible"/></p>
+                </c:otherwise>
+            </c:choose>
+        </sec:authorize>
+        <sec:authorize access="isAnonymous()">
+            <p class="commerce-reviews-card__hint">
+                <spring:message code="pack.detail.reviews.loginPrompt"/>
+                <c:url var="reviewLoginUrl" value="/login"/>
+                <a href="${reviewLoginUrl}" class="commerce-reviews-card__link"><spring:message code="pack.detail.reviews.loginLink"/></a>
+            </p>
+        </sec:authorize>
+    </c:if>
     <script>
         (function () {
             var root = document.getElementById('commerce-reviews');
