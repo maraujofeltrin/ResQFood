@@ -5,10 +5,12 @@ import ar.edu.itba.paw.models.auction.AuctionSortOption;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackTag;
+import ar.edu.itba.paw.persistence.util.JpqlQuerySupport;
 import ar.edu.itba.paw.persistence.util.LikePatternSupport;
 import ar.edu.itba.paw.persistence.util.OpeningTimeFilterJpql;
-import org.springframework.stereotype.Repository;
+import ar.edu.itba.paw.persistence.util.Pagination;
 import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -19,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,70 +58,66 @@ public class AuctionJpaDao implements AuctionDao {
             .findFirst();
     }
 
-    private void appendCityFilter(final StringBuilder hql, final List<Object> params, final String city) {
+    private void appendCityFilter(final StringBuilder jpql, final Map<String, Object> params, final String city) {
         final Municipality municipality = Municipality.fromCityName(city);
         if (municipality != null) {
-            hql.append("AND c.city = ?").append(params.size() + 1).append(" ");
-            params.add(municipality);
+            jpql.append("AND c.city = :city ");
+            params.put("city", municipality);
         }
     }
 
-    private void appendQueryFilter(final StringBuilder hql, final List<Object> params, final String query) {
+    private void appendQueryFilter(final StringBuilder jpql, final Map<String, Object> params, final String query) {
         final Optional<String> pattern = LikePatternSupport.escapeAndWrap(query);
         if (pattern.isEmpty()) {
             return;
         }
-        final String search = pattern.get();
-        final String titleParam = "?" + (params.size() + 1);
-        final String commerceParam = "?" + (params.size() + 2);
-        hql.append("AND (");
-        LikePatternSupport.appendEscapedLike(hql, "p.title", titleParam);
-        hql.append(" OR ");
-        LikePatternSupport.appendEscapedLike(hql, "c.commercialName", commerceParam);
-        hql.append(") ");
-        params.add(search);
-        params.add(search);
+        jpql.append("AND (");
+        LikePatternSupport.appendEscapedLike(jpql, "p.title", ":search");
+        jpql.append(" OR ");
+        LikePatternSupport.appendEscapedLike(jpql, "c.commercialName", ":search");
+        jpql.append(") ");
+        params.put("search", pattern.get());
     }
 
-    private void appendActiveAuctionFilters(final StringBuilder hql, final List<Object> params,
+    private void appendActiveAuctionFilters(final StringBuilder jpql, final Map<String, Object> params,
                                             final boolean requirePositiveStock) {
-        hql.append("AND a.status = 'ACTIVE' AND a.endTime > ?").append(params.size() + 1).append(" ");
-        hql.append("AND p.active = true AND p.deleted = false ");
-        params.add(LocalDateTime.now(ZoneOffset.UTC));
+        jpql.append("AND a.status = :activeStatus AND a.endTime > :now ");
+        jpql.append("AND p.active = true AND p.deleted = false ");
+        params.put("activeStatus", Auction.Status.ACTIVE);
+        params.put("now", LocalDateTime.now(ZoneOffset.UTC));
         if (requirePositiveStock) {
-            hql.append("AND p.stock > 0 ");
+            jpql.append("AND p.stock > 0 ");
         }
     }
 
-    private void appendFilterFromClause(final StringBuilder hql, final boolean withTags) {
-        hql.append("FROM Auction a JOIN a.pack p JOIN Commerce c ON p.commerceId = c.userId ");
+    private void appendFilterFromClause(final StringBuilder jpql, final boolean withTags) {
+        jpql.append("FROM Auction a JOIN a.pack p JOIN Commerce c ON p.commerceId = c.userId ");
         if (withTags) {
-            hql.append("JOIN p.tags t ");
+            jpql.append("JOIN p.tags t ");
         }
-        hql.append("WHERE 1=1 ");
+        jpql.append("WHERE 1=1 ");
     }
 
-    private void appendCommonCatalogFilters(final StringBuilder hql, final List<Object> params, final String query,
+    private void appendCommonCatalogFilters(final StringBuilder jpql, final Map<String, Object> params, final String query,
                                             final String city, final List<String> timeRanges,
                                             final boolean requirePositiveStock) {
-        appendActiveAuctionFilters(hql, params, requirePositiveStock);
-        appendQueryFilter(hql, params, query);
-        appendCityFilter(hql, params, city);
-        OpeningTimeFilterJpql.appendTimeRangeConditions(hql, "c.openingTime", timeRanges);
+        appendActiveAuctionFilters(jpql, params, requirePositiveStock);
+        appendQueryFilter(jpql, params, query);
+        appendCityFilter(jpql, params, city);
+        OpeningTimeFilterJpql.appendTimeRangeConditions(jpql, "c.openingTime", timeRanges);
     }
 
-    private void appendAllTagsFilter(final StringBuilder hql, final List<Object> params, final List<PackTag> tags) {
-        hql.append("AND t IN (?").append(params.size() + 1).append(") ");
-        params.add(tags);
-        hql.append("GROUP BY a.id HAVING COUNT(DISTINCT t) = ?").append(params.size() + 1).append(" ");
-        params.add((long) tags.size());
+    private void appendAllTagsFilter(final StringBuilder jpql, final Map<String, Object> params, final List<PackTag> tags) {
+        jpql.append("AND t IN (:tags) ");
+        params.put("tags", tags);
+        jpql.append("GROUP BY a.id HAVING COUNT(DISTINCT t) = :requiredTagCount ");
+        params.put("requiredTagCount", Long.valueOf(tags.size()));
     }
 
-    private void appendAllTagsCountFilter(final StringBuilder hql, final List<Object> params, final List<PackTag> tags) {
-        hql.append("AND (SELECT COUNT(DISTINCT t2) FROM Pack p2 JOIN p2.tags t2 WHERE p2.id = p.id AND t2 IN (?")
-                .append(params.size() + 1).append(")) = ?").append(params.size() + 2).append(" ");
-        params.add(tags);
-        params.add((long) tags.size());
+    private void appendAllTagsCountFilter(final StringBuilder jpql, final Map<String, Object> params, final List<PackTag> tags) {
+        jpql.append("AND (SELECT COUNT(DISTINCT t2) FROM Pack p2 JOIN p2.tags t2 WHERE p2.id = p.id AND t2 IN (:tags)) = :requiredTagCount ");
+        params.put("tags", tags);
+        params.put("requiredTagCount", Long.valueOf(tags.size()));
     }
 
     private String toOrderByClause(final AuctionSortOption sort, final boolean groupedByAuctionId) {
@@ -153,22 +152,19 @@ public class AuctionJpaDao implements AuctionDao {
                                        final List<String> timeRanges, final AuctionSortOption sort,
                                        final int page, final int pageSize, final boolean requirePositiveStock) {
         final boolean withTags = tags != null && !tags.isEmpty();
-        final StringBuilder hql = new StringBuilder("SELECT a.id ");
-        final List<Object> params = new ArrayList<>();
-        appendFilterFromClause(hql, withTags);
-        appendCommonCatalogFilters(hql, params, query, city, timeRanges, requirePositiveStock);
+        final StringBuilder jpql = new StringBuilder("SELECT a.id ");
+        final Map<String, Object> params = new LinkedHashMap<>();
+        appendFilterFromClause(jpql, withTags);
+        appendCommonCatalogFilters(jpql, params, query, city, timeRanges, requirePositiveStock);
         if (withTags) {
-            appendAllTagsFilter(hql, params, tags);
+            appendAllTagsFilter(jpql, params, tags);
         }
-        hql.append("ORDER BY ").append(toOrderByClause(sort, withTags));
+        jpql.append("ORDER BY ").append(toOrderByClause(sort, withTags));
 
-        final TypedQuery<Long> typedQuery = em.createQuery(hql.toString(), Long.class);
-        for (int i = 0; i < params.size(); i++) {
-            typedQuery.setParameter(i + 1, params.get(i));
-        }
-        typedQuery.setMaxResults(pageSize);
-        typedQuery.setFirstResult(Math.max(0, page - 1) * pageSize);
-        return typedQuery.getResultList();
+        return JpqlQuerySupport.createQuery(em, jpql.toString(), params, Long.class)
+                .setMaxResults(pageSize)
+                .setFirstResult(Pagination.offset(page, pageSize))
+                .getResultList();
     }
 
     @Override
@@ -200,19 +196,15 @@ public class AuctionJpaDao implements AuctionDao {
                                      final String city, final List<String> timeRanges,
                                      final boolean requirePositiveStock) {
         final boolean withTags = tags != null && !tags.isEmpty();
-        final StringBuilder hql = new StringBuilder("SELECT COUNT(DISTINCT a.id) ");
-        final List<Object> params = new ArrayList<>();
-        appendFilterFromClause(hql, withTags);
-        appendCommonCatalogFilters(hql, params, query, city, timeRanges, requirePositiveStock);
+        final StringBuilder jpql = new StringBuilder("SELECT COUNT(DISTINCT a.id) ");
+        final Map<String, Object> params = new LinkedHashMap<>();
+        appendFilterFromClause(jpql, withTags);
+        appendCommonCatalogFilters(jpql, params, query, city, timeRanges, requirePositiveStock);
         if (withTags) {
-            appendAllTagsCountFilter(hql, params, tags);
+            appendAllTagsCountFilter(jpql, params, tags);
         }
 
-        final TypedQuery<Long> typedQuery = em.createQuery(hql.toString(), Long.class);
-        for (int i = 0; i < params.size(); i++) {
-            typedQuery.setParameter(i + 1, params.get(i));
-        }
-        final Long count = typedQuery.getSingleResult();
+        final Long count = JpqlQuerySupport.createQuery(em, jpql.toString(), params, Long.class).getSingleResult();
         return count != null ? count.intValue() : 0;
     }
 
@@ -249,91 +241,77 @@ public class AuctionJpaDao implements AuctionDao {
 
     @Override
     public List<Auction> findExpiredActive() {
-        return em.createQuery("SELECT a FROM Auction a JOIN FETCH a.pack p WHERE a.status = 'ACTIVE' AND a.endTime <= :now AND p.deleted = false", Auction.class)
+        return em.createQuery("SELECT a FROM Auction a JOIN FETCH a.pack p WHERE a.status = :activeStatus AND a.endTime <= :now AND p.deleted = false", Auction.class)
+                .setParameter("activeStatus", Auction.Status.ACTIVE)
                 .setParameter("now", LocalDateTime.now(ZoneOffset.UTC))
                 .getResultList();
     }
 
-    private void appendParticipatedConditions(StringBuilder hql, List<Object> params, long clientId, Auction.Status status, String query) {
-        hql.append("FROM Auction a JOIN a.pack p JOIN Commerce c ON p.commerceId = c.userId WHERE p.deleted = false ");
-        hql.append("AND a.id IN (SELECT b.auctionId FROM Bid b WHERE b.clientId = ?").append(params.size() + 1).append(") ");
-        params.add(clientId);
+    private void appendParticipatedConditions(final StringBuilder jpql, final Map<String, Object> params,
+                                              final long clientId, final Auction.Status status, final String query) {
+        jpql.append("FROM Auction a JOIN a.pack p JOIN Commerce c ON p.commerceId = c.userId WHERE p.deleted = false ");
+        jpql.append("AND a.id IN (SELECT b.auctionId FROM Bid b WHERE b.clientId = :clientId) ");
+        params.put("clientId", Long.valueOf(clientId));
 
         if (status != null) {
-            hql.append("AND a.status = ?").append(params.size() + 1).append(" ");
-            params.add(status);
+            jpql.append("AND a.status = :auctionStatus ");
+            params.put("auctionStatus", status);
         }
 
         final Optional<String> pattern = LikePatternSupport.escapeAndWrap(query);
         if (pattern.isPresent()) {
-            final String search = pattern.get();
-            final String titleParam = "?" + (params.size() + 1);
-            final String descriptionParam = "?" + (params.size() + 2);
-            final String commerceParam = "?" + (params.size() + 3);
-            hql.append("AND (");
-            LikePatternSupport.appendEscapedLike(hql, "p.title", titleParam);
-            hql.append(" OR ");
-            LikePatternSupport.appendEscapedLike(hql, "p.description", descriptionParam);
-            hql.append(" OR ");
-            LikePatternSupport.appendEscapedLike(hql, "c.commercialName", commerceParam);
-            hql.append(") ");
-            params.add(search);
-            params.add(search);
-            params.add(search);
+            jpql.append("AND (");
+            LikePatternSupport.appendEscapedLike(jpql, "p.title", ":search");
+            jpql.append(" OR ");
+            LikePatternSupport.appendEscapedLike(jpql, "p.description", ":search");
+            jpql.append(" OR ");
+            LikePatternSupport.appendEscapedLike(jpql, "c.commercialName", ":search");
+            jpql.append(") ");
+            params.put("search", pattern.get());
         }
     }
 
     @Override
     public List<Auction> filterParticipatedAuctions(final long clientId, final Auction.Status status, final String query, final int page, final int pageSize) {
-        StringBuilder idHql = new StringBuilder("SELECT a.id, MAX(b.timestamp) ");
-        idHql.append("FROM Auction a JOIN a.pack p JOIN Commerce c ON p.commerceId = c.userId, Bid b WHERE a.id = b.auctionId ");
-        idHql.append("AND p.deleted = false AND b.clientId = ?1 ");
+        final StringBuilder idJpql = new StringBuilder("SELECT a.id, MAX(b.timestamp) ");
+        idJpql.append("FROM Auction a JOIN a.pack p JOIN Commerce c ON p.commerceId = c.userId, Bid b WHERE a.id = b.auctionId ");
+        idJpql.append("AND p.deleted = false AND b.clientId = :clientId ");
 
-        List<Object> params = new ArrayList<>();
-        params.add(clientId);
+        final Map<String, Object> params = new LinkedHashMap<>();
+        params.put("clientId", Long.valueOf(clientId));
 
         if (status != null) {
-            idHql.append("AND a.status = ?2 ");
-            params.add(status);
+            idJpql.append("AND a.status = :auctionStatus ");
+            params.put("auctionStatus", status);
         }
 
         final Optional<String> pattern = LikePatternSupport.escapeAndWrap(query);
         if (pattern.isPresent()) {
-            final String search = pattern.get();
-            final String titleParam = "?" + (params.size() + 1);
-            final String descriptionParam = "?" + (params.size() + 2);
-            final String commerceParam = "?" + (params.size() + 3);
-            idHql.append("AND (");
-            LikePatternSupport.appendEscapedLike(idHql, "p.title", titleParam);
-            idHql.append(" OR ");
-            LikePatternSupport.appendEscapedLike(idHql, "p.description", descriptionParam);
-            idHql.append(" OR ");
-            LikePatternSupport.appendEscapedLike(idHql, "c.commercialName", commerceParam);
-            idHql.append(") ");
-            params.add(search);
-            params.add(search);
-            params.add(search);
+            idJpql.append("AND (");
+            LikePatternSupport.appendEscapedLike(idJpql, "p.title", ":search");
+            idJpql.append(" OR ");
+            LikePatternSupport.appendEscapedLike(idJpql, "p.description", ":search");
+            idJpql.append(" OR ");
+            LikePatternSupport.appendEscapedLike(idJpql, "c.commercialName", ":search");
+            idJpql.append(") ");
+            params.put("search", pattern.get());
         }
-        idHql.append("GROUP BY a.id ORDER BY MAX(b.timestamp) DESC");
+        idJpql.append("GROUP BY a.id ORDER BY MAX(b.timestamp) DESC");
 
-        TypedQuery<Object[]> typedQuery = em.createQuery(idHql.toString(), Object[].class);
-        for (int i = 0; i < params.size(); i++) {
-            typedQuery.setParameter(i + 1, params.get(i));
-        }
-        typedQuery.setMaxResults(pageSize);
-        typedQuery.setFirstResult((page - 1) * pageSize);
-
-        List<Object[]> results = typedQuery.getResultList();
+        final List<Object[]> results = JpqlQuerySupport.createQuery(em, idJpql.toString(), params, Object[].class)
+                .setMaxResults(pageSize)
+                .setFirstResult(Pagination.offset(page, pageSize))
+                .getResultList();
         if (results.isEmpty()) {
             return new ArrayList<>();
         }
 
-        List<Long> ids = new ArrayList<>();
-        for (Object[] row : results) {
+        final List<Long> ids = new ArrayList<>();
+        for (final Object[] row : results) {
             ids.add((Long) row[0]);
         }
 
-        List<Auction> auctions = em.createQuery("SELECT a FROM Auction a JOIN FETCH a.pack p WHERE a.id IN :ids", Auction.class)
+        final List<Auction> auctions = em.createQuery("SELECT a FROM Auction a JOIN FETCH a.pack p WHERE a.id IN :ids", Auction.class)
                 .setParameter("ids", ids)
                 .getResultList();
 
@@ -343,15 +321,11 @@ public class AuctionJpaDao implements AuctionDao {
 
     @Override
     public int countParticipatedAuctions(final long clientId, final Auction.Status status, final String query) {
-        StringBuilder hql = new StringBuilder("SELECT COUNT(DISTINCT a.id) ");
-        List<Object> params = new ArrayList<>();
-        appendParticipatedConditions(hql, params, clientId, status, query);
+        final StringBuilder jpql = new StringBuilder("SELECT COUNT(DISTINCT a.id) ");
+        final Map<String, Object> params = new LinkedHashMap<>();
+        appendParticipatedConditions(jpql, params, clientId, status, query);
 
-        TypedQuery<Long> typedQuery = em.createQuery(hql.toString(), Long.class);
-        for (int i = 0; i < params.size(); i++) {
-            typedQuery.setParameter(i + 1, params.get(i));
-        }
-        Long count = typedQuery.getSingleResult();
+        final Long count = JpqlQuerySupport.createQuery(em, jpql.toString(), params, Long.class).getSingleResult();
         return count != null ? count.intValue() : 0;
     }
 }

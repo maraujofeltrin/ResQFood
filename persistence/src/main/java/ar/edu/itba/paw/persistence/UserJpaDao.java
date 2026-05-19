@@ -52,6 +52,7 @@ public class UserJpaDao implements UserDao {
     public Optional<User> findByEmail(final String email) {
         return em.createQuery("FROM User u WHERE u.email = :email", User.class)
                 .setParameter("email", email)
+                .setMaxResults(1)
                 .getResultList()
                 .stream()
                 .findFirst();

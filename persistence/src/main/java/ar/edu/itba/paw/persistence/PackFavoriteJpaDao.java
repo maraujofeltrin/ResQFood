@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.persistence.util.Pagination;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
@@ -15,6 +16,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Favorites are stored in {@code client_pack_favorites} without a dedicated JPA entity.
+ * Native SQL is intentional for this join table; see {@link #findActiveFavoritePacksForClient}.
+ */
 @Primary
 @Repository
 public class PackFavoriteJpaDao implements PackFavoriteDao {
@@ -28,11 +33,10 @@ public class PackFavoriteJpaDao implements PackFavoriteDao {
     public List<Pack> findActiveFavoritePacksForClient(final long clientId, final int page, final int pageSize) {
         final int safePage = Math.max(1, page);
         final int safeSize = Math.max(1, pageSize);
-        final int offset = (safePage - 1) * safeSize;
 
         final javax.persistence.Query idQuery = em.createNativeQuery("SELECT f.pack_id FROM client_pack_favorites f INNER JOIN packs p ON p.id = f.pack_id WHERE f.client_id = :cid AND p.active = TRUE AND p.deleted = FALSE ORDER BY f.created_at DESC");
         idQuery.setParameter("cid", clientId);
-        idQuery.setFirstResult(offset);
+        idQuery.setFirstResult(Pagination.offset(safePage, safeSize));
         idQuery.setMaxResults(safeSize);
         final List<?> rawIds = idQuery.getResultList();
         final List<Long> ids = new ArrayList<>();

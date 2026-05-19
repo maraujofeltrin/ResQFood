@@ -5,8 +5,10 @@ import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
+import ar.edu.itba.paw.persistence.util.JpqlQuerySupport;
 import ar.edu.itba.paw.persistence.util.LikePatternSupport;
 import ar.edu.itba.paw.persistence.util.OpeningTimeFilterJpql;
+import ar.edu.itba.paw.persistence.util.Pagination;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
@@ -148,7 +150,7 @@ public class PackJpaDao implements PackDao {
         final Map<String, Object> params = new LinkedHashMap<>();
         params.put("activeStatus", Auction.Status.ACTIVE);
         appendOptionalFilters(jpql, params, query, tags, city, timeRanges, requirePositiveStock);
-        final Number count = (Number) createQuery(jpql.toString(), params, Long.class).getSingleResult();
+        final Number count = (Number) JpqlQuerySupport.createQuery(em, jpql.toString(), params, Long.class).getSingleResult();
         return count == null ? 0 : count.intValue();
     }
 
@@ -165,8 +167,8 @@ public class PackJpaDao implements PackDao {
             }
         }
         jpql.append(" ORDER BY p.id DESC");
-        return createQuery(jpql.toString(), params, Pack.class)
-                .setFirstResult(Math.max(0, page - 1) * pageSize)
+        return JpqlQuerySupport.createQuery(em, jpql.toString(), params, Pack.class)
+                .setFirstResult(Pagination.offset(page, pageSize))
                 .setMaxResults(pageSize)
                 .getResultList();
     }
@@ -183,7 +185,7 @@ public class PackJpaDao implements PackDao {
                 jpql.append(" AND NOT EXISTS (SELECT a.id FROM Auction a WHERE a.pack.id = p.id)");
             }
         }
-        final Number count = (Number) createQuery(jpql.toString(), params, Long.class).getSingleResult();
+        final Number count = (Number) JpqlQuerySupport.createQuery(em, jpql.toString(), params, Long.class).getSingleResult();
         return count == null ? 0 : count.intValue();
     }
 
@@ -195,8 +197,8 @@ public class PackJpaDao implements PackDao {
         params.put("activeStatus", Auction.Status.ACTIVE);
         appendOptionalFilters(jpql, params, query, tags, city, timeRanges, requirePositiveStock);
         jpql.append(" ORDER BY ").append(toOrderByClause(sort));
-        return createQuery(jpql.toString(), params, Long.class)
-                .setFirstResult(Math.max(0, page - 1) * pageSize)
+        return JpqlQuerySupport.createQuery(em, jpql.toString(), params, Long.class)
+                .setFirstResult(Pagination.offset(page, pageSize))
                 .setMaxResults(pageSize)
                 .getResultList();
     }
@@ -230,15 +232,6 @@ public class PackJpaDao implements PackDao {
                 params.put(paramName, tags.get(index));
             }
         }
-    }
-
-    private <T> javax.persistence.TypedQuery<T> createQuery(final String jpql, final Map<String, Object> params,
-                                                            final Class<T> resultType) {
-        final javax.persistence.TypedQuery<T> query = em.createQuery(jpql, resultType);
-        for (final Map.Entry<String, Object> entry : params.entrySet()) {
-            query.setParameter(entry.getKey(), entry.getValue());
-        }
-        return query;
     }
 
     private String toOrderByClause(final PackSortOption sort) {
