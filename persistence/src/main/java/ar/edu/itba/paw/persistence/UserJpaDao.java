@@ -32,7 +32,12 @@ public class UserJpaDao implements UserDao {
                 .setParameter("r", role)
                 .setParameter("id", id)
                 .executeUpdate();
-        return em.find(User.class, id);
+        final User user = em.find(User.class, id);
+        if (user != null) {
+            em.flush();
+            em.refresh(user);
+        }
+        return user;
     }
 
     @Override

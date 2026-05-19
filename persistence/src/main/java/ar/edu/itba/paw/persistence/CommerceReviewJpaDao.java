@@ -33,9 +33,12 @@ public class CommerceReviewJpaDao implements CommerceReviewDao {
                 .setParameter("updatedAt", LocalDateTime.now())
                 .setParameter("id", id)
                 .executeUpdate();
-        // Return a fresh copy
-        em.clear();
-        return em.find(CommerceReview.class, id);
+        final CommerceReview review = em.find(CommerceReview.class, id);
+        if (review != null) {
+            em.flush();
+            em.refresh(review);
+        }
+        return review;
     }
 
     @Override

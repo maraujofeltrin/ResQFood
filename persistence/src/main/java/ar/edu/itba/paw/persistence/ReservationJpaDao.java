@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.reservation.Reservation;
+import ar.edu.itba.paw.persistence.util.LikePatternSupport;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
@@ -97,16 +98,15 @@ public class ReservationJpaDao implements ReservationDao {
 
     private void appendReservationFilters(StringBuilder hql, List<Object> params, Long commerceId, Long customerId, String query, Reservation.Status status, boolean excludeAuctionPacks) {
         hql.append("FROM Reservation r ");
-        if (commerceId != null || (query != null && !query.isBlank()) || excludeAuctionPacks) {
+        final boolean needsPack = commerceId != null || (query != null && !query.isBlank()) || excludeAuctionPacks;
+        final boolean needsCommerce = commerceId != null || (query != null && !query.isBlank());
+        if (needsPack) {
             hql.append("LEFT JOIN r.pack p ");
-            if (commerceId != null || (query != null && !query.isBlank())) {
-                hql.append(", ar.edu.itba.paw.models.user.Commerce c WHERE p.commerceId = c.id ");
-            } else {
-                hql.append("WHERE 1=1 ");
-            }
-        } else {
-            hql.append("WHERE 1=1 ");
         }
+        if (needsCommerce) {
+            hql.append("JOIN Commerce c ON p.commerceId = c.userId ");
+        }
+        hql.append("WHERE 1=1 ");
 
         if (commerceId != null) {
             hql.append("AND p.commerceId = ?").append(params.size() + 1).append(" ");
@@ -121,22 +121,28 @@ public class ReservationJpaDao implements ReservationDao {
             params.add(status);
         }
 
-        if (query != null && !query.isBlank()) {
-            final String escapedQuery = query.trim()
-                    .replace("\\", "\\\\")
-                    .replace("%", "\\%")
-                    .replace("_", "\\_");
-            final String pattern = "%" + escapedQuery + "%";
-            hql.append("AND (LOWER(p.title) LIKE LOWER(?").append(params.size() + 1).append(") ESCAPE '\\' OR LOWER(p.description) LIKE LOWER(?").append(params.size() + 2).append(") ESCAPE '\\' ");
+        final Optional<String> searchPattern = LikePatternSupport.escapeAndWrap(query);
+        if (searchPattern.isPresent()) {
+            final String pattern = searchPattern.get();
+            final String titleParam = "?" + (params.size() + 1);
+            final String descriptionParam = "?" + (params.size() + 2);
+            hql.append("AND (");
+            LikePatternSupport.appendEscapedLike(hql, "p.title", titleParam);
+            hql.append(" OR ");
+            LikePatternSupport.appendEscapedLike(hql, "p.description", descriptionParam);
             params.add(pattern);
             params.add(pattern);
-            
+
             if (commerceId != null) {
-                // To search by client name, we need client join
-                hql.append("OR EXISTS (SELECT 1 FROM ar.edu.itba.paw.models.user.Client cl WHERE cl.id = r.customerId AND LOWER(CONCAT(cl.name, ' ', cl.lastName)) LIKE LOWER(?").append(params.size() + 1).append(") ESCAPE '\\') ");
+                final String clientParam = "?" + (params.size() + 1);
+                hql.append(" OR EXISTS (SELECT 1 FROM Client cl WHERE cl.userId = r.customerId AND ");
+                LikePatternSupport.appendEscapedLike(hql, "CONCAT(cl.name, ' ', cl.lastName)", clientParam);
+                hql.append(") ");
                 params.add(pattern);
             } else if (customerId != null) {
-                hql.append("OR LOWER(c.commercialName) LIKE LOWER(?").append(params.size() + 1).append(") ESCAPE '\\' ");
+                final String commerceParam = "?" + (params.size() + 1);
+                hql.append(" OR ");
+                LikePatternSupport.appendEscapedLike(hql, "c.commercialName", commerceParam);
                 params.add(pattern);
             }
             hql.append(") ");
