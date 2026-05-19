@@ -12,8 +12,11 @@
 <%@ attribute name="alreadySubmitted" required="false" type="java.lang.Boolean" %>
 <%@ attribute name="alertKind" required="false" type="java.lang.String" %>
 <%@ attribute name="alertMessage" required="false" type="java.lang.String" %>
+<%@ attribute name="fullWidth" required="false" type="java.lang.Boolean" %>
 
-<section class="commerce-reviews-card" id="commerce-reviews" aria-label="<spring:message code='pack.detail.reviews.section'/>">
+<section class="commerce-reviews-card<c:if test="${fullWidth}"> commerce-reviews-card--full-width</c:if>"
+         id="commerce-reviews"
+         aria-label="<spring:message code='pack.detail.reviews.section'/>">
     <div class="commerce-reviews-card__header">
         <div>
             <p class="commerce-reviews-card__eyebrow"><spring:message code="pack.detail.reviews.eyebrow"/></p>

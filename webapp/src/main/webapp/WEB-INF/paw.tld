@@ -44,6 +44,9 @@
     <tag-file><name>userIdentityFields</name><path>/WEB-INF/tags/commerce/userIdentityFields.tag</path></tag-file>
     <tag-file><name>deletePackModal</name><path>/WEB-INF/tags/commerce/deletePackModal.tag</path></tag-file>
     <tag-file><name>cancelAuctionModal</name><path>/WEB-INF/tags/commerce/cancelAuctionModal.tag</path></tag-file>
+    <tag-file><name>commerceInfoCardBody</name><path>/WEB-INF/tags/commerce/commerceInfoCardBody.tag</path></tag-file>
+    <tag-file><name>commerceInfoCard</name><path>/WEB-INF/tags/commerce/commerceInfoCard.tag</path></tag-file>
+    <tag-file><name>commerceInfoCardSidebar</name><path>/WEB-INF/tags/commerce/commerceInfoCardSidebar.tag</path></tag-file>
 
     <!-- Reservations -->
     <tag-file><name>reservationCard</name><path>/WEB-INF/tags/reservations/reservationCard.tag</path></tag-file>
