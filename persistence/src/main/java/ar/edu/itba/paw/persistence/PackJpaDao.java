@@ -5,6 +5,8 @@ import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
+import ar.edu.itba.paw.persistence.util.LikePatternSupport;
+import ar.edu.itba.paw.persistence.util.OpeningTimeFilterJpql;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
@@ -19,7 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Locale;
 
 @Primary
 @Repository
@@ -206,31 +207,21 @@ public class PackJpaDao implements PackDao {
         if (requirePositiveStock) {
             jpql.append(" AND p.stock > 0");
         }
-        if (query != null && !query.isBlank()) {
-            final String normalized = "%" + query.trim().toLowerCase(Locale.ROOT) + "%";
-            jpql.append(" AND (LOWER(p.title) LIKE :search OR LOWER(c.commercialName) LIKE :search)");
-            params.put("search", normalized);
+        final Optional<String> searchPattern = LikePatternSupport.escapeAndWrap(query);
+        if (searchPattern.isPresent()) {
+            jpql.append(" AND (");
+            LikePatternSupport.appendEscapedLike(jpql, "p.title", ":search");
+            jpql.append(" OR ");
+            LikePatternSupport.appendEscapedLike(jpql, "c.commercialName", ":search");
+            jpql.append(")");
+            params.put("search", searchPattern.get());
         }
         final Municipality municipality = Municipality.fromCityName(city);
         if (municipality != null) {
             jpql.append(" AND c.city = :city");
             params.put("city", municipality);
         }
-        final List<String> timePredicates = new ArrayList<>();
-        if (timeRanges != null) {
-            for (final String range : timeRanges) {
-                if ("morning".equals(range)) {
-                    timePredicates.add("c.openingTime < '12:00'");
-                } else if ("afternoon".equals(range)) {
-                    timePredicates.add("c.openingTime >= '12:00' AND c.openingTime < '17:00'");
-                } else if ("evening".equals(range)) {
-                    timePredicates.add("c.openingTime >= '17:00'");
-                }
-            }
-        }
-        if (!timePredicates.isEmpty()) {
-            jpql.append(" AND (").append(String.join(" OR ", timePredicates)).append(")");
-        }
+        OpeningTimeFilterJpql.appendTimeRangeConditions(jpql, "c.openingTime", timeRanges);
         if (tags != null && !tags.isEmpty()) {
             // Each required tag must be present, so we add one MEMBER OF predicate per tag instead of grouping.
             for (int index = 0; index < tags.size(); index++) {
