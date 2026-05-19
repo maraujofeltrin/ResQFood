@@ -1,17 +1,20 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.reservation.Reservation;
+import ar.edu.itba.paw.persistence.util.JpqlQuerySupport;
+import ar.edu.itba.paw.persistence.util.LikePatternSupport;
+import ar.edu.itba.paw.persistence.util.Pagination;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.TypedQuery;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.ArrayList;
 
 @Primary
 @Repository("reservationJpaDao")
@@ -90,96 +93,91 @@ public class ReservationJpaDao implements ReservationDao {
     public Optional<Reservation> findByPickupCode(final String pickupCode) {
         return em.createQuery("FROM Reservation r WHERE r.pickupCode = :code", Reservation.class)
             .setParameter("code", pickupCode)
+            .setMaxResults(1)
             .getResultList()
             .stream()
             .findFirst();
     }
 
-    private void appendReservationFilters(StringBuilder hql, List<Object> params, Long commerceId, Long customerId, String query, Reservation.Status status, boolean excludeAuctionPacks) {
-        hql.append("FROM Reservation r ");
-        if (commerceId != null || (query != null && !query.isBlank()) || excludeAuctionPacks) {
-            hql.append("LEFT JOIN r.pack p ");
-            if (commerceId != null || (query != null && !query.isBlank())) {
-                hql.append(", ar.edu.itba.paw.models.user.Commerce c WHERE p.commerceId = c.id ");
-            } else {
-                hql.append("WHERE 1=1 ");
-            }
-        } else {
-            hql.append("WHERE 1=1 ");
+    private void appendReservationFilters(final StringBuilder jpql, final Map<String, Object> params,
+            final Long commerceId, final Long customerId, final String query, final Reservation.Status status,
+            final boolean excludeAuctionPacks) {
+        jpql.append("FROM Reservation r ");
+        final boolean needsPack = commerceId != null || (query != null && !query.isBlank()) || excludeAuctionPacks;
+        final boolean needsCommerce = commerceId != null || (query != null && !query.isBlank());
+        if (needsPack) {
+            jpql.append("LEFT JOIN r.pack p ");
         }
+        if (needsCommerce) {
+            jpql.append("JOIN Commerce c ON p.commerceId = c.userId ");
+        }
+        jpql.append("WHERE 1=1 ");
 
         if (commerceId != null) {
-            hql.append("AND p.commerceId = ?").append(params.size() + 1).append(" ");
-            params.add(commerceId);
+            jpql.append("AND p.commerceId = :commerceId ");
+            params.put("commerceId", commerceId);
         }
         if (customerId != null) {
-            hql.append("AND r.customerId = ?").append(params.size() + 1).append(" ");
-            params.add(customerId);
+            jpql.append("AND r.customerId = :customerId ");
+            params.put("customerId", customerId);
         }
         if (status != null) {
-            hql.append("AND r.status = ?").append(params.size() + 1).append(" ");
-            params.add(status);
+            jpql.append("AND r.status = :status ");
+            params.put("status", status);
         }
 
-        if (query != null && !query.isBlank()) {
-            final String escapedQuery = query.trim()
-                    .replace("\\", "\\\\")
-                    .replace("%", "\\%")
-                    .replace("_", "\\_");
-            final String pattern = "%" + escapedQuery + "%";
-            hql.append("AND (LOWER(p.title) LIKE LOWER(?").append(params.size() + 1).append(") ESCAPE '\\' OR LOWER(p.description) LIKE LOWER(?").append(params.size() + 2).append(") ESCAPE '\\' ");
-            params.add(pattern);
-            params.add(pattern);
-            
+        final Optional<String> searchPattern = LikePatternSupport.escapeAndWrap(query);
+        if (searchPattern.isPresent()) {
+            final String pattern = searchPattern.get();
+            jpql.append("AND (");
+            LikePatternSupport.appendEscapedLike(jpql, "p.title", ":search");
+            jpql.append(" OR ");
+            LikePatternSupport.appendEscapedLike(jpql, "p.description", ":search");
+            params.put("search", pattern);
+
             if (commerceId != null) {
-                // To search by client name, we need client join
-                hql.append("OR EXISTS (SELECT 1 FROM ar.edu.itba.paw.models.user.Client cl WHERE cl.id = r.customerId AND LOWER(CONCAT(cl.name, ' ', cl.lastName)) LIKE LOWER(?").append(params.size() + 1).append(") ESCAPE '\\') ");
-                params.add(pattern);
+                jpql.append(" OR EXISTS (SELECT 1 FROM Client cl WHERE cl.userId = r.customerId AND ");
+                LikePatternSupport.appendEscapedLike(jpql, "CONCAT(cl.name, ' ', cl.lastName)", ":search");
+                jpql.append(") ");
             } else if (customerId != null) {
-                hql.append("OR LOWER(c.commercialName) LIKE LOWER(?").append(params.size() + 1).append(") ESCAPE '\\' ");
-                params.add(pattern);
+                jpql.append(" OR ");
+                LikePatternSupport.appendEscapedLike(jpql, "c.commercialName", ":search");
             }
-            hql.append(") ");
+            jpql.append(") ");
         }
 
         if (excludeAuctionPacks) {
-            hql.append("AND NOT EXISTS (SELECT 1 FROM Auction a WHERE a.pack.id = p.id) ");
+            jpql.append("AND NOT EXISTS (SELECT 1 FROM Auction a WHERE a.pack.id = p.id) ");
         }
     }
 
     @Override
-    public List<Reservation> filterReservations(Long commerceId, Long customerId, String query, Reservation.Status status, boolean excludeAuctionPacks, int page, int pageSize) {
-        StringBuilder hql = new StringBuilder("SELECT r ");
-        List<Object> params = new ArrayList<>();
-        appendReservationFilters(hql, params, commerceId, customerId, query, status, excludeAuctionPacks);
-        hql.append("ORDER BY r.reservationDate DESC ");
+    public List<Reservation> filterReservations(final Long commerceId, final Long customerId, final String query,
+            final Reservation.Status status, final boolean excludeAuctionPacks, final int page, final int pageSize) {
+        final StringBuilder jpql = new StringBuilder("SELECT r ");
+        final Map<String, Object> params = new LinkedHashMap<>();
+        appendReservationFilters(jpql, params, commerceId, customerId, query, status, excludeAuctionPacks);
+        jpql.append("ORDER BY r.reservationDate DESC ");
 
-        TypedQuery<Reservation> typedQuery = em.createQuery(hql.toString(), Reservation.class);
-        for (int i = 0; i < params.size(); i++) {
-            typedQuery.setParameter(i + 1, params.get(i));
-        }
-        typedQuery.setMaxResults(pageSize);
-        typedQuery.setFirstResult((page - 1) * pageSize);
-
-        return typedQuery.getResultList();
+        return JpqlQuerySupport.createQuery(em, jpql.toString(), params, Reservation.class)
+                .setMaxResults(pageSize)
+                .setFirstResult(Pagination.offset(page, pageSize))
+                .getResultList();
     }
 
     @Override
-    public int countFilteredReservations(Long commerceId, Long customerId, String query, Reservation.Status status, boolean excludeAuctionPacks) {
-        StringBuilder hql = new StringBuilder("SELECT COUNT(r.id) ");
-        List<Object> params = new ArrayList<>();
-        appendReservationFilters(hql, params, commerceId, customerId, query, status, excludeAuctionPacks);
+    public int countFilteredReservations(final Long commerceId, final Long customerId, final String query,
+            final Reservation.Status status, final boolean excludeAuctionPacks) {
+        final StringBuilder jpql = new StringBuilder("SELECT COUNT(r.id) ");
+        final Map<String, Object> params = new LinkedHashMap<>();
+        appendReservationFilters(jpql, params, commerceId, customerId, query, status, excludeAuctionPacks);
 
-        TypedQuery<Long> typedQuery = em.createQuery(hql.toString(), Long.class);
-        for (int i = 0; i < params.size(); i++) {
-            typedQuery.setParameter(i + 1, params.get(i));
-        }
-        Long count = typedQuery.getSingleResult();
+        final Long count = JpqlQuerySupport.createQuery(em, jpql.toString(), params, Long.class).getSingleResult();
         return count != null ? count.intValue() : 0;
     }
 
     @Override
-    public boolean hasActiveReservation(Long packId, Long customerId) {
+    public boolean hasActiveReservation(final Long packId, final Long customerId) {
         final Number count = em.createQuery("SELECT COUNT(r.id) FROM Reservation r WHERE r.packId = :packId AND r.customerId = :customerId AND r.status = :status", Number.class)
                 .setParameter("packId", packId)
                 .setParameter("customerId", customerId)
@@ -214,7 +212,7 @@ public class ReservationJpaDao implements ReservationDao {
     @Override
     public List<Object[]> countPaidReservationsPerDay(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to) {
-        // Use native SQL to group by date to avoid HQL function typing issues across dialects
+        // Native SQL: DATE() aggregation is dialect-specific; no JPA entity for favorites-style bridge tables.
         final String sql = "SELECT DATE(r.reservation_date) AS day, COUNT(r.*) AS cnt "
             + "FROM reservations r JOIN packs p ON p.id = r.pack_id "
             + "WHERE p.commerce_id = :commerceId AND r.status = 'PAID' "
@@ -226,15 +224,15 @@ public class ReservationJpaDao implements ReservationDao {
         q.setParameter("start", java.sql.Timestamp.valueOf(from));
         q.setParameter("end", java.sql.Timestamp.valueOf(to));
 
-        final List<Object[]> results = q.getResultList();
-        return results;
+        return q.getResultList();
     }
 
     @Override
     public BigDecimal sumRevenueInPeriod(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to) {
-        final Double sum = em.createQuery("SELECT SUM(r.finalPrice) FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = 'PAID' AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end", Double.class)
+        final Double sum = em.createQuery("SELECT SUM(r.finalPrice) FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end", Double.class)
                 .setParameter("commerceId", commerceId)
+                .setParameter("status", Reservation.Status.PAID)
                 .setParameter("start", from)
                 .setParameter("end", to)
                 .getSingleResult();
@@ -244,8 +242,9 @@ public class ReservationJpaDao implements ReservationDao {
     @Override
     public Optional<Long> findBestSellingPackId(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to) {
-        return em.createQuery("SELECT r.packId FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = 'PAID' AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY r.packId ORDER BY COUNT(r.id) DESC", Long.class)
+        return em.createQuery("SELECT r.packId FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY r.packId ORDER BY COUNT(r.id) DESC", Long.class)
             .setParameter("commerceId", commerceId)
+            .setParameter("status", Reservation.Status.PAID)
             .setParameter("start", from)
             .setParameter("end", to)
             .setMaxResults(1)
@@ -305,27 +304,25 @@ public class ReservationJpaDao implements ReservationDao {
     @Override
     public List<Object[]> findTopSellingPacks(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to, final int limit) {
-        final List<Object[]> results = em.createQuery("SELECT r.packId, SUM(r.quantity) as unitsSold FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY r.packId ORDER BY unitsSold DESC", Object[].class)
+        return em.createQuery("SELECT r.packId, SUM(r.quantity) as unitsSold FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY r.packId ORDER BY unitsSold DESC", Object[].class)
                 .setParameter("commerceId", commerceId)
                 .setParameter("status", Reservation.Status.PAID)
                 .setParameter("start", from)
                 .setParameter("end", to)
                 .setMaxResults(limit)
                 .getResultList();
-        return results;
     }
 
     @Override
     public List<Object[]> findTopClientsByPaidReservations(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to, final int limit) {
-        final List<Object[]> results = em.createQuery("SELECT r.customerId, COUNT(r.id) as reservationCount FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY r.customerId ORDER BY reservationCount DESC", Object[].class)
+        return em.createQuery("SELECT r.customerId, COUNT(r.id) as reservationCount FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY r.customerId ORDER BY reservationCount DESC", Object[].class)
                 .setParameter("commerceId", commerceId)
                 .setParameter("status", Reservation.Status.PAID)
                 .setParameter("start", from)
                 .setParameter("end", to)
                 .setMaxResults(limit)
                 .getResultList();
-        return results;
     }
 
     @Override

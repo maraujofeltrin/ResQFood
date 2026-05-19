@@ -5,6 +5,10 @@ import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
+import ar.edu.itba.paw.persistence.util.JpqlQuerySupport;
+import ar.edu.itba.paw.persistence.util.LikePatternSupport;
+import ar.edu.itba.paw.persistence.util.OpeningTimeFilterJpql;
+import ar.edu.itba.paw.persistence.util.Pagination;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
@@ -19,7 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Locale;
 
 @Primary
 @Repository
@@ -147,7 +150,7 @@ public class PackJpaDao implements PackDao {
         final Map<String, Object> params = new LinkedHashMap<>();
         params.put("activeStatus", Auction.Status.ACTIVE);
         appendOptionalFilters(jpql, params, query, tags, city, timeRanges, requirePositiveStock);
-        final Number count = (Number) createQuery(jpql.toString(), params, Long.class).getSingleResult();
+        final Number count = (Number) JpqlQuerySupport.createQuery(em, jpql.toString(), params, Long.class).getSingleResult();
         return count == null ? 0 : count.intValue();
     }
 
@@ -164,8 +167,8 @@ public class PackJpaDao implements PackDao {
             }
         }
         jpql.append(" ORDER BY p.id DESC");
-        return createQuery(jpql.toString(), params, Pack.class)
-                .setFirstResult(Math.max(0, page - 1) * pageSize)
+        return JpqlQuerySupport.createQuery(em, jpql.toString(), params, Pack.class)
+                .setFirstResult(Pagination.offset(page, pageSize))
                 .setMaxResults(pageSize)
                 .getResultList();
     }
@@ -182,7 +185,7 @@ public class PackJpaDao implements PackDao {
                 jpql.append(" AND NOT EXISTS (SELECT a.id FROM Auction a WHERE a.pack.id = p.id)");
             }
         }
-        final Number count = (Number) createQuery(jpql.toString(), params, Long.class).getSingleResult();
+        final Number count = (Number) JpqlQuerySupport.createQuery(em, jpql.toString(), params, Long.class).getSingleResult();
         return count == null ? 0 : count.intValue();
     }
 
@@ -194,8 +197,8 @@ public class PackJpaDao implements PackDao {
         params.put("activeStatus", Auction.Status.ACTIVE);
         appendOptionalFilters(jpql, params, query, tags, city, timeRanges, requirePositiveStock);
         jpql.append(" ORDER BY ").append(toOrderByClause(sort));
-        return createQuery(jpql.toString(), params, Long.class)
-                .setFirstResult(Math.max(0, page - 1) * pageSize)
+        return JpqlQuerySupport.createQuery(em, jpql.toString(), params, Long.class)
+                .setFirstResult(Pagination.offset(page, pageSize))
                 .setMaxResults(pageSize)
                 .getResultList();
     }
@@ -206,31 +209,21 @@ public class PackJpaDao implements PackDao {
         if (requirePositiveStock) {
             jpql.append(" AND p.stock > 0");
         }
-        if (query != null && !query.isBlank()) {
-            final String normalized = "%" + query.trim().toLowerCase(Locale.ROOT) + "%";
-            jpql.append(" AND (LOWER(p.title) LIKE :search OR LOWER(c.commercialName) LIKE :search)");
-            params.put("search", normalized);
+        final Optional<String> searchPattern = LikePatternSupport.escapeAndWrap(query);
+        if (searchPattern.isPresent()) {
+            jpql.append(" AND (");
+            LikePatternSupport.appendEscapedLike(jpql, "p.title", ":search");
+            jpql.append(" OR ");
+            LikePatternSupport.appendEscapedLike(jpql, "c.commercialName", ":search");
+            jpql.append(")");
+            params.put("search", searchPattern.get());
         }
         final Municipality municipality = Municipality.fromCityName(city);
         if (municipality != null) {
             jpql.append(" AND c.city = :city");
             params.put("city", municipality);
         }
-        final List<String> timePredicates = new ArrayList<>();
-        if (timeRanges != null) {
-            for (final String range : timeRanges) {
-                if ("morning".equals(range)) {
-                    timePredicates.add("c.openingTime < '12:00'");
-                } else if ("afternoon".equals(range)) {
-                    timePredicates.add("c.openingTime >= '12:00' AND c.openingTime < '17:00'");
-                } else if ("evening".equals(range)) {
-                    timePredicates.add("c.openingTime >= '17:00'");
-                }
-            }
-        }
-        if (!timePredicates.isEmpty()) {
-            jpql.append(" AND (").append(String.join(" OR ", timePredicates)).append(")");
-        }
+        OpeningTimeFilterJpql.appendTimeRangeConditions(jpql, "c.openingTime", timeRanges);
         if (tags != null && !tags.isEmpty()) {
             // Each required tag must be present, so we add one MEMBER OF predicate per tag instead of grouping.
             for (int index = 0; index < tags.size(); index++) {
@@ -239,15 +232,6 @@ public class PackJpaDao implements PackDao {
                 params.put(paramName, tags.get(index));
             }
         }
-    }
-
-    private <T> javax.persistence.TypedQuery<T> createQuery(final String jpql, final Map<String, Object> params,
-                                                            final Class<T> resultType) {
-        final javax.persistence.TypedQuery<T> query = em.createQuery(jpql, resultType);
-        for (final Map.Entry<String, Object> entry : params.entrySet()) {
-            query.setParameter(entry.getKey(), entry.getValue());
-        }
-        return query;
     }
 
     private String toOrderByClause(final PackSortOption sort) {

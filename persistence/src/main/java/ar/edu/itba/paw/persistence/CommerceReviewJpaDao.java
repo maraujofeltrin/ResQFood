@@ -4,9 +4,12 @@ import ar.edu.itba.paw.models.user.CommerceReview;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
+import ar.edu.itba.paw.persistence.util.Pagination;
+
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,7 +22,7 @@ public class CommerceReviewJpaDao implements CommerceReviewDao {
 
     @Override
     public CommerceReview createReview(Long commerceUserId, Long clientUserId, Integer rating, String body) {
-        LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final CommerceReview review = new CommerceReview(null, commerceUserId, clientUserId, rating, body, now, now);
         em.persist(review);
         return review;
@@ -33,9 +36,12 @@ public class CommerceReviewJpaDao implements CommerceReviewDao {
                 .setParameter("updatedAt", LocalDateTime.now())
                 .setParameter("id", id)
                 .executeUpdate();
-        // Return a fresh copy
-        em.clear();
-        return em.find(CommerceReview.class, id);
+        final CommerceReview review = em.find(CommerceReview.class, id);
+        if (review != null) {
+            em.flush();
+            em.refresh(review);
+        }
+        return review;
     }
 
     @Override
@@ -52,7 +58,7 @@ public class CommerceReviewJpaDao implements CommerceReviewDao {
     public List<CommerceReview> findByCommerceId(Long commerceUserId, int page, int pageSize) {
         return em.createQuery("FROM CommerceReview r WHERE r.commerceUserId = :commerce ORDER BY r.createdAt DESC", CommerceReview.class)
                 .setParameter("commerce", commerceUserId)
-                .setFirstResult((page - 1) * pageSize)
+                .setFirstResult(Pagination.offset(page, pageSize))
                 .setMaxResults(pageSize)
                 .getResultList();
     }

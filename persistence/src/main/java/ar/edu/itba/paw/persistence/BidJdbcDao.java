@@ -66,7 +66,7 @@ public class BidJdbcDao implements BidDao {
     @Override
     public Optional<Bid> findHighestBid(final long auctionId) {
         return jdbcTemplate.query(
-                "SELECT id, auction_id, client_id, amount, timestamp FROM bids WHERE auction_id = ? ORDER BY amount DESC LIMIT 1",
+                "SELECT id, auction_id, client_id, amount, timestamp FROM bids WHERE auction_id = ? ORDER BY amount DESC, timestamp ASC LIMIT 1",
                 BID_ROW_MAPPER, auctionId
         ).stream().findFirst();
     }

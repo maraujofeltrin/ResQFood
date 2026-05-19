@@ -47,9 +47,8 @@ public class CommerceReviewJpaDaoTest {
     @Autowired
     private CommerceJpaDao commerceDao;
 
-    // Pack is still JDBC since it hasn't been migrated yet.
     @Autowired
-    private PackJdbcDao packDao;
+    private PackDao packDao;
 
     @PersistenceContext
     private EntityManager em;
@@ -99,6 +98,23 @@ public class CommerceReviewJpaDaoTest {
         assertEquals(BODY, review.getBody());
         assertNotNull(review.getCreatedAt());
         assertNotNull(review.getUpdatedAt());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerce_reviews"));
+    }
+
+    @Test
+    public void testUpdateReviewDoesNotDetachOtherEntitiesInSameTransaction() {
+        // 1. Setup
+        final CommerceReview created = commerceReviewDao.createReview(commerceId, clientId, RATING, BODY);
+        em.flush();
+        final User commerceUser = em.find(User.class, commerceId);
+
+        // 2. Ejercicio
+        final CommerceReview updated = commerceReviewDao.updateReview(created.getId(), 3, "Cambió la experiencia.");
+
+        // 3. Asserts
+        assertEquals(3, updated.getRating());
+        assertTrue(em.contains(commerceUser));
+        assertEquals("commerce-review@example.com", commerceUser.getEmail());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerce_reviews"));
     }
 

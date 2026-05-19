@@ -32,7 +32,12 @@ public class UserJpaDao implements UserDao {
                 .setParameter("r", role)
                 .setParameter("id", id)
                 .executeUpdate();
-        return em.find(User.class, id);
+        final User user = em.find(User.class, id);
+        if (user != null) {
+            em.flush();
+            em.refresh(user);
+        }
+        return user;
     }
 
     @Override
@@ -47,6 +52,7 @@ public class UserJpaDao implements UserDao {
     public Optional<User> findByEmail(final String email) {
         return em.createQuery("FROM User u WHERE u.email = :email", User.class)
                 .setParameter("email", email)
+                .setMaxResults(1)
                 .getResultList()
                 .stream()
                 .findFirst();

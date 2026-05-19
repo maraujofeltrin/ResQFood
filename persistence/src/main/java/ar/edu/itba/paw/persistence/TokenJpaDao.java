@@ -29,6 +29,7 @@ public class TokenJpaDao implements TokenDao {
         return em.createQuery("FROM Token t WHERE t.token = :token AND t.type = :type", Token.class)
                 .setParameter("token", token)
                 .setParameter("type", type)
+                .setMaxResults(1)
                 .getResultList()
                 .stream()
                 .findFirst();

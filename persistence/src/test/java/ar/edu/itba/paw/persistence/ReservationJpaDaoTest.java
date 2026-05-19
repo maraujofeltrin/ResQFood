@@ -220,6 +220,70 @@ public class ReservationJpaDaoTest {
     }
 
     @Test
+    public void testFilterReservationsByCommerceIdAndPackTitleQuery() {
+        // 1. Setup
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.RESERVED, "CODE1", null, 1, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Reservation> filtered = reservationDao.filterReservations(commerceId, null, "Pack", null,
+                false, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, filtered.size());
+        assertEquals(packId, filtered.get(0).getPackId());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
+    public void testCountFilteredReservationsByCommerceIdAndPackTitleQuery() {
+        // 1. Setup
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.RESERVED, "CODE1", null, 1, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final int count = reservationDao.countFilteredReservations(commerceId, null, "Pack", null, false);
+
+        // 3. Asserts
+        assertEquals(1, count);
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
+    public void testFilterReservationsByCommerceIdAndClientNameQuery() {
+        // 1. Setup
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.RESERVED, "CODE2", null, 1, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Reservation> filtered = reservationDao.filterReservations(commerceId, null, "Client Last", null,
+                false, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, filtered.size());
+        assertEquals(clientId, filtered.get(0).getCustomerId());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
+    public void testCountFilteredReservationsByCommerceIdAndClientNameQuery() {
+        // 1. Setup
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.RESERVED, "CODE2", null, 1, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final int count = reservationDao.countFilteredReservations(commerceId, null, "Client Last", null, false);
+
+        // 3. Asserts
+        assertEquals(1, count);
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
     public void testHasPaidReservationWithCommerceWhenOnlyReservedExists() {
         // 1. Setup
         reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0, Reservation.Status.RESERVED,
