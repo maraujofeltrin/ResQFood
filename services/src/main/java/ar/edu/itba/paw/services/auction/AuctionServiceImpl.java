@@ -9,8 +9,8 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.BidDao;
+import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.PackDao;
-import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,15 +35,16 @@ public class AuctionServiceImpl implements AuctionService {
     private final BidDao bidDao;
     private final PackDao packDao;
     private final ReservationService reservationService;
-    private final CommerceService commerceService;
+    private final CommerceDao commerceDao;
 
     @Autowired
-    public AuctionServiceImpl(final AuctionDao auctionDao, final BidDao bidDao, final PackDao packDao, final ReservationService reservationService, final CommerceService commerceService) {
+    public AuctionServiceImpl(final AuctionDao auctionDao, final BidDao bidDao, final PackDao packDao,
+            final ReservationService reservationService, final CommerceDao commerceDao) {
         this.auctionDao = auctionDao;
         this.bidDao = bidDao;
         this.packDao = packDao;
         this.reservationService = reservationService;
-        this.commerceService = commerceService;
+        this.commerceDao = commerceDao;
     }
 
     @Transactional
@@ -91,14 +92,15 @@ public class AuctionServiceImpl implements AuctionService {
     @Override
     public List<Auction> filterAuctions(final String query, final List<PackTag> tags, final String city,
             final List<String> timeRanges, final AuctionSortOption sort, final int page, final int pageSize,
-            final boolean requirePositiveStock) {
-        return auctionDao.filterAuctions(query, tags, city, timeRanges, sort, page, pageSize, requirePositiveStock);
+            final boolean requirePositiveStock, final Long commerceUserId) {
+        return auctionDao.filterAuctions(query, tags, city, timeRanges, sort, page, pageSize, requirePositiveStock,
+                commerceUserId);
     }
 
     @Override
     public int countFilteredAuctions(final String query, final List<PackTag> tags, final String city,
-            final List<String> timeRanges, final boolean requirePositiveStock) {
-        return auctionDao.countFilteredAuctions(query, tags, city, timeRanges, requirePositiveStock);
+            final List<String> timeRanges, final boolean requirePositiveStock, final Long commerceUserId) {
+        return auctionDao.countFilteredAuctions(query, tags, city, timeRanges, requirePositiveStock, commerceUserId);
     }
 
     @Override
@@ -206,7 +208,7 @@ public class AuctionServiceImpl implements AuctionService {
 
         final Pack pack = auction.getPack();
         final Long commerceId = pack.getCommerceId();
-        final boolean isOwner = commerceService.findByUserId(requestingUserId)
+        final boolean isOwner = commerceDao.findByUserId(requestingUserId)
                 .map(c -> c.getUserId().equals(commerceId))
                 .orElse(false);
         if (!isOwner) {

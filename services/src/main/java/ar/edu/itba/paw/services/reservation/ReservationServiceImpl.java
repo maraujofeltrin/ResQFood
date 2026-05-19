@@ -9,10 +9,10 @@ import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.persistence.AuctionDao;
+import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
-import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.pack.DirectReservationCheck;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.services.user.UserService;
@@ -57,7 +57,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final ReservationDao reservationDao;
     private final ReservationTokenDao reservationTokenDao;
     private final PackDao packDao;
-    private final CommerceService commerceService;
+    private final CommerceDao commerceDao;
     private final ReservationMailService reservationMailService;
     private final AuctionDao auctionDao;
     private final ZoneId displayZone;
@@ -69,7 +69,7 @@ public class ReservationServiceImpl implements ReservationService {
             final ReservationTokenDao reservationTokenDao,
             final PackDao packDao,
             final ReservationMailService reservationMailService,
-            final CommerceService commerceService,
+            final CommerceDao commerceDao,
             final AuctionDao auctionDao,
             final ZoneId displayZone) {
         this.userService = userService;
@@ -78,7 +78,7 @@ public class ReservationServiceImpl implements ReservationService {
         this.reservationTokenDao = reservationTokenDao;
         this.packDao = packDao;
         this.reservationMailService = reservationMailService;
-        this.commerceService = commerceService;
+        this.commerceDao = commerceDao;
         this.auctionDao = auctionDao;
         this.displayZone = displayZone;
     }
@@ -236,7 +236,7 @@ public class ReservationServiceImpl implements ReservationService {
             if (pack != null) {
                 final Long commerceId = pack.getCommerceId();
                 if (commerceId != null) {
-                    final Optional<Commerce> maybeCommerce = commerceService.findByUserId(commerceId);
+                    final Optional<Commerce> maybeCommerce = commerceDao.findByUserId(commerceId);
                     if (maybeCommerce.isPresent()) {
                         final Commerce commerce = maybeCommerce.get();
                         final String closing = commerce.getClosingTime();

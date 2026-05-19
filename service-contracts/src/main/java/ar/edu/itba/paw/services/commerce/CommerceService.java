@@ -16,4 +16,9 @@ public interface CommerceService {
     java.util.List<Commerce> filterCommerces(String query, String cityFilter, int page, int pageSize);
 
     int countFilteredCommerces(String query, String cityFilter);
+
+    /**
+     * Active catalog offers (direct-sale packs and live auctions) visible on the public commerce profile.
+     */
+    CommercePublicOffers getPublicOffers(long commerceUserId, int packPage, int packPageSize);
 }

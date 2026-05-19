@@ -28,10 +28,11 @@ public interface AuctionService {
     Optional<Auction> findByPackId(long packId);
 
     List<Auction> filterAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges,
-                                 AuctionSortOption sort, int page, int pageSize, boolean requirePositiveStock);
+                                 AuctionSortOption sort, int page, int pageSize, boolean requirePositiveStock,
+                                 Long commerceUserId);
 
     int countFilteredAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges,
-                              boolean requirePositiveStock);
+                              boolean requirePositiveStock, Long commerceUserId);
 
     List<Auction> findByCommerceId(long commerceId);
 

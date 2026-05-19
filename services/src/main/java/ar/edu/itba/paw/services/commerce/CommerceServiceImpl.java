@@ -1,14 +1,21 @@
 package ar.edu.itba.paw.services.commerce;
 
+import ar.edu.itba.paw.models.auction.Auction;
+import ar.edu.itba.paw.models.auction.AuctionSortOption;
+import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.persistence.CommerceDao;
+import ar.edu.itba.paw.services.auction.AuctionService;
+import ar.edu.itba.paw.services.pack.PackService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -16,12 +23,18 @@ import java.util.Optional;
 public class CommerceServiceImpl implements CommerceService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommerceServiceImpl.class);
+    private static final int PUBLIC_PROFILE_AUCTION_CAP = 50;
 
     private final CommerceDao commerceDao;
+    private final PackService packService;
+    private final AuctionService auctionService;
 
     @Autowired
-    public CommerceServiceImpl(final CommerceDao commerceDao) {
+    public CommerceServiceImpl(final CommerceDao commerceDao, final PackService packService,
+            final AuctionService auctionService) {
         this.commerceDao = commerceDao;
+        this.packService = packService;
+        this.auctionService = auctionService;
     }
 
     @Override
@@ -83,5 +96,24 @@ public class CommerceServiceImpl implements CommerceService {
     @Override
     public int countFilteredCommerces(String query, String cityFilter) {
         return commerceDao.countFilteredCommerces(query, cityFilter);
+    }
+
+    @Override
+    public CommercePublicOffers getPublicOffers(final long commerceUserId, final int packPage, final int packPageSize) {
+        commerceDao.findByUserId(commerceUserId).orElseThrow(() -> {
+            LOGGER.warn("getPublicOffers: commerce not found userId={}", commerceUserId);
+            return new NoSuchElementException("Commerce not found for user: " + commerceUserId);
+        });
+
+        final Long commerceFilter = Long.valueOf(commerceUserId);
+        final List<Pack> directPacks = packService.filterPacks(null, null, null, null, PackSortOption.DATE_DESC,
+                packPage, packPageSize, true, commerceFilter);
+        final int directPacksTotal = packService.countFilteredPacks(null, null, null, null, true, commerceFilter);
+        final List<Auction> activeAuctions = auctionService.filterAuctions(null, null, null, null,
+                AuctionSortOption.TIME_REMAINING_ASC, 1, PUBLIC_PROFILE_AUCTION_CAP, true, commerceFilter);
+        final int activeAuctionsTotal = auctionService.countFilteredAuctions(null, null, null, null, true,
+                commerceFilter);
+
+        return new CommercePublicOffers(directPacks, directPacksTotal, activeAuctions, activeAuctionsTotal);
     }
 }

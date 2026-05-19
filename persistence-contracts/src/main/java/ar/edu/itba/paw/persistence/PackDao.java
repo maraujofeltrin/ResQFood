@@ -41,18 +41,20 @@ public interface PackDao {
      *                   {@code commerces.opening_time} (nullable/empty = skip)
      * @param sort      ordering criterion
      * @param requirePositiveStock when {@code true}, only packs with {@code stock > 0} are included
+     * @param commerceUserId       when non-null, only packs owned by this commerce user id
      */
     List<Pack> filterPacks(String query, List<PackTag> tags, String city,
                            List<String> timeRanges, PackSortOption sort,
-                           int page, int pageSize, boolean requirePositiveStock);
+                           int page, int pageSize, boolean requirePositiveStock, Long commerceUserId);
 
     /**
      * Returns the total number of active packs matching the filters (ignoring sort/pagination).
      *
      * @param requirePositiveStock when {@code true}, only packs with {@code stock > 0} are counted
+     * @param commerceUserId       when non-null, only packs owned by this commerce user id
      */
     int countFilteredPacks(String query, List<PackTag> tags, String city, List<String> timeRanges,
-                           boolean requirePositiveStock);
+                           boolean requirePositiveStock, Long commerceUserId);
 
     /**
      * Filters packs belonging to a specific commerce, optionally filtering by whether they have an associated auction.

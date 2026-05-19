@@ -209,7 +209,7 @@ public class PackJdbcDao implements PackDao {
     private void appendFilterJoinsAndConditions(final StringBuilder sql, final List<Object> params,
                                                 final String query, final List<PackTag> tags,
                                                 final String city, final List<String> timeRanges,
-                                                final boolean requirePositiveStock) {
+                                                final boolean requirePositiveStock, final Long commerceUserId) {
         final boolean hasQuery = query != null && !query.isBlank();
         final boolean hasTags = tags != null && !tags.isEmpty();
         final boolean hasCity = city != null && !city.isBlank();
@@ -230,6 +230,11 @@ public class PackJdbcDao implements PackDao {
 
         if (requirePositiveStock) {
             sql.append("AND p.stock > 0 ");
+        }
+
+        if (commerceUserId != null) {
+            sql.append("AND p.commerce_id = ? ");
+            params.add(commerceUserId);
         }
 
         if (hasQuery) {
@@ -287,14 +292,15 @@ public class PackJdbcDao implements PackDao {
                                   final String city, final List<String> timeRanges,
                                   final PackSortOption sort,
                                   final int page, final int pageSize,
-                                  final boolean requirePositiveStock) {
+                                  final boolean requirePositiveStock, final Long commerceUserId) {
 
         final StringBuilder sql = new StringBuilder();
         sql.append("SELECT p.id, p.commerce_id, p.title, p.description, ")
            .append("p.original_price, p.final_price, p.stock, p.active, p.deleted, p.image_id ");
 
         final List<Object> params = new ArrayList<>();
-        appendFilterJoinsAndConditions(sql, params, query, tags, city, timeRanges, requirePositiveStock);
+        appendFilterJoinsAndConditions(sql, params, query, tags, city, timeRanges, requirePositiveStock,
+                commerceUserId);
 
         if (tags != null && !tags.isEmpty()) {
             sql.append("GROUP BY p.id, p.commerce_id, p.title, p.description, ")
@@ -317,12 +323,12 @@ public class PackJdbcDao implements PackDao {
     @Override
     public int countFilteredPacks(final String query, final List<PackTag> tags,
                                   final String city, final List<String> timeRanges,
-                                  final boolean requirePositiveStock) {
+                                  final boolean requirePositiveStock, final Long commerceUserId) {
 
         final StringBuilder sqlJoinsAndConditions = new StringBuilder();
         final List<Object> params = new ArrayList<>();
         appendFilterJoinsAndConditions(sqlJoinsAndConditions, params, query, tags, city, timeRanges,
-                requirePositiveStock);
+                requirePositiveStock, commerceUserId);
 
         if (tags != null && !tags.isEmpty()) {
             // Because we only want the total count of valid packs, we use a subquery to apply HAVING safely

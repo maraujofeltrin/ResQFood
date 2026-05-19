@@ -37,10 +37,10 @@ public interface PackService {
 
     List<Pack> filterPacks(String query, List<PackTag> tags, String city,
                            List<String> timeRanges, PackSortOption sort,
-                           int page, int pageSize, boolean requirePositiveStock);
+                           int page, int pageSize, boolean requirePositiveStock, Long commerceUserId);
 
     int countFilteredPacks(String query, List<PackTag> tags, String city, List<String> timeRanges,
-                           boolean requirePositiveStock);
+                           boolean requirePositiveStock, Long commerceUserId);
 
     List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize);
 

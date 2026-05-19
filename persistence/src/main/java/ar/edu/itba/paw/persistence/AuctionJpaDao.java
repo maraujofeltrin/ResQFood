@@ -100,8 +100,12 @@ public class AuctionJpaDao implements AuctionDao {
 
     private void appendCommonCatalogFilters(final StringBuilder jpql, final Map<String, Object> params, final String query,
                                             final String city, final List<String> timeRanges,
-                                            final boolean requirePositiveStock) {
+                                            final boolean requirePositiveStock, final Long commerceUserId) {
         appendActiveAuctionFilters(jpql, params, requirePositiveStock);
+        if (commerceUserId != null) {
+            jpql.append("AND p.commerceId = :commerceUserId ");
+            params.put("commerceUserId", commerceUserId);
+        }
         appendQueryFilter(jpql, params, query);
         appendCityFilter(jpql, params, city);
         OpeningTimeFilterJpql.appendTimeRangeConditions(jpql, "c.openingTime", timeRanges);
@@ -150,12 +154,13 @@ public class AuctionJpaDao implements AuctionDao {
 
     private List<Long> queryAuctionIds(final String query, final List<PackTag> tags, final String city,
                                        final List<String> timeRanges, final AuctionSortOption sort,
-                                       final int page, final int pageSize, final boolean requirePositiveStock) {
+                                       final int page, final int pageSize, final boolean requirePositiveStock,
+                                       final Long commerceUserId) {
         final boolean withTags = tags != null && !tags.isEmpty();
         final StringBuilder jpql = new StringBuilder("SELECT a.id ");
         final Map<String, Object> params = new LinkedHashMap<>();
         appendFilterFromClause(jpql, withTags);
-        appendCommonCatalogFilters(jpql, params, query, city, timeRanges, requirePositiveStock);
+        appendCommonCatalogFilters(jpql, params, query, city, timeRanges, requirePositiveStock, commerceUserId);
         if (withTags) {
             appendAllTagsFilter(jpql, params, tags);
         }
@@ -172,8 +177,10 @@ public class AuctionJpaDao implements AuctionDao {
                                         final String city, final List<String> timeRanges,
                                         final AuctionSortOption sort,
                                         final int page, final int pageSize,
-                                        final boolean requirePositiveStock) {
-        final List<Long> ids = queryAuctionIds(query, tags, city, timeRanges, sort, page, pageSize, requirePositiveStock);
+                                        final boolean requirePositiveStock,
+                                        final Long commerceUserId) {
+        final List<Long> ids = queryAuctionIds(query, tags, city, timeRanges, sort, page, pageSize,
+                requirePositiveStock, commerceUserId);
         if (ids.isEmpty()) {
             return Collections.emptyList();
         }
@@ -194,12 +201,13 @@ public class AuctionJpaDao implements AuctionDao {
     @Override
     public int countFilteredAuctions(final String query, final List<PackTag> tags,
                                      final String city, final List<String> timeRanges,
-                                     final boolean requirePositiveStock) {
+                                     final boolean requirePositiveStock,
+                                     final Long commerceUserId) {
         final boolean withTags = tags != null && !tags.isEmpty();
         final StringBuilder jpql = new StringBuilder("SELECT COUNT(DISTINCT a.id) ");
         final Map<String, Object> params = new LinkedHashMap<>();
         appendFilterFromClause(jpql, withTags);
-        appendCommonCatalogFilters(jpql, params, query, city, timeRanges, requirePositiveStock);
+        appendCommonCatalogFilters(jpql, params, query, city, timeRanges, requirePositiveStock, commerceUserId);
         if (withTags) {
             appendAllTagsCountFilter(jpql, params, tags);
         }
