@@ -33,6 +33,9 @@ class PackFavoriteServiceImplTest {
     @Mock
     private PackDao packDao;
 
+    @Mock
+    private ar.edu.itba.paw.persistence.AuctionDao auctionDao;
+
     @InjectMocks
     private PackFavoriteServiceImpl packFavoriteService;
 

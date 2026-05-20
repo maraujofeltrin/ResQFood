@@ -3,6 +3,7 @@ package ar.edu.itba.paw.services.pack;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.FavoriteToggleException;
 import ar.edu.itba.paw.persistence.PackDao;
+import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.PackFavoriteDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,11 +20,13 @@ public class PackFavoriteServiceImpl implements PackFavoriteService {
 
     private final PackFavoriteDao packFavoriteDao;
     private final PackDao packDao;
+    private final AuctionDao auctionDao;
 
     @Autowired
-    public PackFavoriteServiceImpl(final PackFavoriteDao packFavoriteDao, final PackDao packDao) {
+    public PackFavoriteServiceImpl(final PackFavoriteDao packFavoriteDao, final PackDao packDao, final AuctionDao auctionDao) {
         this.packFavoriteDao = packFavoriteDao;
         this.packDao = packDao;
+        this.auctionDao = auctionDao;
     }
 
     @Override
@@ -63,6 +66,11 @@ public class PackFavoriteServiceImpl implements PackFavoriteService {
         if (!Boolean.TRUE.equals(pack.getActive()) || Boolean.TRUE.equals(pack.getDeleted())) {
             LOGGER.warn("Favorite toggle rejected: pack unavailable packId={} clientUserId={}", packId, clientUserId);
             throw new FavoriteToggleException(FavoriteToggleException.Reason.PACK_UNAVAILABLE, "Pack is not available for favorites: " + packId);
+        }
+        // Do not allow favoriting packs that are part of an auction
+        if (auctionDao.findByPackId(packId).isPresent()) {
+            LOGGER.warn("Favorite toggle rejected: pack is an auction packId={} clientUserId={}", packId, clientUserId);
+            throw new FavoriteToggleException(FavoriteToggleException.Reason.PACK_UNAVAILABLE, "Pack is an auction: " + packId);
         }
         packFavoriteDao.insert(clientUserId, packId);
         LOGGER.info("User {} added pack {} to favorites", clientUserId, packId);

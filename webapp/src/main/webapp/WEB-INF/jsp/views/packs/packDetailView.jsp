@@ -198,16 +198,7 @@
                                     <span class="material-symbols-outlined text-auction" aria-hidden="true">gavel</span>
                                     <spring:message code="pack.detail.auction.title"/>
                                 </h2>
-                                <sec:authorize access="hasRole('CLIENT')">
-                                    <form action="${packFavoriteAction}" method="post" class="pack-aside-favorite-form">
-                                        <button type="submit"
-                                                class="pack-aside-favorite-btn<c:if test='${packFavoriteSelected}'> pack-aside-favorite-btn--selected</c:if>"
-                                                aria-label="<c:out value='${packDetailFavoriteToggleAria}'/>"
-                                                aria-pressed="${packFavoriteSelected}">
-                                            <span class="material-symbols-outlined pack-aside-favorite-icon" aria-hidden="true">favorite</span>
-                                        </button>
-                                    </form>
-                                </sec:authorize>
+                                <!-- Favoriting auctions is disabled -->
                             </div>
 
                             <div class="pack-price-block mb-4">
@@ -270,16 +261,7 @@
                                     <span class="material-symbols-outlined text-secondary" aria-hidden="true">gavel</span>
                                     <spring:message code="pack.detail.auction.ended.title"/>
                                 </h2>
-                                <sec:authorize access="hasRole('CLIENT')">
-                                    <form action="${packFavoriteAction}" method="post" class="pack-aside-favorite-form">
-                                        <button type="submit"
-                                                class="pack-aside-favorite-btn<c:if test='${packFavoriteSelected}'> pack-aside-favorite-btn--selected</c:if>"
-                                                aria-label="<c:out value='${packDetailFavoriteToggleAria}'/>"
-                                                aria-pressed="${packFavoriteSelected}">
-                                            <span class="material-symbols-outlined pack-aside-favorite-icon" aria-hidden="true">favorite</span>
-                                        </button>
-                                    </form>
-                                </sec:authorize>
+                                <!-- Favoriting auctions is disabled -->
                             </div>
                             <p class="text-secondary text-sm mb-2"><spring:message code="pack.detail.auction.ended.body"/></p>
                             <p class="text-sm text-on-surface"><spring:message code="pack.detail.auction.endsAt"/>
