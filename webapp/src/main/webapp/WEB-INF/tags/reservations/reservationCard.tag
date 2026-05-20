@@ -87,7 +87,7 @@
                     </div>
                 </c:if>
 
-                <c:if test="${messagePrefix == 'reservation.my' and not empty reservation.pickupCode}">
+                <c:if test="${messagePrefix == 'reservation.my' and (not empty reservation.pickupCode or reservation.status == 'PAID' or reservation.status == 'CANCELED')}">
                     <spring:message code="reservation.my.card.code.label" var="viewCodeLabel" />
                     <spring:message code="reservation.my.card.code.title" var="viewCodeTitle" />
                     <spring:message code="reservation.my.card.code.helper" var="viewCodeHelper" />
@@ -107,7 +107,7 @@
         </paw:packCardShell>
 
         <!-- Modal  outside the clickable packCardShell so clicks inside the modal do not navigate -->
-        <c:if test="${messagePrefix == 'reservation.my' and not empty reservation.pickupCode}">
+        <c:if test="${messagePrefix == 'reservation.my' and (not empty reservation.pickupCode or reservation.status == 'PAID' or reservation.status == 'CANCELED')}">
             <spring:message code="reservation.my.card.code.title" var="viewCodeTitle" />
             <spring:message code="reservation.my.card.code.helper" var="viewCodeHelper" />
             <paw:modal id="pickupCodeModal-${reservation.id}" title="${viewCodeTitle}">
@@ -236,7 +236,7 @@
                     </div>
                 </c:if>
 
-                <c:if test="${messagePrefix == 'reservation.my' and not empty reservation.pickupCode}">
+                <c:if test="${messagePrefix == 'reservation.my' and (not empty reservation.pickupCode or reservation.status == 'PAID' or reservation.status == 'CANCELED')}">
                     <spring:message code="reservation.my.card.code.label" var="viewCodeLabel" />
                     <spring:message code="reservation.my.card.code.title" var="viewCodeTitle" />
                     <spring:message code="reservation.my.card.code.helper" var="viewCodeHelper" />
@@ -256,7 +256,7 @@
         </a>
 
         <!-- Modal  outside the clickable card so clicks inside the modal do not navigate -->
-        <c:if test="${messagePrefix == 'reservation.my' and not empty reservation.pickupCode}">
+        <c:if test="${messagePrefix == 'reservation.my' and (not empty reservation.pickupCode or reservation.status == 'PAID' or reservation.status == 'CANCELED')}">
             <spring:message code="reservation.my.card.code.title" var="viewCodeTitle" />
             <spring:message code="reservation.my.card.code.helper" var="viewCodeHelper" />
             <paw:modal id="pickupCodeModal-${reservation.id}" title="${viewCodeTitle}">
