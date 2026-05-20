@@ -17,12 +17,7 @@
     <c:url var="packCatalogUrl" value="/packs"/>
 
     <main class="commerce-profile-main">
-        <a href="${packCatalogUrl}"
-           onclick="if (window.history.length > 1 && document.referrer.indexOf(window.location.host) !== -1) { window.history.back(); return false; }"
-           class="commerce-profile-back">
-            <span class="material-symbols-outlined text-xl" aria-hidden="true">arrow_back</span>
-            <spring:message code="commerce.profile.back"/>
-        </a>
+        <paw:backLink catalogUrl="${packCatalogUrl}" backLabelCode="commerce.profile.back"/>
 
         <header class="commerce-profile-hero commerce-profile-hero--editorial"
                 aria-label="<spring:message code='commerce.profile.hero.aria'/>">

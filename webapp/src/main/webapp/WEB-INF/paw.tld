@@ -25,6 +25,7 @@
     <tag-file><name>reservationLayout</name><path>/WEB-INF/tags/shared/reservationLayout.tag</path></tag-file>
     <tag-file><name>button</name><path>/WEB-INF/tags/shared/button.tag</path></tag-file>
     <tag-file><name>imageUpload</name><path>/WEB-INF/tags/shared/imageUpload.tag</path></tag-file>
+    <tag-file><name>backLink</name><path>/WEB-INF/tags/shared/backLink.tag</path></tag-file>
 
     <!-- Pack catalog & pack detail -->
     <tag-file><name>catalogHeader</name><path>/WEB-INF/tags/packs/catalogHeader.tag</path></tag-file>
