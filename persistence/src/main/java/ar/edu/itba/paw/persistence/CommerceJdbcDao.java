@@ -85,12 +85,12 @@ public class CommerceJdbcDao implements CommerceDao {
     }
 
     @Override
-    public java.util.List<Commerce> filterCommerces(String query, String cityFilter, int page, int pageSize) {
+    public java.util.List<Commerce> filterCommerces(String query, String cityFilter, Commerce.Category categoryFilter, int page, int pageSize) {
         throw new UnsupportedOperationException("JDBC is deprecated");
     }
 
     @Override
-    public int countFilteredCommerces(String query, String cityFilter) {
+    public int countFilteredCommerces(String query, String cityFilter, Commerce.Category categoryFilter) {
         throw new UnsupportedOperationException("JDBC is deprecated");
     }
 }

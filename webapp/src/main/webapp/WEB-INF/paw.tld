@@ -28,6 +28,7 @@
 
     <!-- Pack catalog & pack detail -->
     <tag-file><name>catalogHeader</name><path>/WEB-INF/tags/packs/catalogHeader.tag</path></tag-file>
+    <tag-file><name>catalogBackLink</name><path>/WEB-INF/tags/packs/catalogBackLink.tag</path></tag-file>
     <tag-file><name>catalogFilter</name><path>/WEB-INF/tags/packs/catalogFilter.tag</path></tag-file>
     <tag-file><name>sortDropdown</name><path>/WEB-INF/tags/packs/sortDropdown.tag</path></tag-file>
     <tag-file><name>auctionSortDropdown</name><path>/WEB-INF/tags/packs/auctionSortDropdown.tag</path></tag-file>

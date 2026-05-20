@@ -14,6 +14,8 @@
 <%@ attribute name="selectedTimeRanges" required="false" type="java.util.List" %>
 <%@ attribute name="currentAuctionSort" required="false" type="ar.edu.itba.paw.models.auction.AuctionSortOption" %>
 <%@ attribute name="catalogMode" required="false" type="java.lang.String" %>
+<%@ attribute name="availableCommerceCategories" required="false" type="ar.edu.itba.paw.models.user.Commerce.Category[]" %>
+<%@ attribute name="selectedCommerceCategory" required="false" type="ar.edu.itba.paw.models.user.Commerce.Category" %>
 
 <c:set var="selectedPacks" value="false"/>
 <c:set var="selectedAuctions" value="false"/>
@@ -27,7 +29,8 @@
 <c:set var="tagSelectionCount" value="${selectedTags.size()}"/>
 <c:set var="timeRangeCount" value="${empty selectedTimeRanges ? 0 : fn:length(selectedTimeRanges)}"/>
 <c:set var="locationCount" value="${selectedMunicipality != null ? 1 : 0}"/>
-<c:set var="selectionCount" value="${tagSelectionCount + (typeFilterApplied ? 1 : 0) + locationCount + timeRangeCount}"/>
+<c:set var="commerceCategoryCount" value="${selectedCommerceCategory != null ? 1 : 0}"/>
+<c:set var="selectionCount" value="${tagSelectionCount + (typeFilterApplied ? 1 : 0) + locationCount + commerceCategoryCount + timeRangeCount}"/>
 <c:set var="hasSelection" value="${selectionCount gt 0}"/>
 
     <%-- Filter configuration without form tags --%>
@@ -130,6 +133,26 @@
 
         <div class="px-6 pb-8 mb-8 border-b border-outline-variant/20">
             <h4 class="text-xs font-bold uppercase tracking-wider text-secondary mb-4 flex items-center justify-between">
+                <spring:message code="pack.catalog.filter.commerceCategory"/>
+            </h4>
+            <div class="relative w-full max-w-full overflow-hidden rounded-full shrink-0">
+                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none shrink-0" style="font-size: 20px;">storefront</span>
+                <select name="commerceCategory"
+                        onchange="this.form.submit()"
+                        class="w-full min-w-0 pl-11 pr-8 py-2.5 bg-surface-container-low text-sm font-medium text-on-surface rounded-full border border-outline-variant/30 hover:border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors duration-200 shadow-sm appearance-none cursor-pointer truncate"
+                        style="text-overflow: ellipsis;">
+                    <option value=""><spring:message code="pack.catalog.filter.commerceCategory.any"/></option>
+                    <c:forEach var="cat" items="${availableCommerceCategories}">
+                        <option value="${cat.name()}" ${selectedCommerceCategory != null && selectedCommerceCategory == cat ? 'selected' : ''}>
+                            <spring:message code="commerce.category.${cat.name()}"/>
+                        </option>
+                    </c:forEach>
+                </select>
+            </div>
+        </div>
+
+        <div class="px-6 pb-8 mb-8 border-b border-outline-variant/20">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-secondary mb-4 flex items-center justify-between">
                 <spring:message code="pack.catalog.filter.time"/>
             </h4>
             <div class="flex flex-col gap-3">
@@ -206,6 +229,7 @@
             <%-- Clear all filters button --%>
             <c:if test="${hasSelection}">
                 <c:url var="clearUrl" value="${baseUrl}">
+                    <c:if test="${catalogMode eq 'COMMERCES'}"><c:param name="types" value="commerces"/></c:if>
                     <c:if test="${not empty searchQuery}"><c:param name="q" value="${searchQuery}"/></c:if>
                     <c:if test="${catalogMode ne 'AUCTIONS' and not empty currentSort}"><c:param name="sort" value="${currentSort.name()}"/></c:if>
                     <c:if test="${catalogMode eq 'AUCTIONS' and not empty currentAuctionSort}"><c:param name="auctionSort" value="${currentAuctionSort.name()}"/></c:if>

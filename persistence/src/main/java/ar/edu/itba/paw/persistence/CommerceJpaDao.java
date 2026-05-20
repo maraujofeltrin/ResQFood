@@ -37,7 +37,7 @@ public class CommerceJpaDao implements CommerceDao {
     }
 
     @Override
-    public List<Commerce> filterCommerces(String query, String cityFilter, int page, int pageSize) {
+    public List<Commerce> filterCommerces(String query, String cityFilter, Commerce.Category categoryFilter, int page, int pageSize) {
         final StringBuilder jpql = new StringBuilder("SELECT c FROM Commerce c LEFT JOIN CommerceReview r ON c.userId = r.commerceUserId");
         final java.util.Map<String, Object> params = new java.util.HashMap<>();
         final List<String> conditions = new java.util.ArrayList<>();
@@ -53,6 +53,11 @@ public class CommerceJpaDao implements CommerceDao {
                 conditions.add("c.city = :city");
                 params.put("city", m);
             }
+        }
+
+        if (categoryFilter != null) {
+            conditions.add("c.category = :category");
+            params.put("category", categoryFilter);
         }
 
         if (!conditions.isEmpty()) {
@@ -72,13 +77,13 @@ public class CommerceJpaDao implements CommerceDao {
     }
 
     @Override
-    public int countFilteredCommerces(String query, String cityFilter) {
+    public int countFilteredCommerces(String query, String cityFilter, Commerce.Category categoryFilter) {
         final javax.persistence.criteria.CriteriaBuilder cb = em.getCriteriaBuilder();
         final javax.persistence.criteria.CriteriaQuery<Long> cq = cb.createQuery(Long.class);
         final javax.persistence.criteria.Root<Commerce> root = cq.from(Commerce.class);
 
         cq.select(cb.count(root));
-        cq.where(buildPredicates(cb, root, query, cityFilter));
+        cq.where(buildPredicates(cb, root, query, cityFilter, categoryFilter));
 
         return em.createQuery(cq).getSingleResult().intValue();
     }
@@ -87,7 +92,8 @@ public class CommerceJpaDao implements CommerceDao {
             final javax.persistence.criteria.CriteriaBuilder cb,
             final javax.persistence.criteria.Root<Commerce> root,
             final String query,
-            final String cityFilter) {
+            final String cityFilter,
+            final Commerce.Category categoryFilter) {
         final java.util.List<javax.persistence.criteria.Predicate> predicates = new java.util.ArrayList<>();
 
         if (query != null && !query.trim().isEmpty()) {
@@ -99,6 +105,10 @@ public class CommerceJpaDao implements CommerceDao {
             if (m != null) {
                 predicates.add(cb.equal(root.get("city"), m));
             }
+        }
+
+        if (categoryFilter != null) {
+            predicates.add(cb.equal(root.get("category"), categoryFilter));
         }
 
         return predicates.toArray(new javax.persistence.criteria.Predicate[0]);

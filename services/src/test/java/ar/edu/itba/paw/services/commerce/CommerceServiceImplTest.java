@@ -101,13 +101,13 @@ class CommerceServiceImplTest {
     @Test
     void testFilterCommercesUsesDefaultPageAndSizeWhenInvalid() {
         // 1. Setup
-        when(commerceDao.filterCommerces("query", "city", 1, 12)).thenReturn(java.util.Collections.emptyList());
+        when(commerceDao.filterCommerces("query", "city", Commerce.Category.BAKERY, 1, 12)).thenReturn(java.util.Collections.emptyList());
 
         // 2. Ejercicio
-        commerceService.filterCommerces("query", "city", -5, 0);
+        commerceService.filterCommerces("query", "city", Commerce.Category.BAKERY, -5, 0);
 
         // 3. Asserts
-        org.mockito.Mockito.verify(commerceDao).filterCommerces("query", "city", 1, 12);
+        org.mockito.Mockito.verify(commerceDao).filterCommerces("query", "city", Commerce.Category.BAKERY, 1, 12);
     }
 
     @Test
@@ -164,13 +164,13 @@ class CommerceServiceImplTest {
     @Test
     void testCountFilteredCommercesDelegatesToDao() {
         // 1. Setup
-        when(commerceDao.countFilteredCommerces("query", "city")).thenReturn(10);
+        when(commerceDao.countFilteredCommerces("query", "city", null)).thenReturn(10);
 
         // 2. Ejercicio
-        int count = commerceService.countFilteredCommerces("query", "city");
+        int count = commerceService.countFilteredCommerces("query", "city", null);
 
         // 3. Asserts
         assertEquals(10, count);
-        org.mockito.Mockito.verify(commerceDao).countFilteredCommerces("query", "city");
+        org.mockito.Mockito.verify(commerceDao).countFilteredCommerces("query", "city", null);
     }
 }

@@ -83,19 +83,19 @@ public class CommerceServiceImpl implements CommerceService {
     }
 
     @Override
-    public java.util.List<Commerce> filterCommerces(String query, String cityFilter, int page, int pageSize) {
+    public java.util.List<Commerce> filterCommerces(String query, String cityFilter, Commerce.Category categoryFilter, int page, int pageSize) {
         if (page < 1) {
             page = 1;
         }
         if (pageSize < 1) {
             pageSize = 12;
         }
-        return commerceDao.filterCommerces(query, cityFilter, page, pageSize);
+        return commerceDao.filterCommerces(query, cityFilter, categoryFilter, page, pageSize);
     }
 
     @Override
-    public int countFilteredCommerces(String query, String cityFilter) {
-        return commerceDao.countFilteredCommerces(query, cityFilter);
+    public int countFilteredCommerces(String query, String cityFilter, Commerce.Category categoryFilter) {
+        return commerceDao.countFilteredCommerces(query, cityFilter, categoryFilter);
     }
 
     @Override

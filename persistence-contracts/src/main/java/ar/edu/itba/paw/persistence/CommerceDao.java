@@ -15,8 +15,8 @@ public interface CommerceDao {
 
     Commerce update(final Commerce commerce);
 
-    List<Commerce> filterCommerces(String query, String cityFilter, int page, int pageSize);
+    List<Commerce> filterCommerces(String query, String cityFilter, Commerce.Category categoryFilter, int page, int pageSize);
 
-    int countFilteredCommerces(String query, String cityFilter);
+    int countFilteredCommerces(String query, String cityFilter, Commerce.Category categoryFilter);
 }
 

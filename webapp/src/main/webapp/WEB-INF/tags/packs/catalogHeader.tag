@@ -15,6 +15,8 @@
 <%@ attribute name="availableMunicipalities" required="false" type="ar.edu.itba.paw.models.pack.Municipality[]" %>
 <%@ attribute name="selectedMunicipality" required="false" type="ar.edu.itba.paw.models.pack.Municipality" %>
 <%@ attribute name="selectedTimeRanges" required="false" type="java.util.List" %>
+<%@ attribute name="availableCommerceCategories" required="false" type="ar.edu.itba.paw.models.user.Commerce.Category[]" %>
+<%@ attribute name="selectedCommerceCategory" required="false" type="ar.edu.itba.paw.models.user.Commerce.Category" %>
 
 <header class="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-12">
     <div>
@@ -30,6 +32,9 @@
         </c:if>
         <c:if test="${catalogMode eq 'AUCTIONS' && currentSort != null && currentSort.name() != 'DATE_DESC'}">
             <input type="hidden" name="sort" value="${currentSort.name()}"/>
+        </c:if>
+        <c:if test="${catalogMode eq 'COMMERCES'}">
+            <input type="hidden" name="types" value="commerces"/>
         </c:if>
 
         <div class="w-full md:w-56 max-w-full">
@@ -77,6 +82,8 @@
                 selectedTimeRanges="${selectedTimeRanges}"
                 currentAuctionSort="${currentAuctionSort}"
                 catalogMode="${catalogMode}"
+                availableCommerceCategories="${availableCommerceCategories}"
+                selectedCommerceCategory="${selectedCommerceCategory}"
             />
         </div>
     </form>

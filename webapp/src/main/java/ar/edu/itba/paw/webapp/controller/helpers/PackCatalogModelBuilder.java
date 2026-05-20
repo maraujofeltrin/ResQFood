@@ -95,6 +95,7 @@ public class PackCatalogModelBuilder {
 
         final Municipality municipality = form.getLocation();
         final String cityFilter = municipality != null ? municipality.getCityName() : null;
+        final Commerce.Category commerceCategory = form.getCommerceCategory();
 
         // types and timeRange are already normalised by the form setters
         final List<String> safeTimeRange = form.getTimeRange() != null ? form.getTimeRange() : Collections.emptyList();
@@ -161,7 +162,7 @@ public class PackCatalogModelBuilder {
                     catalogAuctionListingRequiresPositiveStock,
                     null);
         } else if (catalogMode == CatalogMode.COMMERCES) {
-            totalItems = commerceService.countFilteredCommerces(trimmedQuery, cityFilter);
+            totalItems = commerceService.countFilteredCommerces(trimmedQuery, cityFilter, commerceCategory);
         } else {
             totalItems = packService.countFilteredPacks(
                     trimmedQuery,
@@ -191,7 +192,7 @@ public class PackCatalogModelBuilder {
                     catalogAuctionListingRequiresPositiveStock,
                     null);
         } else if (catalogMode == CatalogMode.COMMERCES) {
-            commerces = commerceService.filterCommerces(trimmedQuery, cityFilter, safePage, PAGE_SIZE);
+            commerces = commerceService.filterCommerces(trimmedQuery, cityFilter, commerceCategory, safePage, PAGE_SIZE);
         } else {
             packs = packService.filterPacks(
                     trimmedQuery,
@@ -221,7 +222,7 @@ public class PackCatalogModelBuilder {
 
         List<Commerce> carouselCommerces = Collections.emptyList();
         if (showCommercesCarousel) {
-            carouselCommerces = commerceService.filterCommerces(trimmedQuery, cityFilter, 1, COMMERCES_CAROUSEL_SIZE);
+            carouselCommerces = commerceService.filterCommerces(trimmedQuery, cityFilter, commerceCategory, 1, COMMERCES_CAROUSEL_SIZE);
         }
 
         final Map<Long, String> commerceNames = new HashMap<>();
@@ -308,6 +309,10 @@ public class PackCatalogModelBuilder {
             baseUrlBuilder.append(firstParam ? "?" : "&").append("auctionSort=").append(auctionSortOption.name());
             firstParam = false;
         }
+        if (catalogMode == CatalogMode.COMMERCES && commerceCategory != null) {
+            baseUrlBuilder.append(firstParam ? "?" : "&").append("commerceCategory=").append(commerceCategory.name());
+            firstParam = false;
+        }
 
         final StringBuilder auctionsViewAllBuilder = new StringBuilder("/packs");
         boolean viewAllFirstParam = true;
@@ -375,7 +380,52 @@ public class PackCatalogModelBuilder {
             commercesViewAllBuilder.append(commViewFirst ? "?" : "&").append("location=").append(municipality.name());
             commViewFirst = false;
         }
+        if (commerceCategory != null) {
+            commercesViewAllBuilder.append(commViewFirst ? "?" : "&").append("commerceCategory=").append(commerceCategory.name());
+            commViewFirst = false;
+        }
         commercesViewAllBuilder.append(commViewFirst ? "?" : "&").append("types=").append(TYPE_COMMERCES);
+
+        final String catalogExploreUrl;
+        if (catalogMode != CatalogMode.ALL) {
+            final StringBuilder exploreUrlBuilder = new StringBuilder("/packs");
+            boolean exploreFirst = true;
+            if (hasQuery) {
+                exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("q=")
+                        .append(java.net.URLEncoder.encode(trimmedQuery, StandardCharsets.UTF_8));
+                exploreFirst = false;
+            }
+            if (!selectedTags.isEmpty()) {
+                for (final PackTag tag : selectedTags) {
+                    exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("tags=").append(tag.name());
+                    exploreFirst = false;
+                }
+            }
+            if (sortOption != PackSortOption.DATE_DESC) {
+                exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("sort=").append(sortOption.name());
+                exploreFirst = false;
+            }
+            if (municipality != null) {
+                exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("location=").append(municipality.name());
+                exploreFirst = false;
+            }
+            if (!safeTimeRange.isEmpty()) {
+                for (final String tr : safeTimeRange) {
+                    exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("timeRange=").append(tr);
+                    exploreFirst = false;
+                }
+            }
+            if (catalogMode == CatalogMode.AUCTIONS) {
+                exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("auctionSort=").append(auctionSortOption.name());
+                exploreFirst = false;
+            }
+            if (commerceCategory != null) {
+                exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("commerceCategory=").append(commerceCategory.name());
+            }
+            catalogExploreUrl = exploreUrlBuilder.toString();
+        } else {
+            catalogExploreUrl = "/packs";
+        }
 
         mav.addObject("packs", packs);
         mav.addObject("auctions", auctions);
@@ -394,6 +444,8 @@ public class PackCatalogModelBuilder {
         mav.addObject("availableMunicipalities", Municipality.values());
         mav.addObject("selectedMunicipality", municipality);
         mav.addObject("selectedTimeRanges", safeTimeRange);
+        mav.addObject("availableCommerceCategories", Commerce.Category.values());
+        mav.addObject("selectedCommerceCategory", commerceCategory);
         mav.addObject("availableAuctionSorts", AuctionSortOption.values());
         mav.addObject("currentAuctionSort", auctionSortOption);
         mav.addObject("currentPage", safePage);
@@ -402,6 +454,7 @@ public class PackCatalogModelBuilder {
         mav.addObject("auctionsViewAllUrl", auctionsViewAllBuilder.toString());
         mav.addObject("favoritesViewAllUrl", favoritesViewAllBuilder.toString());
         mav.addObject("commercesViewAllUrl", commercesViewAllBuilder.toString());
+        mav.addObject("catalogExploreUrl", catalogExploreUrl);
 
         final Map<Long, Auction> favoritePackActiveAuctions = new HashMap<>();
         final List<Pack> favoritePacksForAuctionEnrichment = new ArrayList<>();

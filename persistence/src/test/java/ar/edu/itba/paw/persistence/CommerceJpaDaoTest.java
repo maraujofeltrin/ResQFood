@@ -152,7 +152,7 @@ public class CommerceJpaDaoTest {
         em.flush();
 
         // 2. Ejercicio
-        final java.util.List<Commerce> commerces = commerceDao.filterCommerces("Test", null, 1, 10);
+        final java.util.List<Commerce> commerces = commerceDao.filterCommerces("Test", null, null, 1, 10);
 
         // 3. Asserts
         assertFalse(commerces.isEmpty());
@@ -167,7 +167,7 @@ public class CommerceJpaDaoTest {
         em.flush();
 
         // 2. Ejercicio
-        final int count = commerceDao.countFilteredCommerces(null, CITY.getCityName());
+        final int count = commerceDao.countFilteredCommerces(null, CITY.getCityName(), null);
 
         // 3. Asserts
         assertEquals(1, count);
@@ -212,7 +212,7 @@ public class CommerceJpaDaoTest {
         em.clear();
 
         // 2. Ejercicio
-        final java.util.List<Commerce> results = commerceDao.filterCommerces(null, null, 1, 10);
+        final java.util.List<Commerce> results = commerceDao.filterCommerces(null, null, null, 1, 10);
 
         // 3. Asserts
         assertNotNull(results);
@@ -220,5 +220,41 @@ public class CommerceJpaDaoTest {
         assertEquals("Commerce A", results.get(0).getCommercialName());
         assertEquals("Commerce B", results.get(1).getCommercialName());
         assertEquals("Commerce C", results.get(2).getCommercialName());
+    }
+
+    @Test
+    public void testFilterCommercesByCategory() {
+        // 1. Setup
+        commerceDao.createCommerce(userId, "Bakery Shop", Commerce.Category.BAKERY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+
+        final Long restaurantUserId = userDao.createUser("rest@example.com", PASSWORD, NAME, PHONE, User.Role.COMMERCE).getId();
+        commerceDao.createCommerce(restaurantUserId, "Restaurant Place", Commerce.Category.RESTAURANT, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+        em.flush();
+
+        // 2. Ejercicio
+        final java.util.List<Commerce> restaurants = commerceDao.filterCommerces(null, null, Commerce.Category.RESTAURANT, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, restaurants.size());
+        assertEquals(Commerce.Category.RESTAURANT, restaurants.get(0).getCategory());
+        assertEquals("Restaurant Place", restaurants.get(0).getCommercialName());
+    }
+
+    @Test
+    public void testFilterCommercesByCategoryAndCity() {
+        // 1. Setup
+        commerceDao.createCommerce(userId, "Avellaneda Bakery", Commerce.Category.BAKERY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+
+        final Long otherUserId = userDao.createUser("other@example.com", PASSWORD, NAME, PHONE, User.Role.COMMERCE).getId();
+        commerceDao.createCommerce(otherUserId, "Moron Bakery", Commerce.Category.BAKERY, STREET, STREET_NUMBER, Municipality.MORON, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+        em.flush();
+
+        // 2. Ejercicio
+        final java.util.List<Commerce> results = commerceDao.filterCommerces(null, CITY.getCityName(), Commerce.Category.BAKERY, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, results.size());
+        assertEquals("Avellaneda Bakery", results.get(0).getCommercialName());
+        assertEquals(CITY, results.get(0).getCity());
     }
 }
