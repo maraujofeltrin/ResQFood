@@ -49,25 +49,21 @@ public class PackCatalogModelBuilder {
     private enum CatalogMode {
         ALL,
         PACKS,
-        AUCTIONS,
-        FAVORITES
+        AUCTIONS
     }
 
     private final PackService packService;
     private final CommerceService commerceService;
     private final AuctionService auctionService;
-    private final PackFavoriteService packFavoriteService;
     private final AuthenticatedUserResolver authResolver;
 
     @Autowired
     public PackCatalogModelBuilder(final PackService packService, final CommerceService commerceService,
             final AuctionService auctionService,
-            final PackFavoriteService packFavoriteService,
             final AuthenticatedUserResolver authResolver) {
         this.packService = packService;
         this.commerceService = commerceService;
         this.auctionService = auctionService;
-        this.packFavoriteService = packFavoriteService;
         this.authResolver = authResolver;
     }
 
@@ -101,14 +97,11 @@ public class PackCatalogModelBuilder {
             selectedTypes.removeIf(t -> TYPE_FAVORITES.equals(t));
         }
 
-        final boolean favoritesSelected = clientLoggedIn && selectedTypes.contains(TYPE_FAVORITES);
         final boolean packsSelected = selectedTypes.contains(TYPE_PACKS);
         final boolean auctionsSelected = selectedTypes.contains(TYPE_AUCTIONS);
 
         final CatalogMode catalogMode;
-        if (favoritesSelected) {
-            catalogMode = CatalogMode.FAVORITES;
-        } else if ((packsSelected && auctionsSelected) || (!packsSelected && !auctionsSelected)) {
+        if ((packsSelected && auctionsSelected) || (!packsSelected && !auctionsSelected)) {
             catalogMode = CatalogMode.ALL;
         } else if (packsSelected) {
             catalogMode = CatalogMode.PACKS;
@@ -123,19 +116,13 @@ public class PackCatalogModelBuilder {
                 catalogMode == CatalogMode.ALL || catalogMode == CatalogMode.PACKS;
         final boolean catalogAuctionListingRequiresPositiveStock = true;
 
-        List<Pack> favoritesCarouselPacks = Collections.emptyList();
-        if (showAuctionsCarousel && clientUserId != null) {
-            favoritesCarouselPacks = packFavoriteService.listActiveFavoritePacks(
-                    clientUserId, FAVORITES_CAROUSEL_SIZE);
-        }
+
 
         int totalItems = 0;
         List<Pack> packs = Collections.emptyList();
         List<Auction> auctions = Collections.emptyList();
 
-        if (catalogMode == CatalogMode.FAVORITES) {
-            totalItems = clientUserId != null ? packFavoriteService.countActiveFavoritePacks(clientUserId) : 0;
-        } else if (showAuctionsList) {
+        if (showAuctionsList) {
             totalItems = auctionService.countFilteredAuctions(
                     trimmedQuery,
                     selectedTags.isEmpty() ? null : selectedTags,
@@ -154,11 +141,7 @@ public class PackCatalogModelBuilder {
         final int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
         final int safePage = Math.max(1, Math.min(page, totalPages));
 
-        if (catalogMode == CatalogMode.FAVORITES) {
-            if (clientUserId != null) {
-                packs = packFavoriteService.listActiveFavoritePacks(clientUserId, safePage, PAGE_SIZE);
-            }
-        } else if (showAuctionsList) {
+        if (showAuctionsList) {
             auctions = auctionService.filterAuctions(
                     trimmedQuery,
                     selectedTags.isEmpty() ? null : selectedTags,
@@ -223,13 +206,7 @@ public class PackCatalogModelBuilder {
                             .map(Commerce::getCommercialName)
                             .orElse("—"));
         }
-        for (final Pack fp : favoritesCarouselPacks) {
-            commerceNames.putIfAbsent(
-                    fp.getId(),
-                    commerceService.findByUserId(fp.getCommerceId())
-                            .map(Commerce::getCommercialName)
-                            .orElse("—"));
-        }
+
 
         final StringBuilder baseUrlBuilder = new StringBuilder("/packs");
         boolean firstParam = true;
@@ -293,34 +270,7 @@ public class PackCatalogModelBuilder {
         auctionsViewAllBuilder.append(viewAllFirstParam ? "?" : "&").append("types=").append(TYPE_AUCTIONS);
         auctionsViewAllBuilder.append("&auctionSort=").append(auctionSortOption.name());
 
-        final StringBuilder favoritesViewAllBuilder = new StringBuilder("/packs");
-        boolean favViewFirst = true;
-        if (hasQuery) {
-            favoritesViewAllBuilder.append(favViewFirst ? "?" : "&").append("q=")
-                    .append(java.net.URLEncoder.encode(trimmedQuery, StandardCharsets.UTF_8));
-            favViewFirst = false;
-        }
-        if (hasTags) {
-            for (final PackTag tag : selectedTags) {
-                favoritesViewAllBuilder.append(favViewFirst ? "?" : "&").append("tags=").append(tag.name());
-                favViewFirst = false;
-            }
-        }
-        if (municipality != null) {
-            favoritesViewAllBuilder.append(favViewFirst ? "?" : "&").append("location=").append(municipality.name());
-            favViewFirst = false;
-        }
-        if (!safeTimeRange.isEmpty()) {
-            for (final String tr : safeTimeRange) {
-                favoritesViewAllBuilder.append(favViewFirst ? "?" : "&").append("timeRange=").append(tr);
-                favViewFirst = false;
-            }
-        }
-        if (sortOption != PackSortOption.DATE_DESC) {
-            favoritesViewAllBuilder.append(favViewFirst ? "?" : "&").append("sort=").append(sortOption.name());
-            favViewFirst = false;
-        }
-        favoritesViewAllBuilder.append(favViewFirst ? "?" : "&").append("types=").append(TYPE_FAVORITES);
+
 
         mav.addObject("packs", packs);
         mav.addObject("auctions", auctions);
@@ -341,22 +291,7 @@ public class PackCatalogModelBuilder {
         mav.addObject("totalPages", totalPages);
         mav.addObject("paginationBaseUrl", baseUrlBuilder.toString());
         mav.addObject("auctionsViewAllUrl", auctionsViewAllBuilder.toString());
-        mav.addObject("favoritesViewAllUrl", favoritesViewAllBuilder.toString());
 
-        final Map<Long, Auction> favoritePackActiveAuctions = new HashMap<>();
-        final List<Pack> favoritePacksForAuctionEnrichment = new ArrayList<>();
-        if (catalogMode == CatalogMode.FAVORITES) {
-            favoritePacksForAuctionEnrichment.addAll(packs);
-        } else {
-            favoritePacksForAuctionEnrichment.addAll(favoritesCarouselPacks);
-        }
-        for (final Pack p : favoritePacksForAuctionEnrichment) {
-            auctionService.findByPackId(p.getId())
-                    .filter(Auction::isActive)
-                    .ifPresent(a -> favoritePackActiveAuctions.put(p.getId(), a));
-        }
-        mav.addObject("favoritesCarouselPacks", favoritesCarouselPacks);
-        mav.addObject("favoritePackActiveAuctions", favoritePackActiveAuctions);
 
         return mav;
     }

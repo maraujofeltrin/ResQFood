@@ -35,59 +35,7 @@
             <spring:message code="pack.catalog.lastChance.badge" var="auctionBadgeText"/>
             <spring:message code="pack.catalog.auction.currentBid" var="auctionCurrentBidLabel"/>
 
-            <sec:authorize access="hasRole('CLIENT')">
-                <c:if test="${catalogMode eq 'ALL' and not empty favoritesCarouselPacks}">
-                    <section class="mb-14" aria-label="<spring:message code='pack.catalog.favorites.title'/>">
-                        <div class="flex items-center justify-between gap-4 mb-6">
-                            <div class="flex items-center gap-3">
-                                <h2 class="text-2xl font-headline font-bold text-on-surface"><spring:message code="pack.catalog.favorites.title"/></h2>
-                                <span class="auction-badge"><spring:message code="pack.catalog.favorites.badge"/></span>
-                            </div>
-                            <a href="${pageContext.request.contextPath}${favoritesViewAllUrl}" class="text-sm font-semibold text-primary hover:underline">
-                                <spring:message code="pack.catalog.lastChance.viewAll"/>
-                            </a>
-                        </div>
 
-                        <div class="flex gap-6 overflow-x-auto pb-2 snap-x snap-mandatory hide-scrollbar">
-                            <c:forEach var="pack" items="${favoritesCarouselPacks}">
-                                <div class="min-w-[280px] max-w-[320px] snap-start flex-shrink-0">
-                                    <c:set var="favoritePackUnavailable" value="${pack.stock == null || pack.stock lt 1}"/>
-                                    <c:set var="favAuction" value="${favoritePackActiveAuctions[pack.id]}"/>
-                                    <c:choose>
-                                        <c:when test="${not empty favAuction}">
-                                            <paw:packCard
-                                                packId="${pack.id}"
-                                                imageId="${pack.imageId}"
-                                                title="${pack.title}"
-                                                subtitle="${pack.description}"
-                                                badgeText="${auctionBadgeText}"
-                                                rescueLabel="${auctionCurrentBidLabel}"
-                                                price="$${favAuction.effectivePrice}"
-                                                oldPrice="$${pack.originalPrice}"
-                                                commerceName="${commerceNames[pack.id]}"
-                                                auction="${true}"
-                                                unavailable="${favoritePackUnavailable}"
-                                            />
-                                        </c:when>
-                                        <c:otherwise>
-                                            <paw:packCard
-                                                packId="${pack.id}"
-                                                imageId="${pack.imageId}"
-                                                title="${pack.title}"
-                                                subtitle="${pack.description}"
-                                                price="$${pack.finalPrice}"
-                                                oldPrice="$${pack.originalPrice}"
-                                                commerceName="${commerceNames[pack.id]}"
-                                                unavailable="${favoritePackUnavailable}"
-                                            />
-                                        </c:otherwise>
-                                    </c:choose>
-                                </div>
-                            </c:forEach>
-                        </div>
-                    </section>
-                </c:if>
-            </sec:authorize>
 
             <c:if test="${catalogMode eq 'ALL' and not empty auctionsCarousel}">
                 <section class="mb-14">
@@ -127,7 +75,6 @@
                 <div class="flex items-center gap-3 mb-8">
                     <h2 class="text-2xl font-headline font-bold text-on-surface">
                         <c:choose>
-                            <c:when test="${catalogMode eq 'FAVORITES'}"><spring:message code="pack.catalog.allFavorites"/></c:when>
                             <c:when test="${not empty param.q}">
                                 <spring:message code="pack.catalog.searchResults" arguments="${fn:escapeXml(param.q)}"/>
                             </c:when>
@@ -139,11 +86,6 @@
                 </div>
 
                 <c:choose>
-                    <c:when test="${catalogMode eq 'FAVORITES' and empty packs}">
-                        <spring:message var="emptyTitle" code="pack.catalog.empty.favorites.title"/>
-                        <spring:message var="emptyDesc"  code="pack.catalog.empty.favorites.description"/>
-                        <paw:packEmptyState icon="favorite" title="${emptyTitle}" description="${emptyDesc}" />
-                    </c:when>
                     <c:when test="${catalogMode eq 'AUCTIONS' and empty auctions}">
                         <c:choose>
                             <c:when test="${not empty param.q or not empty selectedTags}">
@@ -158,7 +100,7 @@
                             </c:otherwise>
                         </c:choose>
                     </c:when>
-                    <c:when test="${catalogMode ne 'AUCTIONS' and catalogMode ne 'FAVORITES' and empty packs}">
+                    <c:when test="${catalogMode ne 'AUCTIONS' and empty packs}">
                         <c:choose>
                             <c:when test="${not empty param.q or not empty selectedTags}">
                                 <spring:message var="emptyTitle" code="pack.catalog.empty.search.title"/>
@@ -175,41 +117,6 @@
                     <c:otherwise>
                         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                             <c:choose>
-                                <c:when test="${catalogMode eq 'FAVORITES'}">
-                                    <c:forEach var="pack" items="${packs}">
-                                        <c:set var="favoritePackUnavailable" value="${pack.stock == null || pack.stock lt 1}"/>
-                                        <c:set var="favAuction" value="${favoritePackActiveAuctions[pack.id]}"/>
-                                        <c:choose>
-                                            <c:when test="${not empty favAuction}">
-                                                <paw:packCard
-                                                    packId="${pack.id}"
-                                                    imageId="${pack.imageId}"
-                                                    title="${pack.title}"
-                                                    subtitle="${pack.description}"
-                                                    badgeText="${auctionBadgeText}"
-                                                    rescueLabel="${auctionCurrentBidLabel}"
-                                                    price="$${favAuction.effectivePrice}"
-                                                    oldPrice="$${pack.originalPrice}"
-                                                    commerceName="${commerceNames[pack.id]}"
-                                                    auction="${true}"
-                                                    unavailable="${favoritePackUnavailable}"
-                                                />
-                                            </c:when>
-                                            <c:otherwise>
-                                                <paw:packCard
-                                                    packId="${pack.id}"
-                                                    imageId="${pack.imageId}"
-                                                    title="${pack.title}"
-                                                    subtitle="${pack.description}"
-                                                    price="$${pack.finalPrice}"
-                                                    oldPrice="$${pack.originalPrice}"
-                                                    commerceName="${commerceNames[pack.id]}"
-                                                    unavailable="${favoritePackUnavailable}"
-                                                />
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </c:forEach>
-                                </c:when>
                                 <c:when test="${catalogMode eq 'AUCTIONS'}">
                                     <c:forEach var="auction" items="${auctions}">
                                         <paw:packCard

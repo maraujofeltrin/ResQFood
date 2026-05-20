@@ -17,13 +17,11 @@
 
 <c:set var="selectedPacks" value="false"/>
 <c:set var="selectedAuctions" value="false"/>
-<c:set var="selectedFavorites" value="false"/>
 <c:forEach var="type" items="${selectedTypes}">
     <c:if test="${type eq 'packs'}"><c:set var="selectedPacks" value="true"/></c:if>
     <c:if test="${type eq 'auctions'}"><c:set var="selectedAuctions" value="true"/></c:if>
-    <c:if test="${type eq 'favorites'}"><c:set var="selectedFavorites" value="true"/></c:if>
 </c:forEach>
-<c:set var="typeFilterApplied" value="${(selectedPacks and not selectedAuctions and not selectedFavorites) or (not selectedPacks and selectedAuctions and not selectedFavorites) or (not selectedPacks and not selectedAuctions and selectedFavorites)}"/>
+<c:set var="typeFilterApplied" value="${(selectedPacks and not selectedAuctions) or (not selectedPacks and selectedAuctions)}"/>
 <c:set var="tagSelectionCount" value="${selectedTags.size()}"/>
 <c:set var="timeRangeCount" value="${empty selectedTimeRanges ? 0 : fn:length(selectedTimeRanges)}"/>
 <c:set var="locationCount" value="${selectedMunicipality != null ? 1 : 0}"/>
@@ -96,15 +94,6 @@
                     </div>
                     <span class="text-sm font-medium text-on-surface-variant group-hover:text-on-surface transition-colors"><spring:message code="pack.catalog.filter.type.auctions"/></span>
                 </label>
-                <sec:authorize access="hasRole('CLIENT')">
-                <label class="cursor-pointer group flex items-center gap-3 w-fit">
-                    <div class="relative flex items-center justify-center">
-                        <input type="checkbox" name="types" value="favorites" onchange="this.form.submit()" ${selectedFavorites ? 'checked' : ''} class="peer appearance-none w-5 h-5 border border-outline-variant rounded bg-surface-container-low checked:bg-primary checked:border-primary transition-colors cursor-pointer shadow-sm" />
-                        <span class="material-symbols-outlined absolute text-on-primary text-[16px] opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity">check</span>
-                    </div>
-                    <span class="text-sm font-medium text-on-surface-variant group-hover:text-on-surface transition-colors"><spring:message code="pack.catalog.filter.type.favorites"/></span>
-                </label>
-                </sec:authorize>
             </div>
         </div>
 
