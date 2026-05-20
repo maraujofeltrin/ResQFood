@@ -39,9 +39,6 @@
                     <div class="h-[1px] flex-grow bg-outline-variant/40"></div>
                 </div>
 
-                <spring:message code="pack.catalog.lastChance.badge" var="auctionBadgeText"/>
-                <spring:message code="pack.catalog.auction.currentBid" var="auctionCurrentBidLabel"/>
-
                 <c:choose>
                     <c:when test="${empty packs}">
                         <div class="fav-empty-state">
@@ -65,36 +62,16 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                             <c:forEach var="pack" items="${packs}">
                                 <c:set var="packUnavailable" value="${pack.stock == null || pack.stock lt 1}"/>
-                                <c:set var="auction" value="${activeAuctions[pack.id]}"/>
-                                <c:choose>
-                                    <c:when test="${not empty auction}">
-                                        <paw:packCard
-                                            packId="${pack.id}"
-                                            imageId="${pack.imageId}"
-                                            title="${pack.title}"
-                                            subtitle="${pack.description}"
-                                            badgeText="${auctionBadgeText}"
-                                            rescueLabel="${auctionCurrentBidLabel}"
-                                            price="$${auction.effectivePrice}"
-                                            oldPrice="$${pack.originalPrice}"
-                                            commerceName="${commerceNames[pack.id]}"
-                                            auction="${true}"
-                                            unavailable="${packUnavailable}"
-                                        />
-                                    </c:when>
-                                    <c:otherwise>
-                                        <paw:packCard
-                                            packId="${pack.id}"
-                                            imageId="${pack.imageId}"
-                                            title="${pack.title}"
-                                            subtitle="${pack.description}"
-                                            price="$${pack.finalPrice}"
-                                            oldPrice="$${pack.originalPrice}"
-                                            commerceName="${commerceNames[pack.id]}"
-                                            unavailable="${packUnavailable}"
-                                        />
-                                    </c:otherwise>
-                                </c:choose>
+                                <paw:packCard
+                                    packId="${pack.id}"
+                                    imageId="${pack.imageId}"
+                                    title="${pack.title}"
+                                    subtitle="${pack.description}"
+                                    price="$${pack.finalPrice}"
+                                    oldPrice="$${pack.originalPrice}"
+                                    commerceName="${commerceNames[pack.id]}"
+                                    unavailable="${packUnavailable}"
+                                />
                             </c:forEach>
                         </div>
 

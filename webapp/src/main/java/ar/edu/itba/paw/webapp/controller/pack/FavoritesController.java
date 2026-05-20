@@ -1,10 +1,8 @@
 package ar.edu.itba.paw.webapp.controller.pack;
 
-import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.models.pack.Pack;
-import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.pack.PackFavoriteService;
 import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
@@ -30,17 +28,14 @@ public class FavoritesController {
 
     private final PackFavoriteService packFavoriteService;
     private final CommerceService commerceService;
-    private final AuctionService auctionService;
     private final AuthenticatedUserResolver authResolver;
 
     @Autowired
     public FavoritesController(final PackFavoriteService packFavoriteService,
                                final CommerceService commerceService,
-                               final AuctionService auctionService,
                                final AuthenticatedUserResolver authResolver) {
         this.packFavoriteService = packFavoriteService;
         this.commerceService = commerceService;
-        this.auctionService = auctionService;
         this.authResolver = authResolver;
     }
 
@@ -75,18 +70,9 @@ public class FavoritesController {
                             .orElse("—"));
         }
 
-        // Enrich with active auctions (for price display)
-        final Map<Long, Auction> activeAuctions = new HashMap<>();
-        for (final Pack pack : packs) {
-            auctionService.findByPackId(pack.getId())
-                    .filter(Auction::isActive)
-                    .ifPresent(a -> activeAuctions.put(pack.getId(), a));
-        }
-
         final ModelAndView mav = new ModelAndView("favorites/favoritesView");
         mav.addObject("packs", packs);
         mav.addObject("commerceNames", commerceNames);
-        mav.addObject("activeAuctions", activeAuctions);
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
         mav.addObject("totalFavorites", totalItems);
