@@ -1,0 +1,126 @@
+<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="paw" uri="http://itba.edu.ar/paw/tags" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<!DOCTYPE html>
+<html class="light" lang="${pageContext.response.locale.language}">
+<paw:head titleSuffixCode="favorites.pageTitle.suffix" />
+<body class="bg-surface font-body text-on-surface antialiased flex flex-col min-h-screen">
+
+    <paw:navbar />
+
+    <main class="pt-24 px-6 md:px-12 pb-20 flex-grow">
+        <div class="max-w-6xl mx-auto w-full">
+
+            <%-- Header section --%>
+            <div class="fav-header mb-12">
+                <div class="fav-header__icon-ring">
+                    <span class="material-symbols-outlined fav-header__icon" style="font-variation-settings: 'FILL' 1;">favorite</span>
+                </div>
+                <h1 class="text-3xl md:text-4xl font-headline font-bold text-on-surface mt-4">
+                    <spring:message code="favorites.title"/>
+                </h1>
+                <p class="text-secondary text-lg mt-2 max-w-xl mx-auto">
+                    <spring:message code="favorites.subtitle"/>
+                </p>
+            </div>
+
+            <%-- Packs section --%>
+            <section>
+                <div class="flex items-center gap-3 mb-8">
+                    <span class="material-symbols-outlined text-primary text-xl">inventory_2</span>
+                    <h2 class="text-xl font-headline font-semibold text-on-surface">
+                        <spring:message code="favorites.section.packs"/>
+                    </h2>
+                    <c:if test="${totalFavorites > 0}">
+                        <span class="fav-count-badge">${totalFavorites}</span>
+                    </c:if>
+                    <div class="h-[1px] flex-grow bg-outline-variant/40"></div>
+                </div>
+
+                <spring:message code="pack.catalog.lastChance.badge" var="auctionBadgeText"/>
+                <spring:message code="pack.catalog.auction.currentBid" var="auctionCurrentBidLabel"/>
+
+                <c:choose>
+                    <c:when test="${empty packs}">
+                        <div class="fav-empty-state">
+                            <div class="fav-empty-state__glow"></div>
+                            <span class="material-symbols-outlined fav-empty-state__icon"
+                                  style="font-variation-settings: 'FILL' 1, 'wght' 200;">favorite</span>
+                            <h3 class="text-2xl font-headline font-bold text-on-surface mt-2">
+                                <spring:message code="favorites.empty.packs.title"/>
+                            </h3>
+                            <p class="text-secondary mt-2 text-lg max-w-md mx-auto">
+                                <spring:message code="favorites.empty.packs.description"/>
+                            </p>
+                            <a href="${pageContext.request.contextPath}/packs"
+                               class="fav-empty-state__cta mt-6">
+                                <span class="material-symbols-outlined text-lg">explore</span>
+                                <spring:message code="favorites.empty.exploreBtn"/>
+                            </a>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                            <c:forEach var="pack" items="${packs}">
+                                <c:set var="packUnavailable" value="${pack.stock == null || pack.stock lt 1}"/>
+                                <c:set var="auction" value="${activeAuctions[pack.id]}"/>
+                                <c:choose>
+                                    <c:when test="${not empty auction}">
+                                        <paw:packCard
+                                            packId="${pack.id}"
+                                            imageId="${pack.imageId}"
+                                            title="${pack.title}"
+                                            subtitle="${pack.description}"
+                                            badgeText="${auctionBadgeText}"
+                                            rescueLabel="${auctionCurrentBidLabel}"
+                                            price="$${auction.effectivePrice}"
+                                            oldPrice="$${pack.originalPrice}"
+                                            commerceName="${commerceNames[pack.id]}"
+                                            auction="${true}"
+                                            unavailable="${packUnavailable}"
+                                        />
+                                    </c:when>
+                                    <c:otherwise>
+                                        <paw:packCard
+                                            packId="${pack.id}"
+                                            imageId="${pack.imageId}"
+                                            title="${pack.title}"
+                                            subtitle="${pack.description}"
+                                            price="$${pack.finalPrice}"
+                                            oldPrice="$${pack.originalPrice}"
+                                            commerceName="${commerceNames[pack.id]}"
+                                            unavailable="${packUnavailable}"
+                                        />
+                                    </c:otherwise>
+                                </c:choose>
+                            </c:forEach>
+                        </div>
+
+                        <paw:pagination currentPage="${currentPage}" totalPages="${totalPages}"
+                                        baseUrl="${pageContext.request.contextPath}/favorites" />
+                    </c:otherwise>
+                </c:choose>
+            </section>
+
+            <%-- Future: Favorite Commerces section placeholder --%>
+            <%-- 
+            <section class="mt-16">
+                <div class="flex items-center gap-3 mb-8">
+                    <span class="material-symbols-outlined text-primary text-xl">storefront</span>
+                    <h2 class="text-xl font-headline font-semibold text-on-surface">
+                        <spring:message code="favorites.section.commerces"/>
+                    </h2>
+                    <div class="h-[1px] flex-grow bg-outline-variant/40"></div>
+                </div>
+            </section>
+            --%>
+
+        </div>
+    </main>
+
+    <paw:footer />
+
+</body>
+</html>

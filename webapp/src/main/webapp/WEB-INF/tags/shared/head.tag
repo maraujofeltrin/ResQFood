@@ -32,6 +32,7 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/pack-detail-aside.css"/>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/auction.css"/>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/commerce-reviews-dashboard.css"/>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/favorites.css"/>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="anonymous" href="https://fonts.gstatic.com" rel="preconnect"/>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>

@@ -13,6 +13,7 @@
         </sec:authorize>
         <sec:authorize access="hasRole('CLIENT')">
           <a class="text-on-surface-variant hover:text-primary transition-all duration-300" href="${pageContext.request.contextPath}/reservations"><spring:message code="layout.nav.myReservations"/></a>
+          <a class="text-on-surface-variant hover:text-primary transition-all duration-300" href="${pageContext.request.contextPath}/favorites"><spring:message code="layout.nav.myFavorites"/></a>
         </sec:authorize>
         <sec:authorize access="hasRole('COMMERCE')">
           <a class="text-on-surface-variant hover:text-primary transition-all duration-300" href="${pageContext.request.contextPath}/reservations"><spring:message code="layout.nav.myReservations"/></a>

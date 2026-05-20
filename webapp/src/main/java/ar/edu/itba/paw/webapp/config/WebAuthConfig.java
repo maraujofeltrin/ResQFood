@@ -53,6 +53,7 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                 .requestMatchers(antMatcher(HttpMethod.POST, "/packs/*/commerce-review")).hasRole("CLIENT")
                 .requestMatchers(antMatcher(HttpMethod.POST, "/packs/*/favorite")).hasRole("CLIENT")
                 .requestMatchers(antMatcher(HttpMethod.POST, "/packs/**")).authenticated()
+                .requestMatchers(antMatcher(HttpMethod.GET, "/favorites"), antMatcher(HttpMethod.GET, "/favorites/**")).hasRole("CLIENT")
                 .requestMatchers(antMatcher("/commerce"), antMatcher("/commerce/**")).hasRole("COMMERCE")
                 .requestMatchers(antMatcher("/reservations/accept"), antMatcher("/reservations/reject")).hasRole("COMMERCE")
                 .requestMatchers(antMatcher(HttpMethod.POST, "/reservations/*/reject")).hasRole("COMMERCE")
