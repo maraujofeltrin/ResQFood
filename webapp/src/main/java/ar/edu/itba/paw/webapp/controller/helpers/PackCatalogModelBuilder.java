@@ -271,6 +271,8 @@ public class PackCatalogModelBuilder {
             userService.findById(c.getUserId()).map(User::getProfileImageId).ifPresent(img -> commerceImages.putIfAbsent(c.getUserId(), img));
         }
 
+
+
         final StringBuilder baseUrlBuilder = new StringBuilder("/packs");
         boolean firstParam = true;
         if (hasQuery) {

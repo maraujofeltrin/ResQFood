@@ -51,6 +51,9 @@ public class CommerceJpaDaoTest {
     @Autowired
     private UserJpaDao userDao;
 
+    @Autowired
+    private ClientJpaDao clientDao;
+
     @PersistenceContext
     private EntityManager em;
 
@@ -168,5 +171,54 @@ public class CommerceJpaDaoTest {
 
         // 3. Asserts
         assertEquals(1, count);
+    }
+
+    @Test
+    public void testFilterCommercesOrderedByRating() {
+        // 1. Setup
+        // Commerce A (already has userId from setUp)
+        final Commerce commerceA = commerceDao.createCommerce(userId, "Commerce A", CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+
+        // Commerce B
+        final Long userIdB = userDao.createUser("b@example.com", PASSWORD, NAME, PHONE, User.Role.COMMERCE).getId();
+        final Commerce commerceB = commerceDao.createCommerce(userIdB, "Commerce B", CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+
+        // Commerce C
+        final Long userIdC = userDao.createUser("c@example.com", PASSWORD, NAME, PHONE, User.Role.COMMERCE).getId();
+        final Commerce commerceC = commerceDao.createCommerce(userIdC, "Commerce C", CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+
+        // Client user for writing reviews
+        final Long clientId = userDao.createUser("client@example.com", PASSWORD, "Client", PHONE, User.Role.CLIENT).getId();
+        clientDao.createClient(clientId, "Client", "Last", true);
+
+        em.flush();
+
+        // Create reviews:
+        // Commerce A has rating 5
+        final ar.edu.itba.paw.models.user.CommerceReview reviewA = new ar.edu.itba.paw.models.user.CommerceReview(
+                null, userId, clientId, 5, "Excellent!", java.time.LocalDateTime.now(), java.time.LocalDateTime.now()
+        );
+        em.persist(reviewA);
+
+        // Commerce B has rating 2
+        final ar.edu.itba.paw.models.user.CommerceReview reviewB = new ar.edu.itba.paw.models.user.CommerceReview(
+                null, userIdB, clientId, 2, "Poor", java.time.LocalDateTime.now(), java.time.LocalDateTime.now()
+        );
+        em.persist(reviewB);
+
+        // Commerce C has no reviews (average is 0.0)
+
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final java.util.List<Commerce> results = commerceDao.filterCommerces(null, null, 1, 10);
+
+        // 3. Asserts
+        assertNotNull(results);
+        assertEquals(3, results.size());
+        assertEquals("Commerce A", results.get(0).getCommercialName());
+        assertEquals("Commerce B", results.get(1).getCommercialName());
+        assertEquals("Commerce C", results.get(2).getCommercialName());
     }
 }
