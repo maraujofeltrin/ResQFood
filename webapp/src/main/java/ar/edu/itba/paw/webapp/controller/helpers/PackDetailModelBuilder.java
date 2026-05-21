@@ -7,12 +7,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.ModelAndView;
 import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.auction.Bid;
+import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
-import ar.edu.itba.paw.models.user.CommerceReview;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.auction.AuctionService;
-import ar.edu.itba.paw.services.commerce.CommerceReviewService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.pack.PackFavoriteService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
@@ -35,14 +34,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import ar.edu.itba.paw.models.user.Client;
 
 @Component
 public class PackDetailModelBuilder {
 
     private final CommerceService commerceService;
     private final AuctionService auctionService;
-    private final CommerceReviewService commerceReviewService;
+    private final CommerceReviewPageAttributes commerceReviewPageAttributes;
     private final ClientService clientService;
     private final ReservationService reservationService;
     private final MessageSource messageSource;
@@ -54,13 +52,13 @@ public class PackDetailModelBuilder {
 
     @Autowired
     public PackDetailModelBuilder(final CommerceService commerceService, final AuctionService auctionService,
-            final CommerceReviewService commerceReviewService, final ClientService clientService,
+            final CommerceReviewPageAttributes commerceReviewPageAttributes, final ClientService clientService,
             final ReservationService reservationService, final MessageSource messageSource, final ZoneId businessZone,
             final AuthenticatedUserResolver authResolver, final PackFavoriteService packFavoriteService,
             final CommerceDetailAttributesHelper commerceDetailAttributesHelper) {
         this.commerceService = commerceService;
         this.auctionService = auctionService;
-        this.commerceReviewService = commerceReviewService;
+        this.commerceReviewPageAttributes = commerceReviewPageAttributes;
         this.clientService = clientService;
         this.reservationService = reservationService;
         this.messageSource = messageSource;
@@ -177,7 +175,8 @@ public class PackDetailModelBuilder {
             }
         }
         mav.addObject("clientHasActiveReservation", clientHasActiveReservation);
-        addCommerceReviewAttributes(mav, pack.getCommerceId(), commerceReviewForm);
+        commerceReviewPageAttributes.addReviewPageAttributes(mav, pack.getCommerceId(), commerceReviewForm,
+                commerceReviewForm != null);
 
         final boolean packFavoriteSelected = authResolver.resolveUserOrEmpty()
                 .filter(u -> u.getRole() == User.Role.CLIENT)
@@ -211,44 +210,6 @@ public class PackDetailModelBuilder {
         return mav;
     }
 
-    private void addCommerceReviewAttributes(final ModelAndView mav, final long commerceId,
-            final CommerceReviewForm submittedForm) {
-        final Locale locale = LocaleContextHolder.getLocale();
-        final List<CommerceReview> reviews = commerceReviewService.findReviewsForCommerce(commerceId, 1, 5);
-        final Map<Long, Client> reviewClients = prefetchClients(reviews.stream()
-                .map(CommerceReview::getClientUserId).distinct().collect(java.util.stream.Collectors.toList()));
-        mav.addObject("commerceReviewItems",
-                CommerceReviewViewHelper.buildRows(reviews, reviewClients, businessZone, locale));
-        mav.addObject("commerceReviewCount", commerceReviewService.countReviewsForCommerce(commerceId));
-        mav.addObject("commerceReviewAverageRating",
-                commerceReviewService.averageRatingForCommerce(commerceId).orElse(null));
-
-        final Optional<User> userOpt = authResolver.resolveUserOrEmpty();
-        boolean canReview = false;
-        boolean alreadyReviewed = false;
-        CommerceReviewForm form = submittedForm;
-        if (userOpt.isPresent() && userOpt.get().getRole() == User.Role.CLIENT) {
-            final long clientId = userOpt.get().getId();
-            canReview = commerceReviewService.canClientReviewCommerce(clientId, commerceId);
-            final Optional<CommerceReview> ownReview = commerceReviewService.findClientReview(clientId, commerceId);
-            alreadyReviewed = ownReview.isPresent();
-            if (form == null) {
-                form = new CommerceReviewForm();
-                if (ownReview.isPresent()) {
-                    final CommerceReview review = ownReview.get();
-                    form.setRating(review.getRating());
-                    form.setBody(review.getBody());
-                }
-            }
-        }
-        if (form == null) {
-            form = new CommerceReviewForm();
-        }
-        mav.addObject("commerceReviewForm", form);
-        mav.addObject("commerceReviewCanSubmit", Boolean.valueOf(canReview));
-        mav.addObject("commerceReviewAlreadySubmitted", Boolean.valueOf(alreadyReviewed));
-    }
-
     private Map<Long, Client> prefetchClients(final List<Long> userIds) {
         final Map<Long, Client> map = new HashMap<>();
         for (final Long userId : userIds) {
@@ -258,4 +219,5 @@ public class PackDetailModelBuilder {
         }
         return map;
     }
+
 }

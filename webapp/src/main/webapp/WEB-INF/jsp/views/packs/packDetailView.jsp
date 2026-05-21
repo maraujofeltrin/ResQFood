@@ -79,6 +79,7 @@
                                     packId="${packId}"
                                     canSubmit="${commerceReviewCanSubmit}"
                                     alreadySubmitted="${commerceReviewAlreadySubmitted}"
+                                    formExpanded="${commerceReviewFormExpanded}"
                                     alertKind="${commerceReviewAlertKind}"
                                     alertMessage="${commerceReviewAlertMessage}"/>
                 </div>

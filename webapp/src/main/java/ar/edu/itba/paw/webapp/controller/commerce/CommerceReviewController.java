@@ -4,8 +4,10 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.models.user.CommerceReviewException;
 import ar.edu.itba.paw.services.commerce.CommerceReviewService;
+import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
+import ar.edu.itba.paw.webapp.controller.helpers.CommerceProfileModelBuilder;
 import ar.edu.itba.paw.webapp.controller.helpers.PackDetailModelBuilder;
 import ar.edu.itba.paw.webapp.form.BidForm;
 import ar.edu.itba.paw.webapp.form.CommerceReviewForm;
@@ -35,46 +37,77 @@ public class CommerceReviewController {
 
     private final CommerceReviewService commerceReviewService;
     private final PackService packService;
+    private final CommerceService commerceService;
     private final AuthenticatedUserResolver authResolver;
     private final PackDetailModelBuilder packDetailModelBuilder;
+    private final CommerceProfileModelBuilder commerceProfileModelBuilder;
     private final MessageSource messageSource;
 
     @Autowired
     public CommerceReviewController(final CommerceReviewService commerceReviewService, final PackService packService,
-            final AuthenticatedUserResolver authResolver, final PackDetailModelBuilder packDetailModelBuilder,
+            final CommerceService commerceService, final AuthenticatedUserResolver authResolver,
+            final PackDetailModelBuilder packDetailModelBuilder,
+            final CommerceProfileModelBuilder commerceProfileModelBuilder,
             final MessageSource messageSource) {
         this.commerceReviewService = commerceReviewService;
         this.packService = packService;
+        this.commerceService = commerceService;
         this.authResolver = authResolver;
         this.packDetailModelBuilder = packDetailModelBuilder;
+        this.commerceProfileModelBuilder = commerceProfileModelBuilder;
         this.messageSource = messageSource;
     }
 
     @PostMapping("/packs/{packId}/commerce-review")
-    public ModelAndView submitReview(@PathVariable("packId") final long packId,
+    public ModelAndView submitReviewFromPack(@PathVariable("packId") final long packId,
             @Valid @ModelAttribute("commerceReviewForm") final CommerceReviewForm commerceReviewForm,
             final BindingResult bindingResult,
             final RedirectAttributes redirectAttributes) {
         final Pack pack = packService.findById(packId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        final Locale locale = LocaleContextHolder.getLocale();
-
-        final User currentUser = authResolver.resolveUser();
 
         if (bindingResult.hasErrors()) {
             return packDetailModelBuilder.buildPackDetailModel(pack, createDefaultReservationForm(), new BidForm(),
                     commerceReviewForm);
         }
 
+        return processReviewSubmit(pack.getCommerceId(), commerceReviewForm, redirectAttributes,
+                "redirect:/packs/" + packId + "#commerce-reviews");
+    }
+
+    @PostMapping("/commerces/{commerceUserId}/commerce-review")
+    public ModelAndView submitReviewFromProfile(@PathVariable final long commerceUserId,
+            @Valid @ModelAttribute("commerceReviewForm") final CommerceReviewForm commerceReviewForm,
+            final BindingResult bindingResult,
+            final RedirectAttributes redirectAttributes) {
+        if (!commerceService.findByUserId(commerceUserId).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        if (bindingResult.hasErrors()) {
+            return commerceProfileModelBuilder.buildProfileModel(commerceUserId, 1, commerceReviewForm)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        }
+
+        return processReviewSubmit(commerceUserId, commerceReviewForm, redirectAttributes,
+                "redirect:/commerces/" + commerceUserId + "#commerce-reviews");
+    }
+
+    private ModelAndView processReviewSubmit(final long commerceUserId,
+            final CommerceReviewForm commerceReviewForm, final RedirectAttributes redirectAttributes,
+            final String redirectUrl) {
+        final Locale locale = LocaleContextHolder.getLocale();
+        final User currentUser = authResolver.resolveUser();
+
         try {
-            commerceReviewService.upsertReview(currentUser.getId(), pack.getCommerceId(),
+            commerceReviewService.upsertReview(currentUser.getId(), commerceUserId,
                     commerceReviewForm.getRating().intValue(), commerceReviewForm.getBody());
             redirectAttributes.addFlashAttribute("commerceReviewAlertKind", "success");
             redirectAttributes.addFlashAttribute("commerceReviewAlertMessage",
                     messageSource.getMessage("pack.detail.reviews.alert.success", null, locale));
         } catch (final CommerceReviewException ex) {
-            LOGGER.debug("Commerce review rejected clientId={} packId={} reason={}", Long.valueOf(currentUser.getId()),
-                    Long.valueOf(packId), ex.getReason(), ex);
+            LOGGER.debug("Commerce review rejected clientId={} commerceUserId={} reason={}",
+                    Long.valueOf(currentUser.getId()), Long.valueOf(commerceUserId), ex.getReason(), ex);
             redirectAttributes.addFlashAttribute("commerceReviewAlertKind", "error");
             if (ex.getReason() == CommerceReviewException.Reason.NOT_ELIGIBLE) {
                 redirectAttributes.addFlashAttribute("commerceReviewAlertMessage",
@@ -83,9 +116,10 @@ public class CommerceReviewController {
                 redirectAttributes.addFlashAttribute("commerceReviewAlertMessage",
                         messageSource.getMessage("pack.detail.reviews.alert.invalid", null, locale));
             }
+            redirectAttributes.addFlashAttribute("commerceReviewFormExpanded", Boolean.TRUE);
         }
 
-        return new ModelAndView("redirect:/packs/" + packId + "#commerce-reviews");
+        return new ModelAndView(redirectUrl);
     }
 
     private ReservationForm createDefaultReservationForm() {

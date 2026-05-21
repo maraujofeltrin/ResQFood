@@ -8,10 +8,16 @@
 <%@ attribute name="body" required="true" type="java.lang.String" %>
 <%@ attribute name="formattedDate" required="false" type="java.lang.String" %>
 <%@ attribute name="edited" required="false" type="java.lang.Boolean" %>
+<%@ attribute name="own" required="false" type="java.lang.Boolean" %>
 
-<article class="commerce-review">
+<article class="commerce-review<c:if test='${own}'> commerce-review--own</c:if>">
     <div class="commerce-review__meta">
-        <span class="commerce-review__client"><c:out value="${clientName}"/></span>
+        <span class="commerce-review__client">
+            <c:out value="${clientName}"/>
+            <c:if test="${own}">
+                <span class="commerce-review__own-badge"><spring:message code="pack.detail.reviews.ownBadge"/></span>
+            </c:if>
+        </span>
         <span class="commerce-review__stars" aria-label="<spring:message code='pack.detail.reviews.ratingAria' arguments='${rating}'/>">
             <c:forEach begin="1" end="${rating}">
                 <span class="material-symbols-outlined" aria-hidden="true">star</span>

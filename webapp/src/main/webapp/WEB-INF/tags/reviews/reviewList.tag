@@ -8,23 +8,67 @@
 <%@ attribute name="reviewCount" required="true" type="java.lang.Integer" %>
 <%@ attribute name="averageRating" required="false" type="java.lang.Double" %>
 <%@ attribute name="packId" required="false" type="java.lang.Long" %>
+<%@ attribute name="commerceUserId" required="false" type="java.lang.Long" %>
 <%@ attribute name="canSubmit" required="false" type="java.lang.Boolean" %>
 <%@ attribute name="alreadySubmitted" required="false" type="java.lang.Boolean" %>
 <%@ attribute name="alertKind" required="false" type="java.lang.String" %>
 <%@ attribute name="alertMessage" required="false" type="java.lang.String" %>
+<%@ attribute name="formExpanded" required="false" type="java.lang.Boolean" %>
 <%@ attribute name="fullWidth" required="false" type="java.lang.Boolean" %>
+<%@ attribute name="sectionMessageCode" required="false" type="java.lang.String" %>
+<%@ attribute name="titleMessageCode" required="false" type="java.lang.String" %>
+<%@ attribute name="eyebrowMessageCode" required="false" type="java.lang.String" %>
+
+<c:if test="${empty sectionMessageCode}">
+    <c:set var="sectionMessageCode" value="pack.detail.reviews.section"/>
+</c:if>
+<c:if test="${empty titleMessageCode}">
+    <c:set var="titleMessageCode" value="pack.detail.reviews.title"/>
+</c:if>
+<c:if test="${empty eyebrowMessageCode}">
+    <c:set var="eyebrowMessageCode" value="pack.detail.reviews.eyebrow"/>
+</c:if>
+<c:set var="showReviewForm" value="${not empty packId or not empty commerceUserId}"/>
 
 <section class="commerce-reviews-card<c:if test="${fullWidth}"> commerce-reviews-card--full-width</c:if>"
          id="commerce-reviews"
-         aria-label="<spring:message code='pack.detail.reviews.section'/>">
+         aria-label="<spring:message code='${sectionMessageCode}'/>">
     <div class="commerce-reviews-card__header">
-        <div>
-            <p class="commerce-reviews-card__eyebrow"><spring:message code="pack.detail.reviews.eyebrow"/></p>
-            <h2 class="commerce-reviews-card__title font-headline"><spring:message code="pack.detail.reviews.title"/></h2>
+        <div class="commerce-reviews-card__header-main">
+            <p class="commerce-reviews-card__eyebrow"><spring:message code="${eyebrowMessageCode}"/></p>
+            <h2 class="commerce-reviews-card__title font-headline"><spring:message code="${titleMessageCode}"/></h2>
         </div>
-        <span class="commerce-reviews-card__count">
-            <spring:message code="pack.detail.reviews.count" arguments="${reviewCount}"/>
-        </span>
+        <div class="commerce-reviews-card__header-actions">
+            <c:if test="${showReviewForm}">
+                <sec:authorize access="hasRole('CLIENT')">
+                    <c:if test="${canSubmit}">
+                        <c:choose>
+                            <c:when test="${alreadySubmitted}">
+                                <spring:message code="pack.detail.reviews.form.cta.edit" var="reviewFormCtaLabel"/>
+                            </c:when>
+                            <c:otherwise>
+                                <spring:message code="pack.detail.reviews.form.cta.create" var="reviewFormCtaLabel"/>
+                            </c:otherwise>
+                        </c:choose>
+                        <c:set var="reviewCtaAriaExpanded" value="false"/>
+                        <c:if test="${formExpanded}">
+                            <c:set var="reviewCtaAriaExpanded" value="true"/>
+                        </c:if>
+                        <button type="button"
+                                id="commerce-review-form-toggle"
+                                class="pack-submit-btn pack-submit-btn--compact font-headline"
+                                aria-expanded="${reviewCtaAriaExpanded}"
+                                aria-controls="commerce-review-form-panel">
+                            <span class="pack-submit-btn__label"><c:out value="${reviewFormCtaLabel}"/></span>
+                            <span class="material-symbols-outlined pack-submit-btn__icon" aria-hidden="true">rate_review</span>
+                        </button>
+                    </c:if>
+                </sec:authorize>
+            </c:if>
+            <span class="commerce-reviews-card__count">
+                <spring:message code="pack.detail.reviews.count" arguments="${reviewCount}"/>
+            </span>
+        </div>
     </div>
 
     <c:if test="${alertKind eq 'success'}">
@@ -46,17 +90,21 @@
                                     rating="${reviewItem.review.rating}"
                                     body="${reviewItem.review.body}"
                                     formattedDate="${reviewItem.formattedDate}"
-                                    edited="${reviewItem.edited}"/>
+                                    edited="${reviewItem.edited}"
+                                    own="${reviewItem.own}"/>
                 </c:forEach>
             </c:otherwise>
         </c:choose>
     </div>
 
-    <c:if test="${not empty packId}">
+    <c:if test="${showReviewForm}">
         <sec:authorize access="hasRole('CLIENT')">
             <c:choose>
                 <c:when test="${canSubmit}">
-                    <paw:reviewForm packId="${packId}" alreadySubmitted="${alreadySubmitted}"/>
+                    <paw:reviewForm packId="${packId}"
+                                    commerceUserId="${commerceUserId}"
+                                    alreadySubmitted="${alreadySubmitted}"
+                                    formExpanded="${formExpanded}"/>
                 </c:when>
                 <c:otherwise>
                     <p class="commerce-reviews-card__hint"><spring:message code="pack.detail.reviews.notEligible"/></p>
@@ -97,6 +145,38 @@
                     shortEl.classList.remove('hidden');
                 }
             });
+
+            var toggleBtn = document.getElementById('commerce-review-form-toggle');
+            var panel = document.getElementById('commerce-review-form-panel');
+            if (toggleBtn && panel) {
+                function scrollToReviewForm() {
+                    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                function expandPanel() {
+                    panel.classList.remove('hidden');
+                    toggleBtn.setAttribute('aria-expanded', 'true');
+                    if (typeof window.initCommerceReviewStars === 'function') {
+                        window.initCommerceReviewStars();
+                    }
+                }
+                toggleBtn.addEventListener('click', function () {
+                    var hidden = panel.classList.contains('hidden');
+                    if (hidden) {
+                        expandPanel();
+                        scrollToReviewForm();
+                    } else {
+                        scrollToReviewForm();
+                    }
+                });
+                if (!panel.classList.contains('hidden')) {
+                    if (typeof window.initCommerceReviewStars === 'function') {
+                        window.initCommerceReviewStars();
+                    }
+                    requestAnimationFrame(function () {
+                        scrollToReviewForm();
+                    });
+                }
+            }
         })();
     </script>
 </section>

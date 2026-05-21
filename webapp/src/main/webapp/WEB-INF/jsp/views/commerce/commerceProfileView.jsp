@@ -99,6 +99,15 @@
                     <paw:reviewList items="${commerceReviewItems}"
                                     reviewCount="${commerceReviewCount}"
                                     averageRating="${commerceReviewAverageRating}"
+                                    commerceUserId="${commerceUserId}"
+                                    canSubmit="${commerceReviewCanSubmit}"
+                                    alreadySubmitted="${commerceReviewAlreadySubmitted}"
+                                    formExpanded="${commerceReviewFormExpanded}"
+                                    alertKind="${commerceReviewAlertKind}"
+                                    alertMessage="${commerceReviewAlertMessage}"
+                                    sectionMessageCode="commerce.profile.reviews.aria"
+                                    titleMessageCode="commerce.profile.reviews.title"
+                                    eyebrowMessageCode="pack.detail.reviews.eyebrow"
                                     fullWidth="${true}"/>
                 </section>
             </div>
