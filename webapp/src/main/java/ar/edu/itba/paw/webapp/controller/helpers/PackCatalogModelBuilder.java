@@ -41,9 +41,10 @@ public class PackCatalogModelBuilder {
     private static final Logger LOGGER = LoggerFactory.getLogger(PackCatalogModelBuilder.class);
 
     private static final int PAGE_SIZE = 6;
+    private static final int COMMERCES_PAGE_SIZE = 8;
     private static final int AUCTION_CAROUSEL_SIZE = 6;
     private static final int FAVORITES_CAROUSEL_SIZE = 6;
-    private static final int COMMERCES_CAROUSEL_SIZE = 4;
+    private static final int COMMERCES_CAROUSEL_SIZE = 6;
     private static final String TYPE_PACKS = "packs";
     private static final String TYPE_AUCTIONS = "auctions";
     private static final String TYPE_FAVORITES = "favorites";
@@ -173,12 +174,13 @@ public class PackCatalogModelBuilder {
                     null);
         }
 
-        final int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
+        final int activePageSize = (catalogMode == CatalogMode.COMMERCES) ? COMMERCES_PAGE_SIZE : PAGE_SIZE;
+        final int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / activePageSize));
         final int safePage = Math.max(1, Math.min(page, totalPages));
 
         if (catalogMode == CatalogMode.FAVORITES) {
             if (clientUserId != null) {
-                packs = packFavoriteService.listActiveFavoritePacks(clientUserId, safePage, PAGE_SIZE);
+                packs = packFavoriteService.listActiveFavoritePacks(clientUserId, safePage, activePageSize);
             }
         } else if (showAuctionsList) {
             auctions = auctionService.filterAuctions(
@@ -188,11 +190,11 @@ public class PackCatalogModelBuilder {
                     safeTimeRange.isEmpty() ? null : safeTimeRange,
                     auctionSortOption,
                     safePage,
-                    PAGE_SIZE,
+                    activePageSize,
                     catalogAuctionListingRequiresPositiveStock,
                     null);
         } else if (catalogMode == CatalogMode.COMMERCES) {
-            commerces = commerceService.filterCommerces(trimmedQuery, cityFilter, commerceCategory, safePage, PAGE_SIZE);
+            commerces = commerceService.filterCommerces(trimmedQuery, cityFilter, commerceCategory, safePage, activePageSize);
         } else {
             packs = packService.filterPacks(
                     trimmedQuery,
@@ -201,7 +203,7 @@ public class PackCatalogModelBuilder {
                     safeTimeRange.isEmpty() ? null : safeTimeRange,
                     sortOption,
                     safePage,
-                    PAGE_SIZE,
+                    activePageSize,
                     catalogDirectSaleGridRequiresPositiveStock,
                     null);
         }
