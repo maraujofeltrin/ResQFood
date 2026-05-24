@@ -81,18 +81,53 @@
                 </c:choose>
             </section>
 
-            <%-- Future: Favorite Commerces section placeholder --%>
-            <%-- 
+            <%-- Commerce favorites section --%>
             <section class="mt-16">
                 <div class="flex items-center gap-3 mb-8">
                     <span class="material-symbols-outlined text-primary text-xl">storefront</span>
                     <h2 class="text-xl font-headline font-semibold text-on-surface">
                         <spring:message code="favorites.section.commerces"/>
                     </h2>
+                    <c:if test="${totalFavoriteCommerces > 0}">
+                        <span class="fav-count-badge">${totalFavoriteCommerces}</span>
+                    </c:if>
                     <div class="h-[1px] flex-grow bg-outline-variant/40"></div>
                 </div>
+
+                <c:choose>
+                    <c:when test="${empty favoriteCommerces}">
+                        <div class="fav-empty-state">
+                            <div class="fav-empty-state__glow"></div>
+                            <span class="material-symbols-outlined fav-empty-state__icon"
+                                  style="font-variation-settings: 'FILL' 0, 'wght' 200;">storefront</span>
+                            <h3 class="text-2xl font-headline font-bold text-on-surface mt-2">
+                                <spring:message code="favorites.empty.commerces.title"/>
+                            </h3>
+                            <p class="text-secondary mt-2 text-lg max-w-md mx-auto">
+                                <spring:message code="favorites.empty.commerces.description"/>
+                            </p>
+                            <a href="${pageContext.request.contextPath}/packs?types=commerces"
+                               class="fav-empty-state__cta mt-6">
+                                <span class="material-symbols-outlined text-lg">explore</span>
+                                <spring:message code="favorites.empty.exploreBtn"/>
+                            </a>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <c:forEach var="commerce" items="${favoriteCommerces}">
+                                <paw:commerceCard
+                                    commerceId="${commerce.userId}"
+                                    commerceName="${commerce.commercialName}"
+                                    category="${commerce.category}"
+                                    rating="${commerceRatings[commerce.userId]}"
+                                    imageId="${commerceImages[commerce.userId]}"
+                                />
+                            </c:forEach>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
             </section>
-            --%>
 
         </div>
     </main>

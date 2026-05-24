@@ -78,6 +78,53 @@
   }
 }
 
+/* ── Favorite button (hero) ─────────────────────────────── */
+
+.commerce-profile-favorite-form {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.commerce-profile-favorite-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.commerce-profile-favorite-btn:hover {
+  transform: scale(1.12);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.commerce-profile-favorite-btn:active {
+  transform: scale(0.92);
+}
+
+.commerce-profile-favorite-icon {
+  font-size: 1.4rem;
+  color: rgba(255, 255, 255, 0.85);
+  transition: color 0.2s ease, font-variation-settings 0.25s ease;
+  font-variation-settings: 'FILL' 0;
+}
+
+.commerce-profile-favorite-btn--selected .commerce-profile-favorite-icon {
+  color: #f43f5e;
+  font-variation-settings: 'FILL' 1;
+}
+
+.commerce-profile-favorite-btn:active .commerce-profile-favorite-icon {
+  font-variation-settings: 'FILL' 1;
+}
+
 .commerce-profile-hero__logo {
   flex-shrink: 0;
   width: 5.5rem;

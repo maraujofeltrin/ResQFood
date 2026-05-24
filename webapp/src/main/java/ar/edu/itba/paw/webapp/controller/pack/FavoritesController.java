@@ -3,8 +3,11 @@ package ar.edu.itba.paw.webapp.controller.pack;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.services.commerce.CommerceFavoriteService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.services.commerce.CommerceReviewService;
 import ar.edu.itba.paw.services.pack.PackFavoriteService;
+import ar.edu.itba.paw.services.user.UserService;
 import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,17 +28,27 @@ public class FavoritesController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FavoritesController.class);
     private static final int PAGE_SIZE = 9;
+    private static final int COMMERCE_FAVORITES_LIMIT = 12;
 
     private final PackFavoriteService packFavoriteService;
+    private final CommerceFavoriteService commerceFavoriteService;
     private final CommerceService commerceService;
+    private final CommerceReviewService commerceReviewService;
+    private final UserService userService;
     private final AuthenticatedUserResolver authResolver;
 
     @Autowired
     public FavoritesController(final PackFavoriteService packFavoriteService,
+                               final CommerceFavoriteService commerceFavoriteService,
                                final CommerceService commerceService,
+                               final CommerceReviewService commerceReviewService,
+                               final UserService userService,
                                final AuthenticatedUserResolver authResolver) {
         this.packFavoriteService = packFavoriteService;
+        this.commerceFavoriteService = commerceFavoriteService;
         this.commerceService = commerceService;
+        this.commerceReviewService = commerceReviewService;
+        this.userService = userService;
         this.authResolver = authResolver;
     }
 
@@ -70,12 +83,27 @@ public class FavoritesController {
                             .orElse("—"));
         }
 
+        // Commerce favorites
+        final List<Commerce> favoriteCommerces = commerceFavoriteService.listFavoriteCommerces(userId, 1, COMMERCE_FAVORITES_LIMIT);
+        final int totalFavoriteCommerces = commerceFavoriteService.countFavoriteCommerces(userId);
+
+        final Map<Long, Double> commerceRatings = new HashMap<>();
+        final Map<Long, Long> commerceImages = new HashMap<>();
+        for (final Commerce c : favoriteCommerces) {
+            commerceRatings.putIfAbsent(c.getUserId(), commerceReviewService.averageRatingForCommerce(c.getUserId()).orElse(0.0));
+            userService.findById(c.getUserId()).map(User::getProfileImageId).ifPresent(img -> commerceImages.putIfAbsent(c.getUserId(), img));
+        }
+
         final ModelAndView mav = new ModelAndView("favorites/favoritesView");
         mav.addObject("packs", packs);
         mav.addObject("commerceNames", commerceNames);
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
         mav.addObject("totalFavorites", totalItems);
+        mav.addObject("favoriteCommerces", favoriteCommerces);
+        mav.addObject("totalFavoriteCommerces", totalFavoriteCommerces);
+        mav.addObject("commerceRatings", commerceRatings);
+        mav.addObject("commerceImages", commerceImages);
 
         return mav;
     }

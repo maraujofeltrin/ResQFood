@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <%@ taglib prefix="paw" uri="http://itba.edu.ar/paw/tags" %>
 <!DOCTYPE html>
 <html class="light" lang="${pageContext.response.locale.language}">
@@ -15,6 +16,9 @@
     <spring:message code="commerce.profile.available.empty.title" var="emptyAvailableTitle"/>
     <spring:message code="commerce.profile.available.empty.description" var="emptyAvailableDesc"/>
     <c:url var="packCatalogUrl" value="/packs"/>
+
+    <c:url var="commerceFavoriteAction" value="/commerces/${commerceUserId}/favorite"/>
+    <spring:message code="commerce.profile.favorite.toggleAria" var="commerceFavoriteToggleAria"/>
 
     <main class="commerce-profile-main">
         <paw:backLink catalogUrl="${packCatalogUrl}" backLabelCode="commerce.profile.back"/>
@@ -40,6 +44,16 @@
                     </p>
                     <paw:commerceReviewSummary averageRating="${commerceReviewAverageRating}" reviewCount="${commerceReviewCount}"/>
                 </div>
+                <sec:authorize access="hasRole('CLIENT')">
+                    <form action="${commerceFavoriteAction}" method="post" class="commerce-profile-favorite-form">
+                        <button type="submit"
+                                class="commerce-profile-favorite-btn<c:if test='${commerceFavoriteSelected}'> commerce-profile-favorite-btn--selected</c:if>"
+                                aria-label="<c:out value='${commerceFavoriteToggleAria}'/>"
+                                aria-pressed="${commerceFavoriteSelected}">
+                            <span class="material-symbols-outlined commerce-profile-favorite-icon" aria-hidden="true">favorite</span>
+                        </button>
+                    </form>
+                </sec:authorize>
             </div>
         </header>
 

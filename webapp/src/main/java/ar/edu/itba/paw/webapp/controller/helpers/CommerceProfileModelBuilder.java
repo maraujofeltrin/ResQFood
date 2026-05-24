@@ -4,6 +4,7 @@ import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.services.commerce.CommerceFavoriteService;
 import ar.edu.itba.paw.services.commerce.CommercePublicOffers;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.user.UserService;
@@ -29,17 +30,23 @@ public class CommerceProfileModelBuilder {
     private final UserService userService;
     private final MessageSource messageSource;
     private final CommerceDetailAttributesHelper commerceDetailAttributesHelper;
+    private final CommerceFavoriteService commerceFavoriteService;
+    private final AuthenticatedUserResolver authResolver;
 
     @Autowired
     public CommerceProfileModelBuilder(final CommerceService commerceService,
             final CommerceReviewPageAttributes commerceReviewPageAttributes, final UserService userService,
             final MessageSource messageSource,
-            final CommerceDetailAttributesHelper commerceDetailAttributesHelper) {
+            final CommerceDetailAttributesHelper commerceDetailAttributesHelper,
+            final CommerceFavoriteService commerceFavoriteService,
+            final AuthenticatedUserResolver authResolver) {
         this.commerceService = commerceService;
         this.commerceReviewPageAttributes = commerceReviewPageAttributes;
         this.userService = userService;
         this.messageSource = messageSource;
         this.commerceDetailAttributesHelper = commerceDetailAttributesHelper;
+        this.commerceFavoriteService = commerceFavoriteService;
+        this.authResolver = authResolver;
     }
 
     public Optional<ModelAndView> buildProfileModel(final long commerceUserId, final int page) {
@@ -96,6 +103,12 @@ public class CommerceProfileModelBuilder {
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
         mav.addObject("paginationBaseUrl", "/commerces/" + commerceUserId);
+
+        final boolean commerceFavoriteSelected = authResolver.resolveUserOrEmpty()
+                .filter(u -> u.getRole() == User.Role.CLIENT)
+                .map(u -> commerceFavoriteService.isFavorite(u.getId(), commerceUserId))
+                .orElse(false);
+        mav.addObject("commerceFavoriteSelected", commerceFavoriteSelected);
 
         return Optional.of(mav);
     }
