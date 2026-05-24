@@ -126,8 +126,10 @@ public class PackJpaDao implements PackDao {
     @Override
     public List<Pack> filterPacks(final String query, final List<PackTag> tags, final String city,
                                   final List<String> timeRanges, final PackSortOption sort,
-                                  final int page, final int pageSize, final boolean requirePositiveStock) {
-        final List<Long> ids = queryPackIds(query, tags, city, timeRanges, sort, page, pageSize, requirePositiveStock);
+                                  final int page, final int pageSize, final boolean requirePositiveStock,
+                                  final Long commerceUserId) {
+        final List<Long> ids = queryPackIds(query, tags, city, timeRanges, sort, page, pageSize,
+                requirePositiveStock, commerceUserId);
         if (ids.isEmpty()) {
             return Collections.emptyList();
         }
@@ -145,11 +147,12 @@ public class PackJpaDao implements PackDao {
 
     @Override
     public int countFilteredPacks(final String query, final List<PackTag> tags, final String city,
-                                  final List<String> timeRanges, final boolean requirePositiveStock) {
+                                  final List<String> timeRanges, final boolean requirePositiveStock,
+                                  final Long commerceUserId) {
         final StringBuilder jpql = new StringBuilder("SELECT COUNT(p.id) FROM Pack p, Commerce c WHERE c.userId = p.commerceId AND p.active = true AND p.deleted = false AND NOT EXISTS (SELECT a.id FROM Auction a WHERE a.pack.id = p.id AND a.status = :activeStatus)");
         final Map<String, Object> params = new LinkedHashMap<>();
         params.put("activeStatus", Auction.Status.ACTIVE);
-        appendOptionalFilters(jpql, params, query, tags, city, timeRanges, requirePositiveStock);
+        appendOptionalFilters(jpql, params, query, tags, city, timeRanges, requirePositiveStock, commerceUserId);
         final Number count = (Number) JpqlQuerySupport.createQuery(em, jpql.toString(), params, Long.class).getSingleResult();
         return count == null ? 0 : count.intValue();
     }
@@ -191,11 +194,12 @@ public class PackJpaDao implements PackDao {
 
     private List<Long> queryPackIds(final String query, final List<PackTag> tags, final String city,
                                     final List<String> timeRanges, final PackSortOption sort,
-                                    final int page, final int pageSize, final boolean requirePositiveStock) {
+                                    final int page, final int pageSize, final boolean requirePositiveStock,
+                                    final Long commerceUserId) {
         final StringBuilder jpql = new StringBuilder("SELECT p.id FROM Pack p, Commerce c WHERE c.userId = p.commerceId AND p.active = true AND p.deleted = false AND NOT EXISTS (SELECT a.id FROM Auction a WHERE a.pack.id = p.id AND a.status = :activeStatus)");
         final Map<String, Object> params = new LinkedHashMap<>();
         params.put("activeStatus", Auction.Status.ACTIVE);
-        appendOptionalFilters(jpql, params, query, tags, city, timeRanges, requirePositiveStock);
+        appendOptionalFilters(jpql, params, query, tags, city, timeRanges, requirePositiveStock, commerceUserId);
         jpql.append(" ORDER BY ").append(toOrderByClause(sort));
         return JpqlQuerySupport.createQuery(em, jpql.toString(), params, Long.class)
                 .setFirstResult(Pagination.offset(page, pageSize))
@@ -205,7 +209,12 @@ public class PackJpaDao implements PackDao {
 
     private void appendOptionalFilters(final StringBuilder jpql, final Map<String, Object> params,
                                        final String query, final List<PackTag> tags, final String city,
-                                       final List<String> timeRanges, final boolean requirePositiveStock) {
+                                       final List<String> timeRanges, final boolean requirePositiveStock,
+                                       final Long commerceUserId) {
+        if (commerceUserId != null) {
+            jpql.append(" AND p.commerceId = :commerceUserId");
+            params.put("commerceUserId", commerceUserId);
+        }
         if (requirePositiveStock) {
             jpql.append(" AND p.stock > 0");
         }

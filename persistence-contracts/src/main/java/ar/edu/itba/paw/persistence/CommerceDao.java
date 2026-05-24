@@ -4,6 +4,7 @@ import ar.edu.itba.paw.models.pack.Municipality;
 
 import ar.edu.itba.paw.models.user.Commerce;
 import java.util.Optional;
+import java.util.List;
 
 public interface CommerceDao {
     Commerce createCommerce(final Long userId, final String commercialName, final Commerce.Category category,
@@ -13,5 +14,9 @@ public interface CommerceDao {
     Optional<Commerce> findByUserId(final Long userId);
 
     Commerce update(final Commerce commerce);
+
+    List<Commerce> filterCommerces(String query, String cityFilter, Commerce.Category categoryFilter, int page, int pageSize);
+
+    int countFilteredCommerces(String query, String cityFilter, Commerce.Category categoryFilter);
 }
 

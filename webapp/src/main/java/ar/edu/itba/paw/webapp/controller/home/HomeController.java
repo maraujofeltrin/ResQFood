@@ -19,7 +19,8 @@ public class HomeController {
     @GetMapping("/")
     public ModelAndView home() {
         ModelAndView mav = new ModelAndView("home/landingView");
-        List<Pack> previewPacks = packService.filterPacks(null, null, null, null, PackSortOption.DATE_DESC, 1, 6, true);
+        List<Pack> previewPacks = packService.filterPacks(null, null, null, null, PackSortOption.DATE_DESC, 1, 6, true,
+                null);
         mav.addObject("previewPacks", previewPacks);
         return mav;
     }

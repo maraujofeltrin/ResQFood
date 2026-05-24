@@ -72,6 +72,7 @@ public class UserJpaDao implements UserDao {
 
     @Override
     public void updateProfileImage(final long userId, final Long imageId) {
+        em.flush(); // Ensure pending Image inserts are flushed to the DB to avoid FK violations
         em.createQuery("UPDATE User u SET u.profileImageId = :imgId WHERE u.id = :id")
                 .setParameter("imgId", imageId)
                 .setParameter("id", userId)

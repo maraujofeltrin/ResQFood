@@ -109,7 +109,8 @@ public class AuctionJdbcDaoTest {
         auctionDao.createAuction(packId, 500.0, 500.0, AUCTION_END_TIME);
 
         // 2. Ejercicio
-        final List<Auction> activeAuctions = auctionDao.filterAuctions(null, null, null, null, null, 1, Integer.MAX_VALUE, false);
+        final List<Auction> activeAuctions = auctionDao.filterAuctions(null, null, null, null, null, 1,
+                Integer.MAX_VALUE, false, null);
 
         // 3. Asserts
         assertEquals(1, activeAuctions.size());

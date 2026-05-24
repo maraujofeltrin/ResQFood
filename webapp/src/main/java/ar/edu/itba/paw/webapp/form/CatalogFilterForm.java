@@ -4,6 +4,7 @@ import ar.edu.itba.paw.models.auction.AuctionSortOption;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
+import ar.edu.itba.paw.models.user.Commerce;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,7 +20,7 @@ import java.util.Set;
  */
 public class CatalogFilterForm {
 
-    private static final Set<String> ALLOWED_TYPES = Set.of("packs", "auctions", "favorites");
+    private static final Set<String> ALLOWED_TYPES = Set.of("packs", "auctions", "favorites", "commerces");
     private static final Set<String> ALLOWED_TIME_RANGES = Set.of("morning", "afternoon", "evening");
 
     private String q;
@@ -29,6 +30,7 @@ public class CatalogFilterForm {
     private AuctionSortOption auctionSort;
     private Municipality location;
     private List<String> timeRange;
+    private Commerce.Category commerceCategory;
     private int page = 1;
 
     // -- Getters ---------------------------------------------------------------
@@ -59,6 +61,10 @@ public class CatalogFilterForm {
 
     public List<String> getTimeRange() {
         return timeRange;
+    }
+
+    public Commerce.Category getCommerceCategory() {
+        return commerceCategory;
     }
 
     public int getPage() {
@@ -93,6 +99,18 @@ public class CatalogFilterForm {
 
     public void setTimeRange(final List<String> rawTimeRange) {
         this.timeRange = normalizeList(rawTimeRange, ALLOWED_TIME_RANGES);
+    }
+
+    public void setCommerceCategory(final String rawCommerceCategory) {
+        if (rawCommerceCategory == null || rawCommerceCategory.isBlank()) {
+            this.commerceCategory = null;
+            return;
+        }
+        try {
+            this.commerceCategory = Commerce.Category.valueOf(rawCommerceCategory.trim().toUpperCase(Locale.ROOT));
+        } catch (final IllegalArgumentException ignored) {
+            this.commerceCategory = null;
+        }
     }
 
     public void setPage(final int page) {

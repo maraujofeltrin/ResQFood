@@ -7,8 +7,8 @@ import ar.edu.itba.paw.models.auction.BidPlacementException;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.BidDao;
+import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.PackDao;
-import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,7 +49,7 @@ class AuctionServiceImplTest {
     private ReservationService reservationService;
 
     @Mock
-    private CommerceService commerceService;
+    private CommerceDao commerceDao;
 
     @InjectMocks
     private AuctionServiceImpl auctionService;

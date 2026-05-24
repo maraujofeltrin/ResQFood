@@ -10,8 +10,10 @@ import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.services.commerce.CommerceReviewService;
 import ar.edu.itba.paw.services.pack.PackFavoriteService;
 import ar.edu.itba.paw.services.pack.PackService;
+import ar.edu.itba.paw.services.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,32 +41,42 @@ public class PackCatalogModelBuilder {
     private static final Logger LOGGER = LoggerFactory.getLogger(PackCatalogModelBuilder.class);
 
     private static final int PAGE_SIZE = 6;
+    private static final int COMMERCES_PAGE_SIZE = 8;
     private static final int AUCTION_CAROUSEL_SIZE = 6;
     private static final int FAVORITES_CAROUSEL_SIZE = 6;
+    private static final int COMMERCES_CAROUSEL_SIZE = 6;
     private static final String TYPE_PACKS = "packs";
     private static final String TYPE_AUCTIONS = "auctions";
     private static final String TYPE_FAVORITES = "favorites";
+    private static final String TYPE_COMMERCES = "commerces";
     private static final Set<String> ALLOWED_TIME_RANGES = Set.of("morning", "afternoon", "evening");
 
     private enum CatalogMode {
         ALL,
         PACKS,
-        AUCTIONS
+        AUCTIONS,
+        COMMERCES
     }
 
     private final PackService packService;
     private final CommerceService commerceService;
     private final AuctionService auctionService;
     private final AuthenticatedUserResolver authResolver;
+    private final CommerceReviewService commerceReviewService;
+    private final UserService userService;
 
     @Autowired
     public PackCatalogModelBuilder(final PackService packService, final CommerceService commerceService,
             final AuctionService auctionService,
-            final AuthenticatedUserResolver authResolver) {
+            final AuthenticatedUserResolver authResolver,
+            final CommerceReviewService commerceReviewService,
+            final UserService userService) {
         this.packService = packService;
         this.commerceService = commerceService;
         this.auctionService = auctionService;
         this.authResolver = authResolver;
+        this.commerceReviewService = commerceReviewService;
+        this.userService = userService;
     }
 
     public ModelAndView buildPackCatalog(final CatalogFilterForm form) {
@@ -80,6 +92,7 @@ public class PackCatalogModelBuilder {
 
         final Municipality municipality = form.getLocation();
         final String cityFilter = municipality != null ? municipality.getCityName() : null;
+        final Commerce.Category commerceCategory = form.getCommerceCategory();
 
         // types and timeRange are already normalised by the form setters
         final List<String> safeTimeRange = form.getTimeRange() != null ? form.getTimeRange() : Collections.emptyList();
@@ -99,18 +112,23 @@ public class PackCatalogModelBuilder {
 
         final boolean packsSelected = selectedTypes.contains(TYPE_PACKS);
         final boolean auctionsSelected = selectedTypes.contains(TYPE_AUCTIONS);
+        final boolean commercesSelected = selectedTypes.contains(TYPE_COMMERCES);
 
         final CatalogMode catalogMode;
-        if ((packsSelected && auctionsSelected) || (!packsSelected && !auctionsSelected)) {
+        final int activeTypesCount = (packsSelected ? 1 : 0) + (auctionsSelected ? 1 : 0) + (commercesSelected ? 1 : 0);
+        if (activeTypesCount == 0 || activeTypesCount > 1) {
             catalogMode = CatalogMode.ALL;
         } else if (packsSelected) {
             catalogMode = CatalogMode.PACKS;
-        } else {
+        } else if (auctionsSelected) {
             catalogMode = CatalogMode.AUCTIONS;
+        } else {
+            catalogMode = CatalogMode.COMMERCES;
         }
 
         final boolean showAuctionsList = catalogMode == CatalogMode.AUCTIONS;
         final boolean showAuctionsCarousel = catalogMode == CatalogMode.ALL;
+        final boolean showCommercesCarousel = catalogMode == CatalogMode.ALL;
 
         final boolean catalogDirectSaleGridRequiresPositiveStock =
                 catalogMode == CatalogMode.ALL || catalogMode == CatalogMode.PACKS;
@@ -121,6 +139,7 @@ public class PackCatalogModelBuilder {
         int totalItems = 0;
         List<Pack> packs = Collections.emptyList();
         List<Auction> auctions = Collections.emptyList();
+        List<Commerce> commerces = Collections.emptyList();
 
         if (showAuctionsList) {
             totalItems = auctionService.countFilteredAuctions(
@@ -128,17 +147,22 @@ public class PackCatalogModelBuilder {
                     selectedTags.isEmpty() ? null : selectedTags,
                     cityFilter,
                     safeTimeRange.isEmpty() ? null : safeTimeRange,
-                    catalogAuctionListingRequiresPositiveStock);
+                    catalogAuctionListingRequiresPositiveStock,
+                    null);
+        } else if (catalogMode == CatalogMode.COMMERCES) {
+            totalItems = commerceService.countFilteredCommerces(trimmedQuery, cityFilter, commerceCategory);
         } else {
             totalItems = packService.countFilteredPacks(
                     trimmedQuery,
                     selectedTags.isEmpty() ? null : selectedTags,
                     cityFilter,
                     safeTimeRange.isEmpty() ? null : safeTimeRange,
-                    catalogDirectSaleGridRequiresPositiveStock);
+                    catalogDirectSaleGridRequiresPositiveStock,
+                    null);
         }
 
-        final int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
+        final int activePageSize = (catalogMode == CatalogMode.COMMERCES) ? COMMERCES_PAGE_SIZE : PAGE_SIZE;
+        final int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / activePageSize));
         final int safePage = Math.max(1, Math.min(page, totalPages));
 
         if (showAuctionsList) {
@@ -149,8 +173,11 @@ public class PackCatalogModelBuilder {
                     safeTimeRange.isEmpty() ? null : safeTimeRange,
                     auctionSortOption,
                     safePage,
-                    PAGE_SIZE,
-                    catalogAuctionListingRequiresPositiveStock);
+                    activePageSize,
+                    catalogAuctionListingRequiresPositiveStock,
+                    null);
+        } else if (catalogMode == CatalogMode.COMMERCES) {
+            commerces = commerceService.filterCommerces(trimmedQuery, cityFilter, commerceCategory, safePage, activePageSize);
         } else {
             packs = packService.filterPacks(
                     trimmedQuery,
@@ -159,8 +186,9 @@ public class PackCatalogModelBuilder {
                     safeTimeRange.isEmpty() ? null : safeTimeRange,
                     sortOption,
                     safePage,
-                    PAGE_SIZE,
-                    catalogDirectSaleGridRequiresPositiveStock);
+                    activePageSize,
+                    catalogDirectSaleGridRequiresPositiveStock,
+                    null);
         }
 
         List<Auction> carouselAuctions = Collections.emptyList();
@@ -173,7 +201,13 @@ public class PackCatalogModelBuilder {
                     AuctionSortOption.TIME_REMAINING_ASC,
                     1,
                     AUCTION_CAROUSEL_SIZE,
-                    catalogAuctionListingRequiresPositiveStock);
+                    catalogAuctionListingRequiresPositiveStock,
+                    null);
+        }
+
+        List<Commerce> carouselCommerces = Collections.emptyList();
+        if (showCommercesCarousel) {
+            carouselCommerces = commerceService.filterCommerces(trimmedQuery, cityFilter, commerceCategory, 1, COMMERCES_CAROUSEL_SIZE);
         }
 
         final Map<Long, String> commerceNames = new HashMap<>();
@@ -208,6 +242,17 @@ public class PackCatalogModelBuilder {
         }
 
 
+        final Map<Long, Double> commerceRatings = new HashMap<>();
+        final Map<Long, Long> commerceImages = new HashMap<>();
+        final List<Commerce> commercesForEnrichment = new ArrayList<>(commerces);
+        commercesForEnrichment.addAll(carouselCommerces);
+        for (final Commerce c : commercesForEnrichment) {
+            commerceRatings.putIfAbsent(c.getUserId(), commerceReviewService.averageRatingForCommerce(c.getUserId()).orElse(0.0));
+            userService.findById(c.getUserId()).map(User::getProfileImageId).ifPresent(img -> commerceImages.putIfAbsent(c.getUserId(), img));
+        }
+
+
+
         final StringBuilder baseUrlBuilder = new StringBuilder("/packs");
         boolean firstParam = true;
         if (hasQuery) {
@@ -225,7 +270,7 @@ public class PackCatalogModelBuilder {
             baseUrlBuilder.append(firstParam ? "?" : "&").append("types=").append(selectedType);
             firstParam = false;
         }
-        if (catalogMode != CatalogMode.AUCTIONS && sortOption != PackSortOption.DATE_DESC) {
+        if (catalogMode != CatalogMode.AUCTIONS && catalogMode != CatalogMode.COMMERCES && sortOption != PackSortOption.DATE_DESC) {
             baseUrlBuilder.append(firstParam ? "?" : "&").append("sort=").append(sortOption.name());
             firstParam = false;
         }
@@ -241,6 +286,10 @@ public class PackCatalogModelBuilder {
         }
         if (catalogMode == CatalogMode.AUCTIONS) {
             baseUrlBuilder.append(firstParam ? "?" : "&").append("auctionSort=").append(auctionSortOption.name());
+            firstParam = false;
+        }
+        if (catalogMode == CatalogMode.COMMERCES && commerceCategory != null) {
+            baseUrlBuilder.append(firstParam ? "?" : "&").append("commerceCategory=").append(commerceCategory.name());
             firstParam = false;
         }
 
@@ -272,9 +321,71 @@ public class PackCatalogModelBuilder {
 
 
 
+        final StringBuilder commercesViewAllBuilder = new StringBuilder("/packs");
+        boolean commViewFirst = true;
+        if (hasQuery) {
+            commercesViewAllBuilder.append(commViewFirst ? "?" : "&").append("q=")
+                    .append(java.net.URLEncoder.encode(trimmedQuery, StandardCharsets.UTF_8));
+            commViewFirst = false;
+        }
+        if (municipality != null) {
+            commercesViewAllBuilder.append(commViewFirst ? "?" : "&").append("location=").append(municipality.name());
+            commViewFirst = false;
+        }
+        if (commerceCategory != null) {
+            commercesViewAllBuilder.append(commViewFirst ? "?" : "&").append("commerceCategory=").append(commerceCategory.name());
+            commViewFirst = false;
+        }
+        commercesViewAllBuilder.append(commViewFirst ? "?" : "&").append("types=").append(TYPE_COMMERCES);
+
+        final String catalogExploreUrl;
+        if (catalogMode != CatalogMode.ALL) {
+            final StringBuilder exploreUrlBuilder = new StringBuilder("/packs");
+            boolean exploreFirst = true;
+            if (hasQuery) {
+                exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("q=")
+                        .append(java.net.URLEncoder.encode(trimmedQuery, StandardCharsets.UTF_8));
+                exploreFirst = false;
+            }
+            if (!selectedTags.isEmpty()) {
+                for (final PackTag tag : selectedTags) {
+                    exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("tags=").append(tag.name());
+                    exploreFirst = false;
+                }
+            }
+            if (sortOption != PackSortOption.DATE_DESC) {
+                exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("sort=").append(sortOption.name());
+                exploreFirst = false;
+            }
+            if (municipality != null) {
+                exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("location=").append(municipality.name());
+                exploreFirst = false;
+            }
+            if (!safeTimeRange.isEmpty()) {
+                for (final String tr : safeTimeRange) {
+                    exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("timeRange=").append(tr);
+                    exploreFirst = false;
+                }
+            }
+            if (catalogMode == CatalogMode.AUCTIONS) {
+                exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("auctionSort=").append(auctionSortOption.name());
+                exploreFirst = false;
+            }
+            if (commerceCategory != null) {
+                exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("commerceCategory=").append(commerceCategory.name());
+            }
+            catalogExploreUrl = exploreUrlBuilder.toString();
+        } else {
+            catalogExploreUrl = "/packs";
+        }
+
         mav.addObject("packs", packs);
         mav.addObject("auctions", auctions);
         mav.addObject("auctionsCarousel", carouselAuctions);
+        mav.addObject("commerces", commerces);
+        mav.addObject("commercesCarousel", carouselCommerces);
+        mav.addObject("commerceRatings", commerceRatings);
+        mav.addObject("commerceImages", commerceImages);
         mav.addObject("catalogMode", catalogMode.name());
         mav.addObject("commerceNames", commerceNames);
         mav.addObject("availableTags", PackTag.values());
@@ -285,12 +396,16 @@ public class PackCatalogModelBuilder {
         mav.addObject("availableMunicipalities", Municipality.values());
         mav.addObject("selectedMunicipality", municipality);
         mav.addObject("selectedTimeRanges", safeTimeRange);
+        mav.addObject("availableCommerceCategories", Commerce.Category.values());
+        mav.addObject("selectedCommerceCategory", commerceCategory);
         mav.addObject("availableAuctionSorts", AuctionSortOption.values());
         mav.addObject("currentAuctionSort", auctionSortOption);
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
         mav.addObject("paginationBaseUrl", baseUrlBuilder.toString());
         mav.addObject("auctionsViewAllUrl", auctionsViewAllBuilder.toString());
+        mav.addObject("commercesViewAllUrl", commercesViewAllBuilder.toString());
+        mav.addObject("catalogExploreUrl", catalogExploreUrl);
 
 
         return mav;

@@ -17,12 +17,7 @@
     <c:url var="packFavoriteAction" value="/packs/${packId}/favorite"/>
     <spring:message code="pack.detail.favorite.toggleAria" var="packDetailFavoriteToggleAria"/>
     <main class="pack-detail-main">
-        <div class="flex items-center gap-2 mb-8 text-secondary">
-            <a href="${packCatalogUrl}" onclick="if (window.history.length > 1 && document.referrer.indexOf(window.location.host) !== -1) { window.history.back(); return false; }" class="group flex items-center font-bold">
-                <span class="material-symbols-outlined text-xl mr-1">arrow_back</span>
-                <span class="group-hover:underline"><spring:message code="pack.detail.back"/></span>
-            </a>
-        </div>
+        <paw:backLink catalogUrl="${packCatalogUrl}" backLabelCode="pack.detail.back"/>
         <div class="pack-detail-grid">
             <div class="pack-detail-media-col">
                 <div class="pack-detail-hero relative">
@@ -64,68 +59,19 @@
                         </c:otherwise>
                     </c:choose>
                     <section class="pack-detail-commerce" aria-label="<c:out value='${packDetailCommerceSectionAria}'/>">
-                        <div class="commerce-info-card">
-                            <div class="commerce-info-card__header">
-                                <div class="commerce-info-card__header-main">
-                                    <span class="material-symbols-outlined commerce-info-card__icon commerce-info-card__icon--hero" aria-hidden="true">storefront</span>
-                                    <h2 class="commerce-info-card__title font-headline"><spring:message code="pack.detail.commerce.heading"/></h2>
-                                </div>
-                                <paw:commerceReviewSummary averageRating="${commerceReviewAverageRating}" reviewCount="${commerceReviewCount}"/>
-                            </div>
-                            <div class="commerce-info-card__grid">
-                                <div class="commerce-info-card__column">
-                                    <h3 class="commerce-info-card__section-title font-headline">
-                                        <span class="material-symbols-outlined commerce-info-card__icon" aria-hidden="true">location_on</span>
-                                        <spring:message code="pack.detail.commerce.location"/>
-                                    </h3>
-                                    <div class="commerce-info-card__address">
-                                        <p class="commerce-info-card__store-name"><c:out value="${commerceCommercialName}"/></p>
-                                        <p><c:out value="${commerceStreetLine}"/></p>
-                                        <p><c:out value="${commerceLocationLine}"/></p>
-                                    </div>
-                                </div>
-                                <div class="commerce-info-card__column">
-                                    <h3 class="commerce-info-card__section-title font-headline">
-                                        <span class="material-symbols-outlined commerce-info-card__icon" aria-hidden="true">schedule</span>
-                                        <spring:message code="pack.detail.commerce.hours"/>
-                                    </h3>
-                                    <div class="commerce-info-card__hours">
-                                        <div class="commerce-info-card__hours-row">
-                                            <span class="commerce-info-card__hours-label"><spring:message code="pack.detail.commerce.opening"/></span>
-                                            <span class="commerce-info-card__hours-value"><c:out value="${commerceOpeningTime}"/></span>
-                                        </div>
-                                        <div class="commerce-info-card__hours-row">
-                                            <span class="commerce-info-card__hours-label"><spring:message code="pack.detail.commerce.closing"/></span>
-                                            <span class="commerce-info-card__hours-value"><c:out value="${commerceClosingTime}"/></span>
-                                        </div>
-                                        <div class="commerce-info-card__status">
-                                            <c:choose>
-                                                <c:when test="${commerceOpenNow}">
-                                                    <span class="commerce-info-card__status-badge"><spring:message code="pack.detail.commerce.openNow"/></span>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <span class="commerce-info-card__status-badge commerce-info-card__status-badge--closed"><spring:message code="pack.detail.commerce.closedNow"/></span>
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="commerce-info-card__note">
-                                <span class="material-symbols-outlined commerce-info-card__icon" aria-hidden="true">info</span>
-                                <p class="commerce-info-card__note-text">
-                                    <spring:message code="pack.detail.commerce.pickupNote"/>
-                                </p>
-                            </div>
-                            <c:if test="${not commerceOpenNow}">
-                                <div class="commerce-info-card__note commerce-info-card__note--warning">
-                                    <span class="material-symbols-outlined commerce-info-card__icon" aria-hidden="true">schedule</span>
-                                    <p class="commerce-info-card__note-text">
-                                        <spring:message code="pack.detail.commerce.closedNote"/>
-                                    </p>
-                                </div>
-                            </c:if>
-                        </div>
+                        <paw:commerceInfoCard
+                            showHeader="true"
+                            showStoreName="true"
+                            commerceUserId="${commerceUserId}"
+                            profileImageId="${commerceProfileImageId}"
+                            commercialName="${commerceCommercialName}"
+                            streetLine="${commerceStreetLine}"
+                            locationLine="${commerceLocationLine}"
+                            openingTime="${commerceOpeningTime}"
+                            closingTime="${commerceClosingTime}"
+                            openNow="${commerceOpenNow}"
+                            averageRating="${commerceReviewAverageRating}"
+                            reviewCount="${commerceReviewCount}"/>
                     </section>
                     <paw:reviewList items="${commerceReviewItems}"
                                     reviewCount="${commerceReviewCount}"
@@ -133,6 +79,7 @@
                                     packId="${packId}"
                                     canSubmit="${commerceReviewCanSubmit}"
                                     alreadySubmitted="${commerceReviewAlreadySubmitted}"
+                                    formExpanded="${commerceReviewFormExpanded}"
                                     alertKind="${commerceReviewAlertKind}"
                                     alertMessage="${commerceReviewAlertMessage}"/>
                 </div>

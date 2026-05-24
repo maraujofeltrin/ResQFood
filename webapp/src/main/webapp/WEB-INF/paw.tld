@@ -15,6 +15,7 @@
     <tag-file><name>footer</name><path>/WEB-INF/tags/shared/footer.tag</path></tag-file>
     <tag-file><name>packEmptyState</name><path>/WEB-INF/tags/shared/packEmptyState.tag</path></tag-file>
     <tag-file><name>packCard</name><path>/WEB-INF/tags/shared/packCard.tag</path></tag-file>
+    <tag-file><name>commerceCard</name><path>/WEB-INF/tags/shared/commerceCard.tag</path></tag-file>
     <tag-file><name>packCardShell</name><path>/WEB-INF/tags/shared/packCardShell.tag</path></tag-file>
     <tag-file><name>pagination</name><path>/WEB-INF/tags/shared/pagination.tag</path></tag-file>
     <tag-file><name>searchBar</name><path>/WEB-INF/tags/shared/searchBar.tag</path></tag-file>
@@ -24,9 +25,11 @@
     <tag-file><name>reservationLayout</name><path>/WEB-INF/tags/shared/reservationLayout.tag</path></tag-file>
     <tag-file><name>button</name><path>/WEB-INF/tags/shared/button.tag</path></tag-file>
     <tag-file><name>imageUpload</name><path>/WEB-INF/tags/shared/imageUpload.tag</path></tag-file>
+    <tag-file><name>backLink</name><path>/WEB-INF/tags/shared/backLink.tag</path></tag-file>
 
     <!-- Pack catalog & pack detail -->
     <tag-file><name>catalogHeader</name><path>/WEB-INF/tags/packs/catalogHeader.tag</path></tag-file>
+    <tag-file><name>catalogBackLink</name><path>/WEB-INF/tags/packs/catalogBackLink.tag</path></tag-file>
     <tag-file><name>catalogFilter</name><path>/WEB-INF/tags/packs/catalogFilter.tag</path></tag-file>
     <tag-file><name>sortDropdown</name><path>/WEB-INF/tags/packs/sortDropdown.tag</path></tag-file>
     <tag-file><name>auctionSortDropdown</name><path>/WEB-INF/tags/packs/auctionSortDropdown.tag</path></tag-file>
@@ -43,6 +46,9 @@
     <tag-file><name>userIdentityFields</name><path>/WEB-INF/tags/commerce/userIdentityFields.tag</path></tag-file>
     <tag-file><name>deletePackModal</name><path>/WEB-INF/tags/commerce/deletePackModal.tag</path></tag-file>
     <tag-file><name>cancelAuctionModal</name><path>/WEB-INF/tags/commerce/cancelAuctionModal.tag</path></tag-file>
+    <tag-file><name>commerceInfoCardBody</name><path>/WEB-INF/tags/commerce/commerceInfoCardBody.tag</path></tag-file>
+    <tag-file><name>commerceInfoCard</name><path>/WEB-INF/tags/commerce/commerceInfoCard.tag</path></tag-file>
+    <tag-file><name>commerceInfoCardSidebar</name><path>/WEB-INF/tags/commerce/commerceInfoCardSidebar.tag</path></tag-file>
 
     <!-- Reservations -->
     <tag-file><name>reservationCard</name><path>/WEB-INF/tags/reservations/reservationCard.tag</path></tag-file>

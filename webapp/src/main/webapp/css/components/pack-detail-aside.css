@@ -326,6 +326,13 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
+.pack-submit-btn--compact {
+  width: auto;
+  padding: 0.875rem 1.25rem;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+}
+
 .pack-submit-btn:hover {
   transform: scale(1.02);
 }
