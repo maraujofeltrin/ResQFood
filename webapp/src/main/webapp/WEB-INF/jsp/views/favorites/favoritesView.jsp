@@ -78,8 +78,9 @@
                                     </c:forEach>
                                 </div>
 
-                                <paw:pagination currentPage="${currentPage}" totalPages="${totalPages}"
-                                                baseUrl="${pageContext.request.contextPath}/favorites" />
+                                <paw:pagination currentPage="${currentPackPage}" totalPages="${totalPackPages}"
+                                                baseUrl="${pageContext.request.contextPath}/favorites?commercePage=${currentCommercePage}"
+                                                pageParam="packPage" />
                             </c:otherwise>
                         </c:choose>
                     </section>
@@ -129,6 +130,12 @@
                                             imageId="${commerceImages[commerce.userId]}"
                                         />
                                     </c:forEach>
+                                </div>
+                                
+                                <div class="mt-8">
+                                    <paw:pagination currentPage="${currentCommercePage}" totalPages="${totalCommercePages}"
+                                                    baseUrl="${pageContext.request.contextPath}/favorites?packPage=${currentPackPage}"
+                                                    pageParam="commercePage" />
                                 </div>
                             </c:otherwise>
                         </c:choose>

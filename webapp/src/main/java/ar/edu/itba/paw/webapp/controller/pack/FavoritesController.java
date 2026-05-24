@@ -27,8 +27,8 @@ import java.util.Map;
 public class FavoritesController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FavoritesController.class);
-    private static final int PAGE_SIZE = 9;
-    private static final int COMMERCE_FAVORITES_LIMIT = 12;
+    private static final int PACK_PAGE_SIZE = 10;
+    private static final int COMMERCE_PAGE_SIZE = 10;
 
     private final PackFavoriteService packFavoriteService;
     private final CommerceFavoriteService commerceFavoriteService;
@@ -54,21 +54,23 @@ public class FavoritesController {
 
     @GetMapping("/favorites")
     public ModelAndView favorites(
-            @RequestParam(value = "page", defaultValue = "1") final int page,
+            @RequestParam(value = "packPage", defaultValue = "1") final int packPage,
+            @RequestParam(value = "commercePage", defaultValue = "1") final int commercePage,
             final Authentication authentication) {
 
         final User user = authResolver.resolveUser(authentication);
         final long userId = user.getId();
 
-        LOGGER.debug("Loading favorites page={} for userId={}", page, userId);
+        LOGGER.debug("Loading favorites packPage={} commercePage={} for userId={}", packPage, commercePage, userId);
 
+        // Pack favorites
         final int totalItems = packFavoriteService.countActiveFavoritePacks(userId);
-        final int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
-        final int safePage = Math.max(1, Math.min(page, totalPages));
+        final int totalPackPages = Math.max(1, (int) Math.ceil((double) totalItems / PACK_PAGE_SIZE));
+        final int safePackPage = Math.max(1, Math.min(packPage, totalPackPages));
 
         final List<Pack> packs;
         if (totalItems > 0) {
-            packs = packFavoriteService.listActiveFavoritePacks(userId, safePage, PAGE_SIZE);
+            packs = packFavoriteService.listActiveFavoritePacks(userId, safePackPage, PACK_PAGE_SIZE);
         } else {
             packs = Collections.emptyList();
         }
@@ -84,8 +86,16 @@ public class FavoritesController {
         }
 
         // Commerce favorites
-        final List<Commerce> favoriteCommerces = commerceFavoriteService.listFavoriteCommerces(userId, 1, COMMERCE_FAVORITES_LIMIT);
         final int totalFavoriteCommerces = commerceFavoriteService.countFavoriteCommerces(userId);
+        final int totalCommercePages = Math.max(1, (int) Math.ceil((double) totalFavoriteCommerces / COMMERCE_PAGE_SIZE));
+        final int safeCommercePage = Math.max(1, Math.min(commercePage, totalCommercePages));
+
+        final List<Commerce> favoriteCommerces;
+        if (totalFavoriteCommerces > 0) {
+            favoriteCommerces = commerceFavoriteService.listFavoriteCommerces(userId, safeCommercePage, COMMERCE_PAGE_SIZE);
+        } else {
+            favoriteCommerces = Collections.emptyList();
+        }
 
         final Map<Long, Double> commerceRatings = new HashMap<>();
         final Map<Long, Long> commerceImages = new HashMap<>();
@@ -97,10 +107,12 @@ public class FavoritesController {
         final ModelAndView mav = new ModelAndView("favorites/favoritesView");
         mav.addObject("packs", packs);
         mav.addObject("commerceNames", commerceNames);
-        mav.addObject("currentPage", safePage);
-        mav.addObject("totalPages", totalPages);
+        mav.addObject("currentPackPage", safePackPage);
+        mav.addObject("totalPackPages", totalPackPages);
         mav.addObject("totalFavorites", totalItems);
         mav.addObject("favoriteCommerces", favoriteCommerces);
+        mav.addObject("currentCommercePage", safeCommercePage);
+        mav.addObject("totalCommercePages", totalCommercePages);
         mav.addObject("totalFavoriteCommerces", totalFavoriteCommerces);
         mav.addObject("commerceRatings", commerceRatings);
         mav.addObject("commerceImages", commerceImages);
