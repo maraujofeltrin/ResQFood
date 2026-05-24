@@ -86,7 +86,7 @@
                 </div>
 
                 <%-- Sidebar Column: Commerces --%>
-                <aside class="lg:col-span-1 min-w-0 lg:sticky lg:top-28">
+                <aside class="lg:col-span-1 min-w-0">
                     <%-- Commerce favorites section --%>
                     <section>
                         <div class="flex items-center gap-3 mb-6">
@@ -114,7 +114,7 @@
                                     <a href="${pageContext.request.contextPath}/packs?types=commerces"
                                        class="text-primary font-medium hover:underline inline-flex items-center gap-1 mt-4">
                                         <span class="material-symbols-outlined text-sm">explore</span>
-                                        <spring:message code="favorites.empty.exploreBtn"/>
+                                        <spring:message code="favorites.empty.exploreCommercesBtn"/>
                                     </a>
                                 </div>
                             </c:when>
