@@ -71,7 +71,9 @@
                             closingTime="${commerceClosingTime}"
                             openNow="${commerceOpenNow}"
                             averageRating="${commerceReviewAverageRating}"
-                            reviewCount="${commerceReviewCount}"/>
+                            reviewCount="${commerceReviewCount}"
+                            showFavoriteButton="true"
+                            favoriteSelected="${commerceFavoriteSelected}"/>
                     </section>
                     <paw:reviewList items="${commerceReviewItems}"
                                     reviewCount="${commerceReviewCount}"

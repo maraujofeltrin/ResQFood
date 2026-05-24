@@ -15,6 +15,7 @@ import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.pack.PackFavoriteService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
+import ar.edu.itba.paw.services.commerce.CommerceFavoriteService;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.webapp.form.BidForm;
@@ -48,6 +49,7 @@ public class PackDetailModelBuilder {
     private final AuthenticatedUserResolver authResolver;
     private final PackFavoriteService packFavoriteService;
     private final CommerceDetailAttributesHelper commerceDetailAttributesHelper;
+    private final CommerceFavoriteService commerceFavoriteService;
     private static final Locale LOCALE_AR = new Locale("es", "AR");
 
     @Autowired
@@ -55,7 +57,8 @@ public class PackDetailModelBuilder {
             final CommerceReviewPageAttributes commerceReviewPageAttributes, final ClientService clientService,
             final ReservationService reservationService, final MessageSource messageSource, final ZoneId businessZone,
             final AuthenticatedUserResolver authResolver, final PackFavoriteService packFavoriteService,
-            final CommerceDetailAttributesHelper commerceDetailAttributesHelper) {
+            final CommerceDetailAttributesHelper commerceDetailAttributesHelper,
+            final CommerceFavoriteService commerceFavoriteService) {
         this.commerceService = commerceService;
         this.auctionService = auctionService;
         this.commerceReviewPageAttributes = commerceReviewPageAttributes;
@@ -66,6 +69,7 @@ public class PackDetailModelBuilder {
         this.authResolver = authResolver;
         this.packFavoriteService = packFavoriteService;
         this.commerceDetailAttributesHelper = commerceDetailAttributesHelper;
+        this.commerceFavoriteService = commerceFavoriteService;
     }
 
     private static String formatPrice(final Double amount) {
@@ -183,6 +187,12 @@ public class PackDetailModelBuilder {
                 .map(u -> packFavoriteService.isFavorite(u.getId(), pack.getId()))
                 .orElse(false);
         mav.addObject("packFavoriteSelected", packFavoriteSelected);
+
+        final boolean commerceFavoriteSelected = authResolver.resolveUserOrEmpty()
+                .filter(u -> u.getRole() == User.Role.CLIENT)
+                .map(u -> commerceFavoriteService.isFavorite(u.getId(), pack.getCommerceId()))
+                .orElse(false);
+        mav.addObject("commerceFavoriteSelected", commerceFavoriteSelected);
 
         mav.addObject("originalPrice", formatPrice(pack.getOriginalPrice()));
         mav.addObject("finalPrice", formatPrice(pack.getFinalPrice()));

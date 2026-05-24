@@ -116,9 +116,23 @@
   font-variation-settings: 'FILL' 0;
 }
 
+.commerce-profile-favorite-btn--selected {
+  border-color: rgba(16, 185, 129, 0.6);
+  background: rgba(16, 185, 129, 0.25);
+}
+
 .commerce-profile-favorite-btn--selected .commerce-profile-favorite-icon {
-  color: #f43f5e;
+  color: #34D399;
   font-variation-settings: 'FILL' 1;
+}
+
+.commerce-profile-favorite-btn--selected:hover {
+  border-color: rgba(16, 185, 129, 0.8);
+  background: rgba(16, 185, 129, 0.35);
+}
+
+.commerce-profile-favorite-btn--selected:hover .commerce-profile-favorite-icon {
+  color: #6EE7B7;
 }
 
 .commerce-profile-favorite-btn:active .commerce-profile-favorite-icon {

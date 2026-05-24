@@ -1,6 +1,7 @@
 <%@ tag body-content="empty" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <%@ taglib prefix="paw" uri="http://itba.edu.ar/paw/tags" %>
 
 <%@ attribute name="commercialName" required="false" %>
@@ -16,6 +17,8 @@
 <%@ attribute name="profileImageId" required="false" type="java.lang.Long" %>
 <%@ attribute name="averageRating" required="false" type="java.lang.Double" %>
 <%@ attribute name="reviewCount" required="false" type="java.lang.Integer" %>
+<%@ attribute name="favoriteSelected" required="false" type="java.lang.Boolean" %>
+<%@ attribute name="showFavoriteButton" required="false" type="java.lang.Boolean" %>
 
 <c:if test="${empty showHeader}">
     <c:set var="showHeader" value="true"/>
@@ -49,6 +52,20 @@
                     <span class="material-symbols-outlined commerce-info-card__profile-link-chevron" aria-hidden="true">chevron_right</span>
                 </a>
             </div>
+            
+            <c:if test="${showFavoriteButton}">
+                <sec:authorize access="hasRole('CLIENT')">
+                    <form action="${pageContext.request.contextPath}/commerces/${commerceUserId}/favorite" method="post" class="commerce-info-card__favorite-form">
+                        <button type="submit"
+                                class="commerce-info-card__favorite-btn<c:if test='${favoriteSelected}'> commerce-info-card__favorite-btn--selected</c:if>"
+                                aria-label="<spring:message code='commerce.profile.favorite.toggleAria'/>"
+                                aria-pressed="${favoriteSelected}">
+                            <span class="material-symbols-outlined commerce-info-card__favorite-icon" aria-hidden="true">favorite</span>
+                        </button>
+                    </form>
+                </sec:authorize>
+            </c:if>
+
             <paw:commerceReviewSummary averageRating="${averageRating}" reviewCount="${reviewCount}"/>
         </div>
     </c:if>
