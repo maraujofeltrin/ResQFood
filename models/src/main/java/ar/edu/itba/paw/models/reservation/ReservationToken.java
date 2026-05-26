@@ -1,6 +1,14 @@
 package ar.edu.itba.paw.models.reservation;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 import java.time.LocalDateTime;
 
 @Entity
@@ -16,8 +24,9 @@ public class ReservationToken {
     @Column(length = 255)
     private String token;
 
-    @Column(name = "reservation_id", nullable = false)
-    private Long reservationId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "reservation_id")
+    private Reservation reservation;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 50, nullable = false)
@@ -36,10 +45,10 @@ public class ReservationToken {
         // Just for Hibernate
     }
 
-    public ReservationToken(final String token, final Long reservationId, final Action action, final boolean used,
+    public ReservationToken(final String token, final Reservation reservation, final Action action, final boolean used,
             final LocalDateTime createdAt, final LocalDateTime expiresAt) {
         this.token = token;
-        this.reservationId = reservationId;
+        this.reservation = reservation;
         this.action = action;
         this.used = used;
         this.createdAt = createdAt;
@@ -50,8 +59,12 @@ public class ReservationToken {
         return token;
     }
 
+    public Reservation getReservation() {
+        return reservation;
+    }
+
     public Long getReservationId() {
-        return reservationId;
+        return reservation.getId();
     }
 
     public Action getAction() {
@@ -68,5 +81,11 @@ public class ReservationToken {
 
     public LocalDateTime getExpiresAt() {
         return expiresAt;
+    }
+
+    @Override
+    public String toString() {
+        return "ReservationToken [token=" + token + ", reservationId=" + getReservationId() + ", action=" + action
+                + ", used=" + used + ", createdAt=" + createdAt + ", expiresAt=" + expiresAt + "]";
     }
 }

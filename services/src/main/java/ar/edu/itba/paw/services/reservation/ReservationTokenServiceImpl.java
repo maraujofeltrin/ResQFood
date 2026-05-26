@@ -45,7 +45,7 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
 
     @Override
     public Optional<Long> findReservationIdByToken(final String token) {
-        return reservationTokenDao.findByToken(token).map(ReservationToken::getReservationId);
+        return reservationTokenDao.findByToken(token).map(t -> t.getReservation().getId());
     }
 
     @Transactional
@@ -59,7 +59,7 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
         }
 
         final ReservationToken reservationToken = reservationTokenDao.findByToken(token).orElseThrow();
-        final Reservation reservation = reservationDao.findById(reservationToken.getReservationId()).orElseThrow();
+        final Reservation reservation = reservationDao.findById(reservationToken.getReservation().getId()).orElseThrow();
 
         if (pickupCode == null || pickupCode.isBlank()) {
             return ReservationServiceResult.failure(ReservationTokenActionError.MISSING_PICKUP_CODE, reservation);
@@ -89,7 +89,7 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
         }
 
         final ReservationToken reservationToken = reservationTokenDao.findByToken(token).orElseThrow();
-        final Reservation reservation = reservationDao.findById(reservationToken.getReservationId()).orElseThrow();
+        final Reservation reservation = reservationDao.findById(reservationToken.getReservation().getId()).orElseThrow();
 
         reservationTokenDao.markAsUsed(token);
         reservationService.rejectReservation(reservation.getId());
@@ -119,7 +119,7 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
             return ReservationServiceResult.failure(ReservationTokenActionError.NOT_FOUND);
         }
 
-        final Optional<Reservation> reservationOpt = reservationDao.findById(reservationToken.getReservationId());
+        final Optional<Reservation> reservationOpt = reservationDao.findById(reservationToken.getReservation().getId());
         if (reservationOpt.isEmpty()) {
             return ReservationServiceResult.failure(ReservationTokenActionError.NOT_FOUND);
         }
@@ -154,7 +154,7 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
         }
         final ReservationToken reservationToken = optionalToken.get();
 
-        final Optional<Reservation> reservation = reservationDao.findById(reservationToken.getReservationId());
+        final Optional<Reservation> reservation = reservationDao.findById(reservationToken.getReservation().getId());
         if (reservation.isPresent()) {
             final Reservation.Status status = reservation.get().getStatus();
 

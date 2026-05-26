@@ -66,6 +66,10 @@ class ReservationServiceImplTest {
 
     private ReservationServiceImpl reservationService;
 
+    private static Reservation reservationRef(final long id) {
+        return new Reservation(id, 1L, 1L, null, null, null, null, null, 1, null);
+    }
+
     @BeforeEach
     void setUp() {
         reservationService = new ReservationServiceImpl(
@@ -103,7 +107,7 @@ class ReservationServiceImplTest {
         final List<ReservationToken> createdTokens = new CopyOnWriteArrayList<>();
         when(reservationTokenDao.create(anyString(), anyLong(), any(ReservationToken.Action.class),
                 any(LocalDateTime.class), any(LocalDateTime.class))).thenAnswer(inv -> {
-            final ReservationToken token = new ReservationToken(inv.getArgument(0), inv.getArgument(1),
+            final ReservationToken token = new ReservationToken(inv.getArgument(0), reservationRef(inv.getArgument(1)),
                     inv.getArgument(2), false, inv.getArgument(3), inv.getArgument(4));
             createdTokens.add(token);
             return token;
@@ -157,7 +161,7 @@ class ReservationServiceImplTest {
         lenient().when(reservationTokenDao.create(anyString(), anyLong(), any(ReservationToken.Action.class),
                 any(LocalDateTime.class), any(LocalDateTime.class))).thenAnswer(inv -> {
             tokenCreates.incrementAndGet();
-            return new ReservationToken(inv.getArgument(0), inv.getArgument(1), inv.getArgument(2), false,
+            return new ReservationToken(inv.getArgument(0), reservationRef(inv.getArgument(1)), inv.getArgument(2), false,
                     inv.getArgument(3), inv.getArgument(4));
         });
         final AtomicInteger sentAuctionToClient = new AtomicInteger();

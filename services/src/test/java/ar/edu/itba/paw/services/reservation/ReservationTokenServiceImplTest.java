@@ -40,6 +40,10 @@ class ReservationTokenServiceImplTest {
     @InjectMocks
     private ReservationTokenServiceImpl svc;
 
+    private static Reservation reservationRef(final long id) {
+        return new Reservation(id, 1L, 1L, null, null, null, null, null, 1, null);
+    }
+
     @Test
     void testValidateOnlyWhenTokenNotFoundReturnsNotFound() {
         // 1. Setup
@@ -59,7 +63,7 @@ class ReservationTokenServiceImplTest {
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final Reservation reservation = new Reservation(1L, 1L, 1L, now, 5.0, Reservation.Status.RESERVED, "c", null,
                 1, "pw");
-        final ReservationToken usedToken = new ReservationToken("t1", 1L, ReservationToken.Action.ACCEPT, true, now,
+        final ReservationToken usedToken = new ReservationToken("t1", reservationRef(1L), ReservationToken.Action.ACCEPT, true, now,
                 now.plusHours(1));
         when(reservationTokenDao.findByToken("t1")).thenReturn(Optional.of(usedToken));
         when(reservationDao.findById(1L)).thenReturn(Optional.of(reservation));
@@ -78,7 +82,7 @@ class ReservationTokenServiceImplTest {
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final Reservation reservation = new Reservation(1L, 1L, 1L, now, 5.0, Reservation.Status.RESERVED, "c", null,
                 1, "pw");
-        final ReservationToken token = new ReservationToken("t2", 1L, ReservationToken.Action.ACCEPT, false, now,
+        final ReservationToken token = new ReservationToken("t2", reservationRef(1L), ReservationToken.Action.ACCEPT, false, now,
                 now.plusHours(1));
         when(reservationTokenDao.findByToken("t2")).thenReturn(Optional.of(token));
         when(reservationDao.findById(1L)).thenReturn(Optional.of(reservation));
@@ -97,7 +101,7 @@ class ReservationTokenServiceImplTest {
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final Reservation reservation = new Reservation(1L, 1L, 1L, now, 5.0, Reservation.Status.RESERVED, "c", null,
                 1, "pw");
-        final ReservationToken token = new ReservationToken("t3", 1L, ReservationToken.Action.ACCEPT, false, now,
+        final ReservationToken token = new ReservationToken("t3", reservationRef(1L), ReservationToken.Action.ACCEPT, false, now,
                 now.minusMinutes(5));
         when(reservationTokenDao.findByToken("t3")).thenReturn(Optional.of(token));
         when(reservationDao.findById(1L)).thenReturn(Optional.of(reservation));
@@ -114,7 +118,7 @@ class ReservationTokenServiceImplTest {
     void testFindReservationIdByTokenWhenTokenExistsReturnsId() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-        final ReservationToken token = new ReservationToken("t6", 7L, ReservationToken.Action.ACCEPT, false, now,
+        final ReservationToken token = new ReservationToken("t6", reservationRef(7L), ReservationToken.Action.ACCEPT, false, now,
                 now.plusHours(1));
         when(reservationTokenDao.findByToken("t6")).thenReturn(Optional.of(token));
 
@@ -136,13 +140,13 @@ class ReservationTokenServiceImplTest {
                 "A1B2C", null, 1, null);
         final Reservation paid = new Reservation(201L, 201L, packId, now, 25.0, Reservation.Status.PAID, "A1B2C",
                 now, 1, null);
-        final ReservationToken unused = new ReservationToken("accept-token", 201L, ReservationToken.Action.ACCEPT,
+        final ReservationToken unused = new ReservationToken("accept-token", reserved, ReservationToken.Action.ACCEPT,
                 false, now, now.plusHours(1));
         final AtomicReference<ReservationToken> tokenRef = new AtomicReference<>(unused);
         when(reservationTokenDao.findByToken("accept-token")).thenAnswer(inv -> Optional.of(tokenRef.get()));
         doAnswer(inv -> {
             final ReservationToken cur = tokenRef.get();
-            tokenRef.set(new ReservationToken(cur.getToken(), cur.getReservationId(), cur.getAction(), true,
+            tokenRef.set(new ReservationToken(cur.getToken(), cur.getReservation(), cur.getAction(), true,
                     cur.getCreatedAt(), cur.getExpiresAt()));
             return null;
         }).when(reservationTokenDao).markAsUsed("accept-token");
@@ -169,7 +173,7 @@ class ReservationTokenServiceImplTest {
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final Reservation reserved = new Reservation(202L, 202L, packId, now, 25.0, Reservation.Status.RESERVED,
                 "Z9Y8X", null, 1, null);
-        final ReservationToken token = new ReservationToken("bad-code-token", 202L, ReservationToken.Action.ACCEPT,
+        final ReservationToken token = new ReservationToken("bad-code-token", reserved, ReservationToken.Action.ACCEPT,
                 false, now, now.plusHours(1));
         final AtomicReference<ReservationToken> tokenRef = new AtomicReference<>(token);
         when(reservationTokenDao.findByToken("bad-code-token")).thenAnswer(inv -> Optional.of(tokenRef.get()));
@@ -209,13 +213,13 @@ class ReservationTokenServiceImplTest {
                 "R1R2R", null, 1, null);
         final Reservation canceled = new Reservation(301L, 301L, packId, now, 25.0, Reservation.Status.CANCELED,
                 "R1R2R", null, 1, null);
-        final ReservationToken unused = new ReservationToken("reject-token", 301L, ReservationToken.Action.REJECT,
+        final ReservationToken unused = new ReservationToken("reject-token", reserved, ReservationToken.Action.REJECT,
                 false, now, now.plusHours(1));
         final AtomicReference<ReservationToken> tokenRef = new AtomicReference<>(unused);
         when(reservationTokenDao.findByToken("reject-token")).thenAnswer(inv -> Optional.of(tokenRef.get()));
         doAnswer(inv -> {
             final ReservationToken cur = tokenRef.get();
-            tokenRef.set(new ReservationToken(cur.getToken(), cur.getReservationId(), cur.getAction(), true,
+            tokenRef.set(new ReservationToken(cur.getToken(), cur.getReservation(), cur.getAction(), true,
                     cur.getCreatedAt(), cur.getExpiresAt()));
             return null;
         }).when(reservationTokenDao).markAsUsed("reject-token");
@@ -244,7 +248,7 @@ class ReservationTokenServiceImplTest {
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final Reservation reserved = new Reservation(302L, 302L, packId, now, 25.0, Reservation.Status.RESERVED,
                 "S1S2S", null, 1, null);
-        final ReservationToken token = new ReservationToken("reject-wrong-commerce", 302L,
+        final ReservationToken token = new ReservationToken("reject-wrong-commerce", reserved,
                 ReservationToken.Action.REJECT, false, now, now.plusHours(1));
         final AtomicReference<ReservationToken> tokenRef = new AtomicReference<>(token);
         when(reservationTokenDao.findByToken("reject-wrong-commerce")).thenAnswer(inv -> Optional.of(tokenRef.get()));
@@ -269,7 +273,7 @@ class ReservationTokenServiceImplTest {
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final Reservation reserved = new Reservation(303L, 303L, packId, now, 25.0, Reservation.Status.RESERVED,
                 "T1T2T", null, 1, null);
-        final ReservationToken token = new ReservationToken("reject-expired", 303L, ReservationToken.Action.REJECT,
+        final ReservationToken token = new ReservationToken("reject-expired", reserved, ReservationToken.Action.REJECT,
                 false, now, now.minusHours(1));
         final AtomicReference<ReservationToken> tokenRef = new AtomicReference<>(token);
         when(reservationTokenDao.findByToken("reject-expired")).thenAnswer(inv -> Optional.of(tokenRef.get()));
@@ -292,7 +296,7 @@ class ReservationTokenServiceImplTest {
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final Reservation canceledReservation = new Reservation(304L, 304L, packId, now, 25.0,
                 Reservation.Status.CANCELED, "U1U2U", null, 1, null);
-        final ReservationToken token = new ReservationToken("reject-canceled", 304L, ReservationToken.Action.REJECT,
+        final ReservationToken token = new ReservationToken("reject-canceled", canceledReservation, ReservationToken.Action.REJECT,
                 false, now, now.plusHours(1));
         final AtomicReference<ReservationToken> tokenRef = new AtomicReference<>(token);
         when(reservationTokenDao.findByToken("reject-canceled")).thenAnswer(inv -> Optional.of(tokenRef.get()));

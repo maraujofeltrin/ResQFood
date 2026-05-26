@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.persistence;
 
+import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
@@ -19,7 +20,8 @@ public class ReservationTokenJpaDao implements ReservationTokenDao {
     @Override
     public ReservationToken create(final String token, final Long reservationId, final ReservationToken.Action action,
             final LocalDateTime createdAt, final LocalDateTime expiresAt) {
-        final ReservationToken rt = new ReservationToken(token, reservationId, action, false, createdAt, expiresAt);
+        final Reservation reservation = em.getReference(Reservation.class, reservationId);
+        final ReservationToken rt = new ReservationToken(token, reservation, action, false, createdAt, expiresAt);
         em.persist(rt);
         return rt;
     }
