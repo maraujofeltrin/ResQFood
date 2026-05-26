@@ -45,7 +45,7 @@ public class CommerceReviewPageAttributes {
         final List<CommerceReview> reviews = commerceReviewService.findReviewsForCommerce(commerceId, 1,
                 REVIEW_LIST_LIMIT);
         final Map<Long, Client> reviewClients = prefetchClients(reviews.stream()
-                .map(CommerceReview::getClientUserId).distinct().collect(Collectors.toList()));
+                .map(r -> r.getClient().getUserId()).distinct().collect(Collectors.toList()));
 
         final Optional<User> userOpt = authResolver.resolveUserOrEmpty();
         final Long currentClientId = userOpt.filter(u -> u.getRole() == User.Role.CLIENT)

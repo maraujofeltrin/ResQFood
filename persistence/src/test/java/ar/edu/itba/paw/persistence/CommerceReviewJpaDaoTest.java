@@ -94,6 +94,8 @@ public class CommerceReviewJpaDaoTest {
         assertNotNull(review.getId());
         assertEquals(commerceId, review.getCommerceUserId());
         assertEquals(clientId, review.getClientUserId());
+        assertEquals(commerceId, review.getCommerce().getUserId());
+        assertEquals(clientId, review.getClient().getUserId());
         assertEquals(RATING, review.getRating());
         assertEquals(BODY, review.getBody());
         assertNotNull(review.getCreatedAt());
@@ -162,6 +164,7 @@ public class CommerceReviewJpaDaoTest {
         // 3. Asserts
         assertEquals(1, reviews.size());
         assertEquals(commerceId, reviews.get(0).getCommerceUserId());
+        assertEquals(commerceId, reviews.get(0).getCommerce().getUserId());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerce_reviews"));
     }
 

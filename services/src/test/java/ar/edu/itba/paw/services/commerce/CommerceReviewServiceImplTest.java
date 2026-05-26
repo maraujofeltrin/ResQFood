@@ -1,5 +1,8 @@
 package ar.edu.itba.paw.services.commerce;
 
+import ar.edu.itba.paw.models.pack.Municipality;
+import ar.edu.itba.paw.models.user.Client;
+import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.CommerceReview;
 import ar.edu.itba.paw.models.user.CommerceReviewException;
 import ar.edu.itba.paw.persistence.CommerceReviewDao;
@@ -36,6 +39,15 @@ class CommerceReviewServiceImplTest {
     @InjectMocks
     private CommerceReviewServiceImpl commerceReviewService;
 
+    private static Commerce commerceRef(final long id) {
+        return new Commerce(id, "Shop", Commerce.Category.BAKERY, "St", 1, Municipality.AVELLANEDA, "P", "1000",
+                "08:00", "20:00");
+    }
+
+    private static Client clientRef(final long id) {
+        return new Client(id, "N", "L", true);
+    }
+
     @Test
     void testCanClientReviewCommerceWhenPaidReservationExistsReturnsTrue() {
         // 1. Setup
@@ -51,8 +63,8 @@ class CommerceReviewServiceImplTest {
     @Test
     void testUpsertReviewWhenEligibleAndNoPreviousReviewReturnsCreatedReview() {
         // 1. Setup
-        final CommerceReview created = new CommerceReview(REVIEW_ID, COMMERCE_ID, CLIENT_ID, 5, BODY,
-                LocalDateTime.now(), LocalDateTime.now());
+        final CommerceReview created = new CommerceReview(REVIEW_ID, commerceRef(COMMERCE_ID), clientRef(CLIENT_ID),
+                5, BODY, LocalDateTime.now(), LocalDateTime.now());
         when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
         when(commerceReviewDao.findByClientAndCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(Optional.empty());
         when(commerceReviewDao.createReview(COMMERCE_ID, CLIENT_ID, 5, BODY)).thenReturn(created);
@@ -68,10 +80,10 @@ class CommerceReviewServiceImplTest {
     @Test
     void testUpsertReviewWhenEligibleAndPreviousReviewExistsReturnsUpdatedReview() {
         // 1. Setup
-        final CommerceReview existing = new CommerceReview(REVIEW_ID, COMMERCE_ID, CLIENT_ID, 4, "Antes",
-                LocalDateTime.now(), LocalDateTime.now());
-        final CommerceReview updated = new CommerceReview(REVIEW_ID, COMMERCE_ID, CLIENT_ID, 3, BODY,
-                existing.getCreatedAt(), LocalDateTime.now());
+        final CommerceReview existing = new CommerceReview(REVIEW_ID, commerceRef(COMMERCE_ID), clientRef(CLIENT_ID),
+                4, "Antes", LocalDateTime.now(), LocalDateTime.now());
+        final CommerceReview updated = new CommerceReview(REVIEW_ID, commerceRef(COMMERCE_ID), clientRef(CLIENT_ID), 3,
+                BODY, existing.getCreatedAt(), LocalDateTime.now());
         when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
         when(commerceReviewDao.findByClientAndCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(Optional.of(existing));
         when(commerceReviewDao.updateReview(REVIEW_ID, 3, BODY)).thenReturn(updated);

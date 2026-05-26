@@ -38,7 +38,7 @@ public class CommerceJpaDao implements CommerceDao {
 
     @Override
     public List<Commerce> filterCommerces(String query, String cityFilter, Commerce.Category categoryFilter, int page, int pageSize) {
-        final StringBuilder jpql = new StringBuilder("SELECT c FROM Commerce c LEFT JOIN CommerceReview r ON c.userId = r.commerceUserId");
+        final StringBuilder jpql = new StringBuilder("SELECT c FROM Commerce c LEFT JOIN CommerceReview r ON c.userId = r.commerce.userId");
         final java.util.Map<String, Object> params = new java.util.HashMap<>();
         final List<String> conditions = new java.util.ArrayList<>();
 

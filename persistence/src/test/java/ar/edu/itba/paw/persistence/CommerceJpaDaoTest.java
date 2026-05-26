@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.pack.Municipality;
+import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -189,20 +190,20 @@ public class CommerceJpaDaoTest {
 
         // Client user for writing reviews
         final Long clientId = userDao.createUser("client@example.com", PASSWORD, "Client", PHONE, User.Role.CLIENT).getId();
-        clientDao.createClient(clientId, "Client", "Last", true);
+        final Client client = clientDao.createClient(clientId, "Client", "Last", true);
 
         em.flush();
 
         // Create reviews:
         // Commerce A has rating 5
         final ar.edu.itba.paw.models.user.CommerceReview reviewA = new ar.edu.itba.paw.models.user.CommerceReview(
-                null, userId, clientId, 5, "Excellent!", java.time.LocalDateTime.now(), java.time.LocalDateTime.now()
+                null, commerceA, client, 5, "Excellent!", java.time.LocalDateTime.now(), java.time.LocalDateTime.now()
         );
         em.persist(reviewA);
 
         // Commerce B has rating 2
         final ar.edu.itba.paw.models.user.CommerceReview reviewB = new ar.edu.itba.paw.models.user.CommerceReview(
-                null, userIdB, clientId, 2, "Poor", java.time.LocalDateTime.now(), java.time.LocalDateTime.now()
+                null, commerceB, client, 2, "Poor", java.time.LocalDateTime.now(), java.time.LocalDateTime.now()
         );
         em.persist(reviewB);
 

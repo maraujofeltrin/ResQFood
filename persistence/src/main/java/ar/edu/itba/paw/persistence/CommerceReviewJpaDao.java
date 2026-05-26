@@ -1,5 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
+import ar.edu.itba.paw.models.user.Client;
+import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.CommerceReview;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
@@ -23,7 +25,9 @@ public class CommerceReviewJpaDao implements CommerceReviewDao {
     @Override
     public CommerceReview createReview(Long commerceUserId, Long clientUserId, Integer rating, String body) {
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-        final CommerceReview review = new CommerceReview(null, commerceUserId, clientUserId, rating, body, now, now);
+        final Commerce commerce = em.getReference(Commerce.class, commerceUserId);
+        final Client client = em.getReference(Client.class, clientUserId);
+        final CommerceReview review = new CommerceReview(null, commerce, client, rating, body, now, now);
         em.persist(review);
         return review;
     }
@@ -46,7 +50,9 @@ public class CommerceReviewJpaDao implements CommerceReviewDao {
 
     @Override
     public Optional<CommerceReview> findByClientAndCommerce(Long clientUserId, Long commerceUserId) {
-        return em.createQuery("FROM CommerceReview r WHERE r.clientUserId = :client AND r.commerceUserId = :commerce", CommerceReview.class)
+        return em.createQuery(
+                "FROM CommerceReview r WHERE r.client.userId = :client AND r.commerce.userId = :commerce",
+                CommerceReview.class)
                 .setParameter("client", clientUserId)
                 .setParameter("commerce", commerceUserId)
                 .getResultList()
@@ -56,7 +62,9 @@ public class CommerceReviewJpaDao implements CommerceReviewDao {
 
     @Override
     public List<CommerceReview> findByCommerceId(Long commerceUserId, int page, int pageSize) {
-        return em.createQuery("FROM CommerceReview r WHERE r.commerceUserId = :commerce ORDER BY r.createdAt DESC", CommerceReview.class)
+        return em.createQuery(
+                "FROM CommerceReview r WHERE r.commerce.userId = :commerce ORDER BY r.createdAt DESC",
+                CommerceReview.class)
                 .setParameter("commerce", commerceUserId)
                 .setFirstResult(Pagination.offset(page, pageSize))
                 .setMaxResults(pageSize)
@@ -65,7 +73,8 @@ public class CommerceReviewJpaDao implements CommerceReviewDao {
 
     @Override
     public int countByCommerceId(Long commerceUserId) {
-        Number count = em.createQuery("SELECT COUNT(r) FROM CommerceReview r WHERE r.commerceUserId = :commerce", Number.class)
+        Number count = em.createQuery(
+                "SELECT COUNT(r) FROM CommerceReview r WHERE r.commerce.userId = :commerce", Number.class)
                 .setParameter("commerce", commerceUserId)
                 .getSingleResult();
         return count != null ? count.intValue() : 0;
@@ -73,7 +82,8 @@ public class CommerceReviewJpaDao implements CommerceReviewDao {
 
     @Override
     public Double averageRatingByCommerceId(Long commerceUserId) {
-        return em.createQuery("SELECT AVG(r.rating) FROM CommerceReview r WHERE r.commerceUserId = :commerce", Double.class)
+        return em.createQuery(
+                "SELECT AVG(r.rating) FROM CommerceReview r WHERE r.commerce.userId = :commerce", Double.class)
                 .setParameter("commerce", commerceUserId)
                 .getSingleResult();
     }

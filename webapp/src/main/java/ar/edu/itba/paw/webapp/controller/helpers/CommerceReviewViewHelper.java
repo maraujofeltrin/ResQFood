@@ -42,7 +42,7 @@ public final class CommerceReviewViewHelper {
         final DateTimeFormatter fmt = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale);
         return sortForDisplay(reviews, currentClientUserId).stream()
                 .map(review -> {
-                    final Client client = clientsByUserId.get(review.getClientUserId());
+                    final Client client = clientsByUserId.get(review.getClient().getUserId());
                     final String name = client != null ? client.getFullName() : "-";
                     final LocalDateTime ts = review.getUpdatedAt() != null ? review.getUpdatedAt()
                             : review.getCreatedAt();
@@ -52,7 +52,7 @@ public final class CommerceReviewViewHelper {
                     final boolean edited = review.getUpdatedAt() != null && review.getCreatedAt() != null
                             && !review.getUpdatedAt().equals(review.getCreatedAt());
                     final boolean own = currentClientUserId != null
-                            && currentClientUserId.equals(review.getClientUserId());
+                            && currentClientUserId.equals(review.getClient().getUserId());
                     return new CommerceReviewRow(review, name, date, edited, own);
                 })
                 .collect(Collectors.toList());
@@ -76,7 +76,7 @@ public final class CommerceReviewViewHelper {
     }
 
     private static boolean isOwnReview(final CommerceReview review, final Long currentClientUserId) {
-        return currentClientUserId != null && currentClientUserId.equals(review.getClientUserId());
+        return currentClientUserId != null && currentClientUserId.equals(review.getClient().getUserId());
     }
 
     public static final class CommerceReviewRow {
