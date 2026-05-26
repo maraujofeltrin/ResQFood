@@ -2,10 +2,14 @@ package ar.edu.itba.paw.services.pack;
 
 import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.auction.Bid;
+import ar.edu.itba.paw.models.image.Image;
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.models.user.Client;
+import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.persistence.ImageDao;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommercePackAccess;
@@ -41,6 +45,9 @@ class PackServiceImplTest {
     private PackDao packDao;
 
     @Mock
+    private ImageDao imageDao;
+
+    @Mock
     private AuctionService auctionService;
 
     @Mock
@@ -49,10 +56,33 @@ class PackServiceImplTest {
     @InjectMocks
     private PackServiceImpl packService;
 
+    private static Commerce commerceRef(final long userId) {
+        return new Commerce(userId, "Comm", Commerce.Category.BAKERY, "St", 1, Municipality.AVELLANEDA, "P", "1000",
+                "08:00", "20:00");
+    }
+
+    private static Image imageRef(final long id) {
+        return new Image(id, new byte[0], "image/png");
+    }
+
+    private static Pack newPack(final Long id, final Long commerceId, final String title, final String description,
+            final Double originalPrice, final Double finalPrice, final Integer stock, final Boolean active,
+            final List<PackTag> tags) {
+        return new Pack(id, commerceRef(commerceId), title, description, originalPrice, finalPrice, stock, active,
+                tags);
+    }
+
+    private static Pack newPack(final Long id, final Long commerceId, final String title, final String description,
+            final Double originalPrice, final Double finalPrice, final Integer stock, final Boolean active,
+            final Boolean deleted, final List<PackTag> tags, final Long imageId) {
+        return new Pack(id, commerceRef(commerceId), title, description, originalPrice, finalPrice, stock, active,
+                deleted, tags, imageId != null ? imageRef(imageId) : null);
+    }
+
     @Test
     void testCreatePackWhenDaoPersistsReturnsPackWithIdAndTitle() {
         // 1. Setup
-        final Pack persisted = new Pack(1L, 5L, "T", "D", 10.0, 7.0, 3, true, false, Collections.emptyList(), null);
+        final Pack persisted = newPack(1L, 5L, "T", "D", 10.0, 7.0, 3, true, false, Collections.emptyList(), null);
         when(packDao.createPack(eq(5L), eq("T"), eq("D"), eq(10.0), eq(7.0), eq(3), eq(Collections.emptyList()),
                 isNull())).thenReturn(persisted);
 
@@ -68,7 +98,7 @@ class PackServiceImplTest {
     @Test
     void testFindByIdWhenPackExistsReturnsPackFromDao() {
         // 1. Setup
-        final Pack persisted = new Pack(1L, 5L, "T", "D", 10.0, 7.0, 3, true, false, Collections.emptyList(), null);
+        final Pack persisted = newPack(1L, 5L, "T", "D", 10.0, 7.0, 3, true, false, Collections.emptyList(), null);
         when(packDao.findById(1L)).thenReturn(Optional.of(persisted));
 
         // 2. Ejercicio
@@ -82,7 +112,7 @@ class PackServiceImplTest {
     @Test
     void testDeletePackWhenPackExistsMarksDeletedViaSoftDelete() {
         // 1. Setup
-        final Pack pack = new Pack(1L, 1L, "a", "b", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
+        final Pack pack = newPack(1L, 1L, "a", "b", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
         doAnswer(invocation -> {
             pack.setDeleted(true);
             return null;
@@ -101,7 +131,7 @@ class PackServiceImplTest {
     @Test
     void testUpdateWhenDaoReturnsPackReflectsMutatedFields() {
         // 1. Setup
-        final Pack pack = new Pack(2L, 2L, "old", "d", 2.0, 1.0, 2, true, false, Collections.emptyList(), null);
+        final Pack pack = newPack(2L, 2L, "old", "d", 2.0, 1.0, 2, true, false, Collections.emptyList(), null);
         pack.setTitle("new");
         pack.setStock(5);
         when(packDao.update(pack)).thenReturn(pack);
@@ -117,7 +147,7 @@ class PackServiceImplTest {
     @Test
     void testFindVisibleForDetailWhenPackActiveReturnsPackForAnonymousViewer() {
         // 1. Setup
-        final Pack pack = new Pack(7L, 10L, "active", "d", 2.0, 1.0, 2, true, false, Collections.emptyList(), null);
+        final Pack pack = newPack(7L, 10L, "active", "d", 2.0, 1.0, 2, true, false, Collections.emptyList(), null);
         when(packDao.findById(7L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
@@ -131,7 +161,7 @@ class PackServiceImplTest {
     @Test
     void testFindVisibleForDetailWhenPackInactiveReturnsPackForOwnerCommerce() {
         // 1. Setup
-        final Pack pack = new Pack(8L, 11L, "inactive", "d", 2.0, 1.0, 2, false, false, Collections.emptyList(), null);
+        final Pack pack = newPack(8L, 11L, "inactive", "d", 2.0, 1.0, 2, false, false, Collections.emptyList(), null);
         when(packDao.findById(8L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
@@ -145,7 +175,7 @@ class PackServiceImplTest {
     @Test
     void testFindVisibleForDetailWhenPackInactiveReturnsEmptyForNonOwner() {
         // 1. Setup
-        final Pack pack = new Pack(9L, 12L, "inactive", "d", 2.0, 1.0, 2, false, false, Collections.emptyList(), null);
+        final Pack pack = newPack(9L, 12L, "inactive", "d", 2.0, 1.0, 2, false, false, Collections.emptyList(), null);
         when(packDao.findById(9L)).thenReturn(Optional.of(pack));
         when(reservationService.hasActiveReservation(9L, 99L)).thenReturn(false);
         when(auctionService.findByPackId(9L)).thenReturn(Optional.empty());
@@ -160,7 +190,7 @@ class PackServiceImplTest {
     @Test
     void testFindVisibleForDetailWhenPackInactiveReturnsPackForAuctionParticipant() {
         // 1. Setup
-        final Pack pack = new Pack(11L, 12L, "auction", "d", 2.0, 1.0, 0, false, false, Collections.emptyList(), null);
+        final Pack pack = newPack(11L, 12L, "auction", "d", 2.0, 1.0, 0, false, false, Collections.emptyList(), null);
         final Auction auction = new Auction(20L, pack, 1.0, 1.0, 5.0, 99L,
                 LocalDateTime.now(ZoneOffset.UTC).minusHours(1), Auction.Status.FINISHED, LocalDateTime.now(ZoneOffset.UTC).minusDays(1));
         final Bid bid = new Bid(30L, auction, new Client(99L, "N", "L", true), 5.0, LocalDateTime.now(ZoneOffset.UTC).minusHours(2));
@@ -192,7 +222,7 @@ class PackServiceImplTest {
     @Test
     void testFindVisibleForDetailWhenPackDeletedReturnsEmpty() {
         // 1. Setup
-        final Pack pack = new Pack(10L, 1L, "gone", "d", 1.0, 1.0, 1, true, true, Collections.emptyList(), null);
+        final Pack pack = newPack(10L, 1L, "gone", "d", 1.0, 1.0, 1, true, true, Collections.emptyList(), null);
         when(packDao.findById(10L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
@@ -217,8 +247,8 @@ class PackServiceImplTest {
     @Test
     void testFindAllWhenDaoReturnsListReturnsSameContent() {
         // 1. Setup
-        final Pack a = new Pack(1L, 1L, "A", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
-        final Pack b = new Pack(2L, 1L, "B", "d", 2.0, 2.0, 2, true, false, Collections.emptyList(), null);
+        final Pack a = newPack(1L, 1L, "A", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
+        final Pack b = newPack(2L, 1L, "B", "d", 2.0, 2.0, 2, true, false, Collections.emptyList(), null);
         final List<Pack> fromDao = Arrays.asList(a, b);
         when(packDao.findAll()).thenReturn(fromDao);
 
@@ -235,7 +265,7 @@ class PackServiceImplTest {
     void testFindByCommerceIdWhenDaoReturnsListReturnsSameContent() {
         // 1. Setup
         final long commerceId = 88L;
-        final Pack only = new Pack(9L, commerceId, "C", "d", 3.0, 3.0, 1, true, false, Collections.emptyList(),
+        final Pack only = newPack(9L, commerceId, "C", "d", 3.0, 3.0, 1, true, false, Collections.emptyList(),
                 null);
         when(packDao.findByCommerceId(commerceId)).thenReturn(Collections.singletonList(only));
 
@@ -258,7 +288,7 @@ class PackServiceImplTest {
         final PackSortOption sort = PackSortOption.PRICE_ASC;
         final int page = 1;
         final int pageSize = 20;
-        final Pack filtered = new Pack(30L, 2L, "Vegan", "d", 10.0, 8.0, 4, true, false, tags, null);
+        final Pack filtered = newPack(30L, 2L, "Vegan", "d", 10.0, 8.0, 4, true, false, tags, null);
         when(packDao.filterPacks(eq(query), eq(tags), eq(city), eq(timeRanges), eq(sort), eq(page), eq(pageSize),
                 eq(true), isNull())).thenReturn(Collections.singletonList(filtered));
 
@@ -288,7 +318,7 @@ class PackServiceImplTest {
     @Test
     void testFilterCommercePacksWhenDaoReturnsListReturnsSameContent() {
         // 1. Setup
-        final Pack row = new Pack(40L, 7L, "Mine", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
+        final Pack row = newPack(40L, 7L, "Mine", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
         when(packDao.filterCommercePacks(7L, Boolean.FALSE, 0, 15)).thenReturn(Collections.singletonList(row));
 
         // 2. Ejercicio
@@ -327,8 +357,9 @@ class PackServiceImplTest {
     void testUpdatePackWhenPackExistsUpdatesFieldsAndReturnsUpdatedPack() {
         // 1. Setup
         final Pack existing =
-                new Pack(3L, 5L, "old", "oldD", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
+                newPack(3L, 5L, "old", "oldD", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
         when(packDao.findById(3L)).thenReturn(Optional.of(existing));
+        when(imageDao.getImage(77L)).thenReturn(Optional.of(imageRef(77L)));
         when(packDao.update(any(Pack.class))).thenAnswer(invocation -> invocation.getArgument(0));
         final List<PackTag> tags = Collections.singletonList(PackTag.VEGAN);
 
@@ -350,7 +381,7 @@ class PackServiceImplTest {
     void testUpdatePackWhenTagsNullUsesEmptyList() {
         // 1. Setup
         final Pack existing =
-                new Pack(4L, 2L, "x", "y", 1.0, 1.0, 2, true, false, Collections.singletonList(PackTag.VEGAN), null);
+                newPack(4L, 2L, "x", "y", 1.0, 1.0, 2, true, false, Collections.singletonList(PackTag.VEGAN), null);
         when(packDao.findById(4L)).thenReturn(Optional.of(existing));
         when(packDao.update(any(Pack.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -368,7 +399,7 @@ class PackServiceImplTest {
     void testUpdatePackWhenImageIdNullDoesNotSetImageId() {
         // 1. Setup
         final Pack existing =
-                new Pack(5L, 2L, "x", "y", 1.0, 1.0, 2, true, false, Collections.emptyList(), 99L);
+                newPack(5L, 2L, "x", "y", 1.0, 1.0, 2, true, false, Collections.emptyList(), 99L);
         when(packDao.findById(5L)).thenReturn(Optional.of(existing));
         when(packDao.update(any(Pack.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -397,7 +428,7 @@ class PackServiceImplTest {
     @Test
     void testResolvePackForDirectEditWhenCommerceUserIdMismatchReturnsNotFound() {
         // 1. Setup
-        final Pack pack = new Pack(6L, 50L, "p", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
+        final Pack pack = newPack(6L, 50L, "p", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
         when(packDao.findById(6L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
@@ -410,7 +441,7 @@ class PackServiceImplTest {
     @Test
     void testResolvePackForDirectEditWhenPackDeletedReturnsNotFound() {
         // 1. Setup
-        final Pack pack = new Pack(7L, 100L, "p", "d", 1.0, 1.0, 1, true, true, Collections.emptyList(), null);
+        final Pack pack = newPack(7L, 100L, "p", "d", 1.0, 1.0, 1, true, true, Collections.emptyList(), null);
         when(packDao.findById(7L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
@@ -423,7 +454,7 @@ class PackServiceImplTest {
     @Test
     void testResolvePackForDirectEditWhenAuctionExistsReturnsForbiddenAuction() {
         // 1. Setup
-        final Pack pack = new Pack(8L, 200L, "a", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
+        final Pack pack = newPack(8L, 200L, "a", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
         when(packDao.findById(8L)).thenReturn(Optional.of(pack));
         final Auction auction =
                 new Auction(1L, pack, 1.0, 0.5, 1.0, null, LocalDateTime.now(ZoneOffset.UTC).plusDays(1),
@@ -440,7 +471,7 @@ class PackServiceImplTest {
     @Test
     void testResolvePackForDirectEditWhenPackValidAndNoAuctionReturnsGranted() {
         // 1. Setup
-        final Pack pack = new Pack(11L, 300L, "ok", "d", 2.0, 1.0, 3, true, false, Collections.emptyList(), null);
+        final Pack pack = newPack(11L, 300L, "ok", "d", 2.0, 1.0, 3, true, false, Collections.emptyList(), null);
         when(packDao.findById(11L)).thenReturn(Optional.of(pack));
         when(auctionService.findByPackId(11L)).thenReturn(Optional.empty());
 

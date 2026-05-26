@@ -4,7 +4,9 @@ import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.auction.Bid;
 import ar.edu.itba.paw.models.auction.BidFailureReason;
 import ar.edu.itba.paw.models.auction.BidPlacementException;
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.BidDao;
@@ -68,10 +70,21 @@ class AuctionServiceImplTest {
         return new Client(id, "N", "L", true);
     }
 
+    private static Commerce commerceRef(final long userId) {
+        return new Commerce(userId, "Comm", Commerce.Category.BAKERY, "St", 1, Municipality.AVELLANEDA, "P", "1000",
+                "08:00", "20:00");
+    }
+
+    private static Pack newPack(final long id, final long commerceId, final String title, final String desc,
+            final double originalPrice, final double finalPrice, final int stock, final boolean active,
+            final List<ar.edu.itba.paw.models.pack.PackTag> tags) {
+        return new Pack(id, commerceRef(commerceId), title, desc, originalPrice, finalPrice, stock, active, tags);
+    }
+
     @Test
     void testCreateAuctionWhenPackValidReturnsCreatedAuction() {
         // 1. Setup
-        final Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
         when(packDao.findById(PACK_ID)).thenReturn(Optional.of(pack));
         when(auctionDao.findByPackId(PACK_ID)).thenReturn(Optional.empty());
         final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
@@ -92,7 +105,7 @@ class AuctionServiceImplTest {
     @Test
     void testCreateAuctionWhenPackInactiveThrowsIllegalArgumentException() {
         // 1. Setup
-        final Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, false, null);
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, false, null);
         when(packDao.findById(PACK_ID)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
@@ -107,7 +120,7 @@ class AuctionServiceImplTest {
     @Test
     void testPlaceBidWhenAmountValidReturnsBidAndUpdatesAuctionCurrentBid() {
         // 1. Setup
-        final Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
         final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
         final double minInc = 500.0;
         final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime,
@@ -136,7 +149,7 @@ class AuctionServiceImplTest {
     @Test
     void testPlaceBidWhenAmountBelowMinimumThrowsBidPlacementException() {
         // 1. Setup
-        final Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
         final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
         final double minInc = 500.0;
         final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime,
@@ -154,7 +167,7 @@ class AuctionServiceImplTest {
     @Test
     void testPlaceBidWhenAuctionExpiredThrowsBidPlacementException() {
         // 1. Setup
-        final Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
         final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).minusHours(1);
         final double minInc = 1.0;
         final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime,
@@ -172,7 +185,7 @@ class AuctionServiceImplTest {
     @Test
     void testPlaceBidWhenClientIsOwnCommerceThrowsBidPlacementException() {
         // 1. Setup
-        final Pack pack = new Pack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
         final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
         final double minInc = 1.0;
         final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime,

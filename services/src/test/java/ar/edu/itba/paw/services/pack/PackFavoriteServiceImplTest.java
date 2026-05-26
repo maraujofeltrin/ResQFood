@@ -1,6 +1,8 @@
 package ar.edu.itba.paw.services.pack;
 
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.FavoriteToggleException;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.PackFavoriteDao;
@@ -39,6 +41,19 @@ class PackFavoriteServiceImplTest {
     @InjectMocks
     private PackFavoriteServiceImpl packFavoriteService;
 
+    private static Commerce commerceRef(final long userId) {
+        return new Commerce(userId, "Comm", Commerce.Category.BAKERY, "St", 1, Municipality.AVELLANEDA, "P", "1000",
+                "08:00", "20:00");
+    }
+
+    private static Pack newPack(final Long id, final Long commerceId, final String title, final String description,
+            final Double originalPrice, final Double finalPrice, final Integer stock, final Boolean active,
+            final Boolean deleted, final List<ar.edu.itba.paw.models.pack.PackTag> tags, final Long imageId) {
+        return new Pack(id, commerceRef(commerceId), title, description, originalPrice, finalPrice, stock, active,
+                deleted, tags, imageId != null ? new ar.edu.itba.paw.models.image.Image(imageId, new byte[0], "image/png")
+                        : null);
+    }
+
     @Test
     void testListActiveFavoritePacksWhenLimitExceedsMaxUsesClampedPageSize() {
         // 1. Setup
@@ -72,7 +87,7 @@ class PackFavoriteServiceImplTest {
     void testToggleFavoriteWhenNotFavoriteAndPackActiveInsertsFavorite() {
         // 1. Setup
         when(packFavoriteDao.exists(5L, 10L)).thenReturn(false);
-        final Pack pack = new Pack(10L, 1L, "t", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
+        final Pack pack = newPack(10L, 1L, "t", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
         when(packDao.findById(10L)).thenReturn(Optional.of(pack));
         final AtomicLong capturedClientUserId = new AtomicLong();
         final AtomicLong capturedPackId = new AtomicLong();
@@ -94,7 +109,7 @@ class PackFavoriteServiceImplTest {
     void testToggleFavoriteWhenPackInactiveThrowsIllegalArgumentException() {
         // 1. Setup
         when(packFavoriteDao.exists(5L, 10L)).thenReturn(false);
-        final Pack pack = new Pack(10L, 1L, "t", "d", 1.0, 1.0, 1, false, false, Collections.emptyList(), null);
+        final Pack pack = newPack(10L, 1L, "t", "d", 1.0, 1.0, 1, false, false, Collections.emptyList(), null);
         when(packDao.findById(10L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio

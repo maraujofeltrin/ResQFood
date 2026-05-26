@@ -5,6 +5,7 @@ import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.persistence.ImageDao;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
@@ -24,12 +26,15 @@ public class PackServiceImpl implements PackService {
     private static final Logger LOGGER = LoggerFactory.getLogger(PackServiceImpl.class);
 
     private final PackDao packDao;
+    private final ImageDao imageDao;
     private final AuctionService auctionService;
     private final ReservationService reservationService;
 
     @Autowired
-    public PackServiceImpl(final PackDao packDao, final AuctionService auctionService, final ReservationService reservationService) {
+    public PackServiceImpl(final PackDao packDao, final ImageDao imageDao, final AuctionService auctionService,
+            final ReservationService reservationService) {
         this.packDao = packDao;
+        this.imageDao = imageDao;
         this.auctionService = auctionService;
         this.reservationService = reservationService;
     }
@@ -128,7 +133,8 @@ public class PackServiceImpl implements PackService {
         packToUpdate.setTags(tags != null ? tags : java.util.Collections.emptyList());
 
         if (imageId != null) {
-            packToUpdate.setImageId(imageId);
+            packToUpdate.setImage(imageDao.getImage(imageId)
+                    .orElseThrow(() -> new NoSuchElementException("Image not found: " + imageId)));
         }
 
         final Pack updatedPack = packDao.update(packToUpdate);

@@ -1,10 +1,12 @@
 package ar.edu.itba.paw.services.reservation;
 
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationRejectionError;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.user.Client;
+import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.PackDao;
@@ -70,12 +72,31 @@ class ReservationServiceImplTest {
         return new Client(id, "N", "L", true);
     }
 
+    private static Commerce commerceRef(final long userId) {
+        return new Commerce(userId, "Comm", Commerce.Category.BAKERY, "St", 1, Municipality.AVELLANEDA, "P", "1000",
+                "08:00", "20:00");
+    }
+
     private static Pack packRef(final long id) {
-        return new Pack(id, 1L, "t", "d", 1.0, 1.0, 1, true, Collections.emptyList());
+        return new Pack(id, commerceRef(1L), "t", "d", 1.0, 1.0, 1, true, Collections.emptyList());
     }
 
     private static Pack packRef(final long id, final long commerceId) {
-        return new Pack(id, commerceId, "t", "d", 1.0, 1.0, 1, true, Collections.emptyList());
+        return new Pack(id, commerceRef(commerceId), "t", "d", 1.0, 1.0, 1, true, Collections.emptyList());
+    }
+
+    private static Pack newPack(final long id, final long commerceId, final String title, final String desc,
+            final double originalPrice, final double finalPrice, final int stock, final boolean active,
+            final boolean deleted, final List<ar.edu.itba.paw.models.pack.PackTag> tags, final Long imageId) {
+        return new Pack(id, commerceRef(commerceId), title, desc, originalPrice, finalPrice, stock, active, deleted,
+                tags, imageId != null ? new ar.edu.itba.paw.models.image.Image(imageId, new byte[0], "image/png")
+                        : null);
+    }
+
+    private static Pack newPack(final long id, final long commerceId, final String title, final String desc,
+            final double originalPrice, final double finalPrice, final int stock, final boolean active,
+            final List<ar.edu.itba.paw.models.pack.PackTag> tags) {
+        return new Pack(id, commerceRef(commerceId), title, desc, originalPrice, finalPrice, stock, active, tags);
     }
 
     private static Reservation reservationRef(final long id) {
@@ -103,7 +124,7 @@ class ReservationServiceImplTest {
         final long commerceUserId = 100L;
         final User clientUser = new User(1L, "user@example.org", "pwd", "Test User", null, User.Role.CLIENT, false);
         final User commerceUser = new User(commerceUserId, "commerce@example.org", "pwd", "Commerce", null, User.Role.COMMERCE, false);
-        final Pack pack = new Pack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, false,
+        final Pack pack = newPack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, false,
                 Collections.emptyList(), null);
         when(userService.findById(1L)).thenReturn(Optional.of(clientUser));
         when(clientService.findByUserId(1L)).thenReturn(Optional.of(new Client(1L, "Test", "User", true)));
@@ -156,7 +177,7 @@ class ReservationServiceImplTest {
         final long commerceUserId = 150L;
         final User clientUser = new User(7L, "winner@example.org", "pwd", "Winning User", null, User.Role.CLIENT, false);
         final User commerceUser = new User(commerceUserId, "commerce150@example.org", "pwd", "C150", null, User.Role.COMMERCE, false);
-        final Pack pack = new Pack(packId, commerceUserId, "auction-pack", "desc", 10.0, 5.0, 5, true,
+        final Pack pack = newPack(packId, commerceUserId, "auction-pack", "desc", 10.0, 5.0, 5, true,
                 Collections.emptyList());
         when(userService.findById(7L)).thenReturn(Optional.of(clientUser));
         when(clientService.findByUserId(7L)).thenReturn(Optional.of(new Client(7L, "Winning", "User", true)));
@@ -272,7 +293,7 @@ class ReservationServiceImplTest {
                 Reservation.Status.RESERVED, "GGGGG", null, 1, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
         when(packDao.findById(10L)).thenReturn(Optional.of(
-                new Pack(10L, 77L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
+                newPack(10L, 77L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
 
         // 2. Ejercicio
         reservationService.validateReservationBelongsToCommerce(reservationId, 77L);
@@ -289,7 +310,7 @@ class ReservationServiceImplTest {
                 Reservation.Status.RESERVED, "GGGGG", null, 1, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
         when(packDao.findById(10L)).thenReturn(Optional.of(
-                new Pack(10L, 77L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
+                newPack(10L, 77L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
 
         // 2. Ejercicio
         final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -344,7 +365,7 @@ class ReservationServiceImplTest {
                 Reservation.Status.CANCELED, "HHHHH", null, 3, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reserved));
         when(packDao.findById(packId)).thenReturn(Optional.of(
-                new Pack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
+                newPack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
         when(packDao.incrementStock(packId, 3)).thenReturn(true);
         when(reservationDao.updateStatus(reservationId, Reservation.Status.CANCELED)).thenReturn(canceled);
         final User clientUser = new User(101L, "client@example.org", "pwd", "Client", null, User.Role.CLIENT, false);
@@ -375,7 +396,7 @@ class ReservationServiceImplTest {
                 Reservation.Status.RESERVED, "JJJJJ", null, 1, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reserved));
         when(packDao.findById(packId)).thenReturn(Optional.of(
-                new Pack(packId, 222L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
+                newPack(packId, 222L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationRejectionError> result =
@@ -395,7 +416,7 @@ class ReservationServiceImplTest {
                 Reservation.Status.CANCELED, "KKKKK", null, 1, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
         when(packDao.findById(packId)).thenReturn(Optional.of(
-                new Pack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
+                newPack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationRejectionError> result =
@@ -415,7 +436,7 @@ class ReservationServiceImplTest {
                 Reservation.Status.PAID, "IIIII", null, 1, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
         when(packDao.findById(packId)).thenReturn(Optional.of(
-                new Pack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
+                newPack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationRejectionError> result =

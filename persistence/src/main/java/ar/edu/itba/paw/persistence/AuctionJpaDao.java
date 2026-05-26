@@ -91,7 +91,7 @@ public class AuctionJpaDao implements AuctionDao {
     }
 
     private void appendFilterFromClause(final StringBuilder jpql, final boolean withTags) {
-        jpql.append("FROM Auction a JOIN a.pack p JOIN Commerce c ON p.commerceId = c.userId ");
+        jpql.append("FROM Auction a JOIN a.pack p JOIN p.commerce c ");
         if (withTags) {
             jpql.append("JOIN p.tags t ");
         }
@@ -103,7 +103,7 @@ public class AuctionJpaDao implements AuctionDao {
                                             final boolean requirePositiveStock, final Long commerceUserId) {
         appendActiveAuctionFilters(jpql, params, requirePositiveStock);
         if (commerceUserId != null) {
-            jpql.append("AND p.commerceId = :commerceUserId ");
+            jpql.append("AND p.commerce.userId = :commerceUserId ");
             params.put("commerceUserId", commerceUserId);
         }
         appendQueryFilter(jpql, params, query);
@@ -218,7 +218,7 @@ public class AuctionJpaDao implements AuctionDao {
 
     @Override
     public List<Auction> findByCommerceId(final long commerceId) {
-        return em.createQuery("SELECT a FROM Auction a JOIN FETCH a.pack p WHERE p.commerceId = :commerceId AND p.deleted = false ORDER BY a.createdAt DESC", Auction.class)
+        return em.createQuery("SELECT a FROM Auction a JOIN FETCH a.pack p WHERE p.commerce.userId = :commerceId AND p.deleted = false ORDER BY a.createdAt DESC", Auction.class)
                 .setParameter("commerceId", commerceId)
                 .getResultList();
     }
@@ -257,7 +257,7 @@ public class AuctionJpaDao implements AuctionDao {
 
     private void appendParticipatedConditions(final StringBuilder jpql, final Map<String, Object> params,
                                               final long clientId, final Auction.Status status, final String query) {
-        jpql.append("FROM Auction a JOIN a.pack p JOIN Commerce c ON p.commerceId = c.userId WHERE p.deleted = false ");
+        jpql.append("FROM Auction a JOIN a.pack p JOIN p.commerce c WHERE p.deleted = false ");
         jpql.append("AND a.id IN (SELECT b.auction.id FROM Bid b WHERE b.client.userId = :clientId) ");
         params.put("clientId", Long.valueOf(clientId));
 
@@ -282,7 +282,7 @@ public class AuctionJpaDao implements AuctionDao {
     @Override
     public List<Auction> filterParticipatedAuctions(final long clientId, final Auction.Status status, final String query, final int page, final int pageSize) {
         final StringBuilder idJpql = new StringBuilder("SELECT a.id, MAX(b.timestamp) ");
-        idJpql.append("FROM Auction a JOIN a.pack p JOIN Commerce c ON p.commerceId = c.userId, Bid b WHERE a.id = b.auction.id ");
+        idJpql.append("FROM Auction a JOIN a.pack p JOIN p.commerce c, Bid b WHERE a.id = b.auction.id ");
         idJpql.append("AND p.deleted = false AND b.client.userId = :clientId ");
 
         final Map<String, Object> params = new LinkedHashMap<>();

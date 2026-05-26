@@ -1,6 +1,8 @@
 package ar.edu.itba.paw.services.metrics;
 
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
@@ -115,7 +117,8 @@ class CommerceMetricsServiceImplTest {
                 Optional.of(100L),
                 0L,
                 0L);
-        final Pack pack = new Pack(100L, COMMERCE_ID, "Star Pack", "d", 1.0, 1.0, 1, true, null);
+        final Pack pack = new Pack(100L, new Commerce(COMMERCE_ID, "Comm", Commerce.Category.BAKERY, "St", 1,
+                Municipality.AVELLANEDA, "P", "1000", "08:00", "20:00"), "Star Pack", "d", 1.0, 1.0, 1, true, null);
         when(packDao.findById(100L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio

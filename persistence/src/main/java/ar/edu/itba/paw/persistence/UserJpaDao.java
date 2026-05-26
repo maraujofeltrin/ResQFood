@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.persistence;
 
+import ar.edu.itba.paw.models.image.Image;
 import ar.edu.itba.paw.models.user.User;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
@@ -18,7 +19,7 @@ public class UserJpaDao implements UserDao {
 
     @Override
     public User createUser(final String email, final String password, final String name, final String phone, final User.Role role, final Locale locale) {
-        final User user = new User(null, email, password, name, phone, role, false, locale, null);
+        final User user = new User(null, email, password, name, phone, role, false, locale, (Image) null);
         em.persist(user);
         return user;
     }
@@ -73,8 +74,8 @@ public class UserJpaDao implements UserDao {
     @Override
     public void updateProfileImage(final long userId, final Long imageId) {
         em.flush(); // Ensure pending Image inserts are flushed to the DB to avoid FK violations
-        em.createQuery("UPDATE User u SET u.profileImageId = :imgId WHERE u.id = :id")
-                .setParameter("imgId", imageId)
+        em.createQuery("UPDATE User u SET u.profileImage = :img WHERE u.id = :id")
+                .setParameter("img", imageId != null ? em.getReference(Image.class, imageId) : null)
                 .setParameter("id", userId)
                 .executeUpdate();
     }

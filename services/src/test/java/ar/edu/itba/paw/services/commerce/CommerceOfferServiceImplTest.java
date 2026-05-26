@@ -1,7 +1,9 @@
 package ar.edu.itba.paw.services.commerce;
 
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackTag;
+import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.pack.PackService;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +46,17 @@ class CommerceOfferServiceImplTest {
     private static final long COMMERCE_ID = 1L;
     private static final long PACK_ID = 10L;
 
+    private static Commerce commerceRef(final long userId) {
+        return new Commerce(userId, "Comm", Commerce.Category.BAKERY, "St", 1, Municipality.AVELLANEDA, "P", "1000",
+                "08:00", "20:00");
+    }
+
+    private static Pack newPack(final long id, final long commerceId, final String title, final String desc,
+            final double originalPrice, final double finalPrice, final int stock, final boolean active,
+            final List<PackTag> tags) {
+        return new Pack(id, commerceRef(commerceId), title, desc, originalPrice, finalPrice, stock, active, tags);
+    }
+
     @BeforeEach
     void setUp() {
         commerceOfferService = new CommerceOfferServiceImpl(packService, auctionService, businessZone);
@@ -53,7 +66,7 @@ class CommerceOfferServiceImplTest {
     void testCreateDirectPackWhenTagsProvidedReturnsPackFromService() {
         // 1. Setup
         final List<PackTag> tags = Collections.singletonList(PackTag.VEGAN);
-        final Pack createdPack = new Pack(PACK_ID, COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, true, tags);
+        final Pack createdPack = newPack(PACK_ID, COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, true, tags);
         when(packService.createPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, tags, null)).thenReturn(
                 createdPack);
 
@@ -69,7 +82,7 @@ class CommerceOfferServiceImplTest {
     @Test
     void testCreateDirectPackWhenTagsNullUsesEmptyListAndReturnsPack() {
         // 1. Setup
-        final Pack createdPack = new Pack(PACK_ID, COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, true,
+        final Pack createdPack = newPack(PACK_ID, COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, true,
                 Collections.emptyList());
         when(packService.createPack(COMMERCE_ID, "Direct Pack", "Desc", 1000.0, 500.0, 5, Collections.emptyList(),
                 null)).thenReturn(createdPack);
@@ -87,7 +100,7 @@ class CommerceOfferServiceImplTest {
     void testCreateAuctionOfferWhenValidReturnsPackAndPassesUtcEndToAuction() {
         // 1. Setup
         final List<PackTag> tags = Collections.singletonList(PackTag.VEGETARIAN);
-        final Pack createdPack = new Pack(PACK_ID, COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0, 1, true,
+        final Pack createdPack = newPack(PACK_ID, COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0, 1, true,
                 tags);
         when(packService.createPack(COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0, 1, tags, null)).thenReturn(
                 createdPack);

@@ -1,5 +1,7 @@
 package ar.edu.itba.paw.models.user;
 
+import ar.edu.itba.paw.models.image.Image;
+
 import java.util.Locale;
 
 import javax.persistence.Column;
@@ -7,9 +9,12 @@ import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
@@ -34,14 +39,15 @@ public class User {
     private Role role;
     @Column(nullable = false)
     private boolean verified;
-    
+
     @Convert(converter = LocaleConverter.class)
     @Column(nullable = false)
     private Locale locale;
-    
+
     /** FK opcional a {@code images}; null si el usuario usa solo el avatar por defecto. */
-    @Column(name = "profile_image_id")
-    private Long profileImageId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_image_id")
+    private Image profileImage;
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "users_id_seq")
@@ -63,11 +69,11 @@ public class User {
 
     public User(final Long id, final String email, final String password, final String name, final String phone,
             final Role role, final boolean verified, final Locale locale) {
-        this(id, email, password, name, phone, role, verified, locale, null);
+        this(id, email, password, name, phone, role, verified, locale, (Image) null);
     }
 
     public User(final Long id, final String email, final String password, final String name, final String phone,
-            final Role role, final boolean verified, final Locale locale, final Long profileImageId) {
+            final Role role, final boolean verified, final Locale locale, final Image profileImage) {
         this.id = id;
         this.email = email;
         this.password = password;
@@ -76,7 +82,13 @@ public class User {
         this.role = role;
         this.verified = verified;
         this.locale = locale;
-        this.profileImageId = profileImageId;
+        this.profileImage = profileImage;
+    }
+
+    public User(final Long id, final String email, final String password, final String name, final String phone,
+            final Role role, final boolean verified, final Locale locale, final Long profileImageId) {
+        this(id, email, password, name, phone, role, verified, locale,
+                profileImageId != null ? new Image(profileImageId, new byte[0], "image/png") : null);
     }
 
     public String getEmail() {
@@ -111,14 +123,18 @@ public class User {
         return locale;
     }
 
+    public Image getProfileImage() {
+        return profileImage;
+    }
+
     public Long getProfileImageId() {
-        return profileImageId;
+        return profileImage != null ? profileImage.getId() : null;
     }
 
     @Override
     public String toString() {
         return "User [id=" + id + ", email=" + email + ", password=" + password + ", name=" + name
                 + ", phone=" + phone + ", role=" + role + ", verified=" + verified + ", locale=" + locale
-                + ", profileImageId=" + profileImageId + "]";
+                + ", profileImageId=" + getProfileImageId() + "]";
     }
 }

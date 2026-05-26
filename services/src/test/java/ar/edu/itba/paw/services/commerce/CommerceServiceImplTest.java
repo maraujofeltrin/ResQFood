@@ -114,7 +114,9 @@ class CommerceServiceImplTest {
     void testGetPublicOffersWhenCommerceExistsDelegatesToPackAndAuctionServices() {
         // 1. Setup
         final long commerceUserId = 7L;
-        final Pack pack = new Pack(1L, commerceUserId, "Pack", "d", 10.0, 8.0, 2, true, false, null, null);
+        final Pack pack = new Pack(1L, new Commerce(commerceUserId, "Comm", Commerce.Category.BAKERY, "St", 1,
+                Municipality.AVELLANEDA, "P", "1000", "08:00", "20:00"), "Pack", "d", 10.0, 8.0, 2, true, false,
+                null, null);
         final Auction auction = new Auction(2L, pack, 10.0, 1.0, null, null,
                 LocalDateTime.now().plusDays(1), Auction.Status.ACTIVE, LocalDateTime.now());
         when(packService.filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1), eq(12),

@@ -1,5 +1,8 @@
 package ar.edu.itba.paw.models.pack;
 
+import ar.edu.itba.paw.models.image.Image;
+import ar.edu.itba.paw.models.user.Commerce;
+
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -11,6 +14,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import java.util.List;
@@ -22,8 +27,11 @@ public class Pack {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "packs_id_seq")
     @SequenceGenerator(sequenceName = "packs_id_seq", name = "packs_id_seq", allocationSize = 1)
     private Long id;
-    @Column(name = "commerce_id", nullable = false)
-    private Long commerceId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "commerce_id")
+    private Commerce commerce;
+
     @Column(name = "title", nullable = false)
     private String title;
     @Column(name = "description", nullable = false)
@@ -43,19 +51,25 @@ public class Pack {
     @Column(name = "tag", nullable = false)
     @Enumerated(EnumType.STRING)
     private List<PackTag> tags;
-    @Column(name = "image_id")
-    private Long imageId;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "image_id")
+    private Image image;
 
     protected Pack() {
     }
 
-    public Pack(Long id, Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, Boolean active, List<PackTag> tags) {
-        this(id, commerceId, title, description, originalPrice, finalPrice, stock, active, false, tags, null);
+    public Pack(final Long id, final Commerce commerce, final String title, final String description,
+            final Double originalPrice, final Double finalPrice, final Integer stock, final Boolean active,
+            final List<PackTag> tags) {
+        this(id, commerce, title, description, originalPrice, finalPrice, stock, active, false, tags, null);
     }
 
-    public Pack(Long id, Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, Boolean active, Boolean deleted, List<PackTag> tags, Long imageId) {
+    public Pack(final Long id, final Commerce commerce, final String title, final String description,
+            final Double originalPrice, final Double finalPrice, final Integer stock, final Boolean active,
+            final Boolean deleted, final List<PackTag> tags, final Image image) {
         this.id = id;
-        this.commerceId = commerceId;
+        this.commerce = commerce;
         this.title = title;
         this.description = description;
         this.originalPrice = originalPrice;
@@ -64,15 +78,19 @@ public class Pack {
         this.active = active;
         this.deleted = deleted;
         this.tags = tags;
-        this.imageId = imageId;
+        this.image = image;
     }
 
     public Long getId() {
         return id;
     }
 
+    public Commerce getCommerce() {
+        return commerce;
+    }
+
     public Long getCommerceId() {
-        return commerceId;
+        return commerce != null ? commerce.getUserId() : null;
     }
 
     public String getTitle() {
@@ -103,31 +121,31 @@ public class Pack {
         return tags;
     }
 
-    public void setTags(List<PackTag> tags) {
+    public void setTags(final List<PackTag> tags) {
         this.tags = tags;
     }
 
-    public void setTitle(String title) {
+    public void setTitle(final String title) {
         this.title = title;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(final String description) {
         this.description = description;
     }
 
-    public void setOriginalPrice(Double originalPrice) {
+    public void setOriginalPrice(final Double originalPrice) {
         this.originalPrice = originalPrice;
     }
 
-    public void setFinalPrice(Double finalPrice) {
+    public void setFinalPrice(final Double finalPrice) {
         this.finalPrice = finalPrice;
     }
 
-    public void setStock(Integer stock) {
+    public void setStock(final Integer stock) {
         this.stock = stock;
     }
 
-    public void setActive(Boolean active) {
+    public void setActive(final Boolean active) {
         this.active = active;
     }
 
@@ -135,20 +153,26 @@ public class Pack {
         return deleted;
     }
 
-    public void setDeleted(Boolean deleted) {
+    public void setDeleted(final Boolean deleted) {
         this.deleted = deleted;
     }
 
-    public Long getImageId() {
-        return imageId;
+    public Image getImage() {
+        return image;
     }
 
-    public void setImageId(Long imageId) {
-        this.imageId = imageId;
+    public Long getImageId() {
+        return image != null ? image.getId() : null;
+    }
+
+    public void setImage(final Image image) {
+        this.image = image;
     }
 
     @Override
     public String toString() {
-        return "Pack [id=" + id + ", commerceId=" + commerceId + ", title=" + title + ", description=" + description + ", originalPrice=" + originalPrice + ", finalPrice=" + finalPrice + ", stock=" + stock + ", active=" + active + ", tags=" + tags + ", hasImage=" + (imageId != null) + "]";
+        return "Pack [id=" + id + ", commerceId=" + getCommerceId() + ", title=" + title + ", description="
+                + description + ", originalPrice=" + originalPrice + ", finalPrice=" + finalPrice + ", stock="
+                + stock + ", active=" + active + ", tags=" + tags + ", hasImage=" + (image != null) + "]";
     }
 }

@@ -1,7 +1,9 @@
 package ar.edu.itba.paw.services.reservation;
 
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.Client;
+import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
@@ -17,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -45,8 +48,19 @@ class ReservationTokenServiceImplTest {
         return new Client(id, "N", "L", true);
     }
 
+    private static Commerce commerceRef(final long userId) {
+        return new Commerce(userId, "Comm", Commerce.Category.BAKERY, "St", 1, Municipality.AVELLANEDA, "P", "1000",
+                "08:00", "20:00");
+    }
+
     private static Pack packRef(final long id) {
-        return new Pack(id, 1L, "t", "d", 1.0, 1.0, 1, true, Collections.emptyList());
+        return new Pack(id, commerceRef(1L), "t", "d", 1.0, 1.0, 1, true, Collections.emptyList());
+    }
+
+    private static Pack newPack(final long id, final long commerceId, final String title, final String desc,
+            final double originalPrice, final double finalPrice, final int stock, final boolean active,
+            final List<ar.edu.itba.paw.models.pack.PackTag> tags) {
+        return new Pack(id, commerceRef(commerceId), title, desc, originalPrice, finalPrice, stock, active, tags);
     }
 
     private static Reservation reservationRef(final long id) {
@@ -161,7 +175,7 @@ class ReservationTokenServiceImplTest {
         }).when(reservationTokenDao).markAsUsed("accept-token");
         when(reservationDao.findById(201L)).thenReturn(Optional.of(reserved));
         when(packDao.findById(packId)).thenReturn(Optional.of(
-                new Pack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
+                newPack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
         when(reservationService.confirmPickup(201L)).thenReturn(paid);
 
         // 2. Ejercicio
@@ -188,7 +202,7 @@ class ReservationTokenServiceImplTest {
         when(reservationTokenDao.findByToken("bad-code-token")).thenAnswer(inv -> Optional.of(tokenRef.get()));
         when(reservationDao.findById(202L)).thenReturn(Optional.of(reserved));
         when(packDao.findById(packId)).thenReturn(Optional.of(
-                new Pack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
+                newPack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =
@@ -235,7 +249,7 @@ class ReservationTokenServiceImplTest {
         when(reservationDao.findById(301L)).thenReturn(Optional.of(reserved), Optional.of(reserved),
                 Optional.of(canceled));
         when(packDao.findById(packId)).thenReturn(Optional.of(
-                new Pack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
+                newPack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
         when(reservationService.rejectReservation(301L)).thenReturn(canceled);
 
         // 2. Ejercicio
@@ -263,7 +277,7 @@ class ReservationTokenServiceImplTest {
         when(reservationTokenDao.findByToken("reject-wrong-commerce")).thenAnswer(inv -> Optional.of(tokenRef.get()));
         when(reservationDao.findById(302L)).thenReturn(Optional.of(reserved));
         when(packDao.findById(packId)).thenReturn(Optional.of(
-                new Pack(packId, ownerCommerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
+                newPack(packId, ownerCommerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =

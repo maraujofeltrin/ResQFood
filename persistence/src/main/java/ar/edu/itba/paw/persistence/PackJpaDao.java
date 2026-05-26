@@ -1,8 +1,10 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.auction.Auction;
+import ar.edu.itba.paw.models.image.Image;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.persistence.util.JpqlQuerySupport;
@@ -37,8 +39,10 @@ public class PackJpaDao implements PackDao {
     public Pack createPack(final Long commerceId, final String title, final String description,
                            final Double originalPrice, final Double finalPrice, final Integer stock,
                            final List<PackTag> tags, final Long imageId) {
-        final Pack pack = new Pack(null, commerceId, title, description, originalPrice, finalPrice, stock, true, false,
-                new ArrayList<>(), imageId);
+        final Commerce commerce = em.getReference(Commerce.class, commerceId);
+        final Image image = imageId != null ? em.getReference(Image.class, imageId) : null;
+        final Pack pack = new Pack(null, commerce, title, description, originalPrice, finalPrice, stock, true, false,
+                new ArrayList<>(), image);
         pack.setTags(tags != null ? new ArrayList<>(tags) : new ArrayList<>());
         em.persist(pack);
         return pack;
@@ -60,7 +64,7 @@ public class PackJpaDao implements PackDao {
 
     @Override
     public List<Pack> findByCommerceId(final Long commerceId) {
-        return em.createQuery("FROM Pack p WHERE p.commerceId = :cid AND p.deleted = false ORDER BY p.id DESC", Pack.class)
+        return em.createQuery("FROM Pack p WHERE p.commerce.userId = :cid AND p.deleted = false ORDER BY p.id DESC", Pack.class)
                 .setParameter("cid", commerceId)
                 .getResultList();
     }
@@ -149,7 +153,7 @@ public class PackJpaDao implements PackDao {
     public int countFilteredPacks(final String query, final List<PackTag> tags, final String city,
                                   final List<String> timeRanges, final boolean requirePositiveStock,
                                   final Long commerceUserId) {
-        final StringBuilder jpql = new StringBuilder("SELECT COUNT(p.id) FROM Pack p, Commerce c WHERE c.userId = p.commerceId AND p.active = true AND p.deleted = false AND NOT EXISTS (SELECT a.id FROM Auction a WHERE a.pack.id = p.id AND a.status = :activeStatus)");
+        final StringBuilder jpql = new StringBuilder("SELECT COUNT(p.id) FROM Pack p JOIN p.commerce c WHERE p.active = true AND p.deleted = false AND NOT EXISTS (SELECT a.id FROM Auction a WHERE a.pack.id = p.id AND a.status = :activeStatus)");
         final Map<String, Object> params = new LinkedHashMap<>();
         params.put("activeStatus", Auction.Status.ACTIVE);
         appendOptionalFilters(jpql, params, query, tags, city, timeRanges, requirePositiveStock, commerceUserId);
@@ -159,7 +163,7 @@ public class PackJpaDao implements PackDao {
 
     @Override
     public List<Pack> filterCommercePacks(final Long commerceId, final Boolean hasAuction, final int page, final int pageSize) {
-        final StringBuilder jpql = new StringBuilder("SELECT p FROM Pack p WHERE p.commerceId = :cid AND p.deleted = false");
+        final StringBuilder jpql = new StringBuilder("SELECT p FROM Pack p WHERE p.commerce.userId = :cid AND p.deleted = false");
         final Map<String, Object> params = new LinkedHashMap<>();
         params.put("cid", commerceId);
         if (hasAuction != null) {
@@ -178,7 +182,7 @@ public class PackJpaDao implements PackDao {
 
     @Override
     public int countCommercePacks(final Long commerceId, final Boolean hasAuction) {
-        final StringBuilder jpql = new StringBuilder("SELECT COUNT(p.id) FROM Pack p WHERE p.commerceId = :cid AND p.deleted = false");
+        final StringBuilder jpql = new StringBuilder("SELECT COUNT(p.id) FROM Pack p WHERE p.commerce.userId = :cid AND p.deleted = false");
         final Map<String, Object> params = new LinkedHashMap<>();
         params.put("cid", commerceId);
         if (hasAuction != null) {
@@ -196,7 +200,7 @@ public class PackJpaDao implements PackDao {
                                     final List<String> timeRanges, final PackSortOption sort,
                                     final int page, final int pageSize, final boolean requirePositiveStock,
                                     final Long commerceUserId) {
-        final StringBuilder jpql = new StringBuilder("SELECT p.id FROM Pack p, Commerce c WHERE c.userId = p.commerceId AND p.active = true AND p.deleted = false AND NOT EXISTS (SELECT a.id FROM Auction a WHERE a.pack.id = p.id AND a.status = :activeStatus)");
+        final StringBuilder jpql = new StringBuilder("SELECT p.id FROM Pack p JOIN p.commerce c WHERE p.active = true AND p.deleted = false AND NOT EXISTS (SELECT a.id FROM Auction a WHERE a.pack.id = p.id AND a.status = :activeStatus)");
         final Map<String, Object> params = new LinkedHashMap<>();
         params.put("activeStatus", Auction.Status.ACTIVE);
         appendOptionalFilters(jpql, params, query, tags, city, timeRanges, requirePositiveStock, commerceUserId);
@@ -212,7 +216,7 @@ public class PackJpaDao implements PackDao {
                                        final List<String> timeRanges, final boolean requirePositiveStock,
                                        final Long commerceUserId) {
         if (commerceUserId != null) {
-            jpql.append(" AND p.commerceId = :commerceUserId");
+            jpql.append(" AND p.commerce.userId = :commerceUserId");
             params.put("commerceUserId", commerceUserId);
         }
         if (requirePositiveStock) {

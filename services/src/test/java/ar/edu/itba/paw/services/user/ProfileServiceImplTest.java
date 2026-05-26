@@ -53,7 +53,7 @@ class ProfileServiceImplTest {
         // 1. Setup
         when(userService.findById(1L)).thenReturn(Optional.of(
                 new User(1L, "a@b.com", "hash", "Nombre", "+99", User.Role.CLIENT, true,
-                        Locale.forLanguageTag("en"), null)));
+                        Locale.forLanguageTag("en"))));
         when(clientService.findByUserId(1L)).thenReturn(Optional.of(new Client(1L, "Nombre", null, true)));
 
         // 2. Ejercicio
@@ -78,7 +78,7 @@ class ProfileServiceImplTest {
         // 1. Setup
         when(userService.findById(2L)).thenReturn(Optional.of(
                 new User(2L, "c@d.com", "h", "Solo", null, User.Role.COMMERCE, false,
-                        Locale.forLanguageTag("es"), null)));
+                        Locale.forLanguageTag("es"))));
         when(commerceService.findByUserId(2L)).thenReturn(Optional.of(
                 new Commerce(2L, "El Almacén", Commerce.Category.BAKERY, "Rivadavia", 100, Municipality.MORON, "BA",
                         "1708", "08:30", "20:00")));
@@ -100,7 +100,7 @@ class ProfileServiceImplTest {
     void testGetSettingsOverviewWhenLocaleNotEnglishReturnsSpanishSelectedCode() {
         // 1. Setup
         when(userService.findById(3L)).thenReturn(Optional.of(
-                new User(3L, "e@f.com", "h", "Fr", null, User.Role.CLIENT, true, Locale.FRANCE, null)));
+                new User(3L, "e@f.com", "h", "Fr", null, User.Role.CLIENT, true, Locale.FRANCE)));
         when(clientService.findByUserId(3L)).thenReturn(Optional.of(new Client(3L, "Fr", null, false)));
 
         // 2. Ejercicio
