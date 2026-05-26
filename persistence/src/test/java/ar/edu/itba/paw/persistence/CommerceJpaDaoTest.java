@@ -133,7 +133,9 @@ public class CommerceJpaDaoTest {
 
         final String newName = "Updated Commerce";
         final Commerce.Category newCategory = Commerce.Category.RESTAURANT;
-        final Commerce commerce = new Commerce(userId, newName, newCategory, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+        final Commerce commerce = commerceDao.findByUserId(userId).orElseThrow();
+        commerce.setCommercialName(newName);
+        commerce.setCategory(newCategory);
 
         // 2. Ejercicio
         final Commerce updatedCommerce = commerceDao.update(commerce);

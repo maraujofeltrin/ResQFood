@@ -8,7 +8,11 @@ import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.MapsId;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import java.time.LocalTime;
@@ -33,9 +37,13 @@ public class Commerce {
     public static final String PROVINCE_BUENOS_AIRES = "Buenos Aires";
 
     @Id
-    @Column(name = "user_id")
     private Long userId;
-    
+
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @MapsId
+    @JoinColumn(name = "user_id")
+    private User user;
+
     @Column(name = "commercial_name", nullable = false)
     private String commercialName;
     
@@ -67,9 +75,11 @@ public class Commerce {
 
     protected Commerce() {}
 
-    public Commerce(Long userId, String commercialName, Category category, String street, Integer streetNumber,
-            Municipality city, String province, String postalCode, String openingTime, String closingTime) {
-        this.userId = userId;
+    public Commerce(final User user, final String commercialName, final Category category, final String street,
+            final Integer streetNumber, final Municipality city, final String province, final String postalCode,
+            final String openingTime, final String closingTime) {
+        this.user = user;
+        this.userId = user != null ? user.getId() : null;
         this.commercialName = commercialName;
         this.category = category;
         this.street = street;
@@ -81,8 +91,19 @@ public class Commerce {
         this.closingTime = closingTime;
     }
 
+    public Commerce(final Long userId, final String commercialName, final Category category, final String street,
+            final Integer streetNumber, final Municipality city, final String province, final String postalCode,
+            final String openingTime, final String closingTime) {
+        this(userId != null ? new User(userId, "stub@local", "p", "n", null, User.Role.COMMERCE, false) : null,
+                commercialName, category, street, streetNumber, city, province, postalCode, openingTime, closingTime);
+    }
+
+    public User getUser() {
+        return user;
+    }
+
     public Long getUserId() {
-        return userId;
+        return user != null ? user.getId() : userId;
     }
 
     public String getCommercialName() {
@@ -119,6 +140,42 @@ public class Commerce {
 
     public String getClosingTime() {
         return closingTime;
+    }
+
+    public void setCommercialName(final String commercialName) {
+        this.commercialName = commercialName;
+    }
+
+    public void setCategory(final Category category) {
+        this.category = category;
+    }
+
+    public void setStreet(final String street) {
+        this.street = street;
+    }
+
+    public void setStreetNumber(final Integer streetNumber) {
+        this.streetNumber = streetNumber;
+    }
+
+    public void setCity(final Municipality city) {
+        this.city = city;
+    }
+
+    public void setProvince(final String province) {
+        this.province = province;
+    }
+
+    public void setPostalCode(final String postalCode) {
+        this.postalCode = postalCode;
+    }
+
+    public void setOpeningTime(final String openingTime) {
+        this.openingTime = openingTime;
+    }
+
+    public void setClosingTime(final String closingTime) {
+        this.closingTime = closingTime;
     }
 
     // ── Domain helpers ──────────────────────────────────────────────────
@@ -204,7 +261,7 @@ public class Commerce {
 
     @Override
     public String toString() {
-        return "Commerce [userId=" + userId + ", commercialName=" + commercialName + ", category=" + category
+        return "Commerce [userId=" + getUserId() + ", commercialName=" + commercialName + ", category=" + category
                 + ", street=" + street + ", streetNumber=" + streetNumber + ", city=" + city + ", province="
                 + province + ", postalCode=" + postalCode + ", openingTime=" + openingTime + ", closingTime="
                 + closingTime + "]";

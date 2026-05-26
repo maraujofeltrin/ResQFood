@@ -72,19 +72,20 @@ public class UserServiceImpl implements UserService {
             if (clientProfile == null) {
                 throw new IllegalArgumentException("Client profile data is required for CLIENT users");
             }
-            final Client clientToPersist = new Client(
-                    user.getId(),
-                    clientProfile.getName(),
-                    clientProfile.getLastName(),
-                    clientProfile.getNotificationsVisibilityPreferences());
-
-            clientDao.findByUserId(user.getId())
-                    .map(existingClient -> clientDao.update(clientToPersist))
-                    .orElseGet(() -> clientDao.createClient(
-                            user.getId(),
-                            clientProfile.getName(),
+            final Optional<Client> existingClient = clientDao.findByUserId(user.getId());
+            if (existingClient.isPresent()) {
+                final Client client = existingClient.get();
+                client.setName(clientProfile.getName());
+                client.setLastName(clientProfile.getLastName());
+                client.setNotificationsVisibilityPreferences(clientProfile.getNotificationsVisibilityPreferences());
+                clientDao.update(client);
+            } else {
+                clientDao.createClient(
+                        user.getId(),
+                        clientProfile.getName(),
                         clientProfile.getLastName(),
-                        clientProfile.getNotificationsVisibilityPreferences()));
+                        clientProfile.getNotificationsVisibilityPreferences());
+            }
             return;
         }
 
@@ -95,31 +96,32 @@ public class UserServiceImpl implements UserService {
             if (!Commerce.PROVINCE_BUENOS_AIRES.equalsIgnoreCase(commerceProfile.getProvince())) {
                 throw new IllegalArgumentException("Commerce province must be " + Commerce.PROVINCE_BUENOS_AIRES);
             }
-            final Commerce commerceToPersist = new Commerce(
-                    user.getId(),
-                    commerceProfile.getCommercialName(),
-                    commerceProfile.getCategory(),
-                    commerceProfile.getStreet(),
-                    commerceProfile.getStreetNumber(),
-                    commerceProfile.getCity(),
-                    commerceProfile.getProvince(),
-                    commerceProfile.getPostalCode(),
-                    commerceProfile.getOpeningTime(),
-                    commerceProfile.getClosingTime());
-
-            commerceDao.findByUserId(user.getId())
-                    .map(existingCommerce -> commerceDao.update(commerceToPersist))
-                    .orElseGet(() -> commerceDao.createCommerce(
-                            user.getId(),
-                            commerceProfile.getCommercialName(),
-                            commerceProfile.getCategory(),
-                            commerceProfile.getStreet(),
-                            commerceProfile.getStreetNumber(),
-                            commerceProfile.getCity(),
-                            commerceProfile.getProvince(),
-                            commerceProfile.getPostalCode(),
-                            commerceProfile.getOpeningTime(),
-                            commerceProfile.getClosingTime()));
+            final Optional<Commerce> existingCommerce = commerceDao.findByUserId(user.getId());
+            if (existingCommerce.isPresent()) {
+                final Commerce commerce = existingCommerce.get();
+                commerce.setCommercialName(commerceProfile.getCommercialName());
+                commerce.setCategory(commerceProfile.getCategory());
+                commerce.setStreet(commerceProfile.getStreet());
+                commerce.setStreetNumber(commerceProfile.getStreetNumber());
+                commerce.setCity(commerceProfile.getCity());
+                commerce.setProvince(commerceProfile.getProvince());
+                commerce.setPostalCode(commerceProfile.getPostalCode());
+                commerce.setOpeningTime(commerceProfile.getOpeningTime());
+                commerce.setClosingTime(commerceProfile.getClosingTime());
+                commerceDao.update(commerce);
+            } else {
+                commerceDao.createCommerce(
+                        user.getId(),
+                        commerceProfile.getCommercialName(),
+                        commerceProfile.getCategory(),
+                        commerceProfile.getStreet(),
+                        commerceProfile.getStreetNumber(),
+                        commerceProfile.getCity(),
+                        commerceProfile.getProvince(),
+                        commerceProfile.getPostalCode(),
+                        commerceProfile.getOpeningTime(),
+                        commerceProfile.getClosingTime());
+            }
         }
     }
 

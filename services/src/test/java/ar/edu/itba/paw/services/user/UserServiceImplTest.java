@@ -81,7 +81,7 @@ class UserServiceImplTest {
         // 1. Setup
         final User toCreate = new User(null, "c@d.com", "pw", "N", "123", User.Role.COMMERCE, false);
         final User persisted = new User(1L, "c@d.com", "ENC:pw", "N", "123", User.Role.COMMERCE, false);
-        final Commerce commerceProfile = new Commerce(null, "Shop", Commerce.Category.OTHER, "st", 1, Municipality.AVELLANEDA, Commerce.PROVINCE_BUENOS_AIRES,
+        final Commerce commerceProfile = new Commerce((Long) null, "Shop", Commerce.Category.OTHER, "st", 1, Municipality.AVELLANEDA, Commerce.PROVINCE_BUENOS_AIRES,
                 "pc", "09:00", "18:00");
         when(passwordEncoder.encode("pw")).thenReturn("ENC:pw");
         when(userDao.createUser(eq("c@d.com"), eq("ENC:pw"), eq("N"), eq("123"), eq(User.Role.COMMERCE),
@@ -334,7 +334,7 @@ class UserServiceImplTest {
         when(userDao.findByEmail("dup@example.com")).thenReturn(Optional.of(existing));
         final User registering =
                 new User(null, "dup@example.com", "pw", "New", null, User.Role.CLIENT, false);
-        final Client clientProfile = new Client(null, "N", "L", true);
+        final Client clientProfile = new Client((Long) null, "N", "L", true);
 
         // 2. Ejercicio
         final RegisterResult result =

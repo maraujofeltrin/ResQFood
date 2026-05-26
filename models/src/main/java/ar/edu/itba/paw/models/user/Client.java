@@ -2,15 +2,24 @@ package ar.edu.itba.paw.models.user;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.MapsId;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 @Entity
 @Table(name = "clients")
 public class Client {
     @Id
-    @Column(name = "user_id")
     private Long userId;
+
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @MapsId
+    @JoinColumn(name = "user_id")
+    private User user;
+
     @Column(nullable = false)
     private String name;
     @Column(nullable = false, name = "last_name")
@@ -20,15 +29,27 @@ public class Client {
 
     protected Client() {}
 
-    public Client(Long userId, String name, String lastName, Boolean notificationsVisibilityPreferences) {
-        this.userId = userId;
+    public Client(final User user, final String name, final String lastName,
+            final Boolean notificationsVisibilityPreferences) {
+        this.user = user;
+        this.userId = user != null ? user.getId() : null;
         this.name = name;
         this.lastName = lastName;
         this.notificationsVisibilityPreferences = notificationsVisibilityPreferences;
     }
 
+    public Client(final Long userId, final String name, final String lastName,
+            final Boolean notificationsVisibilityPreferences) {
+        this(userId != null ? new User(userId, "stub@local", "p", "n", null, User.Role.CLIENT, false) : null, name,
+                lastName, notificationsVisibilityPreferences);
+    }
+
+    public User getUser() {
+        return user;
+    }
+
     public Long getUserId() {
-        return userId;
+        return user != null ? user.getId() : userId;
     }
 
     public String getName() {
@@ -43,15 +64,15 @@ public class Client {
         return notificationsVisibilityPreferences;
     }
 
-    public void setName(String name) {
+    public void setName(final String name) {
         this.name = name;
     }
 
-    public void setLastName(String lastName) {
+    public void setLastName(final String lastName) {
         this.lastName = lastName;
     }
 
-    public void setNotificationsVisibilityPreferences(Boolean notificationsVisibilityPreferences) {
+    public void setNotificationsVisibilityPreferences(final Boolean notificationsVisibilityPreferences) {
         this.notificationsVisibilityPreferences = notificationsVisibilityPreferences;
     }
 
@@ -68,7 +89,7 @@ public class Client {
 
     @Override
     public String toString() {
-        return "Client [userId=" + userId + ", name=" + name + ", lastName=" + lastName
+        return "Client [userId=" + getUserId() + ", name=" + name + ", lastName=" + lastName
                 + ", notificationsVisibilityPreferences=" + notificationsVisibilityPreferences + "]";
     }
 }

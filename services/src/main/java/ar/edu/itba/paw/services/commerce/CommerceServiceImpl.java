@@ -67,18 +67,15 @@ public class CommerceServiceImpl implements CommerceService {
         if (province == null || !Commerce.PROVINCE_BUENOS_AIRES.equalsIgnoreCase(province.trim())) {
             throw new IllegalArgumentException("Commerce province must be " + Commerce.PROVINCE_BUENOS_AIRES);
         }
-        final Commerce updated = new Commerce(
-                userId,
-                current.getCommercialName(),
-                category,
-                st,
-                streetNumber,
-                city,
-                Commerce.PROVINCE_BUENOS_AIRES,
-                postalCode == null || postalCode.isBlank() ? null : postalCode.trim(),
-                open,
-                close);
-        commerceDao.update(updated);
+        current.setCategory(category);
+        current.setStreet(st);
+        current.setStreetNumber(streetNumber);
+        current.setCity(city);
+        current.setProvince(Commerce.PROVINCE_BUENOS_AIRES);
+        current.setPostalCode(postalCode == null || postalCode.isBlank() ? null : postalCode.trim());
+        current.setOpeningTime(open);
+        current.setClosingTime(close);
+        commerceDao.update(current);
         LOGGER.info("Commerce profile updated for userId={}", userId);
     }
 

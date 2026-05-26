@@ -2,6 +2,7 @@ package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.User;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
@@ -21,7 +22,9 @@ public class CommerceJpaDao implements CommerceDao {
     public Commerce createCommerce(final Long userId, final String commercialName, final Commerce.Category category,
             final String street, final Integer streetNumber, final Municipality city, final String province,
             final String postalCode, final String openingTime, final String closingTime) {
-        final Commerce commerce = new Commerce(userId, commercialName, category, street, streetNumber, city, province, postalCode, openingTime, closingTime);
+        final User user = em.getReference(User.class, userId);
+        final Commerce commerce = new Commerce(user, commercialName, category, street, streetNumber, city, province,
+                postalCode, openingTime, closingTime);
         em.persist(commerce);
         return commerce;
     }

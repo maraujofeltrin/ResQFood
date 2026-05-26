@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.user.Client;
+import ar.edu.itba.paw.models.user.User;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
@@ -17,7 +18,8 @@ public class ClientJpaDao implements ClientDao {
 
     @Override
     public Client createClient(final Long userId, final String name, final String lastName, final Boolean notificationsVisibilityPreferences) {
-        final Client client = new Client(userId, name, lastName, notificationsVisibilityPreferences);
+        final User user = em.getReference(User.class, userId);
+        final Client client = new Client(user, name, lastName, notificationsVisibilityPreferences);
         em.persist(client);
         return client;
     }

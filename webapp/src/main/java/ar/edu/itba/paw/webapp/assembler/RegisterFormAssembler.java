@@ -27,7 +27,7 @@ public class RegisterFormAssembler {
             return null;
         }
         return new Client(
-                null,
+                (Long) null,
                 form.getClientProfile().getFirstName(),
                 form.getClientProfile().getLastName(),
                 form.getClientProfile().getNotificationsVisibilityPreferences());
@@ -38,7 +38,7 @@ public class RegisterFormAssembler {
             return null;
         }
         return new Commerce(
-                null,
+                (Long) null,
                 form.getCommerceProfile().getCommercialName(),
                 form.getCommerceProfile().getCategory(),
                 form.getCommerceProfile().getStreet(),
