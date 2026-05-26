@@ -258,7 +258,7 @@ public class AuctionJpaDao implements AuctionDao {
     private void appendParticipatedConditions(final StringBuilder jpql, final Map<String, Object> params,
                                               final long clientId, final Auction.Status status, final String query) {
         jpql.append("FROM Auction a JOIN a.pack p JOIN Commerce c ON p.commerceId = c.userId WHERE p.deleted = false ");
-        jpql.append("AND a.id IN (SELECT b.auctionId FROM Bid b WHERE b.clientId = :clientId) ");
+        jpql.append("AND a.id IN (SELECT b.auction.id FROM Bid b WHERE b.client.userId = :clientId) ");
         params.put("clientId", Long.valueOf(clientId));
 
         if (status != null) {
@@ -282,8 +282,8 @@ public class AuctionJpaDao implements AuctionDao {
     @Override
     public List<Auction> filterParticipatedAuctions(final long clientId, final Auction.Status status, final String query, final int page, final int pageSize) {
         final StringBuilder idJpql = new StringBuilder("SELECT a.id, MAX(b.timestamp) ");
-        idJpql.append("FROM Auction a JOIN a.pack p JOIN Commerce c ON p.commerceId = c.userId, Bid b WHERE a.id = b.auctionId ");
-        idJpql.append("AND p.deleted = false AND b.clientId = :clientId ");
+        idJpql.append("FROM Auction a JOIN a.pack p JOIN Commerce c ON p.commerceId = c.userId, Bid b WHERE a.id = b.auction.id ");
+        idJpql.append("AND p.deleted = false AND b.client.userId = :clientId ");
 
         final Map<String, Object> params = new LinkedHashMap<>();
         params.put("clientId", Long.valueOf(clientId));

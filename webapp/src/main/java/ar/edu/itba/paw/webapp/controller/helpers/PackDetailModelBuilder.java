@@ -107,7 +107,7 @@ public class PackDetailModelBuilder {
             mav.addObject("auctionId", auctionId);
             final List<Bid> bidHistory = auctionService.getBidHistory(auctionId);
             final Map<Long, Client> bidClients = prefetchClients(bidHistory.stream()
-                    .map(Bid::getClientId).distinct().collect(java.util.stream.Collectors.toList()));
+                    .map(bid -> bid.getClient().getUserId()).distinct().collect(java.util.stream.Collectors.toList()));
             final List<BidHistoryViewHelper.BidHistoryRow> bidHistoryItems = BidHistoryViewHelper.buildRows(
                     bidHistory, bidClients, messageSource, locale);
             mav.addObject("auctionBidHistoryItems", bidHistoryItems);

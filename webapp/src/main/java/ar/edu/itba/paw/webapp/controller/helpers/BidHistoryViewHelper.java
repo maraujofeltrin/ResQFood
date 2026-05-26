@@ -77,7 +77,7 @@ public final class BidHistoryViewHelper {
         final List<BidHistoryRow> rows = new ArrayList<>();
         for (int i = 0; i < bids.size(); i++) {
             final Bid bid = bids.get(i);
-            final Client client = clientsByUserId.get(bid.getClientId());
+            final Client client = clientsByUserId.get(bid.getClient().getUserId());
             final String displayName = ViewFormatUtils.shortDisplayName(client, messageSource, locale);
             final String initials = ViewFormatUtils.initialsFor(client, messageSource, locale);
             final String amountDisplay = ViewFormatUtils.formatMoney(bid.getAmount());

@@ -5,6 +5,7 @@ import ar.edu.itba.paw.models.auction.Bid;
 import ar.edu.itba.paw.models.auction.BidFailureReason;
 import ar.edu.itba.paw.models.auction.BidPlacementException;
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.BidDao;
 import ar.edu.itba.paw.persistence.CommerceDao;
@@ -59,6 +60,14 @@ class AuctionServiceImplTest {
     private static final long CLIENT_ID = 2L;
     private static final long COMMERCE_ID = 3L;
 
+    private static Auction auctionRef(final long id) {
+        return new Auction(id, null, 1000.0, 500.0, null, null, null, Auction.Status.ACTIVE, null);
+    }
+
+    private static Client clientRef(final long id) {
+        return new Client(id, "N", "L", true);
+    }
+
     @Test
     void testCreateAuctionWhenPackValidReturnsCreatedAuction() {
         // 1. Setup
@@ -104,7 +113,7 @@ class AuctionServiceImplTest {
         final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime,
                 Auction.Status.ACTIVE, LocalDateTime.now());
         when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
-        final Bid createdBid = new Bid(1L, AUCTION_ID, CLIENT_ID, 1600.0, LocalDateTime.now());
+        final Bid createdBid = new Bid(1L, auctionRef(AUCTION_ID), clientRef(CLIENT_ID), 1600.0, LocalDateTime.now());
         when(bidDao.createBid(AUCTION_ID, CLIENT_ID, 1600.0)).thenReturn(createdBid);
         final AtomicReference<Double> capturedAmount = new AtomicReference<>();
         final AtomicReference<Long> capturedBidder = new AtomicReference<>();

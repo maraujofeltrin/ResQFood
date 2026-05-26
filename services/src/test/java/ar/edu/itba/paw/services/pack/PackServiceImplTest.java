@@ -5,6 +5,7 @@ import ar.edu.itba.paw.models.auction.Bid;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
+import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommercePackAccess;
@@ -162,7 +163,7 @@ class PackServiceImplTest {
         final Pack pack = new Pack(11L, 12L, "auction", "d", 2.0, 1.0, 0, false, false, Collections.emptyList(), null);
         final Auction auction = new Auction(20L, pack, 1.0, 1.0, 5.0, 99L,
                 LocalDateTime.now(ZoneOffset.UTC).minusHours(1), Auction.Status.FINISHED, LocalDateTime.now(ZoneOffset.UTC).minusDays(1));
-        final Bid bid = new Bid(30L, 20L, 99L, 5.0, LocalDateTime.now(ZoneOffset.UTC).minusHours(2));
+        final Bid bid = new Bid(30L, auction, new Client(99L, "N", "L", true), 5.0, LocalDateTime.now(ZoneOffset.UTC).minusHours(2));
         when(packDao.findById(11L)).thenReturn(Optional.of(pack));
         when(reservationService.hasActiveReservation(11L, 99L)).thenReturn(false);
         when(auctionService.findByPackId(11L)).thenReturn(Optional.of(auction));

@@ -221,7 +221,7 @@ public class ReservationListModelBuilder {
             auctionCommerceNames.put(auction.getId(), resolveCommerceName(p));
 
             final double myMax = auctionService.getBidHistory(auction.getId()).stream()
-                    .filter(b -> b.getClientId().equals(currentUser.getId()))
+                    .filter(b -> b.getClient().getUserId().equals(currentUser.getId()))
                     .mapToDouble(Bid::getAmount)
                     .max()
                     .orElse(0d);

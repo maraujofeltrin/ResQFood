@@ -126,8 +126,8 @@ public class BidJpaDaoTest {
         // 1. Setup
         final LocalDateTime earlier = LocalDateTime.of(2030, 1, 1, 10, 0);
         final LocalDateTime later = LocalDateTime.of(2030, 1, 1, 11, 0);
-        em.persist(new Bid(null, auctionId, clientId, 700.0, earlier));
-        em.persist(new Bid(null, auctionId, clientId, 700.0, later));
+        em.persist(new Bid(null, em.getReference(Auction.class, auctionId), em.getReference(ar.edu.itba.paw.models.user.Client.class, clientId), 700.0, earlier));
+        em.persist(new Bid(null, em.getReference(Auction.class, auctionId), em.getReference(ar.edu.itba.paw.models.user.Client.class, clientId), 700.0, later));
         em.flush();
         em.clear();
 

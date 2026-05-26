@@ -1,6 +1,17 @@
 package ar.edu.itba.paw.models.auction;
 
-import javax.persistence.*;
+import ar.edu.itba.paw.models.user.Client;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,11 +23,13 @@ public class Bid {
     @SequenceGenerator(sequenceName = "bids_id_seq", name = "bids_id_seq", allocationSize = 1)
     private Long id;
 
-    @Column(name = "auction_id", nullable = false)
-    private Long auctionId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "auction_id")
+    private Auction auction;
 
-    @Column(name = "client_id", nullable = false)
-    private Long clientId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "client_id")
+    private Client client;
 
     @Column(nullable = false)
     private Double amount;
@@ -28,10 +41,11 @@ public class Bid {
         // Just for Hibernate
     }
 
-    public Bid(Long id, Long auctionId, Long clientId, Double amount, LocalDateTime timestamp) {
+    public Bid(final Long id, final Auction auction, final Client client, final Double amount,
+            final LocalDateTime timestamp) {
         this.id = id;
-        this.auctionId = auctionId;
-        this.clientId = clientId;
+        this.auction = auction;
+        this.client = client;
         this.amount = amount;
         this.timestamp = timestamp;
     }
@@ -40,12 +54,20 @@ public class Bid {
         return id;
     }
 
+    public Auction getAuction() {
+        return auction;
+    }
+
+    public Client getClient() {
+        return client;
+    }
+
     public Long getAuctionId() {
-        return auctionId;
+        return auction.getId();
     }
 
     public Long getClientId() {
-        return clientId;
+        return client.getUserId();
     }
 
     public Double getAmount() {
@@ -58,7 +80,7 @@ public class Bid {
 
     @Override
     public String toString() {
-        return "Bid [id=" + id + ", auctionId=" + auctionId + ", clientId=" + clientId
+        return "Bid [id=" + id + ", auctionId=" + getAuctionId() + ", clientId=" + getClientId()
                 + ", amount=" + amount + ", timestamp=" + timestamp + "]";
     }
 }
