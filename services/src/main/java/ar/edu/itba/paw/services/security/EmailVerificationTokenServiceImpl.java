@@ -50,7 +50,7 @@ public class EmailVerificationTokenServiceImpl implements EmailVerificationToken
             return Optional.empty();
         }
 
-        final Long userId = maybeToken.get().getUserId();
+        final Long userId = maybeToken.get().getUser().getId();
         userDao.markVerified(userId);
         tokenDao.markAsUsed(token, TokenType.EMAIL_VERIFICATION);
 

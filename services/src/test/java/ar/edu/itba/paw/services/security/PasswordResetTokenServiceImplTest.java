@@ -50,13 +50,17 @@ class PasswordResetTokenServiceImplTest {
     @InjectMocks
     private PasswordResetTokenServiceImpl service;
 
+    private static User userRef(final long id) {
+        return new User(id, EMAIL, "pw", "N");
+    }
+
     private void stubCreateReturnsTokenString() {
         when(tokenDao.create(anyString(), eq(USER_ID), eq(TokenType.PASSWORD_RESET), any(LocalDateTime.class),
                 any(LocalDateTime.class))).thenAnswer(invocation -> {
             final String tokenStr = invocation.getArgument(0);
             final LocalDateTime createdAt = invocation.getArgument(3);
             final LocalDateTime expiresAt = invocation.getArgument(4);
-            return new Token(tokenStr, USER_ID, false, TokenType.PASSWORD_RESET, createdAt, expiresAt);
+            return new Token(tokenStr, userRef(USER_ID), false, TokenType.PASSWORD_RESET, createdAt, expiresAt);
         });
     }
 
@@ -100,7 +104,7 @@ class PasswordResetTokenServiceImplTest {
     void testIsPasswordResetTokenValidWhenTokenValidReturnsTrue() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
-        final Token t = new Token("r1", USER_ID, false, TokenType.PASSWORD_RESET, now, now.plusHours(1));
+        final Token t = new Token("r1", userRef(USER_ID), false, TokenType.PASSWORD_RESET, now, now.plusHours(1));
         when(tokenDao.findByTokenAndType("r1", TokenType.PASSWORD_RESET)).thenReturn(Optional.of(t));
 
         // 2. Ejercicio
@@ -114,7 +118,7 @@ class PasswordResetTokenServiceImplTest {
     void testIsPasswordResetTokenValidWhenExpiredReturnsFalse() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
-        final Token t = new Token("r2", USER_ID, false, TokenType.PASSWORD_RESET, now.minusDays(1), now.minusHours(1));
+        final Token t = new Token("r2", userRef(USER_ID), false, TokenType.PASSWORD_RESET, now.minusDays(1), now.minusHours(1));
         when(tokenDao.findByTokenAndType("r2", TokenType.PASSWORD_RESET)).thenReturn(Optional.of(t));
 
         // 2. Ejercicio
@@ -128,7 +132,7 @@ class PasswordResetTokenServiceImplTest {
     void testIsPasswordResetTokenValidWhenUsedReturnsFalse() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
-        final Token t = new Token("r3", USER_ID, true, TokenType.PASSWORD_RESET, now, now.plusHours(1));
+        final Token t = new Token("r3", userRef(USER_ID), true, TokenType.PASSWORD_RESET, now, now.plusHours(1));
         when(tokenDao.findByTokenAndType("r3", TokenType.PASSWORD_RESET)).thenReturn(Optional.of(t));
 
         // 2. Ejercicio
@@ -142,7 +146,7 @@ class PasswordResetTokenServiceImplTest {
     void testResetPasswordWhenTokenValidEncodesPasswordAndMarksTokenUsed() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
-        final Token resetToken = new Token("ok", USER_ID, false, TokenType.PASSWORD_RESET, now, now.plusHours(1));
+        final Token resetToken = new Token("ok", userRef(USER_ID), false, TokenType.PASSWORD_RESET, now, now.plusHours(1));
         when(tokenDao.findByTokenAndType("ok", TokenType.PASSWORD_RESET)).thenReturn(Optional.of(resetToken));
         when(userDao.findById(USER_ID)).thenReturn(Optional.of(new User(USER_ID, EMAIL, "old", "N")));
         when(passwordEncoder.encode("new-secret")).thenReturn("ENC");
@@ -185,7 +189,7 @@ class PasswordResetTokenServiceImplTest {
     void testResetPasswordWhenTokenExpiredThrowsIllegalStateException() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
-        final Token expired = new Token("exp", USER_ID, false, TokenType.PASSWORD_RESET, now.minusDays(1),
+        final Token expired = new Token("exp", userRef(USER_ID), false, TokenType.PASSWORD_RESET, now.minusDays(1),
                 now.minusMinutes(1));
         when(tokenDao.findByTokenAndType("exp", TokenType.PASSWORD_RESET)).thenReturn(Optional.of(expired));
 
@@ -201,7 +205,7 @@ class PasswordResetTokenServiceImplTest {
     void testGetEmailByTokenWhenTokenValidReturnsEmail() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
-        final Token t = new Token("g1", USER_ID, false, TokenType.PASSWORD_RESET, now, now.plusHours(1));
+        final Token t = new Token("g1", userRef(USER_ID), false, TokenType.PASSWORD_RESET, now, now.plusHours(1));
         when(tokenDao.findByTokenAndType("g1", TokenType.PASSWORD_RESET)).thenReturn(Optional.of(t));
         when(userDao.findById(USER_ID)).thenReturn(Optional.of(new User(USER_ID, EMAIL, "p", "N")));
 

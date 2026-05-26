@@ -71,6 +71,7 @@ public class TokenJpaDaoTest {
         assertNotNull(token);
         assertEquals("token123", token.getToken());
         assertEquals(userId, token.getUserId());
+        assertEquals(userId, token.getUser().getId());
         assertEquals(TokenType.EMAIL_VERIFICATION, token.getType());
         assertFalse(token.isUsed());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "tokens"));
@@ -88,6 +89,7 @@ public class TokenJpaDaoTest {
         // 3. Asserts
         assertTrue(found.isPresent());
         assertEquals(userId, found.get().getUserId());
+        assertEquals(userId, found.get().getUser().getId());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "tokens"));
     }
 

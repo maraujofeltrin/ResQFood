@@ -65,12 +65,12 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
                     return new IllegalStateException("Password reset failed");
                 });
         if (!isValid(resetToken)) {
-            LOGGER.warn("Password reset failed: invalid or expired token userId={}", resetToken.getUserId());
+            LOGGER.warn("Password reset failed: invalid or expired token userId={}", resetToken.getUser().getId());
             throw new IllegalStateException("Password reset failed");
         }
-        final User user = userDao.findById(resetToken.getUserId())
+        final User user = userDao.findById(resetToken.getUser().getId())
                 .orElseThrow(() -> {
-                    LOGGER.warn("Password reset failed: user not found userId={}", resetToken.getUserId());
+                    LOGGER.warn("Password reset failed: user not found userId={}", resetToken.getUser().getId());
                     return new IllegalStateException("Password reset failed");
                 });
         final String encodedPassword = passwordEncoder.encode(rawPassword);
@@ -81,7 +81,7 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
     @Override
     public Optional<String> getEmailByToken(final String token) {
         return tokenDao.findByTokenAndType(token, TokenType.PASSWORD_RESET)
-                .flatMap(t -> userDao.findById(t.getUserId()))
+                .flatMap(t -> userDao.findById(t.getUser().getId()))
                 .map(User::getEmail);
     }
 

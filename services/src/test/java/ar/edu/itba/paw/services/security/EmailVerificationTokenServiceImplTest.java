@@ -46,13 +46,17 @@ class EmailVerificationTokenServiceImplTest {
     @InjectMocks
     private EmailVerificationTokenServiceImpl service;
 
+    private static User userRef(final long id) {
+        return new User(id, EMAIL, "pw", "N");
+    }
+
     private void stubCreateReturnsTokenString() {
         when(tokenDao.create(anyString(), eq(USER_ID), eq(TokenType.EMAIL_VERIFICATION), any(LocalDateTime.class),
                 any(LocalDateTime.class))).thenAnswer(invocation -> {
             final String tokenStr = invocation.getArgument(0);
             final LocalDateTime createdAt = invocation.getArgument(3);
             final LocalDateTime expiresAt = invocation.getArgument(4);
-            return new Token(tokenStr, USER_ID, false, TokenType.EMAIL_VERIFICATION, createdAt, expiresAt);
+            return new Token(tokenStr, userRef(USER_ID), false, TokenType.EMAIL_VERIFICATION, createdAt, expiresAt);
         });
     }
 
@@ -80,7 +84,7 @@ class EmailVerificationTokenServiceImplTest {
     void testVerifyEmailAndGetUserWhenTokenValidMarksUserAndTokenReturnsUser() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
-        final Token stored = new Token("tok", USER_ID, false, TokenType.EMAIL_VERIFICATION, now, now.plusHours(24));
+        final Token stored = new Token("tok", userRef(USER_ID), false, TokenType.EMAIL_VERIFICATION, now, now.plusHours(24));
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(stored));
         final User verifiedReturned = new User(USER_ID, EMAIL, "pw", "N", null, User.Role.CLIENT, true, LOCALE);
         when(userDao.findById(USER_ID)).thenReturn(Optional.of(verifiedReturned));
@@ -121,7 +125,7 @@ class EmailVerificationTokenServiceImplTest {
     void testVerifyEmailAndGetUserWhenTokenUsedReturnsEmpty() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
-        final Token used = new Token("tok", USER_ID, true, TokenType.EMAIL_VERIFICATION, now, now.plusHours(1));
+        final Token used = new Token("tok", userRef(USER_ID), true, TokenType.EMAIL_VERIFICATION, now, now.plusHours(1));
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(used));
 
         // 2. Ejercicio
@@ -135,7 +139,7 @@ class EmailVerificationTokenServiceImplTest {
     void testVerifyEmailAndGetUserWhenTokenExpiredReturnsEmpty() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
-        final Token expired = new Token("tok", USER_ID, false, TokenType.EMAIL_VERIFICATION, now.minusDays(2),
+        final Token expired = new Token("tok", userRef(USER_ID), false, TokenType.EMAIL_VERIFICATION, now.minusDays(2),
                 now.minusHours(1));
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(expired));
 
@@ -150,7 +154,7 @@ class EmailVerificationTokenServiceImplTest {
     void testVerifyEmailWhenTokenValidReturnsTrue() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
-        final Token stored = new Token("tok", USER_ID, false, TokenType.EMAIL_VERIFICATION, now, now.plusHours(1));
+        final Token stored = new Token("tok", userRef(USER_ID), false, TokenType.EMAIL_VERIFICATION, now, now.plusHours(1));
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(stored));
         when(userDao.findById(USER_ID)).thenReturn(Optional.of(new User(USER_ID, EMAIL, "p", "N")));
         doAnswer(invocation -> null).when(userDao).markVerified(USER_ID);

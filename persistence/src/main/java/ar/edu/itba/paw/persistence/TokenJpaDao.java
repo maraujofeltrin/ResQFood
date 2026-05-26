@@ -2,6 +2,7 @@ package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.security.Token;
 import ar.edu.itba.paw.models.security.TokenType;
+import ar.edu.itba.paw.models.user.User;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
@@ -19,7 +20,8 @@ public class TokenJpaDao implements TokenDao {
 
     @Override
     public Token create(final String token, final Long userId, final TokenType type, final LocalDateTime createdAt, final LocalDateTime expiresAt) {
-        final Token newToken = new Token(token, userId, false, type, createdAt, expiresAt);
+        final User user = em.getReference(User.class, userId);
+        final Token newToken = new Token(token, user, false, type, createdAt, expiresAt);
         em.persist(newToken);
         return newToken;
     }
