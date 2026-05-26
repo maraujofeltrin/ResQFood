@@ -232,7 +232,7 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         try {
-            final Pack pack = packDao.findById(reservation.getPackId()).orElse(null);
+            final Pack pack = packDao.findById(reservation.getPack().getId()).orElse(null);
             if (pack != null) {
                 final Long commerceId = pack.getCommerceId();
                 if (commerceId != null) {
@@ -251,7 +251,7 @@ public class ReservationServiceImpl implements ReservationService {
                                 }
                             } catch (final Exception e) {
                                 LOGGER.debug("computePickupDateStr: closing time parse fallback reservationId={} packId={}",
-                                        reservation.getId(), reservation.getPackId(), e);
+                                        reservation.getId(), reservation.getPack().getId(), e);
                             }
                         }
                     }
@@ -326,19 +326,19 @@ public class ReservationServiceImpl implements ReservationService {
             return ReservationServiceResult.failure(ReservationRejectionError.INVALID_STATUS);
         }
 
-        if (reservation.getPackId() == null) {
+        if (reservation.getPack() == null) {
             LOGGER.warn("Failed to reject reservation: reservationId={}, error={}", reservationId, ReservationRejectionError.PACK_NOT_FOUND);
             return ReservationServiceResult.failure(ReservationRejectionError.PACK_NOT_FOUND);
         }
 
         final int quantity = reservation.getQuantity() == null ? 1 : reservation.getQuantity();
-        if (!packDao.incrementStock(reservation.getPackId(), quantity)) {
+        if (!packDao.incrementStock(reservation.getPack().getId(), quantity)) {
             LOGGER.warn("Failed to reject reservation: reservationId={}, error={}", reservationId, ReservationRejectionError.STOCK_RESTORE_FAILED);
             return ReservationServiceResult.failure(ReservationRejectionError.STOCK_RESTORE_FAILED);
         }
 
         final Reservation canceledReservation = reservationDao.updateStatus(reservation.getId(), Reservation.Status.CANCELED);
-        final User clientUser = userService.findById(canceledReservation.getCustomerId())
+        final User clientUser = userService.findById(canceledReservation.getCustomer().getUserId())
                 .orElseThrow(() -> new IllegalStateException("Customer user not found for reservation id: "
                         + canceledReservation.getId()));
         final String clientEmail = clientUser.getEmail();
@@ -383,11 +383,11 @@ public class ReservationServiceImpl implements ReservationService {
 
     private Optional<ReservationRejectionError> resolveOwnershipError(final Reservation reservation,
             final Long commerceUserId) {
-        if (reservation.getPackId() == null) {
+        if (reservation.getPack() == null) {
             return Optional.of(ReservationRejectionError.PACK_NOT_FOUND);
         }
 
-        final boolean isOwned = packDao.findById(reservation.getPackId())
+        final boolean isOwned = packDao.findById(reservation.getPack().getId())
                 .map(pack -> commerceUserId.equals(pack.getCommerceId()))
                 .orElse(false);
 
@@ -451,7 +451,7 @@ public class ReservationServiceImpl implements ReservationService {
             return ReservationServiceResult.failure(PickupByCodeError.NOT_FOUND);
         }
 
-        final Long packId = reservation.getPackId();
+        final Long packId = reservation.getPack().getId();
         if (packId == null) {
             return ReservationServiceResult.failure(PickupByCodeError.NOT_FOUND);
         }

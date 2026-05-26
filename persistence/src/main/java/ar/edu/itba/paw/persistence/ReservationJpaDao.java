@@ -1,6 +1,8 @@
 package ar.edu.itba.paw.persistence;
 
+import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
+import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.persistence.util.JpqlQuerySupport;
 import ar.edu.itba.paw.persistence.util.LikePatternSupport;
 import ar.edu.itba.paw.persistence.util.Pagination;
@@ -27,7 +29,9 @@ public class ReservationJpaDao implements ReservationDao {
     public Reservation createReservation(final Long customerId, final Long packId, final LocalDateTime reservationDate,
             final Double finalPrice, final Reservation.Status status, final String pickupCode,
             final LocalDateTime pickupConfirmationDate, final Integer quantity, final String pickupWindow) {
-        final Reservation r = new Reservation(null, customerId, packId, reservationDate, finalPrice, status, pickupCode, pickupConfirmationDate, quantity == null ? 1 : quantity, pickupWindow);
+        final Client customer = em.getReference(Client.class, customerId);
+        final Pack pack = em.getReference(Pack.class, packId);
+        final Reservation r = new Reservation(null, customer, pack, reservationDate, finalPrice, status, pickupCode, pickupConfirmationDate, quantity == null ? 1 : quantity, pickupWindow);
         em.persist(r);
         return r;
     }
@@ -39,7 +43,7 @@ public class ReservationJpaDao implements ReservationDao {
 
     @Override
     public List<Reservation> findByCustomerId(final Long customerId) {
-        return em.createQuery("FROM Reservation r WHERE r.customerId = :customerId", Reservation.class)
+        return em.createQuery("FROM Reservation r WHERE r.customer.userId = :customerId", Reservation.class)
                 .setParameter("customerId", customerId)
                 .getResultList();
     }
@@ -53,7 +57,7 @@ public class ReservationJpaDao implements ReservationDao {
 
     @Override
     public List<Reservation> findByPackId(final Long packId) {
-        return em.createQuery("FROM Reservation r WHERE r.packId = :packId", Reservation.class)
+        return em.createQuery("FROM Reservation r WHERE r.pack.id = :packId", Reservation.class)
                 .setParameter("packId", packId)
                 .getResultList();
     }
@@ -118,7 +122,7 @@ public class ReservationJpaDao implements ReservationDao {
             params.put("commerceId", commerceId);
         }
         if (customerId != null) {
-            jpql.append("AND r.customerId = :customerId ");
+            jpql.append("AND r.customer.userId = :customerId ");
             params.put("customerId", customerId);
         }
         if (status != null) {
@@ -136,7 +140,7 @@ public class ReservationJpaDao implements ReservationDao {
             params.put("search", pattern);
 
             if (commerceId != null) {
-                jpql.append(" OR EXISTS (SELECT 1 FROM Client cl WHERE cl.userId = r.customerId AND ");
+                jpql.append(" OR EXISTS (SELECT 1 FROM Client cl WHERE cl.userId = r.customer.userId AND ");
                 LikePatternSupport.appendEscapedLike(jpql, "CONCAT(cl.name, ' ', cl.lastName)", ":search");
                 jpql.append(") ");
             } else if (customerId != null) {
@@ -178,7 +182,7 @@ public class ReservationJpaDao implements ReservationDao {
 
     @Override
     public boolean hasActiveReservation(final Long packId, final Long customerId) {
-        final Number count = em.createQuery("SELECT COUNT(r.id) FROM Reservation r WHERE r.packId = :packId AND r.customerId = :customerId AND r.status = :status", Number.class)
+        final Number count = em.createQuery("SELECT COUNT(r.id) FROM Reservation r WHERE r.pack.id = :packId AND r.customer.userId = :customerId AND r.status = :status", Number.class)
                 .setParameter("packId", packId)
                 .setParameter("customerId", customerId)
                 .setParameter("status", Reservation.Status.RESERVED)
@@ -188,7 +192,7 @@ public class ReservationJpaDao implements ReservationDao {
 
     @Override
     public boolean hasPaidReservationWithCommerce(final Long customerId, final Long commerceId) {
-        final Number count = em.createQuery("SELECT COUNT(r.id) FROM Reservation r JOIN r.pack p WHERE r.customerId = :customerId AND p.commerceId = :commerceId AND r.status = :status", Number.class)
+        final Number count = em.createQuery("SELECT COUNT(r.id) FROM Reservation r JOIN r.pack p WHERE r.customer.userId = :customerId AND p.commerceId = :commerceId AND r.status = :status", Number.class)
                 .setParameter("customerId", customerId)
                 .setParameter("commerceId", commerceId)
                 .setParameter("status", Reservation.Status.PAID)
@@ -242,7 +246,7 @@ public class ReservationJpaDao implements ReservationDao {
     @Override
     public Optional<Long> findBestSellingPackId(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to) {
-        return em.createQuery("SELECT r.packId FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY r.packId ORDER BY COUNT(r.id) DESC", Long.class)
+        return em.createQuery("SELECT r.pack.id FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY r.pack.id ORDER BY COUNT(r.id) DESC", Long.class)
             .setParameter("commerceId", commerceId)
             .setParameter("status", Reservation.Status.PAID)
             .setParameter("start", from)
@@ -292,7 +296,7 @@ public class ReservationJpaDao implements ReservationDao {
     @Override
     public long countUniqueClientsInPeriod(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to) {
-        final Number count = em.createQuery("SELECT COUNT(DISTINCT r.customerId) FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end", Number.class)
+        final Number count = em.createQuery("SELECT COUNT(DISTINCT r.customer.userId) FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end", Number.class)
                 .setParameter("commerceId", commerceId)
                 .setParameter("status", Reservation.Status.PAID)
                 .setParameter("start", from)
@@ -304,7 +308,7 @@ public class ReservationJpaDao implements ReservationDao {
     @Override
     public List<Object[]> findTopSellingPacks(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to, final int limit) {
-        return em.createQuery("SELECT r.packId, SUM(r.quantity) as unitsSold FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY r.packId ORDER BY unitsSold DESC", Object[].class)
+        return em.createQuery("SELECT r.pack.id, SUM(r.quantity) as unitsSold FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY r.pack.id ORDER BY unitsSold DESC", Object[].class)
                 .setParameter("commerceId", commerceId)
                 .setParameter("status", Reservation.Status.PAID)
                 .setParameter("start", from)
@@ -316,7 +320,7 @@ public class ReservationJpaDao implements ReservationDao {
     @Override
     public List<Object[]> findTopClientsByPaidReservations(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to, final int limit) {
-        return em.createQuery("SELECT r.customerId, COUNT(r.id) as reservationCount FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY r.customerId ORDER BY reservationCount DESC", Object[].class)
+        return em.createQuery("SELECT r.customer.userId, COUNT(r.id) as reservationCount FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY r.customer.userId ORDER BY reservationCount DESC", Object[].class)
                 .setParameter("commerceId", commerceId)
                 .setParameter("status", Reservation.Status.PAID)
                 .setParameter("start", from)
@@ -328,7 +332,7 @@ public class ReservationJpaDao implements ReservationDao {
     @Override
     public long countNewClientsInPeriod(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to) {
-        final Number count = em.createQuery("SELECT COUNT(DISTINCT r.customerId) FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end AND NOT EXISTS (SELECT 1 FROM Reservation r2 WHERE r2.customerId = r.customerId AND r2.pickupConfirmationDate < :start)", Number.class)
+        final Number count = em.createQuery("SELECT COUNT(DISTINCT r.customer.userId) FROM Reservation r JOIN r.pack p WHERE p.commerceId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end AND NOT EXISTS (SELECT 1 FROM Reservation r2 WHERE r2.customer.userId = r.customer.userId AND r2.pickupConfirmationDate < :start)", Number.class)
                 .setParameter("commerceId", commerceId)
                 .setParameter("status", Reservation.Status.PAID)
                 .setParameter("start", from)

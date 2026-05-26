@@ -66,8 +66,20 @@ class ReservationServiceImplTest {
 
     private ReservationServiceImpl reservationService;
 
+    private static Client clientRef(final long id) {
+        return new Client(id, "N", "L", true);
+    }
+
+    private static Pack packRef(final long id) {
+        return new Pack(id, 1L, "t", "d", 1.0, 1.0, 1, true, Collections.emptyList());
+    }
+
+    private static Pack packRef(final long id, final long commerceId) {
+        return new Pack(id, commerceId, "t", "d", 1.0, 1.0, 1, true, Collections.emptyList());
+    }
+
     private static Reservation reservationRef(final long id) {
-        return new Reservation(id, 1L, 1L, null, null, null, null, null, 1, null);
+        return new Reservation(id, clientRef(1L), packRef(1L), null, null, null, null, null, 1, null);
     }
 
     @BeforeEach
@@ -100,7 +112,7 @@ class ReservationServiceImplTest {
         lenient().when(auctionDao.findByPackId(anyLong())).thenReturn(Optional.empty());
         when(reservationDao.createReservation(eq(1L), eq(packId), any(LocalDateTime.class), eq(5.0),
                 eq(Reservation.Status.RESERVED), anyString(), isNull(), eq(1), eq("pw")))
-                .thenAnswer(inv -> new Reservation(1L, 1L, packId, inv.getArgument(2), 5.0, Reservation.Status.RESERVED,
+                .thenAnswer(inv -> new Reservation(1L, clientRef(1L), packRef(packId), inv.getArgument(2), 5.0, Reservation.Status.RESERVED,
                         inv.getArgument(5), null, 1, "pw"));
         when(packDao.findById(packId)).thenReturn(Optional.of(pack));
         when(userService.findById(commerceUserId)).thenReturn(Optional.of(commerceUser));
@@ -153,7 +165,7 @@ class ReservationServiceImplTest {
         lenient().when(auctionDao.findByPackId(anyLong())).thenReturn(Optional.empty());
         when(reservationDao.createReservation(eq(7L), eq(packId), any(LocalDateTime.class), eq(7.5),
                 eq(Reservation.Status.RESERVED), anyString(), isNull(), eq(1), isNull()))
-                .thenAnswer(inv -> new Reservation(1L, 7L, packId, inv.getArgument(2), 7.5, Reservation.Status.RESERVED,
+                .thenAnswer(inv -> new Reservation(1L, clientRef(7L), packRef(packId), inv.getArgument(2), 7.5, Reservation.Status.RESERVED,
                         inv.getArgument(5), null, 1, null));
         when(packDao.findById(packId)).thenReturn(Optional.of(pack));
         when(userService.findById(commerceUserId)).thenReturn(Optional.of(commerceUser));
@@ -220,9 +232,9 @@ class ReservationServiceImplTest {
     void testFindByCustomerIdWhenDataExistsReturnsOnlyThatCustomer() {
         // 1. Setup
         final List<Reservation> forCustomer = new ArrayList<>();
-        forCustomer.add(new Reservation(1L, 1L, 10L, LocalDateTime.now(), 10.0, Reservation.Status.RESERVED, "A",
+        forCustomer.add(new Reservation(1L, clientRef(1L), packRef(10L), LocalDateTime.now(), 10.0, Reservation.Status.RESERVED, "A",
                 null, 1, null));
-        forCustomer.add(new Reservation(3L, 1L, 12L, LocalDateTime.now(), 30.0, Reservation.Status.PAID, "C", null, 3,
+        forCustomer.add(new Reservation(3L, clientRef(1L), packRef(12L), LocalDateTime.now(), 30.0, Reservation.Status.PAID, "C", null, 3,
                 null));
         when(reservationDao.findByCustomerId(1L)).thenReturn(forCustomer);
 
@@ -238,9 +250,9 @@ class ReservationServiceImplTest {
     void testFindByCommerceIdWhenDataExistsReturnsMatchingPackIds() {
         // 1. Setup
         final List<Reservation> forCommerce = new ArrayList<>();
-        forCommerce.add(new Reservation(1L, 1L, 100L, LocalDateTime.now(), 10.0, Reservation.Status.RESERVED, "D", null,
+        forCommerce.add(new Reservation(1L, clientRef(1L), packRef(100L), LocalDateTime.now(), 10.0, Reservation.Status.RESERVED, "D", null,
                 1, null));
-        forCommerce.add(new Reservation(3L, 3L, 100L, LocalDateTime.now(), 30.0, Reservation.Status.PAID, "F", null, 1,
+        forCommerce.add(new Reservation(3L, clientRef(3L), packRef(100L), LocalDateTime.now(), 30.0, Reservation.Status.PAID, "F", null, 1,
                 null));
         when(reservationDao.findByCommerceId(100L)).thenReturn(forCommerce);
 
@@ -256,7 +268,7 @@ class ReservationServiceImplTest {
     void testValidateReservationBelongsToCommerceWhenOwnerMatchesReservationStillPresent() {
         // 1. Setup
         final long reservationId = 5L;
-        final Reservation reservation = new Reservation(reservationId, 1L, 10L, LocalDateTime.now(), 10.0,
+        final Reservation reservation = new Reservation(reservationId, clientRef(1L), packRef(10L), LocalDateTime.now(), 10.0,
                 Reservation.Status.RESERVED, "GGGGG", null, 1, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
         when(packDao.findById(10L)).thenReturn(Optional.of(
@@ -273,7 +285,7 @@ class ReservationServiceImplTest {
     void testValidateReservationBelongsToCommerceWhenCommerceMismatchThrows() {
         // 1. Setup
         final long reservationId = 5L;
-        final Reservation reservation = new Reservation(reservationId, 1L, 10L, LocalDateTime.now(), 10.0,
+        final Reservation reservation = new Reservation(reservationId, clientRef(1L), packRef(10L), LocalDateTime.now(), 10.0,
                 Reservation.Status.RESERVED, "GGGGG", null, 1, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
         when(packDao.findById(10L)).thenReturn(Optional.of(
@@ -305,7 +317,7 @@ class ReservationServiceImplTest {
     void testValidateReservationBelongsToCommerceWhenCommerceIdNullThrows() {
         // 1. Setup
         final long reservationId = 5L;
-        final Reservation reservation = new Reservation(reservationId, 1L, 10L, LocalDateTime.now(), 10.0,
+        final Reservation reservation = new Reservation(reservationId, clientRef(1L), packRef(10L), LocalDateTime.now(), 10.0,
                 Reservation.Status.RESERVED, "GGGGG", null, 1, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
 
@@ -326,9 +338,9 @@ class ReservationServiceImplTest {
         final long commerceId = 999L;
         final long reservationId = 42L;
         final LocalDateTime resDate = LocalDateTime.now();
-        final Reservation reserved = new Reservation(reservationId, 101L, packId, resDate, 25.0,
+        final Reservation reserved = new Reservation(reservationId, clientRef(101L), packRef(packId), resDate, 25.0,
                 Reservation.Status.RESERVED, "HHHHH", null, 3, null);
-        final Reservation canceled = new Reservation(reservationId, 101L, packId, resDate, 25.0,
+        final Reservation canceled = new Reservation(reservationId, clientRef(101L), packRef(packId), resDate, 25.0,
                 Reservation.Status.CANCELED, "HHHHH", null, 3, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reserved));
         when(packDao.findById(packId)).thenReturn(Optional.of(
@@ -359,7 +371,7 @@ class ReservationServiceImplTest {
         // 1. Setup
         final long packId = 700L;
         final long reservationId = 43L;
-        final Reservation reserved = new Reservation(reservationId, 103L, packId, LocalDateTime.now(), 25.0,
+        final Reservation reserved = new Reservation(reservationId, clientRef(103L), packRef(packId), LocalDateTime.now(), 25.0,
                 Reservation.Status.RESERVED, "JJJJJ", null, 1, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reserved));
         when(packDao.findById(packId)).thenReturn(Optional.of(
@@ -379,7 +391,7 @@ class ReservationServiceImplTest {
         final long packId = 710L;
         final long commerceId = 711L;
         final long reservationId = 44L;
-        final Reservation reservation = new Reservation(reservationId, 104L, packId, LocalDateTime.now(), 25.0,
+        final Reservation reservation = new Reservation(reservationId, clientRef(104L), packRef(packId), LocalDateTime.now(), 25.0,
                 Reservation.Status.CANCELED, "KKKKK", null, 1, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
         when(packDao.findById(packId)).thenReturn(Optional.of(
@@ -399,7 +411,7 @@ class ReservationServiceImplTest {
         final long packId = 600L;
         final long commerceId = 111L;
         final long reservationId = 45L;
-        final Reservation reservation = new Reservation(reservationId, 102L, packId, LocalDateTime.now(), 25.0,
+        final Reservation reservation = new Reservation(reservationId, clientRef(102L), packRef(packId), LocalDateTime.now(), 25.0,
                 Reservation.Status.PAID, "IIIII", null, 1, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
         when(packDao.findById(packId)).thenReturn(Optional.of(

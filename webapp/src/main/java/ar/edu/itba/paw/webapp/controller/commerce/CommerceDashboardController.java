@@ -112,7 +112,7 @@ public class CommerceDashboardController {
                 id, null, null, null, false, 1, DASHBOARD_RECENT_LIMIT);
         final Locale locale = LocaleContextHolder.getLocale();
         final Map<Long, Client> resClients = prefetchClients(recentReservations.stream()
-                .map(Reservation::getCustomerId).filter(java.util.Objects::nonNull)
+                .map(r -> r.getCustomer().getUserId()).filter(java.util.Objects::nonNull)
                 .distinct().collect(Collectors.toList()));
         final List<ReservationHistoryViewHelper.ReservationHistoryRow> recentHistoryItems =
                 ReservationHistoryViewHelper.buildRows(recentReservations, resClients, messageSource, locale);

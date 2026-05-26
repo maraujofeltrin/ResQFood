@@ -100,12 +100,12 @@ public class ReservationListModelBuilder {
 
         for (final Reservation reservation : reservations) {
             populateFormattedDate(formattedDates, reservation);
-            if (reservation.getPackId() != null) {
-                packService.findById(reservation.getPackId()).ifPresent(
+            if (reservation.getPack() != null) {
+                packService.findById(reservation.getPack().getId()).ifPresent(
                         pack -> packsByReservationId.put(reservation.getId(), pack));
             }
-            if (reservation.getCustomerId() != null) {
-                final String clientName = clientService.findByUserId(reservation.getCustomerId())
+            if (reservation.getCustomer() != null) {
+                final String clientName = clientService.findByUserId(reservation.getCustomer().getUserId())
                         .map(Client::getFullName)
                         .orElse("-");
                 clientNamesByReservationId.put(reservation.getId(), clientName);
@@ -269,8 +269,8 @@ public class ReservationListModelBuilder {
 
         for (final Reservation reservation : reservations) {
             populateFormattedDate(formattedDates, reservation);
-            if (reservation.getPackId() != null) {
-                final Optional<Pack> packOpt = packService.findById(reservation.getPackId());
+            if (reservation.getPack() != null) {
+                final Optional<Pack> packOpt = packService.findById(reservation.getPack().getId());
                 if (packOpt.isPresent()) {
                     final Pack pack = packOpt.get();
                     packsByReservationId.put(reservation.getId(), pack);
@@ -321,8 +321,8 @@ public class ReservationListModelBuilder {
     private Set<Long> resolveAuctionReservationIds(final List<Reservation> reservations) {
         final Set<Long> distinctPackIds = new HashSet<>();
         for (final Reservation r : reservations) {
-            if (r.getPackId() != null) {
-                distinctPackIds.add(r.getPackId());
+            if (r.getPack() != null) {
+                distinctPackIds.add(r.getPack().getId());
             }
         }
         final Set<Long> auctionPackIds = new HashSet<>();
@@ -331,7 +331,7 @@ public class ReservationListModelBuilder {
         }
         final Set<Long> ids = new HashSet<>();
         for (final Reservation r : reservations) {
-            if (r.getPackId() != null && auctionPackIds.contains(r.getPackId())) {
+            if (r.getPack() != null && auctionPackIds.contains(r.getPack().getId())) {
                 ids.add(r.getId());
             }
         }

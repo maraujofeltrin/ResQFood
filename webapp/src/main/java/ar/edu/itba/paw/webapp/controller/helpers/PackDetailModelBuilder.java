@@ -162,7 +162,7 @@ public class PackDetailModelBuilder {
         if (isOwner) {
             final List<Reservation> reservations = reservationService.findByPackId(pack.getId());
             final Map<Long, Client> resClients = prefetchClients(reservations.stream()
-                    .map(Reservation::getCustomerId).filter(java.util.Objects::nonNull)
+                    .map(r -> r.getCustomer().getUserId()).filter(java.util.Objects::nonNull)
                     .distinct().collect(java.util.stream.Collectors.toList()));
             final List<ReservationHistoryViewHelper.ReservationHistoryRow> reservationHistoryItems = 
                 ReservationHistoryViewHelper.buildRows(reservations, resClients, messageSource, locale);

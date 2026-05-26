@@ -3,7 +3,18 @@ package ar.edu.itba.paw.models.reservation;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.Client;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 import java.time.LocalDateTime;
 
 @Entity
@@ -20,18 +31,12 @@ public class Reservation {
     @SequenceGenerator(sequenceName = "reservations_id_seq", name = "reservations_id_seq", allocationSize = 1)
     private Long id;
 
-    @Column(name = "customer_id")
-    private Long customerId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id", insertable = false, updatable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "customer_id")
     private Client customer;
 
-    @Column(name = "pack_id")
-    private Long packId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pack_id", insertable = false, updatable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "pack_id")
     private Pack pack;
 
     @Column(name = "reservation_date")
@@ -60,12 +65,12 @@ public class Reservation {
         // Just for Hibernate
     }
 
-    public Reservation(Long id, Long customerId, Long packId, LocalDateTime reservationDate, Double finalPrice,
-            Status status, String pickupCode, LocalDateTime pickupConfirmationDate, Integer quantity,
-            String pickupWindow) {
+    public Reservation(final Long id, final Client customer, final Pack pack, final LocalDateTime reservationDate,
+            final Double finalPrice, final Status status, final String pickupCode,
+            final LocalDateTime pickupConfirmationDate, final Integer quantity, final String pickupWindow) {
         this.id = id;
-        this.customerId = customerId;
-        this.packId = packId;
+        this.customer = customer;
+        this.pack = pack;
         this.reservationDate = reservationDate;
         this.finalPrice = finalPrice;
         this.status = status;
@@ -79,20 +84,20 @@ public class Reservation {
         return id;
     }
 
-    public Long getCustomerId() {
-        return customerId;
-    }
-
     public Client getCustomer() {
         return customer;
     }
 
-    public Long getPackId() {
-        return packId;
-    }
-
     public Pack getPack() {
         return pack;
+    }
+
+    public Long getCustomerId() {
+        return customer.getUserId();
+    }
+
+    public Long getPackId() {
+        return pack.getId();
     }
 
     public LocalDateTime getReservationDate() {
@@ -125,9 +130,9 @@ public class Reservation {
 
     @Override
     public String toString() {
-        return "Reservation [id=" + id + ", customerId=" + customerId + ", packId=" + packId + ", reservationDate="
-                + reservationDate + ", finalPrice=" + finalPrice + ", status=" + status + ", pickupCode=" + pickupCode
-                + ", pickupConfirmationDate=" + pickupConfirmationDate + ", quantity=" + quantity + ", pickupWindow="
-                + pickupWindow + "]";
+        return "Reservation [id=" + id + ", customerId=" + getCustomerId() + ", packId=" + getPackId()
+                + ", reservationDate=" + reservationDate + ", finalPrice=" + finalPrice + ", status=" + status
+                + ", pickupCode=" + pickupCode + ", pickupConfirmationDate=" + pickupConfirmationDate + ", quantity="
+                + quantity + ", pickupWindow=" + pickupWindow + "]";
     }
 }

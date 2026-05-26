@@ -134,10 +134,10 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
             return ReservationServiceResult.failure(ReservationTokenActionError.EXPIRED, reservation);
         }
 
-        if (reservation.getPackId() == null) {
+        if (reservation.getPack() == null) {
             return ReservationServiceResult.failure(ReservationTokenActionError.NOT_FOUND, reservation);
         }
-        final boolean isOwned = packDao.findById(reservation.getPackId())
+        final boolean isOwned = packDao.findById(reservation.getPack().getId())
                 .map(pack -> commerceUserId.equals(pack.getCommerceId()))
                 .orElse(false);
         if (!isOwned) {

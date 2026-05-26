@@ -75,7 +75,7 @@ public final class ReservationHistoryViewHelper {
         final List<ReservationHistoryRow> rows = new ArrayList<>();
         for (int i = 0; i < reservations.size(); i++) {
             final Reservation reservation = reservations.get(i);
-            final Client client = clientsByUserId.get(reservation.getCustomerId());
+            final Client client = clientsByUserId.get(reservation.getCustomer().getUserId());
             final String displayName = ViewFormatUtils.shortDisplayName(client, messageSource, locale);
             final String initials = ViewFormatUtils.initialsFor(client, messageSource, locale);
             final String amountDisplay = ViewFormatUtils.formatMoney(reservation.getFinalPrice());

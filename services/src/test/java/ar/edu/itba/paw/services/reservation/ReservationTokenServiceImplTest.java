@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.reservation;
 
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
@@ -40,8 +41,16 @@ class ReservationTokenServiceImplTest {
     @InjectMocks
     private ReservationTokenServiceImpl svc;
 
+    private static Client clientRef(final long id) {
+        return new Client(id, "N", "L", true);
+    }
+
+    private static Pack packRef(final long id) {
+        return new Pack(id, 1L, "t", "d", 1.0, 1.0, 1, true, Collections.emptyList());
+    }
+
     private static Reservation reservationRef(final long id) {
-        return new Reservation(id, 1L, 1L, null, null, null, null, null, 1, null);
+        return new Reservation(id, clientRef(1L), packRef(1L), null, null, null, null, null, 1, null);
     }
 
     @Test
@@ -61,7 +70,7 @@ class ReservationTokenServiceImplTest {
     void testValidateOnlyWhenTokenUsedReturnsAlreadyUsed() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-        final Reservation reservation = new Reservation(1L, 1L, 1L, now, 5.0, Reservation.Status.RESERVED, "c", null,
+        final Reservation reservation = new Reservation(1L, clientRef(1L), packRef(1L), now, 5.0, Reservation.Status.RESERVED, "c", null,
                 1, "pw");
         final ReservationToken usedToken = new ReservationToken("t1", reservationRef(1L), ReservationToken.Action.ACCEPT, true, now,
                 now.plusHours(1));
@@ -80,7 +89,7 @@ class ReservationTokenServiceImplTest {
     void testValidateOnlyWhenActionMismatchReturnsNotFound() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-        final Reservation reservation = new Reservation(1L, 1L, 1L, now, 5.0, Reservation.Status.RESERVED, "c", null,
+        final Reservation reservation = new Reservation(1L, clientRef(1L), packRef(1L), now, 5.0, Reservation.Status.RESERVED, "c", null,
                 1, "pw");
         final ReservationToken token = new ReservationToken("t2", reservationRef(1L), ReservationToken.Action.ACCEPT, false, now,
                 now.plusHours(1));
@@ -99,7 +108,7 @@ class ReservationTokenServiceImplTest {
     void testValidateOnlyWhenExpiredReturnsExpired() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-        final Reservation reservation = new Reservation(1L, 1L, 1L, now, 5.0, Reservation.Status.RESERVED, "c", null,
+        final Reservation reservation = new Reservation(1L, clientRef(1L), packRef(1L), now, 5.0, Reservation.Status.RESERVED, "c", null,
                 1, "pw");
         final ReservationToken token = new ReservationToken("t3", reservationRef(1L), ReservationToken.Action.ACCEPT, false, now,
                 now.minusMinutes(5));
@@ -136,9 +145,9 @@ class ReservationTokenServiceImplTest {
         final long packId = 800L;
         final long commerceId = 801L;
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-        final Reservation reserved = new Reservation(201L, 201L, packId, now, 25.0, Reservation.Status.RESERVED,
+        final Reservation reserved = new Reservation(201L, clientRef(201L), packRef(packId), now, 25.0, Reservation.Status.RESERVED,
                 "A1B2C", null, 1, null);
-        final Reservation paid = new Reservation(201L, 201L, packId, now, 25.0, Reservation.Status.PAID, "A1B2C",
+        final Reservation paid = new Reservation(201L, clientRef(201L), packRef(packId), now, 25.0, Reservation.Status.PAID, "A1B2C",
                 now, 1, null);
         final ReservationToken unused = new ReservationToken("accept-token", reserved, ReservationToken.Action.ACCEPT,
                 false, now, now.plusHours(1));
@@ -171,7 +180,7 @@ class ReservationTokenServiceImplTest {
         final long packId = 810L;
         final long commerceId = 811L;
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-        final Reservation reserved = new Reservation(202L, 202L, packId, now, 25.0, Reservation.Status.RESERVED,
+        final Reservation reserved = new Reservation(202L, clientRef(202L), packRef(packId), now, 25.0, Reservation.Status.RESERVED,
                 "Z9Y8X", null, 1, null);
         final ReservationToken token = new ReservationToken("bad-code-token", reserved, ReservationToken.Action.ACCEPT,
                 false, now, now.plusHours(1));
@@ -209,9 +218,9 @@ class ReservationTokenServiceImplTest {
         final long packId = 900L;
         final long commerceId = 901L;
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-        final Reservation reserved = new Reservation(301L, 301L, packId, now, 25.0, Reservation.Status.RESERVED,
+        final Reservation reserved = new Reservation(301L, clientRef(301L), packRef(packId), now, 25.0, Reservation.Status.RESERVED,
                 "R1R2R", null, 1, null);
-        final Reservation canceled = new Reservation(301L, 301L, packId, now, 25.0, Reservation.Status.CANCELED,
+        final Reservation canceled = new Reservation(301L, clientRef(301L), packRef(packId), now, 25.0, Reservation.Status.CANCELED,
                 "R1R2R", null, 1, null);
         final ReservationToken unused = new ReservationToken("reject-token", reserved, ReservationToken.Action.REJECT,
                 false, now, now.plusHours(1));
@@ -246,7 +255,7 @@ class ReservationTokenServiceImplTest {
         final long ownerCommerceId = 911L;
         final long otherCommerceId = 999L;
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-        final Reservation reserved = new Reservation(302L, 302L, packId, now, 25.0, Reservation.Status.RESERVED,
+        final Reservation reserved = new Reservation(302L, clientRef(302L), packRef(packId), now, 25.0, Reservation.Status.RESERVED,
                 "S1S2S", null, 1, null);
         final ReservationToken token = new ReservationToken("reject-wrong-commerce", reserved,
                 ReservationToken.Action.REJECT, false, now, now.plusHours(1));
@@ -271,7 +280,7 @@ class ReservationTokenServiceImplTest {
         final long packId = 920L;
         final long commerceId = 921L;
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-        final Reservation reserved = new Reservation(303L, 303L, packId, now, 25.0, Reservation.Status.RESERVED,
+        final Reservation reserved = new Reservation(303L, clientRef(303L), packRef(packId), now, 25.0, Reservation.Status.RESERVED,
                 "T1T2T", null, 1, null);
         final ReservationToken token = new ReservationToken("reject-expired", reserved, ReservationToken.Action.REJECT,
                 false, now, now.minusHours(1));
@@ -294,7 +303,7 @@ class ReservationTokenServiceImplTest {
         final long packId = 930L;
         final long commerceId = 931L;
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-        final Reservation canceledReservation = new Reservation(304L, 304L, packId, now, 25.0,
+        final Reservation canceledReservation = new Reservation(304L, clientRef(304L), packRef(packId), now, 25.0,
                 Reservation.Status.CANCELED, "U1U2U", null, 1, null);
         final ReservationToken token = new ReservationToken("reject-canceled", canceledReservation, ReservationToken.Action.REJECT,
                 false, now, now.plusHours(1));

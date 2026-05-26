@@ -92,7 +92,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         final String rejectUrl = normalizedBase + "/reservations/reject?token=" + rejectToken;
 
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
-        final String clientName = resolveClientName(reservation.getCustomerId(), locale);
+        final String clientName = resolveClientName(reservation.getCustomer().getUserId(), locale);
         final String subject = mailMessages.getMessage("mail.subject.reservationRequest",
                 new Object[]{reservation.getId(), clientName}, locale);
         final String html = buildCommerceHtml(reservation, packMailInfo.packLabel(), acceptUrl, rejectUrl,
@@ -105,7 +105,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     @Override
     public void sendReservationCodeToClient(final Reservation reservation, final String clientEmail,
             final String pickupDateStr, final Locale locale) {
-        if (!clientWantsNonCriticalEmails(reservation.getCustomerId())) {
+        if (!clientWantsNonCriticalEmails(reservation.getCustomer().getUserId())) {
             return;
         }
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
@@ -119,7 +119,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     @Override
     public void sendAuctionWinnerCodeToClient(final Reservation reservation, final String clientEmail,
             final String pickupDateStr, final Locale locale) {
-        if (!clientWantsNonCriticalEmails(reservation.getCustomerId())) {
+        if (!clientWantsNonCriticalEmails(reservation.getCustomer().getUserId())) {
             return;
         }
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
@@ -137,7 +137,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
         final String subject = mailMessages.getMessage("mail.subject.auctionWinnerCommerce",
                 new Object[]{packMailInfo.localName()}, locale);
-        final String winnerName = resolveClientName(reservation.getCustomerId(), locale);
+        final String winnerName = resolveClientName(reservation.getCustomer().getUserId(), locale);
         final String html = buildAuctionWinnerHtml(reservation, packMailInfo.packLabel(), pickupDateStr, true,
                 winnerName, locale);
         sendHtmlMail(commerceEmail, subject, html, "Could not send auction winner pickup code mail to commerce");
@@ -147,7 +147,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     @Override
     public void sendReservationRejectedToClient(final Reservation reservation, final String clientEmail,
             final Locale locale) {
-        if (!clientWantsNonCriticalEmails(reservation.getCustomerId())) {
+        if (!clientWantsNonCriticalEmails(reservation.getCustomer().getUserId())) {
             return;
         }
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
@@ -230,9 +230,9 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     }
 
     private PackMailInfo getPackMailInfo(final Reservation reservation, final Locale locale) {
-        final Pack pack = packDao.findById(reservation.getPackId()).orElse(null);
+        final Pack pack = packDao.findById(reservation.getPack().getId()).orElse(null);
         final String fallbackName = mailMessages.getMessage("mail.label.packFallback",
-                new Object[]{reservation.getPackId()}, locale);
+                new Object[]{reservation.getPack().getId()}, locale);
         final String localName = pack != null ? pack.getTitle() : fallbackName;
         final String packLabel = pack != null
                 ? (pack.getTitle() + " (#" + pack.getId() + ")")
