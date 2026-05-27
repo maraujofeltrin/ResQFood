@@ -51,36 +51,42 @@
                     </h2>
 
                     <c:choose>
-                        <c:when test="${activeAuctionsTotal == 0 && directPacksTotal == 0}">
+                        <c:when test="${totalOffers == 0}">
                             <paw:packEmptyState icon="inventory_2" title="${emptyAvailableTitle}" description="${emptyAvailableDesc}"/>
                         </c:when>
                         <c:otherwise>
-                            <div class="commerce-profile-offers-grid">
-                                <c:forEach var="auction" items="${activeAuctions}">
-                                    <paw:packCard
-                                        packId="${auction.pack.id}"
-                                        imageId="${auction.pack.imageId}"
-                                        title="${auction.pack.title}"
-                                        subtitle="${auction.pack.description}"
-                                        badgeText="${auctionBadgeText}"
-                                        rescueLabel="${auctionCurrentBidLabel}"
-                                        price="$${auction.effectivePrice}"
-                                        oldPrice="$${auction.pack.originalPrice}"
-                                        auction="${true}"
-                                    />
-                                </c:forEach>
-                                <c:forEach var="pack" items="${directPacks}">
-                                    <c:set var="packUnavailable" value="${pack.stock == null || pack.stock lt 1}"/>
-                                    <paw:packCard
-                                        packId="${pack.id}"
-                                        imageId="${pack.imageId}"
-                                        title="${pack.title}"
-                                        subtitle="${pack.description}"
-                                        price="$${pack.finalPrice}"
-                                        oldPrice="$${pack.originalPrice}"
-                                        unavailable="${packUnavailable}"
-                                    />
-                                </c:forEach>
+                            <div class="commerce-profile-offers-scroll">
+                                <div class="commerce-profile-offers-grid">
+                                    <c:forEach var="offer" items="${profileOffers}">
+                                        <c:choose>
+                                            <c:when test="${offer.auction != null}">
+                                                <paw:packCard
+                                                    packId="${offer.pack.id}"
+                                                    imageId="${offer.pack.imageId}"
+                                                    title="${offer.pack.title}"
+                                                    subtitle="${offer.pack.description}"
+                                                    badgeText="${auctionBadgeText}"
+                                                    rescueLabel="${auctionCurrentBidLabel}"
+                                                    price="$${offer.auction.effectivePrice}"
+                                                    oldPrice="$${offer.pack.originalPrice}"
+                                                    auction="${true}"
+                                                />
+                                            </c:when>
+                                            <c:otherwise>
+                                                <c:set var="packUnavailable" value="${offer.pack.stock == null || offer.pack.stock lt 1}"/>
+                                                <paw:packCard
+                                                    packId="${offer.pack.id}"
+                                                    imageId="${offer.pack.imageId}"
+                                                    title="${offer.pack.title}"
+                                                    subtitle="${offer.pack.description}"
+                                                    price="$${offer.pack.finalPrice}"
+                                                    oldPrice="$${offer.pack.originalPrice}"
+                                                    unavailable="${packUnavailable}"
+                                                />
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </c:forEach>
+                                </div>
                             </div>
                             <c:if test="${totalPages gt 1}">
                                 <div class="commerce-profile-offers-pagination">

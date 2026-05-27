@@ -16,11 +16,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -114,51 +118,101 @@ class CommerceServiceImplTest {
     void testGetPublicOffersWhenCommerceExistsDelegatesToPackAndAuctionServices() {
         // 1. Setup
         final long commerceUserId = 7L;
-        final Pack pack = new Pack(1L, commerceUserId, "Pack", "d", 10.0, 8.0, 2, true, false, null, null);
-        final Auction auction = new Auction(2L, pack, 10.0, 1.0, null, null,
+        final Pack directPack = new Pack(10L, commerceUserId, "Pack", "d", 10.0, 8.0, 2, true, false, null, null);
+        final Pack auctionPack = new Pack(20L, commerceUserId, "AuctionPack", "d", 10.0, 8.0, 1, true, false, null, null);
+        final Auction auction = new Auction(2L, auctionPack, 10.0, 1.0, null, null,
                 LocalDateTime.now().plusDays(1), Auction.Status.ACTIVE, LocalDateTime.now());
-        when(packService.filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1), eq(12),
-                eq(true), eq(commerceUserId))).thenReturn(java.util.Collections.singletonList(pack));
         when(packService.countFilteredPacks(isNull(), isNull(), isNull(), isNull(), eq(true), eq(commerceUserId)))
                 .thenReturn(1);
-        when(auctionService.filterAuctions(isNull(), isNull(), isNull(), isNull(),
-                eq(AuctionSortOption.TIME_REMAINING_ASC), eq(1), eq(50), eq(true), eq(commerceUserId)))
-                .thenReturn(java.util.Collections.singletonList(auction));
         when(auctionService.countFilteredAuctions(isNull(), isNull(), isNull(), isNull(), eq(true),
                 eq(commerceUserId))).thenReturn(1);
+        when(packService.filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1), eq(1),
+                eq(true), eq(commerceUserId))).thenReturn(List.of(directPack));
+        when(auctionService.filterAuctions(isNull(), isNull(), isNull(), isNull(), any(), eq(1), eq(1),
+                eq(true), eq(commerceUserId))).thenReturn(List.of(auction));
 
         // 2. Ejercicio
         final CommercePublicOffers offers = commerceService.getPublicOffers(commerceUserId, 1, 12);
 
         // 3. Asserts
-        assertEquals(1, offers.getDirectPacks().size());
-        assertEquals(1, offers.getDirectPacksTotal());
-        assertEquals(1, offers.getActiveAuctions().size());
-        assertEquals(1, offers.getActiveAuctionsTotal());
+        assertEquals(2, offers.getTotalOffers());
+        assertEquals(2, offers.getItems().size());
         verify(packService).filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1),
-                eq(12), eq(true), eq(commerceUserId));
+                eq(1), eq(true), eq(commerceUserId));
+        verify(auctionService).filterAuctions(isNull(), isNull(), isNull(), isNull(), any(), eq(1), eq(1),
+                eq(true), eq(commerceUserId));
     }
 
     @Test
-    void testGetPublicOffersWhenPackPageOutOfRangeClampsBeforeFilter() {
+    void testGetPublicOffersMergesAuctionsAndDirectPacksSortedByPackIdDesc() {
+        // 1. Setup
+        final long commerceUserId = 7L;
+        final Pack olderDirect = new Pack(10L, commerceUserId, "Direct", "d", 10.0, 8.0, 2, true, false, null, null);
+        final Pack auctionPack = new Pack(20L, commerceUserId, "AuctionPack", "d", 10.0, 8.0, 1, true, false, null, null);
+        final Auction auction = new Auction(2L, auctionPack, 10.0, 1.0, null, null,
+                LocalDateTime.now().plusDays(1), Auction.Status.ACTIVE, LocalDateTime.now());
+
+        when(packService.countFilteredPacks(isNull(), isNull(), isNull(), isNull(), eq(true), eq(commerceUserId))).thenReturn(1);
+        when(auctionService.countFilteredAuctions(isNull(), isNull(), isNull(), isNull(), eq(true), eq(commerceUserId))).thenReturn(1);
+        when(packService.filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1), eq(1),
+                eq(true), eq(commerceUserId))).thenReturn(List.of(olderDirect));
+        when(auctionService.filterAuctions(isNull(), isNull(), isNull(), isNull(), any(), eq(1), eq(1),
+                eq(true), eq(commerceUserId))).thenReturn(List.of(auction));
+
+        // 2. Ejercicio
+        final CommercePublicOffers offers = commerceService.getPublicOffers(commerceUserId, 1, 12);
+
+        // 3. Asserts
+        assertEquals(2, offers.getTotalOffers());
+        assertEquals(2, offers.getItems().size());
+        assertNotNull(offers.getItems().get(0).getAuction());
+        assertEquals(Long.valueOf(20L), offers.getItems().get(0).getPack().getId());
+        assertNull(offers.getItems().get(1).getAuction());
+        assertEquals(Long.valueOf(10L), offers.getItems().get(1).getPack().getId());
+    }
+
+    @Test
+    void testGetPublicOffersPaginatesUnifiedList() {
+        // 1. Setup
+        final long commerceUserId = 7L;
+        when(packService.countFilteredPacks(isNull(), isNull(), isNull(), isNull(), eq(true), eq(commerceUserId))).thenReturn(3);
+        when(auctionService.countFilteredAuctions(isNull(), isNull(), isNull(), isNull(), eq(true), eq(commerceUserId))).thenReturn(0);
+        when(packService.filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1), eq(3),
+                eq(true), eq(commerceUserId))).thenReturn(List.of(
+                new Pack(30L, commerceUserId, "C", "d", 10.0, 8.0, 1, true, false, null, null),
+                new Pack(20L, commerceUserId, "B", "d", 10.0, 8.0, 1, true, false, null, null),
+                new Pack(10L, commerceUserId, "A", "d", 10.0, 8.0, 1, true, false, null, null)));
+
+        // 2. Ejercicio
+        final CommercePublicOffers pageOne = commerceService.getPublicOffers(commerceUserId, 1, 2);
+
+        // 3. Asserts
+        assertEquals(3, pageOne.getTotalOffers());
+        assertEquals(2, pageOne.getItems().size());
+        assertEquals(Long.valueOf(30L), pageOne.getItems().get(0).getPack().getId());
+        assertEquals(Long.valueOf(20L), pageOne.getItems().get(1).getPack().getId());
+    }
+
+    @Test
+    void testGetPublicOffersWhenPageOutOfRangeClampsBeforeSlice() {
         // 1. Setup
         final long commerceUserId = 7L;
         when(packService.countFilteredPacks(isNull(), isNull(), isNull(), isNull(), eq(true), eq(commerceUserId)))
                 .thenReturn(1);
-        when(packService.filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1), eq(12),
-                eq(true), eq(commerceUserId))).thenReturn(java.util.Collections.emptyList());
-        when(auctionService.filterAuctions(isNull(), isNull(), isNull(), isNull(),
-                eq(AuctionSortOption.TIME_REMAINING_ASC), eq(1), eq(50), eq(true), eq(commerceUserId)))
-                .thenReturn(java.util.Collections.emptyList());
+        when(packService.filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1), eq(1),
+                eq(true), eq(commerceUserId))).thenReturn(List.of(
+                new Pack(10L, commerceUserId, "A", "d", 10.0, 8.0, 1, true, false, null, null)));
         when(auctionService.countFilteredAuctions(isNull(), isNull(), isNull(), isNull(), eq(true),
                 eq(commerceUserId))).thenReturn(0);
 
         // 2. Ejercicio
-        commerceService.getPublicOffers(commerceUserId, 99, 12);
+        final CommercePublicOffers offers = commerceService.getPublicOffers(commerceUserId, 99, 12);
 
         // 3. Asserts
+        assertEquals(1, offers.getTotalOffers());
+        assertEquals(1, offers.getItems().size());
         verify(packService).filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1),
-                eq(12), eq(true), eq(commerceUserId));
+                eq(1), eq(true), eq(commerceUserId));
     }
 
     @Test
