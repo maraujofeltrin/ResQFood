@@ -15,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -23,8 +25,6 @@ import java.util.Optional;
 public class CommerceServiceImpl implements CommerceService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommerceServiceImpl.class);
-    private static final int PUBLIC_PROFILE_AUCTION_CAP = 50;
-
     private final CommerceDao commerceDao;
     private final PackService packService;
     private final AuctionService auctionService;
@@ -99,19 +99,41 @@ public class CommerceServiceImpl implements CommerceService {
     }
 
     @Override
-    public CommercePublicOffers getPublicOffers(final long commerceUserId, final int packPage, final int packPageSize) {
+    public CommercePublicOffers getPublicOffers(final long commerceUserId, final int page, final int pageSize) {
         final Long commerceFilter = Long.valueOf(commerceUserId);
-        final int directPacksTotal = packService.countFilteredPacks(null, null, null, null, true, commerceFilter);
-        final int normalizedPageSize = packPageSize < 1 ? 12 : packPageSize;
-        final int totalPages = Math.max(1, (int) Math.ceil((double) directPacksTotal / normalizedPageSize));
-        final int safePackPage = Math.max(1, Math.min(packPage < 1 ? 1 : packPage, totalPages));
-        final List<Pack> directPacks = packService.filterPacks(null, null, null, null, PackSortOption.DATE_DESC,
-                safePackPage, normalizedPageSize, true, commerceFilter);
-        final List<Auction> activeAuctions = auctionService.filterAuctions(null, null, null, null,
-                AuctionSortOption.TIME_REMAINING_ASC, 1, PUBLIC_PROFILE_AUCTION_CAP, true, commerceFilter);
-        final int activeAuctionsTotal = auctionService.countFilteredAuctions(null, null, null, null, true,
-                commerceFilter);
+        final int normalizedPageSize = pageSize < 1 ? 12 : pageSize;
 
-        return new CommercePublicOffers(directPacks, directPacksTotal, activeAuctions, activeAuctionsTotal);
+        final int directTotal = packService.countFilteredPacks(null, null, null, null, true, commerceFilter);
+        final int auctionTotal = auctionService.countFilteredAuctions(null, null, null, null, true, commerceFilter);
+
+        final List<Pack> directPacks = directTotal == 0
+                ? List.of()
+                : packService.filterPacks(null, null, null, null, PackSortOption.DATE_DESC,
+                        1, directTotal, true, commerceFilter);
+
+        final List<Auction> activeAuctions = auctionTotal == 0
+                ? List.of()
+                : auctionService.filterAuctions(null, null, null, null, AuctionSortOption.TIME_REMAINING_ASC,
+                        1, auctionTotal, true, commerceFilter);
+
+        final List<CommerceProfileOfferItem> merged = new ArrayList<>(directTotal + auctionTotal);
+        for (final Auction auction : activeAuctions) {
+            merged.add(new CommerceProfileOfferItem(auction.getPack(), auction));
+        }
+        for (final Pack pack : directPacks) {
+            merged.add(new CommerceProfileOfferItem(pack, null));
+        }
+        merged.sort(Comparator.comparing((CommerceProfileOfferItem item) -> item.getPack().getId()).reversed());
+
+        final int totalOffers = merged.size();
+        final int totalPages = Math.max(1, (int) Math.ceil((double) totalOffers / normalizedPageSize));
+        final int safePage = Math.max(1, Math.min(page < 1 ? 1 : page, totalPages));
+        final int fromIndex = (safePage - 1) * normalizedPageSize;
+        final int toIndex = Math.min(fromIndex + normalizedPageSize, totalOffers);
+        final List<CommerceProfileOfferItem> pageItems = fromIndex >= totalOffers
+                ? List.of()
+                : merged.subList(fromIndex, toIndex);
+
+        return new CommercePublicOffers(pageItems, totalOffers);
     }
 }

@@ -18,8 +18,9 @@ public interface CommerceService {
     int countFilteredCommerces(String query, String cityFilter, Commerce.Category categoryFilter);
 
     /**
-     * Active catalog offers (direct-sale packs and live auctions) visible on the public commerce profile.
-     * The caller must ensure the commerce exists; {@code packPage} is clamped to the valid range.
+     * Active catalog offers (direct-sale packs and live auctions) visible on the public commerce profile,
+     * merged and sorted by {@code pack.id DESC}. The caller must ensure the commerce exists;
+     * {@code page} is clamped to the valid range.
      */
-    CommercePublicOffers getPublicOffers(long commerceUserId, int packPage, int packPageSize);
+    CommercePublicOffers getPublicOffers(long commerceUserId, int page, int pageSize);
 }

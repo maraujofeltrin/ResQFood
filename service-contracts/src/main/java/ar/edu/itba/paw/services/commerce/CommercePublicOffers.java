@@ -1,39 +1,23 @@
 package ar.edu.itba.paw.services.commerce;
 
-import ar.edu.itba.paw.models.auction.Auction;
-import ar.edu.itba.paw.models.pack.Pack;
-
 import java.util.Collections;
 import java.util.List;
 
 public final class CommercePublicOffers {
 
-    private final List<Pack> directPacks;
-    private final int directPacksTotal;
-    private final List<Auction> activeAuctions;
-    private final int activeAuctionsTotal;
+    private final List<CommerceProfileOfferItem> items;
+    private final int totalOffers;
 
-    public CommercePublicOffers(final List<Pack> directPacks, final int directPacksTotal,
-                                final List<Auction> activeAuctions, final int activeAuctionsTotal) {
-        this.directPacks = directPacks != null ? directPacks : Collections.emptyList();
-        this.directPacksTotal = directPacksTotal;
-        this.activeAuctions = activeAuctions != null ? activeAuctions : Collections.emptyList();
-        this.activeAuctionsTotal = activeAuctionsTotal;
+    public CommercePublicOffers(final List<CommerceProfileOfferItem> items, final int totalOffers) {
+        this.items = items != null ? items : Collections.emptyList();
+        this.totalOffers = totalOffers;
     }
 
-    public List<Pack> getDirectPacks() {
-        return directPacks;
+    public List<CommerceProfileOfferItem> getItems() {
+        return items;
     }
 
-    public int getDirectPacksTotal() {
-        return directPacksTotal;
-    }
-
-    public List<Auction> getActiveAuctions() {
-        return activeAuctions;
-    }
-
-    public int getActiveAuctionsTotal() {
-        return activeAuctionsTotal;
+    public int getTotalOffers() {
+        return totalOffers;
     }
 }
