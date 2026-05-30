@@ -1,7 +1,6 @@
 package ar.edu.itba.paw.webapp.controller.helpers;
 
-import ar.edu.itba.paw.models.auction.Auction;
-import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.services.commerce.CommerceProfileOfferItem;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.commerce.CommerceFavoriteService;
@@ -71,7 +70,7 @@ public class CommerceProfileModelBuilder {
 
         final CommercePublicOffers offers = commerceService.getPublicOffers(commerceUserId, page, PAGE_SIZE);
         final int totalPages = Math.max(1,
-                (int) Math.ceil((double) offers.getDirectPacksTotal() / PAGE_SIZE));
+                (int) Math.ceil((double) offers.getTotalOffers() / (double) PAGE_SIZE));
         final int safePage = Math.max(1, Math.min(page, totalPages));
 
         final ModelAndView mav = new ModelAndView("commerce/commerceProfileView");
@@ -84,19 +83,12 @@ public class CommerceProfileModelBuilder {
         commerceReviewPageAttributes.addReviewPageAttributes(mav, commerceUserId, submittedForm,
                 submittedForm != null);
 
-        mav.addObject("directPacks", offers.getDirectPacks());
-        mav.addObject("activeAuctions", offers.getActiveAuctions());
-        mav.addObject("directPacksTotal", offers.getDirectPacksTotal());
-        mav.addObject("activeAuctionsTotal", offers.getActiveAuctionsTotal());
+        mav.addObject("profileOffers", offers.getItems());
+        mav.addObject("totalOffers", offers.getTotalOffers());
 
         final Map<Long, String> commerceNames = new HashMap<>();
-        for (final Pack pack : offers.getDirectPacks()) {
-            commerceNames.put(pack.getId(), commercialName);
-        }
-        for (final Auction auction : offers.getActiveAuctions()) {
-            if (auction.getPack() != null && auction.getPack().getId() != null) {
-                commerceNames.put(auction.getPack().getId(), commercialName);
-            }
+        for (final CommerceProfileOfferItem offer : offers.getItems()) {
+            commerceNames.put(offer.getPack().getId(), commercialName);
         }
         mav.addObject("commerceNames", commerceNames);
 

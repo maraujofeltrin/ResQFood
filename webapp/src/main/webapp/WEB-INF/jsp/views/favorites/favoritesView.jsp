@@ -26,11 +26,12 @@
                 </p>
             </div>
 
-            <div class="flex flex-col lg:grid lg:grid-cols-3 gap-12 lg:gap-8 xl:gap-12 items-start">
+            <div class="flex flex-col lg:grid lg:grid-cols-3 gap-12 lg:gap-8 xl:gap-12">
                 <%-- Main Column: Packs --%>
-                <div class="lg:col-span-2 flex flex-col gap-12 min-w-0">
-                    <%-- Packs section --%>
-                    <section>
+                <div class="lg:col-span-2 min-w-0">
+                    <div class="flex flex-col gap-12 lg:sticky lg:top-28 lg:h-max pb-4">
+                        <%-- Packs section --%>
+                        <section>
                         <div class="flex items-center gap-3 mb-8">
                             <span class="material-symbols-outlined text-primary text-xl">inventory_2</span>
                             <h2 class="text-xl font-headline font-semibold text-on-surface">
@@ -84,12 +85,14 @@
                             </c:otherwise>
                         </c:choose>
                     </section>
+                    </div>
                 </div>
 
                 <%-- Sidebar Column: Commerces --%>
                 <aside class="lg:col-span-1 min-w-0">
-                    <%-- Commerce favorites section --%>
-                    <section>
+                    <div class="lg:sticky lg:top-28 lg:h-max pb-4">
+                        <%-- Commerce favorites section --%>
+                        <section>
                         <div class="flex items-center gap-3 mb-6">
                             <span class="material-symbols-outlined text-primary text-xl">storefront</span>
                             <h2 class="text-xl font-headline font-semibold text-on-surface">
@@ -140,6 +143,7 @@
                             </c:otherwise>
                         </c:choose>
                     </section>
+                    </div>
                 </aside>
             </div>
 
