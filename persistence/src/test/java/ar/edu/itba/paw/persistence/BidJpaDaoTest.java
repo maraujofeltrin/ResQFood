@@ -24,6 +24,8 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -172,5 +174,37 @@ public class BidJpaDaoTest {
         assertTrue(Hibernate.isInitialized(bids.get(0).getClient()));
         assertNotNull(bids.get(0).getClient().getFullName());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "bids"));
+    }
+
+    @Test
+    public void testFindMaxBidsByClientForAuctions() {
+        // 1. Setup
+        bidDao.createBid(auctionId, clientId, 50.0);
+        bidDao.createBid(auctionId, clientId, 80.0);
+        em.flush();
+
+        // 2. Ejercicio
+        final Map<Long, Double> result = bidDao.findMaxBidsByClientForAuctions(clientId, Set.of(auctionId));
+
+        // 3. Asserts
+        assertEquals(1, result.size());
+        assertEquals(80.0, result.get(auctionId), 0.001);
+    }
+
+    @Test
+    public void testFindAuctionIdsWhereClientLeads() {
+        // 1. Setup
+        final Pack pack2 = packDao.createPack(commerceId, "Pack 2", "Desc", 1000.0, 500.0, 1,
+                Collections.emptyList(), null);
+        final Auction auction2 = auctionDao.createAuction(pack2.getId(), 500.0, 500.0, AUCTION_END_TIME);
+        auctionDao.updateCurrentBid(auctionId, 700.0, clientId);
+        em.flush();
+
+        // 2. Ejercicio
+        final Set<Long> result = bidDao.findAuctionIdsWhereClientLeads(clientId, Set.of(auctionId, auction2.getId()));
+
+        // 3. Asserts
+        assertTrue(result.contains(auctionId));
+        assertFalse(result.contains(auction2.getId()));
     }
 }

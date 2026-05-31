@@ -17,14 +17,17 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Primary
 @Repository("auctionJpaDao")
@@ -320,7 +323,9 @@ public class AuctionJpaDao implements AuctionDao {
             ids.add((Long) row[0]);
         }
 
-        final List<Auction> auctions = em.createQuery("SELECT a FROM Auction a JOIN FETCH a.pack p WHERE a.id IN :ids", Auction.class)
+        final List<Auction> auctions = em.createQuery(
+                "SELECT a FROM Auction a JOIN FETCH a.pack p JOIN FETCH p.commerce WHERE a.id IN :ids",
+                Auction.class)
                 .setParameter("ids", ids)
                 .getResultList();
 
@@ -336,5 +341,18 @@ public class AuctionJpaDao implements AuctionDao {
 
         final Long count = JpqlQuerySupport.createQuery(em, jpql.toString(), params, Long.class).getSingleResult();
         return count != null ? count.intValue() : 0;
+    }
+
+    @Override
+    public Set<Long> findPackIdsWithAuction(final Collection<Long> packIds) {
+        if (packIds == null || packIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+        final List<Long> results = em.createQuery(
+                "SELECT DISTINCT a.pack.id FROM Auction a WHERE a.pack.id IN :packIds",
+                Long.class)
+                .setParameter("packIds", new ArrayList<>(packIds))
+                .getResultList();
+        return new HashSet<>(results);
     }
 }

@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -287,5 +288,22 @@ class AuctionServiceImplTest {
 
         // 3. Asserts
         assertEquals(CancelAuctionResult.Outcome.SUCCESS, result.getOutcome());
+    }
+
+    @Test
+    void testCloseExpiredAuctionsUpdatesEntityStatus() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Auction expiredAuction = new Auction(AUCTION_ID, pack, 1000.0, 10.0, null, null,
+                LocalDateTime.now(ZoneOffset.UTC).minusHours(1), Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.findExpiredActive()).thenReturn(List.of(expiredAuction));
+
+        // 2. Ejercicio
+        final int closed = auctionService.closeExpiredAuctions();
+
+        // 3. Asserts
+        assertEquals(1, closed);
+        assertEquals(Auction.Status.FINISHED, expiredAuction.getStatus());
+        assertFalse(expiredAuction.getPack().getActive());
     }
 }

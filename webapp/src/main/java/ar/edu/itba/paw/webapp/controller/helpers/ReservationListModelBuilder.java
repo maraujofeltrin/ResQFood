@@ -1,7 +1,6 @@
 package ar.edu.itba.paw.webapp.controller.helpers;
 
 import ar.edu.itba.paw.models.auction.Auction;
-import ar.edu.itba.paw.models.auction.Bid;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
@@ -32,6 +31,8 @@ import java.util.List;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.Collections;
+import java.util.stream.Collectors;
 
 /**
  * Builds the {@link ModelAndView} for the reservation list view ({@code reservationsView.jsp}).
@@ -201,26 +202,28 @@ public class ReservationListModelBuilder {
         final Map<Long, Double> auctionMyMaxBid = new HashMap<>();
         final Map<Long, String> auctionParticipationBadges = new HashMap<>();
 
+        final List<Long> auctionIds = auctionsPage.stream()
+            .map(Auction::getId)
+            .collect(Collectors.toList());
+        final Map<Long, Double> myMaxBids = auctionService
+            .getMaxBidsByClientForAuctions(currentUser.getId(), auctionIds);
+        final Set<Long> leadingIds = auctionService
+            .findAuctionIdsWhereClientLeads(currentUser.getId(), auctionIds);
+
         for (final Auction auction : auctionsPage) {
             auctionEndLabels.put(auction.getId(), formatUtcDateTimeForDisplay(auction.getEndTime()));
             final Pack p = auction.getPack();
             final Commerce commerce = p != null ? p.getCommerce() : null;
             final String commerceName = commerce != null && commerce.getCommercialName() != null
-                    && !commerce.getCommercialName().isBlank()
-                    ? commerce.getCommercialName() : "-";
+                && !commerce.getCommercialName().isBlank()
+                ? commerce.getCommercialName() : "-";
             auctionCommerceNames.put(auction.getId(), commerceName);
-
-            final double myMax = auctionService.getBidHistory(auction.getId()).stream()
-                    .filter(b -> b.getClient().getUserId().equals(currentUser.getId()))
-                    .mapToDouble(Bid::getAmount)
-                    .max()
-                    .orElse(0d);
-            auctionMyMaxBid.put(auction.getId(), myMax);
+            auctionMyMaxBid.put(auction.getId(), myMaxBids.getOrDefault(auction.getId(), 0d));
 
             final String badge = clientParticipationAuctionBadge(auction,
-                    auctionService.isClientLeading(auction.getId(), currentUser.getId()));
+                leadingIds.contains(auction.getId()));
             if (badge != null) {
-                auctionParticipationBadges.put(auction.getId(), badge);
+            auctionParticipationBadges.put(auction.getId(), badge);
             }
         }
 
@@ -306,10 +309,10 @@ public class ReservationListModelBuilder {
                 distinctPackIds.add(r.getPack().getId());
             }
         }
-        final Set<Long> auctionPackIds = new HashSet<>();
-        for (final Long packId : distinctPackIds) {
-            auctionService.findByPackId(packId).ifPresent(a -> auctionPackIds.add(packId));
+        if (distinctPackIds.isEmpty()) {
+            return Collections.emptySet();
         }
+        final Set<Long> auctionPackIds = auctionService.findPackIdsWithAuction(distinctPackIds);
         final Set<Long> ids = new HashSet<>();
         for (final Reservation r : reservations) {
             if (r.getPack() != null && auctionPackIds.contains(r.getPack().getId())) {

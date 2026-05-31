@@ -10,8 +10,15 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Primary
 @Repository("bidJpaDao")
@@ -61,5 +68,39 @@ public class BidJpaDao implements BidDao {
                 .setParameter("auctionId", auctionId)
                 .getSingleResult();
         return count != null ? count.intValue() : 0;
+    }
+
+    @Override
+    public Map<Long, Double> findMaxBidsByClientForAuctions(final long clientUserId, final Collection<Long> auctionIds) {
+        if (auctionIds == null || auctionIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        final List<Object[]> rows = em.createQuery(
+                        "SELECT b.auction.id, MAX(b.amount) FROM Bid b "
+                                + "WHERE b.client.userId = :clientId AND b.auction.id IN :auctionIds "
+                                + "GROUP BY b.auction.id",
+                        Object[].class)
+                .setParameter("clientId", clientUserId)
+                .setParameter("auctionIds", new ArrayList<>(auctionIds))
+                .getResultList();
+        final Map<Long, Double> result = new HashMap<>();
+        for (final Object[] row : rows) {
+            result.put((Long) row[0], (Double) row[1]);
+        }
+        return result;
+    }
+
+    @Override
+    public Set<Long> findAuctionIdsWhereClientLeads(final long clientUserId, final Collection<Long> auctionIds) {
+        if (auctionIds == null || auctionIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+        final List<Long> ids = em.createQuery(
+                        "SELECT a.id FROM Auction a WHERE a.id IN :ids AND a.currentBidderId = :clientId",
+                        Long.class)
+                .setParameter("ids", new ArrayList<>(auctionIds))
+                .setParameter("clientId", clientUserId)
+                .getResultList();
+        return new HashSet<>(ids);
     }
 }
