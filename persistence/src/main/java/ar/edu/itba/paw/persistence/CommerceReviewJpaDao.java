@@ -12,7 +12,10 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Primary
@@ -86,5 +89,22 @@ public class CommerceReviewJpaDao implements CommerceReviewDao {
                 "SELECT AVG(r.rating) FROM CommerceReview r WHERE r.commerce.userId = :commerce", Double.class)
                 .setParameter("commerce", commerceUserId)
                 .getSingleResult();
+    }
+
+    @Override
+    public Map<Long, Double> findAverageRatingsForCommerceIds(final List<Long> commerceUserIds) {
+        if (commerceUserIds == null || commerceUserIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        final List<Object[]> rows = em.createQuery(
+                "SELECT r.commerce.userId, AVG(r.rating) FROM CommerceReview r " +
+                "WHERE r.commerce.userId IN :ids GROUP BY r.commerce.userId", Object[].class)
+                .setParameter("ids", commerceUserIds)
+                .getResultList();
+        final Map<Long, Double> result = new HashMap<>();
+        for (final Object[] row : rows) {
+            result.put((Long) row[0], (Double) row[1]);
+        }
+        return result;
     }
 }

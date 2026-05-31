@@ -20,6 +20,7 @@ import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -216,6 +217,34 @@ public class CommerceReviewJpaDaoTest {
         // 3. Asserts
         assertNull(average);
         assertEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerce_reviews"));
+    }
+
+    @Test
+    public void testFindAverageRatingsForMultipleCommerces() {
+        // 1. Setup
+        commerceReviewDao.createReview(commerceId, clientId, 4, BODY);
+        em.flush();
+
+        final Long commerce2Id = userDao.createUser("commerce2-review@example.com", "pass", "Commerce2", "456",
+                User.Role.COMMERCE).getId();
+        em.flush();
+        commerceDao.createCommerce(commerce2Id, "Comm2", Commerce.Category.BAKERY, "Street", 456,
+                ar.edu.itba.paw.models.pack.Municipality.AVELLANEDA, "Prov", "1000", "08:00", "20:00");
+        em.flush();
+        commerceReviewDao.createReview(commerce2Id, clientId, 5, "Muy bueno.");
+        em.flush();
+
+        // 2. Ejercicio
+        final Map<Long, Double> ratings = commerceReviewDao.findAverageRatingsForCommerceIds(
+                List.of(commerceId, commerce2Id));
+
+        // 3. Asserts
+        assertEquals(2, ratings.size());
+        assertNotNull(ratings.get(commerceId));
+        assertNotNull(ratings.get(commerce2Id));
+        assertEquals(4.0, ratings.get(commerceId), 0.01);
+        assertEquals(5.0, ratings.get(commerce2Id), 0.01);
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerce_reviews"));
     }
 
     @Test

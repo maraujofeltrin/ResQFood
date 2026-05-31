@@ -8,8 +8,12 @@ import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import java.util.Optional;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Primary
 @Repository
@@ -41,7 +45,7 @@ public class CommerceJpaDao implements CommerceDao {
 
     @Override
     public List<Commerce> filterCommerces(String query, String cityFilter, Commerce.Category categoryFilter, int page, int pageSize) {
-        final StringBuilder jpql = new StringBuilder("SELECT c FROM Commerce c LEFT JOIN CommerceReview r ON c.userId = r.commerce.userId");
+        final StringBuilder jpql = new StringBuilder("SELECT c.userId FROM Commerce c LEFT JOIN CommerceReview r ON c.userId = r.commerce.userId");
         final java.util.Map<String, Object> params = new java.util.HashMap<>();
         final List<String> conditions = new java.util.ArrayList<>();
 
@@ -67,16 +71,32 @@ public class CommerceJpaDao implements CommerceDao {
             jpql.append(" WHERE ").append(String.join(" AND ", conditions));
         }
 
-        jpql.append(" GROUP BY c ORDER BY COALESCE(AVG(r.rating), 0.0) DESC, c.commercialName ASC");
+        jpql.append(" GROUP BY c.userId, c.commercialName ORDER BY COALESCE(AVG(r.rating), 0.0) DESC, c.commercialName ASC");
 
-        final javax.persistence.TypedQuery<Commerce> q = em.createQuery(jpql.toString(), Commerce.class);
+        final javax.persistence.TypedQuery<Long> idQuery = em.createQuery(jpql.toString(), Long.class);
         for (final java.util.Map.Entry<String, Object> entry : params.entrySet()) {
-            q.setParameter(entry.getKey(), entry.getValue());
+            idQuery.setParameter(entry.getKey(), entry.getValue());
         }
 
-        return q.setFirstResult((page - 1) * pageSize)
+        final List<Long> ids = idQuery.setFirstResult((page - 1) * pageSize)
                 .setMaxResults(pageSize)
                 .getResultList();
+
+        if (ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        final List<Commerce> commerces = em.createQuery(
+                "SELECT c FROM Commerce c JOIN FETCH c.user WHERE c.userId IN :ids", Commerce.class)
+                .setParameter("ids", ids)
+                .getResultList();
+
+        final Map<Long, Integer> positions = new HashMap<>();
+        for (int i = 0; i < ids.size(); i++) {
+            positions.put(ids.get(i), Integer.valueOf(i));
+        }
+        commerces.sort(Comparator.comparingInt(c -> positions.getOrDefault(c.getUserId(), Integer.MAX_VALUE)));
+        return commerces;
     }
 
     @Override
