@@ -63,7 +63,7 @@ public class CommerceReviewJpaDao implements CommerceReviewDao {
     @Override
     public List<CommerceReview> findByCommerceId(Long commerceUserId, int page, int pageSize) {
         return em.createQuery(
-                "FROM CommerceReview r WHERE r.commerce.userId = :commerce ORDER BY r.createdAt DESC",
+                "FROM CommerceReview r JOIN FETCH r.client WHERE r.commerce.userId = :commerce ORDER BY r.createdAt DESC",
                 CommerceReview.class)
                 .setParameter("commerce", commerceUserId)
                 .setFirstResult(Pagination.offset(page, pageSize))

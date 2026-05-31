@@ -31,7 +31,9 @@ public class BidJpaDao implements BidDao {
 
     @Override
     public List<Bid> findByAuctionId(final long auctionId) {
-        return em.createQuery("FROM Bid b WHERE b.auction.id = :auctionId ORDER BY b.amount DESC, b.timestamp ASC", Bid.class)
+        return em.createQuery(
+                "FROM Bid b JOIN FETCH b.client WHERE b.auction.id = :auctionId ORDER BY b.amount DESC, b.timestamp ASC",
+                Bid.class)
                 .setParameter("auctionId", auctionId)
                 .getResultList();
     }

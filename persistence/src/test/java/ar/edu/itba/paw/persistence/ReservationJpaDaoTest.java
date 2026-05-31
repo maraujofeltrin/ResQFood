@@ -8,6 +8,7 @@ import ar.edu.itba.paw.models.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -295,6 +296,46 @@ public class ReservationJpaDaoTest {
 
         // 3. Asserts
         assertFalse(result);
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
+    public void testFilterReservationsEagerlyLoadsCustomerAndPack() {
+        // 1. Setup
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.RESERVED, "CODE", null, 1, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Reservation> results = reservationDao.filterReservations(commerceId, null, null, null, false, 1, 10);
+
+        // 3. Asserts
+        assertFalse(results.isEmpty());
+        final Reservation r = results.get(0);
+        assertTrue(Hibernate.isInitialized(r.getCustomer()));
+        assertNotNull(r.getCustomer().getFullName());
+        assertTrue(Hibernate.isInitialized(r.getPack()));
+        assertNotNull(r.getPack().getTitle());
+        assertTrue(Hibernate.isInitialized(r.getPack().getCommerce()));
+        assertNotNull(r.getPack().getCommerce().getCommercialName());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
+    public void testFindByPackIdEagerlyLoadsCustomer() {
+        // 1. Setup
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.RESERVED, "CODE", null, 1, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Reservation> results = reservationDao.findByPackId(packId);
+
+        // 3. Asserts
+        assertFalse(results.isEmpty());
+        final Reservation r = results.get(0);
+        assertTrue(Hibernate.isInitialized(r.getCustomer()));
+        assertNotNull(r.getCustomer().getFullName());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
     }
 }

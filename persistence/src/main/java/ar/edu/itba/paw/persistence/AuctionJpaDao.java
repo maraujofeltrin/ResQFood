@@ -186,7 +186,8 @@ public class AuctionJpaDao implements AuctionDao {
         }
 
         final List<Auction> auctions = em.createQuery(
-                        "SELECT a FROM Auction a JOIN FETCH a.pack p WHERE a.id IN :ids", Auction.class)
+                        "SELECT a FROM Auction a JOIN FETCH a.pack p JOIN FETCH p.commerce WHERE a.id IN :ids",
+                        Auction.class)
                 .setParameter("ids", ids)
                 .getResultList();
 

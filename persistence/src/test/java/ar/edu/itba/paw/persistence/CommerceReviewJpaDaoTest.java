@@ -6,6 +6,7 @@ import ar.edu.itba.paw.models.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.Rollback;
@@ -215,5 +216,21 @@ public class CommerceReviewJpaDaoTest {
         // 3. Asserts
         assertNull(average);
         assertEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerce_reviews"));
+    }
+
+    @Test
+    public void testFindByCommerceIdEagerlyLoadsClient() {
+        // 1. Setup
+        commerceReviewDao.createReview(commerceId, clientId, RATING, BODY);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<CommerceReview> reviews = commerceReviewDao.findByCommerceId(commerceId, 1, 10);
+
+        // 3. Asserts
+        assertFalse(reviews.isEmpty());
+        assertTrue(Hibernate.isInitialized(reviews.get(0).getClient()));
+        assertNotNull(reviews.get(0).getClient().getFullName());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerce_reviews"));
     }
 }

@@ -9,6 +9,7 @@ import ar.edu.itba.paw.models.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -155,5 +156,21 @@ public class BidJpaDaoTest {
         assertEquals(700.0, bids.get(0).getAmount());
         assertEquals(600.0, bids.get(1).getAmount());
         assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "bids"));
+    }
+
+    @Test
+    public void testFindByAuctionIdEagerlyLoadsClient() {
+        // 1. Setup
+        bidDao.createBid(auctionId, clientId, 600.0);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Bid> bids = bidDao.findByAuctionId(auctionId);
+
+        // 3. Asserts
+        assertFalse(bids.isEmpty());
+        assertTrue(Hibernate.isInitialized(bids.get(0).getClient()));
+        assertNotNull(bids.get(0).getClient().getFullName());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "bids"));
     }
 }
