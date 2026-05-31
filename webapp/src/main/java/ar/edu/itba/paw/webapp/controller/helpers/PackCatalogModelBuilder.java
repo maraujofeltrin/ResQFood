@@ -212,33 +212,27 @@ public class PackCatalogModelBuilder {
 
         final Map<Long, String> commerceNames = new HashMap<>();
         for (final Pack pack : packs) {
-            commerceNames.putIfAbsent(
-                    pack.getId(),
-                    commerceService.findByUserId(pack.getCommerceId())
-                            .map(Commerce::getCommercialName)
-                            .orElse("—"));
+            final Commerce c = pack.getCommerce();
+            commerceNames.putIfAbsent(pack.getId(),
+                    c != null && c.getCommercialName() != null ? c.getCommercialName() : "—");
         }
         for (final Auction auctionEntity : auctions) {
             if (auctionEntity.getPack() == null) {
                 continue;
             }
             final Pack auctionPack = auctionEntity.getPack();
-            commerceNames.putIfAbsent(
-                    auctionPack.getId(),
-                    commerceService.findByUserId(auctionPack.getCommerceId())
-                            .map(Commerce::getCommercialName)
-                            .orElse("—"));
+            final Commerce c = auctionPack.getCommerce();
+            commerceNames.putIfAbsent(auctionPack.getId(),
+                    c != null && c.getCommercialName() != null ? c.getCommercialName() : "—");
         }
         for (final Auction auctionEntity : carouselAuctions) {
             if (auctionEntity.getPack() == null) {
                 continue;
             }
             final Pack auctionPack = auctionEntity.getPack();
-            commerceNames.putIfAbsent(
-                    auctionPack.getId(),
-                    commerceService.findByUserId(auctionPack.getCommerceId())
-                            .map(Commerce::getCommercialName)
-                            .orElse("—"));
+            final Commerce c = auctionPack.getCommerce();
+            commerceNames.putIfAbsent(auctionPack.getId(),
+                    c != null && c.getCommercialName() != null ? c.getCommercialName() : "—");
         }
 
 

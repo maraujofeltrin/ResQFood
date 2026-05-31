@@ -3,14 +3,11 @@ package ar.edu.itba.paw.webapp.controller.helpers;
 import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.auction.Bid;
 import ar.edu.itba.paw.models.user.Commerce;
-import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.auction.AuctionService;
-import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
-import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
@@ -34,7 +31,6 @@ import java.util.HashSet;
 import java.util.List;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -52,23 +48,17 @@ public class ReservationListModelBuilder {
     private static final String VIEW_NAME = "reservations/reservationsView";
 
     private final ReservationService reservationService;
-    private final PackService packService;
     private final CommerceService commerceService;
-    private final ClientService clientService;
     private final AuctionService auctionService;
     private final ZoneId displayZone;
 
     @Autowired
     public ReservationListModelBuilder(final ReservationService reservationService,
-            final PackService packService,
             final CommerceService commerceService,
-            final ClientService clientService,
             final AuctionService auctionService,
             final ZoneId businessZone) {
         this.reservationService = reservationService;
-        this.packService = packService;
         this.commerceService = commerceService;
-        this.clientService = clientService;
         this.auctionService = auctionService;
         this.displayZone = businessZone;
     }
@@ -101,14 +91,10 @@ public class ReservationListModelBuilder {
         for (final Reservation reservation : reservations) {
             populateFormattedDate(formattedDates, reservation);
             if (reservation.getPack() != null) {
-                packService.findById(reservation.getPack().getId()).ifPresent(
-                        pack -> packsByReservationId.put(reservation.getId(), pack));
+                packsByReservationId.put(reservation.getId(), reservation.getPack());
             }
             if (reservation.getCustomer() != null) {
-                final String clientName = clientService.findByUserId(reservation.getCustomer().getUserId())
-                        .map(Client::getFullName)
-                        .orElse("-");
-                clientNamesByReservationId.put(reservation.getId(), clientName);
+                clientNamesByReservationId.put(reservation.getId(), reservation.getCustomer().getFullName());
             }
         }
 
@@ -218,7 +204,11 @@ public class ReservationListModelBuilder {
         for (final Auction auction : auctionsPage) {
             auctionEndLabels.put(auction.getId(), formatUtcDateTimeForDisplay(auction.getEndTime()));
             final Pack p = auction.getPack();
-            auctionCommerceNames.put(auction.getId(), resolveCommerceName(p));
+            final Commerce commerce = p != null ? p.getCommerce() : null;
+            final String commerceName = commerce != null && commerce.getCommercialName() != null
+                    && !commerce.getCommercialName().isBlank()
+                    ? commerce.getCommercialName() : "-";
+            auctionCommerceNames.put(auction.getId(), commerceName);
 
             final double myMax = auctionService.getBidHistory(auction.getId()).stream()
                     .filter(b -> b.getClient().getUserId().equals(currentUser.getId()))
@@ -270,12 +260,13 @@ public class ReservationListModelBuilder {
         for (final Reservation reservation : reservations) {
             populateFormattedDate(formattedDates, reservation);
             if (reservation.getPack() != null) {
-                final Optional<Pack> packOpt = packService.findById(reservation.getPack().getId());
-                if (packOpt.isPresent()) {
-                    final Pack pack = packOpt.get();
-                    packsByReservationId.put(reservation.getId(), pack);
-                    commerceNamesByReservationId.put(reservation.getId(), resolveCommerceName(pack));
-                }
+                final Pack pack = reservation.getPack();
+                packsByReservationId.put(reservation.getId(), pack);
+                final Commerce commerce = pack.getCommerce();
+                final String name = commerce != null && commerce.getCommercialName() != null
+                        && !commerce.getCommercialName().isBlank()
+                        ? commerce.getCommercialName() : "-";
+                commerceNamesByReservationId.put(reservation.getId(), name);
             }
         }
 
@@ -306,16 +297,6 @@ public class ReservationListModelBuilder {
         if (reservation.getReservationDate() != null) {
             map.put(reservation.getId(), formatUtcDateTimeForDisplay(reservation.getReservationDate()));
         }
-    }
-
-    private String resolveCommerceName(final Pack pack) {
-        if (pack == null) {
-            return "-";
-        }
-        return commerceService.findByUserId(pack.getCommerceId())
-                .map(Commerce::getCommercialName)
-                .filter(name -> name != null && !name.isBlank())
-                .orElse("-");
     }
 
     private Set<Long> resolveAuctionReservationIds(final List<Reservation> reservations) {

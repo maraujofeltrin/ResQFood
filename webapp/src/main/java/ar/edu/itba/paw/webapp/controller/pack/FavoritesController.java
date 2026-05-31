@@ -4,7 +4,6 @@ import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.services.commerce.CommerceFavoriteService;
-import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.commerce.CommerceReviewService;
 import ar.edu.itba.paw.services.pack.PackFavoriteService;
 import ar.edu.itba.paw.services.user.UserService;
@@ -32,7 +31,6 @@ public class FavoritesController {
 
     private final PackFavoriteService packFavoriteService;
     private final CommerceFavoriteService commerceFavoriteService;
-    private final CommerceService commerceService;
     private final CommerceReviewService commerceReviewService;
     private final UserService userService;
     private final AuthenticatedUserResolver authResolver;
@@ -40,13 +38,11 @@ public class FavoritesController {
     @Autowired
     public FavoritesController(final PackFavoriteService packFavoriteService,
                                final CommerceFavoriteService commerceFavoriteService,
-                               final CommerceService commerceService,
                                final CommerceReviewService commerceReviewService,
                                final UserService userService,
                                final AuthenticatedUserResolver authResolver) {
         this.packFavoriteService = packFavoriteService;
         this.commerceFavoriteService = commerceFavoriteService;
-        this.commerceService = commerceService;
         this.commerceReviewService = commerceReviewService;
         this.userService = userService;
         this.authResolver = authResolver;
@@ -75,14 +71,11 @@ public class FavoritesController {
             packs = Collections.emptyList();
         }
 
-        // Enrich with commerce names
         final Map<Long, String> commerceNames = new HashMap<>();
         for (final Pack pack : packs) {
-            commerceNames.putIfAbsent(
-                    pack.getId(),
-                    commerceService.findByUserId(pack.getCommerceId())
-                            .map(Commerce::getCommercialName)
-                            .orElse("—"));
+            final Commerce c = pack.getCommerce();
+            commerceNames.putIfAbsent(pack.getId(),
+                    c != null && c.getCommercialName() != null ? c.getCommercialName() : "—");
         }
 
         // Commerce favorites
