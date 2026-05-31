@@ -81,9 +81,7 @@ class ReservationServiceImplTest {
         return new Pack(id, commerceRef(1L), "t", "d", 1.0, 1.0, 1, true, Collections.emptyList());
     }
 
-    private static Pack packRef(final long id, final long commerceId) {
-        return new Pack(id, commerceRef(commerceId), "t", "d", 1.0, 1.0, 1, true, Collections.emptyList());
-    }
+
 
     private static Pack newPack(final long id, final long commerceId, final String title, final String desc,
             final double originalPrice, final double finalPrice, final int stock, final boolean active,
@@ -286,77 +284,9 @@ class ReservationServiceImplTest {
     }
 
     @Test
-    void testValidateReservationBelongsToCommerceWhenOwnerMatchesReservationStillPresent() {
-        // 1. Setup
-        final long reservationId = 5L;
-        final Reservation reservation = new Reservation(reservationId, clientRef(1L), packRef(10L), LocalDateTime.now(), 10.0,
-                Reservation.Status.RESERVED, "GGGGG", null, 1, null);
-        when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
-        when(packDao.findById(10L)).thenReturn(Optional.of(
-                newPack(10L, 77L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
-
-        // 2. Ejercicio
-        reservationService.validateReservationBelongsToCommerce(reservationId, 77L);
-
-        // 3. Asserts
-        assertEquals(reservationId, reservationService.findById(reservationId).map(Reservation::getId).orElseThrow());
-    }
-
-    @Test
-    void testValidateReservationBelongsToCommerceWhenCommerceMismatchThrows() {
-        // 1. Setup
-        final long reservationId = 5L;
-        final Reservation reservation = new Reservation(reservationId, clientRef(1L), packRef(10L), LocalDateTime.now(), 10.0,
-                Reservation.Status.RESERVED, "GGGGG", null, 1, null);
-        when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
-        when(packDao.findById(10L)).thenReturn(Optional.of(
-                newPack(10L, 77L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
-
-        // 2. Ejercicio
-        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reservationService.validateReservationBelongsToCommerce(reservationId, 88L));
-
-        // 3. Asserts
-        assertEquals(ReservationRejectionError.WRONG_COMMERCE.name(), ex.getMessage());
-        assertEquals(Reservation.Status.RESERVED,
-                reservationService.findById(reservationId).orElseThrow().getStatus());
-    }
-
-    @Test
-    void testValidateReservationBelongsToCommerceWhenReservationIdNullThrows() {
-        // 1. Setup
-
-        // 2. Ejercicio
-        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reservationService.validateReservationBelongsToCommerce(null, 77L));
-
-        // 3. Asserts
-        assertEquals(ReservationRejectionError.INVALID_PARAMS.name(), ex.getMessage());
-    }
-
-    @Test
-    void testValidateReservationBelongsToCommerceWhenCommerceIdNullThrows() {
-        // 1. Setup
-        final long reservationId = 5L;
-        final Reservation reservation = new Reservation(reservationId, clientRef(1L), packRef(10L), LocalDateTime.now(), 10.0,
-                Reservation.Status.RESERVED, "GGGGG", null, 1, null);
-        when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
-
-        // 2. Ejercicio
-        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reservationService.validateReservationBelongsToCommerce(reservationId, null));
-
-        // 3. Asserts
-        assertEquals(ReservationRejectionError.INVALID_PARAMS.name(), ex.getMessage());
-        assertEquals(Reservation.Status.RESERVED,
-                reservationService.findById(reservationId).orElseThrow().getStatus());
-    }
-
-    @Test
-    void testTryRejectReservationForCommerceWhenReservedCancelsRestoresStockAndNotifiesClient() {
+    void testTryRejectReservationWhenReservedCancelsRestoresStockAndNotifiesClient() {
         // 1. Setup
         final long packId = 500L;
-        final long commerceId = 999L;
         final long reservationId = 42L;
         final LocalDateTime resDate = LocalDateTime.now();
         final Reservation reserved = new Reservation(reservationId, clientRef(101L), packRef(packId), resDate, 25.0,
@@ -364,8 +294,6 @@ class ReservationServiceImplTest {
         final Reservation canceled = new Reservation(reservationId, clientRef(101L), packRef(packId), resDate, 25.0,
                 Reservation.Status.CANCELED, "HHHHH", null, 3, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reserved));
-        when(packDao.findById(packId)).thenReturn(Optional.of(
-                newPack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
         when(packDao.incrementStock(packId, 3)).thenReturn(true);
         when(reservationDao.updateStatus(reservationId, Reservation.Status.CANCELED)).thenReturn(canceled);
         final User clientUser = new User(101L, "client@example.org", "pwd", "Client", null, User.Role.CLIENT, false);
@@ -379,7 +307,7 @@ class ReservationServiceImplTest {
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationRejectionError> result =
-                reservationService.tryRejectReservationForCommerce(reservationId, commerceId);
+                reservationService.tryRejectReservation(reservationId);
 
         // 3. Asserts
         assertTrue(result.isSuccess());
@@ -388,62 +316,36 @@ class ReservationServiceImplTest {
     }
 
     @Test
-    void testTryRejectReservationForCommerceWhenWrongCommerceReturnsError() {
-        // 1. Setup
-        final long packId = 700L;
-        final long reservationId = 43L;
-        final Reservation reserved = new Reservation(reservationId, clientRef(103L), packRef(packId), LocalDateTime.now(), 25.0,
-                Reservation.Status.RESERVED, "JJJJJ", null, 1, null);
-        when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reserved));
-        when(packDao.findById(packId)).thenReturn(Optional.of(
-                newPack(packId, 222L, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
-
-        // 2. Ejercicio
-        final ReservationServiceResult<ReservationRejectionError> result =
-                reservationService.tryRejectReservationForCommerce(reservationId, 333L);
-
-        // 3. Asserts
-        assertEquals(ReservationRejectionError.WRONG_COMMERCE, result.error().orElseThrow());
-    }
-
-    @Test
-    void testTryRejectReservationForCommerceWhenCanceledReturnsError() {
+    void testTryRejectReservationWhenCanceledReturnsError() {
         // 1. Setup
         final long packId = 710L;
-        final long commerceId = 711L;
         final long reservationId = 44L;
         final Reservation reservation = new Reservation(reservationId, clientRef(104L), packRef(packId), LocalDateTime.now(), 25.0,
                 Reservation.Status.CANCELED, "KKKKK", null, 1, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
-        when(packDao.findById(packId)).thenReturn(Optional.of(
-                newPack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationRejectionError> result =
-                reservationService.tryRejectReservationForCommerce(reservationId, commerceId);
+                reservationService.tryRejectReservation(reservationId);
 
         // 3. Asserts
         assertEquals(ReservationRejectionError.ALREADY_CANCELED, result.error().orElseThrow());
     }
 
     @Test
-    void testTryRejectReservationForCommerceWhenPaidReturnsError() {
+    void testTryRejectReservationWhenPaidReturnsError() {
         // 1. Setup
         final long packId = 600L;
-        final long commerceId = 111L;
         final long reservationId = 45L;
         final Reservation reservation = new Reservation(reservationId, clientRef(102L), packRef(packId), LocalDateTime.now(), 25.0,
                 Reservation.Status.PAID, "IIIII", null, 1, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
-        when(packDao.findById(packId)).thenReturn(Optional.of(
-                newPack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationRejectionError> result =
-                reservationService.tryRejectReservationForCommerce(reservationId, commerceId);
+                reservationService.tryRejectReservation(reservationId);
 
         // 3. Asserts
         assertEquals(ReservationRejectionError.ALREADY_COMPLETED, result.error().orElseThrow());
     }
-
 }

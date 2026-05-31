@@ -229,4 +229,63 @@ class AuctionServiceImplTest {
         // 3. Asserts
         assertEquals(expected, result);
     }
+
+    @Test
+    void testCancelAuctionWhenAuctionNotFoundReturnsNotFound() {
+        // 1. Setup
+        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final CancelAuctionResult result = auctionService.cancelAuction(AUCTION_ID);
+
+        // 3. Asserts
+        assertEquals(CancelAuctionResult.Outcome.NOT_FOUND, result.getOutcome());
+    }
+
+    @Test
+    void testCancelAuctionWhenAuctionNotActiveReturnsNotActive() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, 10.0, null, null, null,
+                Auction.Status.FINISHED, LocalDateTime.now());
+        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
+
+        // 2. Ejercicio
+        final CancelAuctionResult result = auctionService.cancelAuction(AUCTION_ID);
+
+        // 3. Asserts
+        assertEquals(CancelAuctionResult.Outcome.NOT_ACTIVE, result.getOutcome());
+    }
+
+    @Test
+    void testCancelAuctionWhenAuctionHasBidsReturnsHasBids() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, 10.0, null, null, null,
+                Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
+        when(bidDao.countByAuctionId(AUCTION_ID)).thenReturn(1);
+
+        // 2. Ejercicio
+        final CancelAuctionResult result = auctionService.cancelAuction(AUCTION_ID);
+
+        // 3. Asserts
+        assertEquals(CancelAuctionResult.Outcome.HAS_BIDS, result.getOutcome());
+    }
+
+    @Test
+    void testCancelAuctionWhenValidCancelsAuctionAndSetsPackInactive() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, 10.0, null, null, null,
+                Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
+        when(bidDao.countByAuctionId(AUCTION_ID)).thenReturn(0);
+
+        // 2. Ejercicio
+        final CancelAuctionResult result = auctionService.cancelAuction(AUCTION_ID);
+
+        // 3. Asserts
+        assertEquals(CancelAuctionResult.Outcome.SUCCESS, result.getOutcome());
+    }
 }

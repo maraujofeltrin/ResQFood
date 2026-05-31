@@ -10,8 +10,6 @@ public final class CancelAuctionResult {
         SUCCESS,
         /** Auction does not exist. */
         NOT_FOUND,
-        /** Requesting user is not the owner of the auction's commerce. */
-        FORBIDDEN,
         /** Auction has bids and cannot be cancelled. */
         HAS_BIDS,
         /** Auction is not active (already cancelled or finished). */
@@ -30,10 +28,6 @@ public final class CancelAuctionResult {
 
     public static CancelAuctionResult notFound() {
         return new CancelAuctionResult(Outcome.NOT_FOUND);
-    }
-
-    public static CancelAuctionResult forbidden() {
-        return new CancelAuctionResult(Outcome.FORBIDDEN);
     }
 
     public static CancelAuctionResult hasBids() {

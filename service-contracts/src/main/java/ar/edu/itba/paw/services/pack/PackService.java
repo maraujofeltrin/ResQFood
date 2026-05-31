@@ -14,7 +14,7 @@ public interface PackService {
     List<Pack> findAll();
     List<Pack> findByCommerceId(Long commerceId);
     Pack update(Pack pack);
-    CommercePackAccess deletePack(long packId, long commerceUserId);
+    CommercePackAccess deletePack(long packId);
 
     /**
      * Returns a pack visible on its public detail page.
@@ -26,14 +26,14 @@ public interface PackService {
     /**
      * Updates an existing pack. If imageData is provided, it updates the image too.
      */
-    CommercePackAccess updatePack(long packId, long commerceUserId, String title, String description, Double originalPrice,
+    CommercePackAccess updatePack(long packId, String title, String description, Double originalPrice,
                     Double finalPrice, Integer stock, List<PackTag> tags,
                     Long imageId);
 
     /**
      * Direct-sale pack owned by the commerce, not soft-deleted, and not under an auction.
      */
-    CommercePackAccess resolvePackForDirectEdit(long packId, long commerceUserId);
+    CommercePackAccess resolvePackForDirectEdit(long packId);
 
     List<Pack> filterPacks(String query, List<PackTag> tags, String city,
                            List<String> timeRanges, PackSortOption sort,

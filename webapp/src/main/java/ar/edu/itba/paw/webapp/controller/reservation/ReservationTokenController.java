@@ -1,6 +1,5 @@
 package ar.edu.itba.paw.webapp.controller.reservation;
 
-import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
@@ -10,7 +9,7 @@ import ar.edu.itba.paw.services.reservation.ReservationTokenService.TokenValidat
 import ar.edu.itba.paw.services.reservation.ReservationServiceResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,9 +17,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
-import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -33,23 +29,18 @@ import java.util.Optional;
 @RequestMapping("/reservations")
 public class ReservationTokenController {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReservationTokenController.class);
-
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
 
     private final ReservationTokenService reservationTokenService;
     private final ReservationService reservationService;
     private final ZoneId displayZone;
-    private final AuthenticatedUserResolver authResolver;
 
     @Autowired
     public ReservationTokenController(final ReservationTokenService reservationTokenService,
             final ReservationService reservationService,
-            final AuthenticatedUserResolver authResolver,
             final ZoneId businessZone) {
         this.reservationTokenService = reservationTokenService;
         this.reservationService = reservationService;
-        this.authResolver = authResolver;
         this.displayZone = businessZone;
     }
 
@@ -61,32 +52,32 @@ public class ReservationTokenController {
     }
 
     @GetMapping("/accept")
-    public String acceptGet(@RequestParam(required = false) final String token, final Model model,
-            final Authentication authentication) {
-        return handleConfirmGet(token, model, authentication, ReservationToken.Action.ACCEPT, "reservations/confirm-action");
+    @PreAuthorize("#token == null or #token.isEmpty() or @own.canWriteToken(#token, authentication.principal.id)")
+    public String acceptGet(@RequestParam(required = false) final String token, final Model model) {
+        return handleConfirmGet(token, model, ReservationToken.Action.ACCEPT, "reservations/confirm-action");
     }
 
     @GetMapping("/reject")
-    public String rejectGet(@RequestParam(required = false) final String token, final Model model,
-            final Authentication authentication) {
-        return handleConfirmGet(token, model, authentication, ReservationToken.Action.REJECT, "reservations/reject-confirm");
+    @PreAuthorize("#token == null or #token.isEmpty() or @own.canWriteToken(#token, authentication.principal.id)")
+    public String rejectGet(@RequestParam(required = false) final String token, final Model model) {
+        return handleConfirmGet(token, model, ReservationToken.Action.REJECT, "reservations/reject-confirm");
     }
 
     @PostMapping("/accept")
+    @PreAuthorize("#token == null or #token.isEmpty() or @own.canWriteToken(#token, authentication.principal.id)")
     public String acceptPost(@RequestParam(required = false) final String token,
                              @RequestParam(required = false) final String pickupCode,
-                             final Model model,
-                             final Authentication authentication) {
-        return handleConsumePost(token, pickupCode, model, authentication, ReservationToken.Action.ACCEPT, "reservation.token.action.accepted");
+                             final Model model) {
+        return handleConsumePost(token, pickupCode, model, ReservationToken.Action.ACCEPT, "reservation.token.action.accepted");
     }
 
     @PostMapping("/reject")
-    public String rejectPost(@RequestParam(required = false) final String token, final Model model,
-            final Authentication authentication) {
-        return handleConsumePost(token, null, model, authentication, ReservationToken.Action.REJECT, "reservation.token.action.rejected");
+    @PreAuthorize("#token == null or #token.isEmpty() or @own.canWriteToken(#token, authentication.principal.id)")
+    public String rejectPost(@RequestParam(required = false) final String token, final Model model) {
+        return handleConsumePost(token, null, model, ReservationToken.Action.REJECT, "reservation.token.action.rejected");
     }
 
-    private String handleConfirmGet(final String token, final Model model, final Authentication authentication,
+    private String handleConfirmGet(final String token, final Model model,
             final ReservationToken.Action action, final String viewName) {
         if (token == null || token.isBlank()) {
             model.addAttribute("tokenStatus", "invalid");
@@ -94,10 +85,6 @@ public class ReservationTokenController {
         }
 
         final TokenValidationResult result = reservationTokenService.validateOnly(token, action);
-
-        if (result == TokenValidationResult.SUCCESS || result == TokenValidationResult.ALREADY_USED) {
-            verifyTokenOwnership(token, authentication);
-        }
 
         switch (result) {
             case SUCCESS: {
@@ -139,23 +126,20 @@ public class ReservationTokenController {
     }
 
     private String handleConsumePost(final String token, final String pickupCode, final Model model,
-            final Authentication authentication, final ReservationToken.Action action,
-            final String actionCode) {
+            final ReservationToken.Action action, final String actionCode) {
         if (token == null || token.isBlank()) {
             model.addAttribute("tokenStatus", "invalid");
             return "reservations/token-status";
         }
 
-        final Commerce commerce = authResolver.resolveCommerce(authentication);
-
         if (action == ReservationToken.Action.ACCEPT) {
             final ReservationServiceResult<ReservationTokenActionError> result = reservationTokenService.acceptReservationTokenWithPickupCode(
-                    token, pickupCode, commerce.getUserId());
+                    token, pickupCode);
             return mapAcceptTokenResult(result, token, model, actionCode);
         }
 
         final ReservationServiceResult<ReservationTokenActionError> result = reservationTokenService.rejectReservationToken(
-                token, commerce.getUserId());
+                token);
         return mapTokenActionResult(result, token, model, actionCode);
     }
 
@@ -173,8 +157,6 @@ public class ReservationTokenController {
             case EXPIRED:
                 model.addAttribute("tokenStatus", "expired");
                 return "reservations/token-status";
-            case WRONG_COMMERCE:
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             case INVALID_TOKEN:
             case NOT_FOUND:
             default:
@@ -223,22 +205,5 @@ public class ReservationTokenController {
         }
         model.addAttribute("tokenStatus", "already-used");
         return "reservations/token-status";
-    }
-
-    /**
-     * Verifies that the authenticated commerce user owns the reservation behind the token.
-     * Used for GET (display-only) endpoints; POST endpoints delegate ownership to the service layer.
-     */
-    private void verifyTokenOwnership(final String token, final Authentication authentication) {
-        final Commerce commerce = authResolver.resolveCommerce(authentication);
-        final Long reservationId = reservationTokenService.findReservationIdByToken(token)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN));
-        try {
-            reservationService.validateReservationBelongsToCommerce(reservationId, commerce.getUserId());
-        } catch (final IllegalArgumentException ex) {
-            LOGGER.debug("Token GET ownership check failed commerceUserId={} reservationId={}",
-                    Long.valueOf(commerce.getUserId()), reservationId, ex);
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
     }
 }

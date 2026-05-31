@@ -23,8 +23,6 @@ public interface ReservationService {
 
     String computePickupDateStr(Reservation reservation);
 
-    void validateReservationBelongsToCommerce(Long reservationId, Long commerceUserId);
-
     /**
      * Validates a direct (non-auction) reservation for an active pack.
      */
@@ -33,26 +31,12 @@ public interface ReservationService {
     Reservation confirmPickup(final Long id);
 
     /**
-     * Rejects a RESERVED reservation for a commerce-owned pack without using exceptions
-     * for expected failures.
+     * Rejects a RESERVED reservation without using exceptions for expected failures.
      */
-    ReservationServiceResult<ReservationRejectionError> tryRejectReservationForCommerce(Long reservationId, Long commerceUserId);
-
-    /**
-     * Rejects a RESERVED reservation for a commerce-owned pack.
-     * Changes status to CANCELED, restores pack stock and notifies the client.
-     *
-     * @param reservationId  reservation id to reject
-     * @param commerceUserId authenticated commerce user id
-     * @return the updated Reservation in CANCELED status
-     * @throws IllegalArgumentException if ids are invalid or reservation doesn't belong to commerce
-     * @throws IllegalStateException    if reservation cannot be rejected in its current state
-     */
-    Reservation rejectReservationForCommerce(Long reservationId, Long commerceUserId);
+    ReservationServiceResult<ReservationRejectionError> tryRejectReservation(Long reservationId);
 
     /**
      * Core rejection: validates state, restores stock, marks CANCELED, notifies client.
-     * Does NOT check commerce ownership — caller must verify beforehand.
      *
      * @param reservationId reservation to reject
      * @return the updated Reservation in CANCELED status

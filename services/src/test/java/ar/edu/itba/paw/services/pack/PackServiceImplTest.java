@@ -122,7 +122,7 @@ class PackServiceImplTest {
         when(auctionService.findByPackId(1L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
-        packService.deletePack(1L, 1L);
+        packService.deletePack(1L);
 
         // 3. Asserts
         assertTrue(pack.getDeleted());
@@ -347,7 +347,7 @@ class PackServiceImplTest {
         when(packDao.findById(999L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
-        final CommercePackAccess result = packService.updatePack(999L, 1L, "t", "d", 1.0, 1.0, 1, Collections.emptyList(), null);
+        final CommercePackAccess result = packService.updatePack(999L, "t", "d", 1.0, 1.0, 1, Collections.emptyList(), null);
 
         // 3. Asserts
         assertTrue(result instanceof CommercePackAccess.NotFound);
@@ -365,7 +365,7 @@ class PackServiceImplTest {
 
         // 2. Ejercicio
         final CommercePackAccess access =
-                packService.updatePack(3L, 5L, "NewTitle", "NewDesc", 10.0, 8.0, 12, tags, 77L);
+                packService.updatePack(3L, "NewTitle", "NewDesc", 10.0, 8.0, 12, tags, 77L);
 
         // 3. Asserts
         assertTrue(access instanceof CommercePackAccess.Granted);
@@ -387,7 +387,7 @@ class PackServiceImplTest {
 
         // 2. Ejercicio
         final CommercePackAccess access =
-                packService.updatePack(4L, 2L, "x", "y", 1.0, 1.0, 2, null, null);
+                packService.updatePack(4L, "x", "y", 1.0, 1.0, 2, null, null);
 
         // 3. Asserts
         assertTrue(access instanceof CommercePackAccess.Granted);
@@ -405,7 +405,7 @@ class PackServiceImplTest {
 
         // 2. Ejercicio
         final CommercePackAccess access =
-                packService.updatePack(5L, 2L, "x2", "y2", 2.0, 2.0, 3, Collections.emptyList(), null);
+                packService.updatePack(5L, "x2", "y2", 2.0, 2.0, 3, Collections.emptyList(), null);
 
         // 3. Asserts
         assertTrue(access instanceof CommercePackAccess.Granted);
@@ -419,20 +419,7 @@ class PackServiceImplTest {
         when(packDao.findById(1L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
-        final CommercePackAccess access = packService.resolvePackForDirectEdit(1L, 100L);
-
-        // 3. Asserts
-        assertInstanceOf(CommercePackAccess.NotFound.class, access);
-    }
-
-    @Test
-    void testResolvePackForDirectEditWhenCommerceUserIdMismatchReturnsNotFound() {
-        // 1. Setup
-        final Pack pack = newPack(6L, 50L, "p", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
-        when(packDao.findById(6L)).thenReturn(Optional.of(pack));
-
-        // 2. Ejercicio
-        final CommercePackAccess access = packService.resolvePackForDirectEdit(6L, 99L);
+        final CommercePackAccess access = packService.resolvePackForDirectEdit(1L);
 
         // 3. Asserts
         assertInstanceOf(CommercePackAccess.NotFound.class, access);
@@ -445,7 +432,7 @@ class PackServiceImplTest {
         when(packDao.findById(7L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
-        final CommercePackAccess access = packService.resolvePackForDirectEdit(7L, 100L);
+        final CommercePackAccess access = packService.resolvePackForDirectEdit(7L);
 
         // 3. Asserts
         assertInstanceOf(CommercePackAccess.NotFound.class, access);
@@ -462,7 +449,7 @@ class PackServiceImplTest {
         when(auctionService.findByPackId(8L)).thenReturn(Optional.of(auction));
 
         // 2. Ejercicio
-        final CommercePackAccess access = packService.resolvePackForDirectEdit(8L, 200L);
+        final CommercePackAccess access = packService.resolvePackForDirectEdit(8L);
 
         // 3. Asserts
         assertInstanceOf(CommercePackAccess.ForbiddenAuction.class, access);
@@ -476,7 +463,7 @@ class PackServiceImplTest {
         when(auctionService.findByPackId(11L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
-        final CommercePackAccess access = packService.resolvePackForDirectEdit(11L, 300L);
+        final CommercePackAccess access = packService.resolvePackForDirectEdit(11L);
 
         // 3. Asserts
         assertInstanceOf(CommercePackAccess.Granted.class, access);

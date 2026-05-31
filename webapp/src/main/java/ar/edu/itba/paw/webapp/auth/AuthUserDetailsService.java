@@ -37,6 +37,7 @@ public class AuthUserDetailsService implements UserDetailsService {
                 Collections.singleton(new SimpleGrantedAuthority(roleName));
 
         return new AuthUser(
+                user.getId(),
                 user.getEmail(),
                 user.getPassword(),
                 user.isVerified(),

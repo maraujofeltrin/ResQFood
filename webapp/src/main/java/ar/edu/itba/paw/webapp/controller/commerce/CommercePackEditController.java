@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
@@ -62,7 +63,7 @@ public class CommercePackEditController {
     }
 
     private Pack resolveEditPack(final long packId, final long commerceId, final String forbiddenActionKey) {
-        final CommercePackAccess access = packService.resolvePackForDirectEdit(packId, commerceId);
+        final CommercePackAccess access = packService.resolvePackForDirectEdit(packId);
         if (access instanceof CommercePackAccess.NotFound) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
@@ -74,6 +75,7 @@ public class CommercePackEditController {
     }
 
     @RequestMapping(value = "/edit-pack/{packId}", method = RequestMethod.GET)
+    @PreAuthorize("@own.canWritePack(#packId, authentication.principal.id)")
     public ModelAndView editPackForm(@PathVariable("packId") final long packId,
             @AuthenticationPrincipal final AuthUser principal,
             @ModelAttribute("createOfferForm") final CreateOfferForm form,
@@ -106,13 +108,14 @@ public class CommercePackEditController {
         if ("maxUploadSize".equals(error)) {
             mav.addObject("errorMessage",
                     messageSource.getMessage("commerce.createPack.validation.image.maxSize",
-                            null, LocaleContextHolder.getLocale()));
+                             null, LocaleContextHolder.getLocale()));
         }
 
         return mav;
     }
 
     @RequestMapping(value = "/edit-pack/{packId}", method = RequestMethod.POST)
+    @PreAuthorize("@own.canWritePack(#packId, authentication.principal.id)")
     public ModelAndView editPack(
             @PathVariable("packId") final long packId,
             @AuthenticationPrincipal final AuthUser principal,
@@ -160,7 +163,6 @@ public class CommercePackEditController {
 
             CommercePackAccess access = packService.updatePack(
                     packId,
-                    commerceId,
                     form.getTitle(),
                     form.getDescription(),
                     form.getOriginalPrice(),
@@ -208,6 +210,7 @@ public class CommercePackEditController {
     }
 
     @RequestMapping(value = "/delete-pack/{packId}", method = RequestMethod.POST)
+    @PreAuthorize("@own.canWritePack(#packId, authentication.principal.id)")
     public ModelAndView deletePack(
             @PathVariable("packId") final long packId,
             @AuthenticationPrincipal final AuthUser principal,
@@ -219,7 +222,7 @@ public class CommercePackEditController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        CommercePackAccess access = packService.deletePack(packId, commerceId);
+        CommercePackAccess access = packService.deletePack(packId);
         if (access instanceof CommercePackAccess.NotFound) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }

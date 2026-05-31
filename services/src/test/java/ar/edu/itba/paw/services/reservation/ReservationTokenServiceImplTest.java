@@ -7,7 +7,6 @@ import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
-import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import org.junit.jupiter.api.Test;
@@ -19,7 +18,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -36,8 +34,6 @@ class ReservationTokenServiceImplTest {
     private ReservationTokenDao reservationTokenDao;
     @Mock
     private ReservationDao reservationDao;
-    @Mock
-    private PackDao packDao;
     @Mock
     private ReservationService reservationService;
 
@@ -57,11 +53,7 @@ class ReservationTokenServiceImplTest {
         return new Pack(id, commerceRef(1L), "t", "d", 1.0, 1.0, 1, true, Collections.emptyList());
     }
 
-    private static Pack newPack(final long id, final long commerceId, final String title, final String desc,
-            final double originalPrice, final double finalPrice, final int stock, final boolean active,
-            final List<ar.edu.itba.paw.models.pack.PackTag> tags) {
-        return new Pack(id, commerceRef(commerceId), title, desc, originalPrice, finalPrice, stock, active, tags);
-    }
+
 
     private static Reservation reservationRef(final long id) {
         return new Reservation(id, clientRef(1L), packRef(1L), null, null, null, null, null, 1, null);
@@ -157,7 +149,6 @@ class ReservationTokenServiceImplTest {
     void testAcceptReservationTokenWhenValidCodeMarksUsedAndConfirmsPickup() {
         // 1. Setup
         final long packId = 800L;
-        final long commerceId = 801L;
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final Reservation reserved = new Reservation(201L, clientRef(201L), packRef(packId), now, 25.0, Reservation.Status.RESERVED,
                 "A1B2C", null, 1, null);
@@ -174,13 +165,11 @@ class ReservationTokenServiceImplTest {
             return null;
         }).when(reservationTokenDao).markAsUsed("accept-token");
         when(reservationDao.findById(201L)).thenReturn(Optional.of(reserved));
-        when(packDao.findById(packId)).thenReturn(Optional.of(
-                newPack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
         when(reservationService.confirmPickup(201L)).thenReturn(paid);
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =
-                svc.acceptReservationTokenWithPickupCode("accept-token", "a1b2c", commerceId);
+                svc.acceptReservationTokenWithPickupCode("accept-token", "a1b2c");
 
         // 3. Asserts
         assertTrue(result.isSuccess());
@@ -192,7 +181,6 @@ class ReservationTokenServiceImplTest {
     void testAcceptReservationTokenWhenInvalidPickupCodeReturnsErrorAndDoesNotConsumeToken() {
         // 1. Setup
         final long packId = 810L;
-        final long commerceId = 811L;
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final Reservation reserved = new Reservation(202L, clientRef(202L), packRef(packId), now, 25.0, Reservation.Status.RESERVED,
                 "Z9Y8X", null, 1, null);
@@ -201,12 +189,10 @@ class ReservationTokenServiceImplTest {
         final AtomicReference<ReservationToken> tokenRef = new AtomicReference<>(token);
         when(reservationTokenDao.findByToken("bad-code-token")).thenAnswer(inv -> Optional.of(tokenRef.get()));
         when(reservationDao.findById(202L)).thenReturn(Optional.of(reserved));
-        when(packDao.findById(packId)).thenReturn(Optional.of(
-                newPack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =
-                svc.acceptReservationTokenWithPickupCode("bad-code-token", "WRONG", commerceId);
+                svc.acceptReservationTokenWithPickupCode("bad-code-token", "WRONG");
 
         // 3. Asserts
         assertEquals(ReservationTokenActionError.INVALID_PICKUP_CODE, result.error().orElseThrow());
@@ -220,7 +206,7 @@ class ReservationTokenServiceImplTest {
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =
-                svc.acceptReservationTokenWithPickupCode("  ", "CODE", 1L);
+                svc.acceptReservationTokenWithPickupCode("  ", "CODE");
 
         // 3. Asserts
         assertEquals(ReservationTokenActionError.INVALID_TOKEN, result.error().orElseThrow());
@@ -230,7 +216,6 @@ class ReservationTokenServiceImplTest {
     void testRejectReservationTokenWhenValidTokenMarksUsedAndCancelsReservation() {
         // 1. Setup
         final long packId = 900L;
-        final long commerceId = 901L;
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final Reservation reserved = new Reservation(301L, clientRef(301L), packRef(packId), now, 25.0, Reservation.Status.RESERVED,
                 "R1R2R", null, 1, null);
@@ -248,13 +233,11 @@ class ReservationTokenServiceImplTest {
         }).when(reservationTokenDao).markAsUsed("reject-token");
         when(reservationDao.findById(301L)).thenReturn(Optional.of(reserved), Optional.of(reserved),
                 Optional.of(canceled));
-        when(packDao.findById(packId)).thenReturn(Optional.of(
-                newPack(packId, commerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
         when(reservationService.rejectReservation(301L)).thenReturn(canceled);
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =
-                svc.rejectReservationToken("reject-token", commerceId);
+                svc.rejectReservationToken("reject-token");
 
         // 3. Asserts
         assertTrue(result.isSuccess());
@@ -262,37 +245,12 @@ class ReservationTokenServiceImplTest {
         assertTrue(tokenRef.get().isUsed());
     }
 
-    @Test
-    void testRejectReservationTokenWhenWrongCommerceReturnsErrorAndDoesNotConsumeToken() {
-        // 1. Setup
-        final long packId = 910L;
-        final long ownerCommerceId = 911L;
-        final long otherCommerceId = 999L;
-        final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-        final Reservation reserved = new Reservation(302L, clientRef(302L), packRef(packId), now, 25.0, Reservation.Status.RESERVED,
-                "S1S2S", null, 1, null);
-        final ReservationToken token = new ReservationToken("reject-wrong-commerce", reserved,
-                ReservationToken.Action.REJECT, false, now, now.plusHours(1));
-        final AtomicReference<ReservationToken> tokenRef = new AtomicReference<>(token);
-        when(reservationTokenDao.findByToken("reject-wrong-commerce")).thenAnswer(inv -> Optional.of(tokenRef.get()));
-        when(reservationDao.findById(302L)).thenReturn(Optional.of(reserved));
-        when(packDao.findById(packId)).thenReturn(Optional.of(
-                newPack(packId, ownerCommerceId, "title", "desc", 10.0, 5.0, 5, true, Collections.emptyList())));
 
-        // 2. Ejercicio
-        final ReservationServiceResult<ReservationTokenActionError> result =
-                svc.rejectReservationToken("reject-wrong-commerce", otherCommerceId);
-
-        // 3. Asserts
-        assertEquals(ReservationTokenActionError.WRONG_COMMERCE, result.error().orElseThrow());
-        assertFalse(tokenRef.get().isUsed());
-    }
 
     @Test
     void testRejectReservationTokenWhenExpiredReturnsErrorAndDoesNotConsumeToken() {
         // 1. Setup
         final long packId = 920L;
-        final long commerceId = 921L;
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final Reservation reserved = new Reservation(303L, clientRef(303L), packRef(packId), now, 25.0, Reservation.Status.RESERVED,
                 "T1T2T", null, 1, null);
@@ -304,7 +262,7 @@ class ReservationTokenServiceImplTest {
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =
-                svc.rejectReservationToken("reject-expired", commerceId);
+                svc.rejectReservationToken("reject-expired");
 
         // 3. Asserts
         assertEquals(ReservationTokenActionError.EXPIRED, result.error().orElseThrow());
@@ -315,7 +273,6 @@ class ReservationTokenServiceImplTest {
     void testRejectReservationTokenWhenReservationAlreadyCanceledReturnsAlreadyUsedError() {
         // 1. Setup
         final long packId = 930L;
-        final long commerceId = 931L;
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final Reservation canceledReservation = new Reservation(304L, clientRef(304L), packRef(packId), now, 25.0,
                 Reservation.Status.CANCELED, "U1U2U", null, 1, null);
@@ -327,7 +284,7 @@ class ReservationTokenServiceImplTest {
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =
-                svc.rejectReservationToken("reject-canceled", commerceId);
+                svc.rejectReservationToken("reject-canceled");
 
         // 3. Asserts
         assertEquals(ReservationTokenActionError.ALREADY_USED, result.error().orElseThrow());
@@ -340,7 +297,7 @@ class ReservationTokenServiceImplTest {
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =
-                svc.rejectReservationToken("  ", 1L);
+                svc.rejectReservationToken("  ");
 
         // 3. Asserts
         assertEquals(ReservationTokenActionError.INVALID_TOKEN, result.error().orElseThrow());

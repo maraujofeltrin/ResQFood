@@ -193,7 +193,7 @@ public class AuctionServiceImpl implements AuctionService {
 
     @Transactional
     @Override
-    public CancelAuctionResult cancelAuction(final long auctionId, final long requestingUserId) {
+    public CancelAuctionResult cancelAuction(final long auctionId) {
         final Auction auction = auctionDao.findById(auctionId).orElse(null);
         if (auction == null) {
             LOGGER.warn("Failed to cancel auction: auctionId={}, result={}", auctionId, CancelAuctionResult.notFound().getOutcome().name());
@@ -207,14 +207,6 @@ public class AuctionServiceImpl implements AuctionService {
         }
 
         final Pack pack = auction.getPack();
-        final Long commerceId = pack.getCommerceId();
-        final boolean isOwner = commerceDao.findByUserId(requestingUserId)
-                .map(c -> c.getUserId().equals(commerceId))
-                .orElse(false);
-        if (!isOwner) {
-            LOGGER.warn("Failed to cancel auction: auctionId={}, result={}", auctionId, CancelAuctionResult.forbidden().getOutcome().name());
-            return CancelAuctionResult.forbidden();
-        }
 
         final int bidCount = bidDao.countByAuctionId(auctionId);
         if (bidCount > 0) {
@@ -225,7 +217,7 @@ public class AuctionServiceImpl implements AuctionService {
         auctionDao.updateStatus(auctionId, Auction.Status.CANCELLED);
         packDao.setActive(pack.getId(), false);
 
-        LOGGER.info("Auction cancelled: auctionId={}, requestingUserId={}", auctionId, requestingUserId);
+        LOGGER.info("Auction cancelled: auctionId={}", auctionId);
         return CancelAuctionResult.success();
     }
 

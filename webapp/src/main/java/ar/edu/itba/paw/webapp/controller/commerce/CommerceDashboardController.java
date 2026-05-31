@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
@@ -277,18 +278,15 @@ public class CommerceDashboardController {
     }
 
     @PostMapping(value = "/auctions/{auctionId}/cancel")
-    public ModelAndView cancelAuction(@PathVariable("auctionId") final long auctionId,
-            @AuthenticationPrincipal final AuthUser principal) {
-        final long userId = authResolver.resolveUser(principal).getId();
-        final CancelAuctionResult result = auctionService.cancelAuction(auctionId, userId);
+    @PreAuthorize("@own.canWriteAuction(#auctionId, authentication.principal.id)")
+    public ModelAndView cancelAuction(@PathVariable("auctionId") final long auctionId) {
+        final CancelAuctionResult result = auctionService.cancelAuction(auctionId);
 
         switch (result.getOutcome()) {
             case SUCCESS:
                 return new ModelAndView("redirect:/commerce/products?cancelled=true");
             case NOT_FOUND:
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-            case FORBIDDEN:
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             case HAS_BIDS:
                 return new ModelAndView("redirect:/commerce/products?cancelFailed=true");
             case NOT_ACTIVE:

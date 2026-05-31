@@ -12,8 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,7 +23,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Controller;
 
 @Controller
 @RequestMapping("/reservations")
@@ -64,24 +64,20 @@ public class ReservationListController {
     }
 
     @PostMapping("/{id}/reject")
+    @PreAuthorize("@own.canWriteReservation(#id, authentication.principal.id)")
     public String rejectReservationFromCard(@PathVariable("id") final Long reservationId,
             @RequestParam(value = "page", required = false) final Integer page,
             @RequestParam(value = "q", required = false) final String query,
             @RequestParam(value = "status", required = false) final Reservation.Status status,
-            final Authentication authentication,
             final RedirectAttributes redirectAttributes) {
-        final User currentUser = authResolver.resolveUser(authentication);
 
         final ReservationServiceResult<ReservationRejectionError> result =
-                reservationService.tryRejectReservationForCommerce(reservationId, currentUser.getId());
+                reservationService.tryRejectReservation(reservationId);
         if (result.isSuccess()) {
             redirectAttributes.addFlashAttribute("reservationActionKind", "success");
             redirectAttributes.addFlashAttribute("reservationActionMessageCode", "commerce.reservations.action.reject.success");
         } else {
             final ReservationRejectionError error = result.error().orElse(ReservationRejectionError.INVALID_STATUS);
-            if (error == ReservationRejectionError.WRONG_COMMERCE) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-            }
             redirectAttributes.addFlashAttribute("reservationActionKind", "error");
             redirectAttributes.addFlashAttribute("reservationActionMessageCode", rejectionMessageCode(error));
         }

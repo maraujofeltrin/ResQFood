@@ -207,13 +207,7 @@ public class ReservationServiceImpl implements ReservationService {
         return reservationDao.findByPackId(packId);
     }
 
-    @Override
-    public void validateReservationBelongsToCommerce(final Long reservationId, final Long commerceUserId) {
-        resolveReservationOwnershipError(reservationId, commerceUserId)
-                .ifPresent(error -> {
-                    throw new IllegalArgumentException(error.name());
-                });
-    }
+
 
     @Override
     public String computePickupDateStr(final Reservation reservation) {
@@ -280,20 +274,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Transactional
     @Override
-    public Reservation rejectReservationForCommerce(final Long reservationId, final Long commerceUserId) {
-        final ReservationServiceResult<ReservationRejectionError> result = tryRejectReservationForCommerce(reservationId, commerceUserId);
-        return result.reservation().orElseThrow(() -> toRejectionException(result));
-    }
-
-    @Transactional
-    @Override
-    public ReservationServiceResult<ReservationRejectionError> tryRejectReservationForCommerce(final Long reservationId,
-            final Long commerceUserId) {
-        final Optional<ReservationRejectionError> ownershipError =
-                resolveReservationOwnershipError(reservationId, commerceUserId);
-        if (ownershipError.isPresent()) {
-            return ReservationServiceResult.failure(ownershipError.get());
-        }
+    public ReservationServiceResult<ReservationRejectionError> tryRejectReservation(final Long reservationId) {
         return rejectReservationInternal(reservationId);
     }
 
@@ -356,7 +337,6 @@ public class ReservationServiceImpl implements ReservationService {
             case INVALID_PARAMS:
             case RESERVATION_NOT_FOUND:
             case PACK_NOT_FOUND:
-            case WRONG_COMMERCE:
                 return new IllegalArgumentException(error.name());
             case ALREADY_CANCELED:
             case ALREADY_COMPLETED:
@@ -365,36 +345,6 @@ public class ReservationServiceImpl implements ReservationService {
             default:
                 return new IllegalStateException(error.name());
         }
-    }
-
-    private Optional<ReservationRejectionError> resolveReservationOwnershipError(final Long reservationId,
-            final Long commerceUserId) {
-        if (reservationId == null || commerceUserId == null) {
-            return Optional.of(ReservationRejectionError.INVALID_PARAMS);
-        }
-
-        final Reservation reservation = reservationDao.findById(reservationId).orElse(null);
-        if (reservation == null) {
-            return Optional.of(ReservationRejectionError.RESERVATION_NOT_FOUND);
-        }
-
-        return resolveOwnershipError(reservation, commerceUserId);
-    }
-
-    private Optional<ReservationRejectionError> resolveOwnershipError(final Reservation reservation,
-            final Long commerceUserId) {
-        if (reservation.getPack() == null) {
-            return Optional.of(ReservationRejectionError.PACK_NOT_FOUND);
-        }
-
-        final boolean isOwned = packDao.findById(reservation.getPack().getId())
-                .map(pack -> commerceUserId.equals(pack.getCommerceId()))
-                .orElse(false);
-
-        if (!isOwned) {
-            return Optional.of(ReservationRejectionError.WRONG_COMMERCE);
-        }
-        return Optional.empty();
     }
 
     @Override

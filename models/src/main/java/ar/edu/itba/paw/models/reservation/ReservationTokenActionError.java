@@ -8,7 +8,6 @@ public enum ReservationTokenActionError {
     NOT_FOUND,
     ALREADY_USED,
     EXPIRED,
-    WRONG_COMMERCE,
     MISSING_PICKUP_CODE,
     INVALID_PICKUP_CODE
 }

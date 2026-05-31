@@ -3,7 +3,6 @@ package ar.edu.itba.paw.services.reservation;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
-import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import org.slf4j.Logger;
@@ -24,17 +23,14 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
 
     private final ReservationTokenDao reservationTokenDao;
     private final ReservationDao reservationDao;
-    private final PackDao packDao;
     private final ReservationService reservationService;
 
     @Autowired
     public ReservationTokenServiceImpl(final ReservationTokenDao reservationTokenDao,
             final ReservationDao reservationDao,
-            final PackDao packDao,
             final ReservationService reservationService) {
         this.reservationTokenDao = reservationTokenDao;
         this.reservationDao = reservationDao;
-        this.packDao = packDao;
         this.reservationService = reservationService;
     }
 
@@ -51,9 +47,9 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
     @Transactional
     @Override
     public ReservationServiceResult<ReservationTokenActionError> acceptReservationTokenWithPickupCode(final String token,
-            final String pickupCode, final Long commerceUserId) {
+            final String pickupCode) {
         final ReservationServiceResult<ReservationTokenActionError> common =
-                validateTokenCommon(token, ReservationToken.Action.ACCEPT, commerceUserId);
+                validateTokenCommon(token, ReservationToken.Action.ACCEPT);
         if (common != null) {
             return common;
         }
@@ -80,10 +76,9 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
 
     @Transactional
     @Override
-    public ReservationServiceResult<ReservationTokenActionError> rejectReservationToken(final String token,
-            final Long commerceUserId) {
+    public ReservationServiceResult<ReservationTokenActionError> rejectReservationToken(final String token) {
         final ReservationServiceResult<ReservationTokenActionError> common =
-                validateTokenCommon(token, ReservationToken.Action.REJECT, commerceUserId);
+                validateTokenCommon(token, ReservationToken.Action.REJECT);
         if (common != null) {
             return common;
         }
@@ -105,7 +100,7 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
      *         and the caller should proceed with the action-specific logic.
      */
     private ReservationServiceResult<ReservationTokenActionError> validateTokenCommon(final String token,
-            final ReservationToken.Action expectedAction, final Long commerceUserId) {
+            final ReservationToken.Action expectedAction) {
         if (token == null || token.isBlank()) {
             return ReservationServiceResult.failure(ReservationTokenActionError.INVALID_TOKEN);
         }
@@ -136,12 +131,6 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
 
         if (reservation.getPack() == null) {
             return ReservationServiceResult.failure(ReservationTokenActionError.NOT_FOUND, reservation);
-        }
-        final boolean isOwned = packDao.findById(reservation.getPack().getId())
-                .map(pack -> commerceUserId.equals(pack.getCommerceId()))
-                .orElse(false);
-        if (!isOwned) {
-            return ReservationServiceResult.failure(ReservationTokenActionError.WRONG_COMMERCE, reservation);
         }
 
         return null;

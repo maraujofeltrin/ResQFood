@@ -73,14 +73,14 @@ public class PackServiceImpl implements PackService {
 
     @Transactional
     @Override
-    public CommercePackAccess deletePack(long packId, long commerceUserId) {
-        CommercePackAccess access = resolvePackForDirectEdit(packId, commerceUserId);
+    public CommercePackAccess deletePack(long packId) {
+        CommercePackAccess access = resolvePackForDirectEdit(packId);
         if (!(access instanceof CommercePackAccess.Granted)) {
             LOGGER.warn("Failed to soft-delete pack: packId={}, accessType={}", packId, access.getClass().getSimpleName());
             return access;
         }
         packDao.softDelete(packId);
-        LOGGER.info("Pack soft-deleted: packId={}, commerceUserId={}", packId, commerceUserId);
+        LOGGER.info("Pack soft-deleted: packId={}", packId);
         return access;
     }
 
@@ -115,10 +115,10 @@ public class PackServiceImpl implements PackService {
 
     @Transactional
     @Override
-    public CommercePackAccess updatePack(long packId, long commerceUserId, String title, String description, Double originalPrice,
+    public CommercePackAccess updatePack(long packId, String title, String description, Double originalPrice,
                            Double finalPrice, Integer stock, List<PackTag> tags,
                            Long imageId) {
-        CommercePackAccess access = resolvePackForDirectEdit(packId, commerceUserId);
+        CommercePackAccess access = resolvePackForDirectEdit(packId);
         if (!(access instanceof CommercePackAccess.Granted)) {
             LOGGER.warn("Failed to update pack: packId={}, accessType={}", packId, access.getClass().getSimpleName());
             return access;
@@ -138,7 +138,7 @@ public class PackServiceImpl implements PackService {
         }
 
         final Pack updatedPack = packDao.update(packToUpdate);
-        LOGGER.info("Pack updated: packId={}, commerceUserId={}", packId, commerceUserId);
+        LOGGER.info("Pack updated: packId={}", packId);
         return new CommercePackAccess.Granted(updatedPack);
     }
 
@@ -160,11 +160,9 @@ public class PackServiceImpl implements PackService {
     }
 
     @Override
-    public CommercePackAccess resolvePackForDirectEdit(final long packId, final long commerceUserId) {
+    public CommercePackAccess resolvePackForDirectEdit(final long packId) {
         final Optional<Pack> packOpt = packDao.findById(packId);
-        if (packOpt.isEmpty() || packOpt.get().getCommerceId() == null
-                || packOpt.get().getCommerceId() != commerceUserId
-                || Boolean.TRUE.equals(packOpt.get().getDeleted())) {
+        if (packOpt.isEmpty() || Boolean.TRUE.equals(packOpt.get().getDeleted())) {
             return new CommercePackAccess.NotFound();
         }
         if (auctionService.findByPackId(packId).isPresent()) {

@@ -19,15 +19,15 @@ public interface ReservationTokenService {
     Optional<Long> findReservationIdByToken(String token);
 
     /**
-     * Consumes an ACCEPT token after validating commerce ownership and pickup code,
+     * Consumes an ACCEPT token after validating pickup code,
      * then confirms pickup.
      */
     ReservationServiceResult<ReservationTokenActionError> acceptReservationTokenWithPickupCode(
-            String token, String pickupCode, Long commerceUserId);
+            String token, String pickupCode);
 
     /**
-     * Consumes a REJECT token after validating commerce ownership,
+     * Consumes a REJECT token,
      * then rejects the reservation (stock restore + status + email).
      */
-    ReservationServiceResult<ReservationTokenActionError> rejectReservationToken(String token, Long commerceUserId);
+    ReservationServiceResult<ReservationTokenActionError> rejectReservationToken(String token);
 }
