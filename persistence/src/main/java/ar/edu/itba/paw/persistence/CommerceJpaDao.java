@@ -35,7 +35,12 @@ public class CommerceJpaDao implements CommerceDao {
 
     @Override
     public Optional<Commerce> findByUserId(final Long userId) {
-        return Optional.ofNullable(em.find(Commerce.class, userId));
+        return em.createQuery(
+                        "SELECT c FROM Commerce c JOIN FETCH c.user WHERE c.userId = :userId", Commerce.class)
+                .setParameter("userId", userId)
+                .getResultList()
+                .stream()
+                .findFirst();
     }
 
     @Override

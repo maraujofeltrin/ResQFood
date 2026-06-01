@@ -113,6 +113,21 @@ public class CommerceJpaDaoTest {
     }
 
     @Test
+    public void testFindByUserIdEagerlyLoadsUser() {
+        // 1. Setup
+        commerceDao.createCommerce(userId, COMMERCIAL_NAME, CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+        em.flush();
+
+        // 2. Ejercicio
+        final Optional<Commerce> commerce = commerceDao.findByUserId(userId);
+
+        // 3. Asserts
+        assertTrue(commerce.isPresent());
+        assertTrue(Hibernate.isInitialized(commerce.get().getUser()));
+        assertEquals(EMAIL, commerce.get().getUser().getEmail());
+    }
+
+    @Test
     public void testFindByUserIdWhenCommerceDoesNotExist() {
         // 1. Setup
         // No commerce row for the user created in setUp().

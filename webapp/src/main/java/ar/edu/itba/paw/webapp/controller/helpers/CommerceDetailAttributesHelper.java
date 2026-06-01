@@ -2,7 +2,6 @@ package ar.edu.itba.paw.webapp.controller.helpers;
 
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
-import ar.edu.itba.paw.services.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.ModelAndView;
@@ -14,12 +13,10 @@ import java.util.Optional;
 public class CommerceDetailAttributesHelper {
 
     private final ZoneId businessZone;
-    private final UserService userService;
 
     @Autowired
-    public CommerceDetailAttributesHelper(final ZoneId businessZone, final UserService userService) {
+    public CommerceDetailAttributesHelper(final ZoneId businessZone) {
         this.businessZone = businessZone;
-        this.userService = userService;
     }
 
     public void addCommerceDetailAttributes(final ModelAndView mav, final Optional<Commerce> commerceOpt) {
@@ -36,8 +33,8 @@ public class CommerceDetailAttributesHelper {
         if (commerce != null && commerce.getUserId() != null) {
             final Long commerceUserId = commerce.getUserId();
             mav.addObject("commerceUserId", commerceUserId);
-            mav.addObject("commerceProfileImageId",
-                    userService.findById(commerceUserId).map(User::getProfileImageId).orElse(null));
+            final User user = commerce.getUser();
+            mav.addObject("commerceProfileImageId", user != null ? user.getProfileImageId() : null);
         }
     }
 

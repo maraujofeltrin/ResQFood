@@ -6,7 +6,6 @@ import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.commerce.CommerceFavoriteService;
 import ar.edu.itba.paw.services.commerce.CommercePublicOffers;
 import ar.edu.itba.paw.services.commerce.CommerceService;
-import ar.edu.itba.paw.services.user.UserService;
 import ar.edu.itba.paw.webapp.form.CommerceReviewForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -26,7 +25,6 @@ public class CommerceProfileModelBuilder {
 
     private final CommerceService commerceService;
     private final CommerceReviewPageAttributes commerceReviewPageAttributes;
-    private final UserService userService;
     private final MessageSource messageSource;
     private final CommerceDetailAttributesHelper commerceDetailAttributesHelper;
     private final CommerceFavoriteService commerceFavoriteService;
@@ -34,14 +32,13 @@ public class CommerceProfileModelBuilder {
 
     @Autowired
     public CommerceProfileModelBuilder(final CommerceService commerceService,
-            final CommerceReviewPageAttributes commerceReviewPageAttributes, final UserService userService,
+            final CommerceReviewPageAttributes commerceReviewPageAttributes,
             final MessageSource messageSource,
             final CommerceDetailAttributesHelper commerceDetailAttributesHelper,
             final CommerceFavoriteService commerceFavoriteService,
             final AuthenticatedUserResolver authResolver) {
         this.commerceService = commerceService;
         this.commerceReviewPageAttributes = commerceReviewPageAttributes;
-        this.userService = userService;
         this.messageSource = messageSource;
         this.commerceDetailAttributesHelper = commerceDetailAttributesHelper;
         this.commerceFavoriteService = commerceFavoriteService;
@@ -77,7 +74,8 @@ public class CommerceProfileModelBuilder {
         mav.addObject("pageTitle", pageTitle);
         mav.addObject("commerceUserId", Long.valueOf(commerceUserId));
         mav.addObject("commerceCategory", commerce.getCategory());
-        mav.addObject("profileImageId", userService.findById(commerceUserId).map(User::getProfileImageId).orElse(null));
+        mav.addObject("profileImageId",
+                commerce.getUser() != null ? commerce.getUser().getProfileImageId() : null);
         commerceDetailAttributesHelper.addCommerceDetailAttributes(mav, commerceOpt);
 
         commerceReviewPageAttributes.addReviewPageAttributes(mav, commerceUserId, submittedForm,
