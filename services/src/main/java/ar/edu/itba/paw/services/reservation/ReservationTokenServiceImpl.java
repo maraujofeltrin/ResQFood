@@ -3,7 +3,6 @@ package ar.edu.itba.paw.services.reservation;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
-import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,15 +21,12 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReservationTokenServiceImpl.class);
 
     private final ReservationTokenDao reservationTokenDao;
-    private final ReservationDao reservationDao;
     private final ReservationService reservationService;
 
     @Autowired
     public ReservationTokenServiceImpl(final ReservationTokenDao reservationTokenDao,
-            final ReservationDao reservationDao,
             final ReservationService reservationService) {
         this.reservationTokenDao = reservationTokenDao;
-        this.reservationDao = reservationDao;
         this.reservationService = reservationService;
     }
 
@@ -55,7 +51,7 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
         }
 
         final ReservationToken reservationToken = reservationTokenDao.findByToken(token).orElseThrow();
-        final Reservation reservation = reservationDao.findById(reservationToken.getReservation().getId()).orElseThrow();
+        final Reservation reservation = reservationToken.getReservation();
 
         if (pickupCode == null || pickupCode.isBlank()) {
             return ReservationServiceResult.failure(ReservationTokenActionError.MISSING_PICKUP_CODE, reservation);
@@ -84,13 +80,12 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
         }
 
         final ReservationToken reservationToken = reservationTokenDao.findByToken(token).orElseThrow();
-        final Reservation reservation = reservationDao.findById(reservationToken.getReservation().getId()).orElseThrow();
+        final Reservation reservation = reservationToken.getReservation();
 
         reservationTokenDao.markAsUsed(token);
-        reservationService.rejectReservation(reservation.getId());
+        final Reservation canceled = reservationService.rejectReservation(reservation.getId());
 
-        final Reservation updated = reservationDao.findById(reservation.getId()).orElseThrow();
-        return ReservationServiceResult.success(updated);
+        return ReservationServiceResult.success(canceled);
     }
 
     /**
@@ -114,11 +109,10 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
             return ReservationServiceResult.failure(ReservationTokenActionError.NOT_FOUND);
         }
 
-        final Optional<Reservation> reservationOpt = reservationDao.findById(reservationToken.getReservation().getId());
-        if (reservationOpt.isEmpty()) {
+        final Reservation reservation = reservationToken.getReservation();
+        if (reservation == null) {
             return ReservationServiceResult.failure(ReservationTokenActionError.NOT_FOUND);
         }
-        final Reservation reservation = reservationOpt.get();
 
         if (reservation.getStatus() == Reservation.Status.PAID
                 || reservation.getStatus() == Reservation.Status.CANCELED
@@ -142,10 +136,10 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
             return TokenValidationResult.NOT_FOUND;
         }
         final ReservationToken reservationToken = optionalToken.get();
+        final Reservation reservation = reservationToken.getReservation();
 
-        final Optional<Reservation> reservation = reservationDao.findById(reservationToken.getReservation().getId());
-        if (reservation.isPresent()) {
-            final Reservation.Status status = reservation.get().getStatus();
+        if (reservation != null) {
+            final Reservation.Status status = reservation.getStatus();
 
             if (status == Reservation.Status.PAID || status == Reservation.Status.CANCELED) {
                 return TokenValidationResult.ALREADY_USED;

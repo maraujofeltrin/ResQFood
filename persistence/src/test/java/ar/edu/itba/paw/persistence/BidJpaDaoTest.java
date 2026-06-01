@@ -224,4 +224,30 @@ public class BidJpaDaoTest {
         assertTrue(result.contains(auctionId));
         assertFalse(result.contains(auction2.getId()));
     }
+
+    @Test
+    public void testExistsByAuctionIdAndClientUserIdWhenBidExists() {
+        // 1. Setup
+        bidDao.createBid(auctionId, clientId, 600.0);
+        em.flush();
+
+        // 2. Ejercicio
+        final boolean exists = bidDao.existsByAuctionIdAndClientUserId(auctionId, clientId);
+
+        // 3. Asserts
+        assertTrue(exists);
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "bids"));
+    }
+
+    @Test
+    public void testExistsByAuctionIdAndClientUserIdWhenNoBidReturnsFalse() {
+        // 1. Setup
+        // No bids created.
+
+        // 2. Ejercicio
+        final boolean exists = bidDao.existsByAuctionIdAndClientUserId(auctionId, clientId);
+
+        // 3. Asserts
+        assertFalse(exists);
+    }
 }

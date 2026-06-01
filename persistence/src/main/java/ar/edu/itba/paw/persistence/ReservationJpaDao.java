@@ -45,6 +45,21 @@ public class ReservationJpaDao implements ReservationDao {
     }
 
     @Override
+    public Optional<Reservation> findByIdWithDetails(final Long id) {
+        return em.createQuery(
+                "SELECT r FROM Reservation r "
+                        + "JOIN FETCH r.customer "
+                        + "JOIN FETCH r.pack p "
+                        + "JOIN FETCH p.commerce "
+                        + "WHERE r.id = :id",
+                Reservation.class)
+                .setParameter("id", id)
+                .getResultList()
+                .stream()
+                .findFirst();
+    }
+
+    @Override
     public List<Reservation> findByCustomerId(final Long customerId) {
         return em.createQuery("FROM Reservation r WHERE r.customer.userId = :customerId", Reservation.class)
                 .setParameter("customerId", customerId)
@@ -100,7 +115,13 @@ public class ReservationJpaDao implements ReservationDao {
 
     @Override
     public Optional<Reservation> findByPickupCode(final String pickupCode) {
-        return em.createQuery("FROM Reservation r WHERE r.pickupCode = :code", Reservation.class)
+        return em.createQuery(
+                "SELECT r FROM Reservation r "
+                        + "JOIN FETCH r.customer "
+                        + "JOIN FETCH r.pack p "
+                        + "JOIN FETCH p.commerce "
+                        + "WHERE r.pickupCode = :code",
+                Reservation.class)
             .setParameter("code", pickupCode)
             .setMaxResults(1)
             .getResultList()

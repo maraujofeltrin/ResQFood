@@ -94,4 +94,6 @@ public interface AuctionService {
     Set<Long> findAuctionIdsWhereClientLeads(long clientUserId, Collection<Long> auctionIds);
 
     List<AuctionPackSummary> findSummariesByPackIds(Collection<Long> packIds);
+
+    boolean hasClientBidOnAuction(long auctionId, long clientUserId);
 }

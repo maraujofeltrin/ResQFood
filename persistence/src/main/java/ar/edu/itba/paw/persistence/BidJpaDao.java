@@ -116,4 +116,16 @@ public class BidJpaDao implements BidDao {
                 .getResultList();
         return new HashSet<>(ids);
     }
+
+    @Override
+    public boolean existsByAuctionIdAndClientUserId(final long auctionId, final long clientUserId) {
+        final Number count = em.createQuery(
+                        "SELECT COUNT(b.id) FROM Bid b "
+                                + "WHERE b.auction.id = :auctionId AND b.client.userId = :clientId",
+                        Number.class)
+                .setParameter("auctionId", auctionId)
+                .setParameter("clientId", clientUserId)
+                .getSingleResult();
+        return count != null && count.intValue() > 0;
+    }
 }

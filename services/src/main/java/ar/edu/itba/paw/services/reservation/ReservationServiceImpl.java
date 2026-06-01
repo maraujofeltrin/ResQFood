@@ -405,14 +405,16 @@ public class ReservationServiceImpl implements ReservationService {
         if (packId == null) {
             return ReservationServiceResult.failure(PickupByCodeError.NOT_FOUND);
         }
-        final Long packCommerceId = packDao.findById(packId)
-                .map(Pack::getCommerceId)
-                .orElse(null);
+        final Long packCommerceId = reservation.getPack().getCommerce() != null
+                ? reservation.getPack().getCommerce().getUserId()
+                : null;
         if (packCommerceId == null || !packCommerceId.equals(commerceUserId)) {
             return ReservationServiceResult.failure(PickupByCodeError.WRONG_COMMERCE);
         }
 
-        final Reservation confirmed = confirmPickup(reservation.getId());
+        confirmPickup(reservation.getId());
+        final Reservation confirmed = reservationDao.findByIdWithDetails(reservation.getId())
+                .orElseThrow(() -> new IllegalStateException("Reservation not found after pickup: " + reservation.getId()));
         return ReservationServiceResult.success(confirmed);
     }
 

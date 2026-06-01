@@ -322,6 +322,28 @@ public class ReservationJpaDaoTest {
     }
 
     @Test
+    public void testFindByPickupCodeEagerlyLoadsCustomerPackAndCommerce() {
+        // 1. Setup
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.RESERVED, "PICKUP1", null, 1, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final Optional<Reservation> found = reservationDao.findByPickupCode("PICKUP1");
+
+        // 3. Asserts
+        assertTrue(found.isPresent());
+        final Reservation r = found.get();
+        assertTrue(Hibernate.isInitialized(r.getCustomer()));
+        assertNotNull(r.getCustomer().getFullName());
+        assertTrue(Hibernate.isInitialized(r.getPack()));
+        assertNotNull(r.getPack().getTitle());
+        assertTrue(Hibernate.isInitialized(r.getPack().getCommerce()));
+        assertNotNull(r.getPack().getCommerce().getCommercialName());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
     public void testFilterReservationsReturnsPageInQueryOneOrder() {
         // 1. Setup
         final LocalDateTime oldest = LocalDateTime.of(2030, 1, 1, 10, 0);

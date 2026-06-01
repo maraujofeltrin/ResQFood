@@ -28,7 +28,16 @@ public class ReservationTokenJpaDao implements ReservationTokenDao {
 
     @Override
     public Optional<ReservationToken> findByToken(final String token) {
-        return Optional.ofNullable(em.find(ReservationToken.class, token));
+        return em.createQuery(
+                "SELECT rt FROM ReservationToken rt "
+                        + "JOIN FETCH rt.reservation r "
+                        + "LEFT JOIN FETCH r.pack "
+                        + "WHERE rt.token = :token",
+                ReservationToken.class)
+                .setParameter("token", token)
+                .getResultList()
+                .stream()
+                .findFirst();
     }
 
     @Override

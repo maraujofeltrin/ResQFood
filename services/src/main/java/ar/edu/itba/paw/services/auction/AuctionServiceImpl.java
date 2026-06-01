@@ -288,4 +288,9 @@ public class AuctionServiceImpl implements AuctionService {
         }
         return summaries;
     }
+
+    @Override
+    public boolean hasClientBidOnAuction(final long auctionId, final long clientUserId) {
+        return bidDao.existsByAuctionIdAndClientUserId(auctionId, clientUserId);
+    }
 }

@@ -7,7 +7,6 @@ import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
-import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,8 +32,6 @@ class ReservationTokenServiceImplTest {
     @Mock
     private ReservationTokenDao reservationTokenDao;
     @Mock
-    private ReservationDao reservationDao;
-    @Mock
     private ReservationService reservationService;
 
     @InjectMocks
@@ -52,8 +49,6 @@ class ReservationTokenServiceImplTest {
     private static Pack packRef(final long id) {
         return new Pack(id, commerceRef(1L), "t", "d", 1.0, 1.0, 1, true, Collections.emptyList());
     }
-
-
 
     private static Reservation reservationRef(final long id) {
         return new Reservation(id, clientRef(1L), packRef(1L), null, null, null, null, null, 1, null);
@@ -78,10 +73,9 @@ class ReservationTokenServiceImplTest {
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final Reservation reservation = new Reservation(1L, clientRef(1L), packRef(1L), now, 5.0, Reservation.Status.RESERVED, "c", null,
                 1, "pw");
-        final ReservationToken usedToken = new ReservationToken("t1", reservationRef(1L), ReservationToken.Action.ACCEPT, true, now,
+        final ReservationToken usedToken = new ReservationToken("t1", reservation, ReservationToken.Action.ACCEPT, true, now,
                 now.plusHours(1));
         when(reservationTokenDao.findByToken("t1")).thenReturn(Optional.of(usedToken));
-        when(reservationDao.findById(1L)).thenReturn(Optional.of(reservation));
 
         // 2. Ejercicio
         final ReservationTokenService.TokenValidationResult res =
@@ -97,10 +91,9 @@ class ReservationTokenServiceImplTest {
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final Reservation reservation = new Reservation(1L, clientRef(1L), packRef(1L), now, 5.0, Reservation.Status.RESERVED, "c", null,
                 1, "pw");
-        final ReservationToken token = new ReservationToken("t2", reservationRef(1L), ReservationToken.Action.ACCEPT, false, now,
+        final ReservationToken token = new ReservationToken("t2", reservation, ReservationToken.Action.ACCEPT, false, now,
                 now.plusHours(1));
         when(reservationTokenDao.findByToken("t2")).thenReturn(Optional.of(token));
-        when(reservationDao.findById(1L)).thenReturn(Optional.of(reservation));
 
         // 2. Ejercicio
         final ReservationTokenService.TokenValidationResult res =
@@ -116,10 +109,9 @@ class ReservationTokenServiceImplTest {
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final Reservation reservation = new Reservation(1L, clientRef(1L), packRef(1L), now, 5.0, Reservation.Status.RESERVED, "c", null,
                 1, "pw");
-        final ReservationToken token = new ReservationToken("t3", reservationRef(1L), ReservationToken.Action.ACCEPT, false, now,
+        final ReservationToken token = new ReservationToken("t3", reservation, ReservationToken.Action.ACCEPT, false, now,
                 now.minusMinutes(5));
         when(reservationTokenDao.findByToken("t3")).thenReturn(Optional.of(token));
-        when(reservationDao.findById(1L)).thenReturn(Optional.of(reservation));
 
         // 2. Ejercicio
         final ReservationTokenService.TokenValidationResult res =
@@ -164,7 +156,6 @@ class ReservationTokenServiceImplTest {
                     cur.getCreatedAt(), cur.getExpiresAt()));
             return null;
         }).when(reservationTokenDao).markAsUsed("accept-token");
-        when(reservationDao.findById(201L)).thenReturn(Optional.of(reserved));
         when(reservationService.confirmPickup(201L)).thenReturn(paid);
 
         // 2. Ejercicio
@@ -188,7 +179,6 @@ class ReservationTokenServiceImplTest {
                 false, now, now.plusHours(1));
         final AtomicReference<ReservationToken> tokenRef = new AtomicReference<>(token);
         when(reservationTokenDao.findByToken("bad-code-token")).thenAnswer(inv -> Optional.of(tokenRef.get()));
-        when(reservationDao.findById(202L)).thenReturn(Optional.of(reserved));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =
@@ -231,8 +221,6 @@ class ReservationTokenServiceImplTest {
                     cur.getCreatedAt(), cur.getExpiresAt()));
             return null;
         }).when(reservationTokenDao).markAsUsed("reject-token");
-        when(reservationDao.findById(301L)).thenReturn(Optional.of(reserved), Optional.of(reserved),
-                Optional.of(canceled));
         when(reservationService.rejectReservation(301L)).thenReturn(canceled);
 
         // 2. Ejercicio
@@ -245,8 +233,6 @@ class ReservationTokenServiceImplTest {
         assertTrue(tokenRef.get().isUsed());
     }
 
-
-
     @Test
     void testRejectReservationTokenWhenExpiredReturnsErrorAndDoesNotConsumeToken() {
         // 1. Setup
@@ -258,7 +244,6 @@ class ReservationTokenServiceImplTest {
                 false, now, now.minusHours(1));
         final AtomicReference<ReservationToken> tokenRef = new AtomicReference<>(token);
         when(reservationTokenDao.findByToken("reject-expired")).thenAnswer(inv -> Optional.of(tokenRef.get()));
-        when(reservationDao.findById(303L)).thenReturn(Optional.of(reserved));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =
@@ -280,7 +265,6 @@ class ReservationTokenServiceImplTest {
                 false, now, now.plusHours(1));
         final AtomicReference<ReservationToken> tokenRef = new AtomicReference<>(token);
         when(reservationTokenDao.findByToken("reject-canceled")).thenAnswer(inv -> Optional.of(tokenRef.get()));
-        when(reservationDao.findById(304L)).thenReturn(Optional.of(canceledReservation));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =
