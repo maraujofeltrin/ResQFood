@@ -52,4 +52,6 @@ public interface AuctionDao {
     int countParticipatedAuctions(long clientId, Auction.Status status, String query);
 
     Set<Long> findPackIdsWithAuction(Collection<Long> packIds);
+
+    List<Object[]> findSummariesByPackIds(Collection<Long> packIds);
 }

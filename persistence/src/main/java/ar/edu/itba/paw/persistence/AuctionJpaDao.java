@@ -355,4 +355,16 @@ public class AuctionJpaDao implements AuctionDao {
                 .getResultList();
         return new HashSet<>(results);
     }
+
+    @Override
+    public List<Object[]> findSummariesByPackIds(final Collection<Long> packIds) {
+        if (packIds == null || packIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return em.createQuery(
+                        "SELECT a.pack.id, a.id, a.status FROM Auction a WHERE a.pack.id IN :packIds",
+                        Object[].class)
+                .setParameter("packIds", new ArrayList<>(packIds))
+                .getResultList();
+    }
 }

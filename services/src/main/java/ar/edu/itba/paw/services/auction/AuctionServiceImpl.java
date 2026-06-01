@@ -20,7 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -261,5 +263,29 @@ public class AuctionServiceImpl implements AuctionService {
     @Override
     public Set<Long> findAuctionIdsWhereClientLeads(final long clientUserId, final Collection<Long> auctionIds) {
         return bidDao.findAuctionIdsWhereClientLeads(clientUserId, auctionIds);
+    }
+
+    @Override
+    public List<AuctionPackSummary> findSummariesByPackIds(final Collection<Long> packIds) {
+        if (packIds == null || packIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final List<Object[]> rows = auctionDao.findSummariesByPackIds(packIds);
+        if (rows.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final List<Long> auctionIds = new ArrayList<>(rows.size());
+        for (final Object[] row : rows) {
+            auctionIds.add((Long) row[1]);
+        }
+        final Set<Long> auctionIdsWithBids = bidDao.findAuctionIdsWithBids(auctionIds);
+        final List<AuctionPackSummary> summaries = new ArrayList<>(rows.size());
+        for (final Object[] row : rows) {
+            final long packId = (Long) row[0];
+            final long auctionId = (Long) row[1];
+            final Auction.Status status = (Auction.Status) row[2];
+            summaries.add(new AuctionPackSummary(packId, auctionId, status, auctionIdsWithBids.contains(auctionId)));
+        }
+        return summaries;
     }
 }

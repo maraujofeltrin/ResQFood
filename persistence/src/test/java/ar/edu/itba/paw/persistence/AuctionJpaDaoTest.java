@@ -344,6 +344,25 @@ public class AuctionJpaDaoTest {
     }
 
     @Test
+    public void testFindSummariesByPackIds() {
+        // 1. Setup
+        final Auction auction = auctionDao.createAuction(packId, 500.0, 500.0, AUCTION_END_TIME);
+        final Pack packWithoutAuction = packDao.createPack(commerceId, "Regular Pack", "Desc", 1000.0, 500.0, 1,
+                Collections.emptyList(), null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Object[]> rows = auctionDao.findSummariesByPackIds(
+                List.of(packId, packWithoutAuction.getId()));
+
+        // 3. Asserts
+        assertEquals(1, rows.size());
+        assertEquals(packId, rows.get(0)[0]);
+        assertEquals(auction.getId(), rows.get(0)[1]);
+        assertEquals(Auction.Status.ACTIVE, rows.get(0)[2]);
+    }
+
+    @Test
     public void testCountParticipatedAuctionsWhenClientHasBidsReturnsCount() {
         // 1. Setup
         final Auction created = auctionDao.createAuction(packId, 500.0, 500.0, AUCTION_END_TIME);

@@ -5,6 +5,7 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.user.CommerceReview;
 import ar.edu.itba.paw.services.auction.AuctionService;
+import ar.edu.itba.paw.services.auction.AuctionPackSummary;
 import ar.edu.itba.paw.services.auction.CancelAuctionResult;
 import ar.edu.itba.paw.services.commerce.CommerceReviewService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
@@ -43,8 +44,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.user.Client;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 @Controller
 @RequestMapping("/commerce")
@@ -199,18 +203,20 @@ public class CommerceDashboardController {
         final int auctionsCount = packService.countCommercePacks(id, true);
         final int packsCount = packService.countCommercePacks(id, false);
 
-        final List<ar.edu.itba.paw.models.auction.Auction> commerceAuctions = auctionService.findByCommerceId(id);
-        final Set<Long> auctionPackIds = commerceAuctions.stream()
-                .map(a -> a.getPack().getId())
-                .collect(Collectors.toSet());
-        final java.util.Map<Long, Long> packIdToAuctionId = new java.util.HashMap<>();
-        final java.util.Map<Long, Boolean> packIdToAuctionActive = new java.util.HashMap<>();
-        final java.util.Map<Long, Boolean> packIdToAuctionHasBids = new java.util.HashMap<>();
-        for (final ar.edu.itba.paw.models.auction.Auction auction : commerceAuctions) {
-            final long packId = auction.getPack().getId();
-            packIdToAuctionId.put(packId, auction.getId());
-            packIdToAuctionActive.put(packId, auction.getStatus() == ar.edu.itba.paw.models.auction.Auction.Status.ACTIVE);
-            packIdToAuctionHasBids.put(packId, !auctionService.getBidHistory(auction.getId()).isEmpty());
+        final List<Long> displayedPackIds = displayedPacks.stream()
+                .map(Pack::getId)
+                .collect(Collectors.toList());
+        final List<AuctionPackSummary> auctionSummaries = auctionService.findSummariesByPackIds(displayedPackIds);
+
+        final Set<Long> auctionPackIds = new HashSet<>();
+        final Map<Long, Long> packIdToAuctionId = new HashMap<>();
+        final Map<Long, Boolean> packIdToAuctionActive = new HashMap<>();
+        final Map<Long, Boolean> packIdToAuctionHasBids = new HashMap<>();
+        for (final AuctionPackSummary summary : auctionSummaries) {
+            auctionPackIds.add(summary.packId());
+            packIdToAuctionId.put(summary.packId(), summary.auctionId());
+            packIdToAuctionActive.put(summary.packId(), summary.status() == Auction.Status.ACTIVE);
+            packIdToAuctionHasBids.put(summary.packId(), summary.hasBids());
         }
 
         mav.addObject("commerce", commerce);

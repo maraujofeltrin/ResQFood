@@ -103,4 +103,17 @@ public class BidJpaDao implements BidDao {
                 .getResultList();
         return new HashSet<>(ids);
     }
+
+    @Override
+    public Set<Long> findAuctionIdsWithBids(final Collection<Long> auctionIds) {
+        if (auctionIds == null || auctionIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+        final List<Long> ids = em.createQuery(
+                        "SELECT DISTINCT b.auction.id FROM Bid b WHERE b.auction.id IN :ids",
+                        Long.class)
+                .setParameter("ids", new ArrayList<>(auctionIds))
+                .getResultList();
+        return new HashSet<>(ids);
+    }
 }
