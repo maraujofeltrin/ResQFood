@@ -9,6 +9,7 @@ import ar.edu.itba.paw.models.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.Rollback;
@@ -420,6 +421,22 @@ public class PackJpaDaoTest {
         // 3. Asserts
         assertTrue(success);
         assertEquals(15, packDao.findById(created.getId()).map(Pack::getStock).orElse(-1));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testFilterPacksEagerlyLoadsCommerce() {
+        // 1. Setup
+        packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, null, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Pack> packs = packDao.filterPacks(null, null, null, null, PackSortOption.DATE_DESC, 1, 10, false, null);
+
+        // 3. Asserts
+        assertFalse(packs.isEmpty());
+        assertTrue(Hibernate.isInitialized(packs.get(0).getCommerce()));
+        assertNotNull(packs.get(0).getCommerce().getCommercialName());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 }

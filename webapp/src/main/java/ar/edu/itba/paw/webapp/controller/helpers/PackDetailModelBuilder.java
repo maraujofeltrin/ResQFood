@@ -16,7 +16,6 @@ import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.pack.PackFavoriteService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.commerce.CommerceFavoriteService;
-import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.webapp.form.BidForm;
 import ar.edu.itba.paw.webapp.form.CommerceReviewForm;
@@ -30,11 +29,11 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 public class PackDetailModelBuilder {
@@ -42,7 +41,6 @@ public class PackDetailModelBuilder {
     private final CommerceService commerceService;
     private final AuctionService auctionService;
     private final CommerceReviewPageAttributes commerceReviewPageAttributes;
-    private final ClientService clientService;
     private final ReservationService reservationService;
     private final MessageSource messageSource;
     private final ZoneId businessZone;
@@ -54,7 +52,7 @@ public class PackDetailModelBuilder {
 
     @Autowired
     public PackDetailModelBuilder(final CommerceService commerceService, final AuctionService auctionService,
-            final CommerceReviewPageAttributes commerceReviewPageAttributes, final ClientService clientService,
+            final CommerceReviewPageAttributes commerceReviewPageAttributes,
             final ReservationService reservationService, final MessageSource messageSource, final ZoneId businessZone,
             final AuthenticatedUserResolver authResolver, final PackFavoriteService packFavoriteService,
             final CommerceDetailAttributesHelper commerceDetailAttributesHelper,
@@ -62,7 +60,6 @@ public class PackDetailModelBuilder {
         this.commerceService = commerceService;
         this.auctionService = auctionService;
         this.commerceReviewPageAttributes = commerceReviewPageAttributes;
-        this.clientService = clientService;
         this.reservationService = reservationService;
         this.messageSource = messageSource;
         this.businessZone = businessZone;
@@ -106,8 +103,12 @@ public class PackDetailModelBuilder {
             final long auctionId = auctionOpt.get().getId();
             mav.addObject("auctionId", auctionId);
             final List<Bid> bidHistory = auctionService.getBidHistory(auctionId);
-            final Map<Long, Client> bidClients = prefetchClients(bidHistory.stream()
-                    .map(bid -> bid.getClient().getUserId()).distinct().collect(java.util.stream.Collectors.toList()));
+            final Map<Long, Client> bidClients = bidHistory.stream()
+                    .filter(b -> b.getClient() != null)
+                    .collect(Collectors.toMap(
+                            b -> b.getClient().getUserId(),
+                            Bid::getClient,
+                            (a, b) -> a));
             final List<BidHistoryViewHelper.BidHistoryRow> bidHistoryItems = BidHistoryViewHelper.buildRows(
                     bidHistory, bidClients, messageSource, locale);
             mav.addObject("auctionBidHistoryItems", bidHistoryItems);
@@ -161,9 +162,12 @@ public class PackDetailModelBuilder {
         
         if (isOwner) {
             final List<Reservation> reservations = reservationService.findByPackId(pack.getId());
-            final Map<Long, Client> resClients = prefetchClients(reservations.stream()
-                    .map(r -> r.getCustomer().getUserId()).filter(java.util.Objects::nonNull)
-                    .distinct().collect(java.util.stream.Collectors.toList()));
+            final Map<Long, Client> resClients = reservations.stream()
+                    .filter(r -> r.getCustomer() != null)
+                    .collect(Collectors.toMap(
+                            r -> r.getCustomer().getUserId(),
+                            Reservation::getCustomer,
+                            (a, b) -> a));
             final List<ReservationHistoryViewHelper.ReservationHistoryRow> reservationHistoryItems = 
                 ReservationHistoryViewHelper.buildRows(reservations, resClients, messageSource, locale);
             mav.addObject("packReservationHistoryItems", reservationHistoryItems);
@@ -218,16 +222,6 @@ public class PackDetailModelBuilder {
         mav.addObject("reservationForm", reservationForm);
         mav.addObject("bidForm", bidForm);
         return mav;
-    }
-
-    private Map<Long, Client> prefetchClients(final List<Long> userIds) {
-        final Map<Long, Client> map = new HashMap<>();
-        for (final Long userId : userIds) {
-            if (userId != null) {
-                clientService.findByUserId(userId).ifPresent(c -> map.put(userId, c));
-            }
-        }
-        return map;
     }
 
 }

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -67,6 +68,11 @@ public class CommerceReviewServiceImpl implements CommerceReviewService {
     @Override
     public Optional<Double> averageRatingForCommerce(final long commerceUserId) {
         return Optional.ofNullable(commerceReviewDao.averageRatingByCommerceId(commerceUserId));
+    }
+
+    @Override
+    public Map<Long, Double> findAverageRatingsForCommerceIds(final List<Long> commerceUserIds) {
+        return commerceReviewDao.findAverageRatingsForCommerceIds(commerceUserIds);
     }
 
     private void validateRating(final int rating) throws CommerceReviewException {

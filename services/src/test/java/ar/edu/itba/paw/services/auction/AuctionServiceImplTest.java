@@ -21,11 +21,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -287,5 +290,66 @@ class AuctionServiceImplTest {
 
         // 3. Asserts
         assertEquals(CancelAuctionResult.Outcome.SUCCESS, result.getOutcome());
+    }
+
+    @Test
+    void testCloseExpiredAuctionsUpdatesEntityStatus() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Auction expiredAuction = new Auction(AUCTION_ID, pack, 1000.0, 10.0, null, null,
+                LocalDateTime.now(ZoneOffset.UTC).minusHours(1), Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.findExpiredActive()).thenReturn(List.of(expiredAuction));
+
+        // 2. Ejercicio
+        final int closed = auctionService.closeExpiredAuctions();
+
+        // 3. Asserts
+        assertEquals(1, closed);
+        assertEquals(Auction.Status.FINISHED, expiredAuction.getStatus());
+        assertFalse(expiredAuction.getPack().getActive());
+    }
+
+    @Test
+    void testFindSummariesByPackIdsMergesHasBids() {
+        // 1. Setup
+        when(auctionDao.findSummariesByPackIds(List.of(PACK_ID)))
+                .thenReturn(List.<Object[]>of(new Object[] { PACK_ID, AUCTION_ID, Auction.Status.ACTIVE }));
+        when(bidDao.findAuctionIdsWithBids(List.of(AUCTION_ID))).thenReturn(Set.of(AUCTION_ID));
+
+        // 2. Ejercicio
+        final List<AuctionPackSummary> summaries = auctionService.findSummariesByPackIds(List.of(PACK_ID));
+
+        // 3. Asserts
+        assertEquals(1, summaries.size());
+        assertEquals(PACK_ID, summaries.get(0).packId());
+        assertEquals(AUCTION_ID, summaries.get(0).auctionId());
+        assertEquals(Auction.Status.ACTIVE, summaries.get(0).status());
+        assertTrue(summaries.get(0).hasBids());
+    }
+
+    @Test
+    void testFindSummariesByPackIdsWhenNoBidsReturnsHasBidsFalse() {
+        // 1. Setup
+        when(auctionDao.findSummariesByPackIds(List.of(PACK_ID)))
+                .thenReturn(List.<Object[]>of(new Object[] { PACK_ID, AUCTION_ID, Auction.Status.ACTIVE }));
+        when(bidDao.findAuctionIdsWithBids(List.of(AUCTION_ID))).thenReturn(Collections.emptySet());
+
+        // 2. Ejercicio
+        final List<AuctionPackSummary> summaries = auctionService.findSummariesByPackIds(List.of(PACK_ID));
+
+        // 3. Asserts
+        assertEquals(1, summaries.size());
+        assertFalse(summaries.get(0).hasBids());
+    }
+
+    @Test
+    void testFindSummariesByPackIdsWhenPackIdsEmptyReturnsEmptyList() {
+        // 1. Setup — no mocks needed
+
+        // 2. Ejercicio
+        final List<AuctionPackSummary> summaries = auctionService.findSummariesByPackIds(Collections.emptyList());
+
+        // 3. Asserts
+        assertTrue(summaries.isEmpty());
     }
 }

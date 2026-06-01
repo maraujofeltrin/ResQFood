@@ -3,6 +3,7 @@ package ar.edu.itba.paw.persistence;
 import ar.edu.itba.paw.models.user.CommerceReview;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface CommerceReviewDao {
@@ -18,4 +19,6 @@ public interface CommerceReviewDao {
     int countByCommerceId(Long commerceUserId);
 
     Double averageRatingByCommerceId(Long commerceUserId);
+
+    Map<Long, Double> findAverageRatingsForCommerceIds(List<Long> commerceUserIds);
 }

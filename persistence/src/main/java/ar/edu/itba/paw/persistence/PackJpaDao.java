@@ -137,7 +137,8 @@ public class PackJpaDao implements PackDao {
         if (ids.isEmpty()) {
             return Collections.emptyList();
         }
-        final List<Pack> packs = em.createQuery("SELECT DISTINCT p FROM Pack p LEFT JOIN FETCH p.tags WHERE p.id IN :ids",
+        final List<Pack> packs = em.createQuery(
+                        "SELECT DISTINCT p FROM Pack p LEFT JOIN FETCH p.tags JOIN FETCH p.commerce WHERE p.id IN :ids",
                         Pack.class)
                 .setParameter("ids", ids)
                 .getResultList();

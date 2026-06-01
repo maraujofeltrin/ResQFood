@@ -13,7 +13,6 @@ import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.commerce.CommerceReviewService;
 import ar.edu.itba.paw.services.pack.PackFavoriteService;
 import ar.edu.itba.paw.services.pack.PackService;
-import ar.edu.itba.paw.services.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,20 +62,17 @@ public class PackCatalogModelBuilder {
     private final AuctionService auctionService;
     private final AuthenticatedUserResolver authResolver;
     private final CommerceReviewService commerceReviewService;
-    private final UserService userService;
 
     @Autowired
     public PackCatalogModelBuilder(final PackService packService, final CommerceService commerceService,
             final AuctionService auctionService,
             final AuthenticatedUserResolver authResolver,
-            final CommerceReviewService commerceReviewService,
-            final UserService userService) {
+            final CommerceReviewService commerceReviewService) {
         this.packService = packService;
         this.commerceService = commerceService;
         this.auctionService = auctionService;
         this.authResolver = authResolver;
         this.commerceReviewService = commerceReviewService;
-        this.userService = userService;
     }
 
     public ModelAndView buildPackCatalog(final CatalogFilterForm form) {
@@ -212,43 +208,52 @@ public class PackCatalogModelBuilder {
 
         final Map<Long, String> commerceNames = new HashMap<>();
         for (final Pack pack : packs) {
-            commerceNames.putIfAbsent(
-                    pack.getId(),
-                    commerceService.findByUserId(pack.getCommerceId())
-                            .map(Commerce::getCommercialName)
-                            .orElse("—"));
+            final Commerce c = pack.getCommerce();
+            commerceNames.putIfAbsent(pack.getId(),
+                    c != null && c.getCommercialName() != null ? c.getCommercialName() : "—");
         }
         for (final Auction auctionEntity : auctions) {
             if (auctionEntity.getPack() == null) {
                 continue;
             }
             final Pack auctionPack = auctionEntity.getPack();
-            commerceNames.putIfAbsent(
-                    auctionPack.getId(),
-                    commerceService.findByUserId(auctionPack.getCommerceId())
-                            .map(Commerce::getCommercialName)
-                            .orElse("—"));
+            final Commerce c = auctionPack.getCommerce();
+            commerceNames.putIfAbsent(auctionPack.getId(),
+                    c != null && c.getCommercialName() != null ? c.getCommercialName() : "—");
         }
         for (final Auction auctionEntity : carouselAuctions) {
             if (auctionEntity.getPack() == null) {
                 continue;
             }
             final Pack auctionPack = auctionEntity.getPack();
-            commerceNames.putIfAbsent(
-                    auctionPack.getId(),
-                    commerceService.findByUserId(auctionPack.getCommerceId())
-                            .map(Commerce::getCommercialName)
-                            .orElse("—"));
+            final Commerce c = auctionPack.getCommerce();
+            commerceNames.putIfAbsent(auctionPack.getId(),
+                    c != null && c.getCommercialName() != null ? c.getCommercialName() : "—");
         }
 
 
+        /*
+         * TECH DEBT — commerce ratings enrichment:
+         * filterCommerces already computes AVG(r.rating) for sorting but discards the value;
+         * we then issue a second batch query here. Future refactor: expose a service DTO
+         * (e.g. CommerceWithRating) populated in the same DAO query, and drop this map.
+         */
         final Map<Long, Double> commerceRatings = new HashMap<>();
         final Map<Long, Long> commerceImages = new HashMap<>();
         final List<Commerce> commercesForEnrichment = new ArrayList<>(commerces);
         commercesForEnrichment.addAll(carouselCommerces);
+
+        final List<Long> commerceIds = new ArrayList<>();
         for (final Commerce c : commercesForEnrichment) {
-            commerceRatings.putIfAbsent(c.getUserId(), commerceReviewService.averageRatingForCommerce(c.getUserId()).orElse(0.0));
-            userService.findById(c.getUserId()).map(User::getProfileImageId).ifPresent(img -> commerceImages.putIfAbsent(c.getUserId(), img));
+            commerceIds.add(c.getUserId());
+        }
+
+        commerceRatings.putAll(commerceReviewService.findAverageRatingsForCommerceIds(commerceIds));
+
+        for (final Commerce c : commercesForEnrichment) {
+            if (c.getUser() != null && c.getUser().getProfileImageId() != null) {
+                commerceImages.putIfAbsent(c.getUserId(), c.getUser().getProfileImageId());
+            }
         }
 
 
