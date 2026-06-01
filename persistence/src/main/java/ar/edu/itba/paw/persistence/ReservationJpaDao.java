@@ -14,6 +14,8 @@ import javax.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -164,7 +166,7 @@ public class ReservationJpaDao implements ReservationDao {
         final StringBuilder idJpql = new StringBuilder("SELECT r.id ");
         final Map<String, Object> params = new LinkedHashMap<>();
         appendReservationFilters(idJpql, params, commerceId, customerId, query, status, excludeAuctionPacks);
-        idJpql.append("ORDER BY r.reservationDate DESC ");
+        idJpql.append("ORDER BY r.reservationDate DESC, r.id DESC ");
 
         final List<Long> ids = JpqlQuerySupport.createQuery(em, idJpql.toString(), params, Long.class)
                 .setMaxResults(pageSize)
@@ -175,14 +177,22 @@ public class ReservationJpaDao implements ReservationDao {
             return Collections.emptyList();
         }
 
-        return em.createQuery(
+        final List<Reservation> reservations = em.createQuery(
                 "SELECT r FROM Reservation r " +
                 "JOIN FETCH r.customer " +
                 "JOIN FETCH r.pack p " +
                 "JOIN FETCH p.commerce " +
-                "WHERE r.id IN :ids ORDER BY r.reservationDate DESC", Reservation.class)
+                "WHERE r.id IN :ids", Reservation.class)
                 .setParameter("ids", ids)
                 .getResultList();
+
+        final Map<Long, Integer> positions = new HashMap<>();
+        for (int index = 0; index < ids.size(); index++) {
+            positions.put(ids.get(index), Integer.valueOf(index));
+        }
+        reservations.sort(Comparator.comparingInt(
+                r -> positions.getOrDefault(r.getId(), Integer.MAX_VALUE)));
+        return reservations;
     }
 
     @Override

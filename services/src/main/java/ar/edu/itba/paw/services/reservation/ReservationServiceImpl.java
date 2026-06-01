@@ -416,12 +416,14 @@ public class ReservationServiceImpl implements ReservationService {
         return ReservationServiceResult.success(confirmed);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Reservation> filterReservations(Long commerceId, Long customerId, String query,
             Reservation.Status status, boolean excludeAuctionPacks, int page, int pageSize) {
         return reservationDao.filterReservations(commerceId, customerId, query, status, excludeAuctionPacks, page, pageSize);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public int countFilteredReservations(Long commerceId, Long customerId, String query,
             Reservation.Status status, boolean excludeAuctionPacks) {
