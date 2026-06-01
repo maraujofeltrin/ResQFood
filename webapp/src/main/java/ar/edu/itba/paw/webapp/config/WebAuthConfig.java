@@ -10,6 +10,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
@@ -18,18 +20,51 @@ import static org.springframework.security.web.util.matcher.AntPathRequestMatche
 @EnableMethodSecurity
 public class WebAuthConfig extends WebSecurityConfigurerAdapter {
 
+    private static final int REMEMBER_ME_KEY_MIN_LENGTH = 32;
+    private static final Set<String> WEAK_REMEMBER_ME_KEYS = Set.of(
+            "resqfood-remember-me-secret",
+            "PAW_REMEMBER_ME_TOKEN_KEY_FOR_PRODUCTION",
+            "CHANGE_ME_WITH_A_LONG_RANDOM_SECRET");
+
     private final AuthUserDetailsService authUserDetailsService;
     private final String rememberMeKey;
     private final int rememberMeValidityDays;
+    private final String appBaseUrl;
 
     @Autowired
     public WebAuthConfig(
             final AuthUserDetailsService authUserDetailsService,
-            @Value("${security.remember-me.key:resqfood-remember-me-secret}") final String rememberMeKey,
-            @Value("${security.remember-me.validity-days:7}") final int rememberMeValidityDays) {
+            @Value("${security.remember-me.key}") final String rememberMeKey,
+            @Value("${security.remember-me.validity-days:7}") final int rememberMeValidityDays,
+            @Value("${app.base-url:}") final String appBaseUrl) {
         this.authUserDetailsService = authUserDetailsService;
         this.rememberMeKey = rememberMeKey;
         this.rememberMeValidityDays = rememberMeValidityDays;
+        this.appBaseUrl = appBaseUrl;
+        validateRememberMeKey();
+    }
+
+    private void validateRememberMeKey() {
+        final String key = rememberMeKey == null ? "" : rememberMeKey.trim();
+        if (key.isEmpty() || key.length() < REMEMBER_ME_KEY_MIN_LENGTH) {
+            throw new IllegalStateException(
+                    "security.remember-me.key must be set to a long, random secret (min length: "
+                            + REMEMBER_ME_KEY_MIN_LENGTH + ")");
+        }
+
+        if (WEAK_REMEMBER_ME_KEYS.contains(key) && !isLocalBaseUrl(appBaseUrl)) {
+            throw new IllegalStateException(
+                    "security.remember-me.key is set to a placeholder value; configure a strong secret for deployment");
+        }
+    }
+
+    private boolean isLocalBaseUrl(final String baseUrl) {
+        if (baseUrl == null || baseUrl.trim().isEmpty()) {
+            return false;
+        }
+
+        final String normalized = baseUrl.trim().toLowerCase(Locale.ROOT);
+        return normalized.contains("localhost") || normalized.contains("127.0.0.1");
     }
 
 

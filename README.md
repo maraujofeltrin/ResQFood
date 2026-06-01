@@ -16,6 +16,11 @@ Antes de compilar o ejecutar el proyecto, es **estrictamente necesario** contar 
 
 Este archivo provee la configuración de conexión a la base de datos y demás variables de entorno requeridas por la aplicación.
 
+En despliegue, estas propiedades pueden externalizarse mediante variables de entorno o parámetros JVM (`-D...`).
+Si `env.properties` no está presente en el classpath, la aplicación usará los valores del entorno.
+La propiedad `security.remember-me.key` debe ser un secreto largo y aleatorio (recomendado 32+ caracteres).
+Si `app.base-url` no es localhost, no se aceptan valores placeholder para `security.remember-me.key`.
+
 ## Construcción del Proyecto
 
 Para empaquetar el proyecto y generar el ejecutable, posicionarse en la raíz del mismo y ejecutar:
