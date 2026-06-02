@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -27,6 +28,7 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
             "CHANGE_ME_WITH_A_LONG_RANDOM_SECRET");
 
     private final AuthUserDetailsService authUserDetailsService;
+    private final PasswordEncoder passwordEncoder;
     private final String rememberMeKey;
     private final int rememberMeValidityDays;
     private final String appBaseUrl;
@@ -34,10 +36,12 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     public WebAuthConfig(
             final AuthUserDetailsService authUserDetailsService,
+            final PasswordEncoder passwordEncoder,
             @Value("${security.remember-me.key}") final String rememberMeKey,
             @Value("${security.remember-me.validity-days:7}") final int rememberMeValidityDays,
             @Value("${app.base-url:}") final String appBaseUrl) {
         this.authUserDetailsService = authUserDetailsService;
+        this.passwordEncoder = passwordEncoder;
         this.rememberMeKey = rememberMeKey;
         this.rememberMeValidityDays = rememberMeValidityDays;
         this.appBaseUrl = appBaseUrl;
@@ -70,7 +74,8 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(final AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(authUserDetailsService);
+        auth.userDetailsService(authUserDetailsService)
+                .passwordEncoder(passwordEncoder);
     }
 
     @Override
