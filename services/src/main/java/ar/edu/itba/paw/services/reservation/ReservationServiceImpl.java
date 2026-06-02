@@ -87,7 +87,7 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public Reservation createReservation(final long packId, final long userId, final int quantity,
             final double unitPrice,
-            final String pickupWindow, final String baseUrl) {
+            final String pickupWindow, final boolean isAuction) {
         if (quantity < 1) {
             throw new IllegalArgumentException("quantity must be >= 1");
         }
@@ -130,9 +130,8 @@ public class ReservationServiceImpl implements ReservationService {
         final java.util.Locale commerceLocale = commerceUser.getLocale();
 
         final String pickupDateStr = computePickupDateStr(reservation);
-        final boolean auctionReservation = baseUrl == null || baseUrl.trim().isEmpty();
 
-        if (auctionReservation) {
+        if (isAuction) {
             reservationMailService.sendAuctionWinnerCodeToClient(reservation, user.getEmail(), pickupDateStr,
                 user.getLocale());
             reservationMailService.sendAuctionWinnerCodeToCommerce(reservation, commerceEmail, pickupDateStr,
@@ -148,7 +147,7 @@ public class ReservationServiceImpl implements ReservationService {
             reservationTokenDao.create(rejectToken, reservation.getId(), ReservationToken.Action.REJECT,
                     tokenCreatedAt, tokenExpiresAt);
 
-            reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail, baseUrl,
+            reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail,
                 acceptToken, rejectToken, pickupDateStr, commerceLocale);
             reservationMailService.sendReservationCodeToClient(reservation, user.getEmail(), pickupDateStr,
                 user.getLocale());

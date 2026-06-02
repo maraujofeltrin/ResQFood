@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class EmailVerificationTokenServiceImpl implements EmailVerificationTokenService {
@@ -23,19 +24,21 @@ public class EmailVerificationTokenServiceImpl implements EmailVerificationToken
     private final TokenDao tokenDao;
     private final UserDao userDao;
     private final EmailVerificationMailService emailVerificationMailService;
+    private final String baseUrl;
 
     @Autowired
     public EmailVerificationTokenServiceImpl(final TokenDao tokenDao, final UserDao userDao,
-            final EmailVerificationMailService emailVerificationMailService) {
+            final EmailVerificationMailService emailVerificationMailService,
+            @Value("${app.base-url}") final String baseUrl) {
         this.tokenDao = tokenDao;
         this.userDao = userDao;
         this.emailVerificationMailService = emailVerificationMailService;
+        this.baseUrl = baseUrl;
     }
 
     @Transactional
     @Override
-    public void sendVerificationMail(final Long userId, final String email, final String baseUrl,
-            final Locale locale) {
+    public void sendVerificationMail(final Long userId, final String email, final Locale locale) {
         final Token token = TokenUtils.createToken(tokenDao, userId, TokenType.EMAIL_VERIFICATION, 24L);
         final String verificationUrl = baseUrl + "/verify-email?token=" + token.getToken();
         emailVerificationMailService.sendVerificationMail(email, verificationUrl, locale);
@@ -64,11 +67,11 @@ public class EmailVerificationTokenServiceImpl implements EmailVerificationToken
 
     @Transactional
     @Override
-    public void resendVerificationMail(final String email, final String baseUrl) {
+    public void resendVerificationMail(final String email) {
         final Optional<User> maybeUser = userDao.findByEmail(email);
         if (maybeUser.isPresent() && !maybeUser.get().isVerified()) {
             final User user = maybeUser.get();
-            sendVerificationMail(user.getId(), user.getEmail(), baseUrl, user.getLocale());
+            sendVerificationMail(user.getId(), user.getEmail(), user.getLocale());
         }
     }
 

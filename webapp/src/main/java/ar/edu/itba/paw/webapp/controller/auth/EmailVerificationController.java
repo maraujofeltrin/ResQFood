@@ -19,8 +19,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
@@ -71,10 +69,7 @@ public class EmailVerificationController {
             return "verify-email/resend";
         }
 
-        final String appBaseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .build()
-                .toUriString();
-        emailVerificationTokenService.resendVerificationMail(form.getEmail(), appBaseUrl);
+        emailVerificationTokenService.resendVerificationMail(form.getEmail());
 
         return "redirect:/login?pendingVerification=true";
     }

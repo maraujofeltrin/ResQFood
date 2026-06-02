@@ -17,8 +17,7 @@ public interface UserService {
      */
     ChangePasswordResult changePassword(long userId, String currentPassword, String newPassword);
     void markVerified(final Long userId);
-    RegisterResult tryRegister(final User user, final Client clientProfile, final Commerce commerceProfile,
-            final String appBaseUrl);
+    RegisterResult tryRegister(final User user, final Client clientProfile, final Commerce commerceProfile);
 
     /**
      * Persiste una nueva imagen y asocia su id al usuario. Valida tamaño y tipo MIME como en el flujo de packs.

@@ -149,7 +149,7 @@ class ReservationServiceImplTest {
             sentToCommerce.incrementAndGet();
             return null;
         }).when(reservationMailService).sendReservationRequestToCommerce(any(Reservation.class), anyString(),
-                anyString(), anyString(), anyString(), anyString(), any(Locale.class));
+                anyString(), anyString(), anyString(), any(Locale.class));
         doAnswer(inv -> {
             sentToClient.incrementAndGet();
             return null;
@@ -157,7 +157,7 @@ class ReservationServiceImplTest {
                 any(Locale.class));
 
         // 2. Ejercicio
-        final Reservation result = reservationService.createReservation(packId, 1L, 1, 5.0, "pw", APP_URL);
+        final Reservation result = reservationService.createReservation(packId, 1L, 1, 5.0, "pw", false);
 
         // 3. Asserts
         assertEquals(packId, result.getPackId());
@@ -169,7 +169,7 @@ class ReservationServiceImplTest {
     }
 
     @Test
-    void testCreateReservationWhenEmptyBaseUrlSendsAuctionWinnerMails() {
+    void testCreateReservationWhenIsAuctionSendsAuctionWinnerMails() {
         // 1. Setup
         final long packId = 15L;
         final long commerceUserId = 150L;
@@ -209,7 +209,7 @@ class ReservationServiceImplTest {
                 anyString(), any(Locale.class));
 
         // 2. Ejercicio
-        final Reservation result = reservationService.createReservation(packId, 7L, 1, 7.5, null, "");
+        final Reservation result = reservationService.createReservation(packId, 7L, 1, 7.5, null, true);
 
         // 3. Asserts
         assertEquals(packId, result.getPackId());
@@ -224,7 +224,7 @@ class ReservationServiceImplTest {
 
         // 2. Ejercicio
         final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reservationService.createReservation(20L, 2L, 0, 5.0, "pw", APP_URL));
+                () -> reservationService.createReservation(20L, 2L, 0, 5.0, "pw", false));
 
         // 3. Asserts
         assertTrue(ex.getMessage().contains("quantity"));
@@ -241,7 +241,7 @@ class ReservationServiceImplTest {
 
         // 2. Ejercicio
         final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reservationService.createReservation(30L, 3L, 1, 5.0, longPickup, APP_URL));
+                () -> reservationService.createReservation(30L, 3L, 1, 5.0, longPickup, false));
 
         // 3. Asserts
         assertTrue(ex.getMessage().contains("pickup_window"));

@@ -338,7 +338,7 @@ class UserServiceImplTest {
 
         // 2. Ejercicio
         final RegisterResult result =
-                userService.tryRegister(registering, clientProfile, null, "https://app.example");
+                userService.tryRegister(registering, clientProfile, null);
 
         // 3. Asserts
         assertEquals(RegisterResult.Outcome.DUPLICATE_EMAIL, result.getOutcome());
