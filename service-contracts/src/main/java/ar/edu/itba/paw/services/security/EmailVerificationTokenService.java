@@ -7,11 +7,11 @@ import java.util.Locale;
 
 public interface EmailVerificationTokenService {
 
-    void sendVerificationMail(final Long userId, final String email, final String baseUrl, final Locale locale);
+    void sendVerificationMail(final Long userId, final String email, final Locale locale);
 
     Optional<User> verifyEmailAndGetUser(final String token);
 
     boolean verifyEmail(final String token);
 
-    void resendVerificationMail(final String email, final String baseUrl);
+    void resendVerificationMail(final String email);
 }

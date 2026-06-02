@@ -43,8 +43,12 @@ class EmailVerificationTokenServiceImplTest {
     @Mock
     private EmailVerificationMailService emailVerificationMailService;
 
-    @InjectMocks
     private EmailVerificationTokenServiceImpl service;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        service = new EmailVerificationTokenServiceImpl(tokenDao, userDao, emailVerificationMailService, "https://app.example");
+    }
 
     private static User userRef(final long id) {
         return new User(id, EMAIL, "pw", "N");
@@ -72,7 +76,7 @@ class EmailVerificationTokenServiceImplTest {
         }).when(emailVerificationMailService).sendVerificationMail(eq(EMAIL), anyString(), eq(LOCALE));
 
         // 2. Ejercicio
-        service.sendVerificationMail(USER_ID, EMAIL, baseUrl, LOCALE);
+        service.sendVerificationMail(USER_ID, EMAIL, LOCALE);
 
         // 3. Asserts
         final String url = capturedUrl.get();
@@ -180,7 +184,7 @@ class EmailVerificationTokenServiceImplTest {
         }).when(emailVerificationMailService).sendVerificationMail(eq(EMAIL), anyString(), eq(LOCALE));
 
         // 2. Ejercicio
-        service.resendVerificationMail(EMAIL, "https://x.example");
+        service.resendVerificationMail(EMAIL);
 
         // 3. Asserts
         assertTrue(capturedUrl.get().contains("/verify-email?token="));
@@ -197,7 +201,7 @@ class EmailVerificationTokenServiceImplTest {
         });
 
         // 2. Ejercicio
-        service.resendVerificationMail(EMAIL, "https://x.example");
+        service.resendVerificationMail(EMAIL);
 
         // 3. Asserts
         assertEquals(1, emailLookups.get());
@@ -213,7 +217,7 @@ class EmailVerificationTokenServiceImplTest {
         });
 
         // 2. Ejercicio
-        service.resendVerificationMail("nobody@example.com", "https://x.example");
+        service.resendVerificationMail("nobody@example.com");
 
         // 3. Asserts
         assertEquals(1, emailLookups.get());

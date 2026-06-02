@@ -177,7 +177,7 @@ public class AuctionServiceImpl implements AuctionService {
                             1,
                             auction.getCurrentBid(),
                             null,
-                            ""
+                            true
                     );
                 } catch (final RuntimeException e) {
                     final Long packId = auction.getPack() != null ? auction.getPack().getId() : null;

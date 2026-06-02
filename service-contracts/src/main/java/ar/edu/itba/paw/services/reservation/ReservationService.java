@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface ReservationService {
 
     Reservation createReservation(long packId, long userId, int quantity, double unitPrice, String pickupWindow,
-            String baseUrl);
+            boolean isAuction);
 
     Optional<Reservation> findById(final Long id);
 

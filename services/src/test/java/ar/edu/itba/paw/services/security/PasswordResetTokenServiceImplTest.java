@@ -47,8 +47,12 @@ class PasswordResetTokenServiceImplTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
-    @InjectMocks
     private PasswordResetTokenServiceImpl service;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        service = new PasswordResetTokenServiceImpl(tokenDao, userDao, passwordResetMailService, passwordEncoder, "https://app.example");
+    }
 
     private static User userRef(final long id) {
         return new User(id, EMAIL, "pw", "N");
@@ -78,7 +82,7 @@ class PasswordResetTokenServiceImplTest {
         }).when(passwordResetMailService).sendPasswordResetMail(eq(EMAIL), anyString(), eq(LOCALE));
 
         // 2. Ejercicio
-        service.requestPasswordReset(EMAIL, baseUrl);
+        service.requestPasswordReset(EMAIL);
 
         // 3. Asserts
         assertTrue(capturedUrl.get().startsWith(baseUrl + "/password-reset/change?token="));
@@ -94,7 +98,7 @@ class PasswordResetTokenServiceImplTest {
         });
 
         // 2. Ejercicio
-        service.requestPasswordReset("missing@example.com", "https://x.example");
+        service.requestPasswordReset("missing@example.com");
 
         // 3. Asserts
         assertEquals(1, emailLookups.get());

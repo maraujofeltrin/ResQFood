@@ -14,8 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
+import org.springframework.web.servlet.ModelAndView;
 import javax.validation.Valid;
 
 @Controller
@@ -44,18 +43,16 @@ public class PasswordResetController {
     }
 
     @PostMapping("/request")
-    public String submitRequest(
-            @Valid @ModelAttribute("passwordResetRequestForm") final PasswordResetRequestForm form,
+    public ModelAndView requestPasswordReset(
+            @Valid @ModelAttribute("resetRequestForm") final PasswordResetRequestForm form,
             final BindingResult errors) {
         if (errors.hasErrors()) {
-            return "password-reset/request";
+            return new ModelAndView("password-reset/request");
         }
-
-        final String appBaseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .build()
-                .toUriString();
-        passwordResetTokenService.requestPasswordReset(form.getEmail(), appBaseUrl);
-        return "redirect:/password-reset/request?sent=true";
+        passwordResetTokenService.requestPasswordReset(form.getEmail());
+        final ModelAndView mav = new ModelAndView("auth/password-reset/password-reset-request");
+        mav.addObject("success", true);
+        return mav;
     }
 
     @GetMapping("/change")
