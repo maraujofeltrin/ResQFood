@@ -13,6 +13,7 @@ import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
+import ar.edu.itba.paw.services.notification.NotificationService;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.services.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +61,7 @@ class ReservationServiceImplTest {
     @Mock
     private PackDao packDao;
     @Mock
-    private ReservationMailService reservationMailService;
+    private NotificationService notificationService;
     @Mock
     private CommerceDao commerceDao;
     @Mock
@@ -109,7 +110,7 @@ class ReservationServiceImplTest {
                 reservationDao,
                 reservationTokenDao,
                 packDao,
-                reservationMailService,
+                notificationService,
                 commerceDao,
                 auctionDao,
                 TEST_ZONE);
@@ -148,12 +149,12 @@ class ReservationServiceImplTest {
         doAnswer(inv -> {
             sentToCommerce.incrementAndGet();
             return null;
-        }).when(reservationMailService).sendReservationRequestToCommerce(any(Reservation.class), anyString(),
+        }).when(notificationService).notifyReservationRequested(any(Reservation.class), anyString(),
                 anyString(), anyString(), anyString(), anyString(), any(Locale.class));
         doAnswer(inv -> {
             sentToClient.incrementAndGet();
             return null;
-        }).when(reservationMailService).sendReservationCodeToClient(any(Reservation.class), anyString(), anyString(),
+        }).when(notificationService).notifyReservationCodeIssued(any(Reservation.class), anyString(), anyString(),
                 any(Locale.class));
 
         // 2. Ejercicio
@@ -200,12 +201,12 @@ class ReservationServiceImplTest {
         doAnswer(inv -> {
             sentAuctionToClient.incrementAndGet();
             return null;
-        }).when(reservationMailService).sendAuctionWinnerCodeToClient(any(Reservation.class), anyString(), anyString(),
+        }).when(notificationService).notifyAuctionWinnerForClient(any(Reservation.class), anyString(), anyString(),
                 any(Locale.class));
         doAnswer(inv -> {
             sentAuctionToCommerce.incrementAndGet();
             return null;
-        }).when(reservationMailService).sendAuctionWinnerCodeToCommerce(any(Reservation.class), anyString(),
+        }).when(notificationService).notifyAuctionWinnerForCommerce(any(Reservation.class), anyString(),
                 anyString(), any(Locale.class));
 
         // 2. Ejercicio
@@ -302,7 +303,7 @@ class ReservationServiceImplTest {
         doAnswer(inv -> {
             sentRejected.incrementAndGet();
             return null;
-        }).when(reservationMailService).sendReservationRejectedToClient(any(Reservation.class), anyString(),
+        }).when(notificationService).notifyReservationRejected(any(Reservation.class), anyString(),
                 any(Locale.class));
 
         // 2. Ejercicio

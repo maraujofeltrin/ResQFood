@@ -11,6 +11,7 @@ import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.BidDao;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.PackDao;
+import ar.edu.itba.paw.services.notification.NotificationService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,15 +37,18 @@ public class AuctionServiceImpl implements AuctionService {
     private final PackDao packDao;
     private final ReservationService reservationService;
     private final CommerceDao commerceDao;
+    private final NotificationService notificationService;
 
     @Autowired
     public AuctionServiceImpl(final AuctionDao auctionDao, final BidDao bidDao, final PackDao packDao,
-            final ReservationService reservationService, final CommerceDao commerceDao) {
+            final ReservationService reservationService, final CommerceDao commerceDao,
+            final NotificationService notificationService) {
         this.auctionDao = auctionDao;
         this.bidDao = bidDao;
         this.packDao = packDao;
         this.reservationService = reservationService;
         this.commerceDao = commerceDao;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -147,10 +151,9 @@ public class AuctionServiceImpl implements AuctionService {
         final Bid bid = bidDao.createBid(auctionId, clientId, amount);
         auctionDao.updateCurrentBid(auctionId, amount, clientId);
 
-        // TODO: Notification hook — notify outbid user
-        // if (previousBidderId != null && !previousBidderId.equals(clientId)) {
-        //     notificationService.notifyOutbid(previousBidderId, auctionId, amount);
-        // }
+        if (previousBidderId != null && !previousBidderId.equals(clientId)) {
+            notificationService.notifyAuctionOutbid(previousBidderId, auctionId, amount);
+        }
 
         LOGGER.info("Bid placed: auctionId={}, clientId={}, amount={}", auctionId, clientId, amount);
         return bid;

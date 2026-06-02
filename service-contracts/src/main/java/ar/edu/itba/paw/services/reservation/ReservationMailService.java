@@ -18,4 +18,7 @@ public interface ReservationMailService {
         Locale locale);
 
     void sendReservationRejectedToClient(Reservation reservation, String clientEmail, Locale locale);
+
+    void sendAuctionOutbidToClient(String clientEmail, String packTitle, String commerceName, double newAmount,
+            Locale locale);
 }

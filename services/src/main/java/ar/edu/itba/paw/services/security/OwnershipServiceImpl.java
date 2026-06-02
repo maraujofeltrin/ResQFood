@@ -5,6 +5,7 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.persistence.AuctionDao;
+import ar.edu.itba.paw.persistence.NotificationDao;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
@@ -21,16 +22,19 @@ public class OwnershipServiceImpl implements OwnershipService {
     private final AuctionDao auctionDao;
     private final ReservationDao reservationDao;
     private final ReservationTokenDao reservationTokenDao;
+    private final NotificationDao notificationDao;
 
     @Autowired
     public OwnershipServiceImpl(final PackDao packDao,
                                 final AuctionDao auctionDao,
                                 final ReservationDao reservationDao,
-                                final ReservationTokenDao reservationTokenDao) {
+                                final ReservationTokenDao reservationTokenDao,
+                                final NotificationDao notificationDao) {
         this.packDao = packDao;
         this.auctionDao = auctionDao;
         this.reservationDao = reservationDao;
         this.reservationTokenDao = reservationTokenDao;
+        this.notificationDao = notificationDao;
     }
 
     @Transactional(readOnly = true)
@@ -78,6 +82,15 @@ public class OwnershipServiceImpl implements OwnershipService {
             throw new OwnershipResourceNotFoundException("Pack not found");
         }
         return pack.getCommerceId() != null && pack.getCommerceId().equals(currentUserId);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public boolean canWriteNotification(final long notificationId, final long currentUserId) {
+        if (notificationDao.findById(notificationId).isEmpty()) {
+            throw new OwnershipResourceNotFoundException("Notification not found");
+        }
+        return notificationDao.belongsToRecipient(notificationId, currentUserId);
     }
 
     private Pack findPackOrThrow(final long packId) {

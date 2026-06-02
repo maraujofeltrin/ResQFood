@@ -12,6 +12,7 @@ import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.BidDao;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.PackDao;
+import ar.edu.itba.paw.services.notification.NotificationService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +24,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -53,6 +55,9 @@ class AuctionServiceImplTest {
 
     @Mock
     private CommerceDao commerceDao;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private AuctionServiceImpl auctionService;
@@ -144,6 +149,32 @@ class AuctionServiceImplTest {
         assertEquals(1600.0, bid.getAmount());
         assertEquals(1600.0, capturedAmount.get());
         assertEquals(CLIENT_ID, capturedBidder.get().longValue());
+    }
+
+    @Test
+    void testPlaceBidWhenPreviousBidderExistsTriggersOutbidNotification() {
+        // 1. Setup
+        final long previousBidderId = 50L;
+        final long newBidderId = 60L;
+        final double amount = 75.0;
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
+        final Auction auction = new Auction(AUCTION_ID, pack, 10.0, 5.0, 50.0, previousBidderId, endTime,
+                Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
+        when(bidDao.createBid(AUCTION_ID, newBidderId, amount))
+                .thenReturn(new Bid(1L, auctionRef(AUCTION_ID), clientRef(newBidderId), amount, LocalDateTime.now()));
+        final AtomicBoolean outbidCalled = new AtomicBoolean(false);
+        doAnswer(inv -> {
+            outbidCalled.set(true);
+            return null;
+        }).when(notificationService).notifyAuctionOutbid(eq(previousBidderId), eq(AUCTION_ID), eq(amount));
+
+        // 2. Ejercicio
+        auctionService.placeBid(AUCTION_ID, newBidderId, amount);
+
+        // 3. Asserts
+        assertTrue(outbidCalled.get());
     }
 
     @Test

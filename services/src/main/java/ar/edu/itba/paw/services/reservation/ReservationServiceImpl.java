@@ -13,6 +13,7 @@ import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
+import ar.edu.itba.paw.services.notification.NotificationService;
 import ar.edu.itba.paw.services.pack.DirectReservationCheck;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.services.user.UserService;
@@ -58,7 +59,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final ReservationTokenDao reservationTokenDao;
     private final PackDao packDao;
     private final CommerceDao commerceDao;
-    private final ReservationMailService reservationMailService;
+    private final NotificationService notificationService;
     private final AuctionDao auctionDao;
     private final ZoneId displayZone;
 
@@ -68,7 +69,7 @@ public class ReservationServiceImpl implements ReservationService {
             final ReservationDao reservationDao,
             final ReservationTokenDao reservationTokenDao,
             final PackDao packDao,
-            final ReservationMailService reservationMailService,
+            final NotificationService notificationService,
             final CommerceDao commerceDao,
             final AuctionDao auctionDao,
             final ZoneId displayZone) {
@@ -77,7 +78,7 @@ public class ReservationServiceImpl implements ReservationService {
         this.reservationDao = reservationDao;
         this.reservationTokenDao = reservationTokenDao;
         this.packDao = packDao;
-        this.reservationMailService = reservationMailService;
+        this.notificationService = notificationService;
         this.commerceDao = commerceDao;
         this.auctionDao = auctionDao;
         this.displayZone = displayZone;
@@ -133,9 +134,9 @@ public class ReservationServiceImpl implements ReservationService {
         final boolean auctionReservation = baseUrl == null || baseUrl.trim().isEmpty();
 
         if (auctionReservation) {
-            reservationMailService.sendAuctionWinnerCodeToClient(reservation, user.getEmail(), pickupDateStr,
+            notificationService.notifyAuctionWinnerForClient(reservation, user.getEmail(), pickupDateStr,
                 user.getLocale());
-            reservationMailService.sendAuctionWinnerCodeToCommerce(reservation, commerceEmail, pickupDateStr,
+            notificationService.notifyAuctionWinnerForCommerce(reservation, commerceEmail, pickupDateStr,
                 commerceLocale);
         } else {
             final String acceptToken = UUID.randomUUID().toString();
@@ -148,9 +149,9 @@ public class ReservationServiceImpl implements ReservationService {
             reservationTokenDao.create(rejectToken, reservation.getId(), ReservationToken.Action.REJECT,
                     tokenCreatedAt, tokenExpiresAt);
 
-            reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail, baseUrl,
+            notificationService.notifyReservationRequested(reservation, commerceEmail, baseUrl,
                 acceptToken, rejectToken, pickupDateStr, commerceLocale);
-            reservationMailService.sendReservationCodeToClient(reservation, user.getEmail(), pickupDateStr,
+            notificationService.notifyReservationCodeIssued(reservation, user.getEmail(), pickupDateStr,
                 user.getLocale());
         }
 
@@ -324,7 +325,7 @@ public class ReservationServiceImpl implements ReservationService {
                         + canceledReservation.getId()));
         final String clientEmail = clientUser.getEmail();
 
-        reservationMailService.sendReservationRejectedToClient(canceledReservation, clientEmail,
+        notificationService.notifyReservationRejected(canceledReservation, clientEmail,
             clientUser.getLocale());
         LOGGER.info("Reservation canceled: reservationId={}", reservationId);
         return ReservationServiceResult.success(canceledReservation);

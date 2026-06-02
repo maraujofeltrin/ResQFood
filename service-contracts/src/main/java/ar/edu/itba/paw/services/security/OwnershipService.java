@@ -28,4 +28,9 @@ public interface OwnershipService {
      * @throws OwnershipResourceNotFoundException if the token, reservation or pack does not exist
      */
     boolean canWriteToken(String token, long currentUserId);
+
+    /**
+     * @throws OwnershipResourceNotFoundException if the notification does not exist
+     */
+    boolean canWriteNotification(long notificationId, long currentUserId);
 }
