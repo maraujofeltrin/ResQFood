@@ -1,0 +1,109 @@
+/* ── Notification sidebar (drawer) ───────────────────────── */
+
+.notifications-backdrop {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.notifications-backdrop--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.notifications-backdrop:not(.hidden).notifications-backdrop--visible {
+  display: block;
+}
+
+.notifications-sidebar {
+  transform: translateX(100%);
+  transition: transform 0.25s ease-out;
+  will-change: transform;
+}
+
+.notifications-sidebar.notifications-sidebar--open {
+  transform: translateX(0);
+}
+
+body.notifications-sidebar-open {
+  overflow: hidden;
+}
+
+/* ── Bell ────────────────────────────────────────────────── */
+
+.notification-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 9999px;
+  color: inherit;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.notification-bell:hover {
+  background-color: var(--color-primary-container, #d1fae5);
+}
+
+.notification-bell:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+
+.notification-bell__badge {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #ffffff;
+  background-color: #ba1a1a;
+  border-radius: 9999px;
+}
+
+/* ── Sidebar header close ────────────────────────────────── */
+
+.notification-sidebar__close:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+
+/* ── List items ──────────────────────────────────────────── */
+
+.notification-item {
+  border-bottom: 1px solid rgba(194, 201, 194, 0.15);
+}
+
+.notification-item--unread {
+  background-color: rgba(209, 250, 229, 0.35);
+}
+
+.notification-item__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.125rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  font-family: "Material Symbols Outlined", sans-serif;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.notification-item__action:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 1px;
+}
