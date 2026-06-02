@@ -56,7 +56,7 @@ public class CommerceFavoriteJpaDao implements CommerceFavoriteDao {
         }
 
         final List<Commerce> commerces = em.createQuery(
-                        "SELECT c FROM Commerce c WHERE c.userId IN :ids", Commerce.class)
+                        "SELECT c FROM Commerce c JOIN FETCH c.user WHERE c.userId IN :ids", Commerce.class)
                 .setParameter("ids", ids)
                 .getResultList();
 

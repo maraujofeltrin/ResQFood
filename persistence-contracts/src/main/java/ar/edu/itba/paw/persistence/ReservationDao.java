@@ -13,6 +13,8 @@ public interface ReservationDao {
 
     Optional<Reservation> findById(final Long id);
 
+    Optional<Reservation> findByIdWithDetails(final Long id);
+
     List<Reservation> findByCustomerId(final Long customerId);
 
     List<Reservation> findByCommerceId(final Long commerceId);

@@ -22,8 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -166,8 +168,8 @@ public class AuctionServiceImpl implements AuctionService {
         int closed = 0;
 
         for (final Auction auction : expired) {
-            auctionDao.updateStatus(auction.getId(), Auction.Status.FINISHED);
-            packDao.setActive(auction.getPack().getId(), false);
+            auction.setStatus(Auction.Status.FINISHED);
+            auction.getPack().setActive(false);
             closed++;
 
             if (auction.getCurrentBidderId() != null && auction.getCurrentBid() != null) {
@@ -249,5 +251,49 @@ public class AuctionServiceImpl implements AuctionService {
     @Override
     public int countParticipatedAuctions(final long clientId, final Auction.Status status, final String query) {
         return auctionDao.countParticipatedAuctions(clientId, status, query);
+    }
+
+    @Override
+    public Set<Long> findPackIdsWithAuction(final Collection<Long> packIds) {
+        return auctionDao.findPackIdsWithAuction(packIds);
+    }
+
+    @Override
+    public Map<Long, Double> getMaxBidsByClientForAuctions(final long clientUserId, final Collection<Long> auctionIds) {
+        return bidDao.findMaxBidsByClientForAuctions(clientUserId, auctionIds);
+    }
+
+    @Override
+    public Set<Long> findAuctionIdsWhereClientLeads(final long clientUserId, final Collection<Long> auctionIds) {
+        return bidDao.findAuctionIdsWhereClientLeads(clientUserId, auctionIds);
+    }
+
+    @Override
+    public List<AuctionPackSummary> findSummariesByPackIds(final Collection<Long> packIds) {
+        if (packIds == null || packIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final List<Object[]> rows = auctionDao.findSummariesByPackIds(packIds);
+        if (rows.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final List<Long> auctionIds = new ArrayList<>(rows.size());
+        for (final Object[] row : rows) {
+            auctionIds.add((Long) row[1]);
+        }
+        final Set<Long> auctionIdsWithBids = bidDao.findAuctionIdsWithBids(auctionIds);
+        final List<AuctionPackSummary> summaries = new ArrayList<>(rows.size());
+        for (final Object[] row : rows) {
+            final long packId = (Long) row[0];
+            final long auctionId = (Long) row[1];
+            final Auction.Status status = (Auction.Status) row[2];
+            summaries.add(new AuctionPackSummary(packId, auctionId, status, auctionIdsWithBids.contains(auctionId)));
+        }
+        return summaries;
+    }
+
+    @Override
+    public boolean hasClientBidOnAuction(final long auctionId, final long clientUserId) {
+        return bidDao.existsByAuctionIdAndClientUserId(auctionId, clientUserId);
     }
 }

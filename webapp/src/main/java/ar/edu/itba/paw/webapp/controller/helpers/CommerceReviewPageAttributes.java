@@ -4,15 +4,12 @@ import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.CommerceReview;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.commerce.CommerceReviewService;
-import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.webapp.form.CommerceReviewForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.time.ZoneId;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -25,16 +22,14 @@ public class CommerceReviewPageAttributes {
     private static final int REVIEW_LIST_LIMIT = 5;
 
     private final CommerceReviewService commerceReviewService;
-    private final ClientService clientService;
     private final AuthenticatedUserResolver authResolver;
     private final ZoneId businessZone;
 
     @Autowired
     public CommerceReviewPageAttributes(final CommerceReviewService commerceReviewService,
-            final ClientService clientService, final AuthenticatedUserResolver authResolver,
+            final AuthenticatedUserResolver authResolver,
             final ZoneId businessZone) {
         this.commerceReviewService = commerceReviewService;
-        this.clientService = clientService;
         this.authResolver = authResolver;
         this.businessZone = businessZone;
     }
@@ -44,8 +39,12 @@ public class CommerceReviewPageAttributes {
         final Locale locale = org.springframework.context.i18n.LocaleContextHolder.getLocale();
         final List<CommerceReview> reviews = commerceReviewService.findReviewsForCommerce(commerceId, 1,
                 REVIEW_LIST_LIMIT);
-        final Map<Long, Client> reviewClients = prefetchClients(reviews.stream()
-                .map(r -> r.getClient().getUserId()).distinct().collect(Collectors.toList()));
+        final Map<Long, Client> reviewClients = reviews.stream()
+                .filter(r -> r.getClient() != null)
+                .collect(Collectors.toMap(
+                        r -> r.getClient().getUserId(),
+                        CommerceReview::getClient,
+                        (a, b) -> a));
 
         final Optional<User> userOpt = authResolver.resolveUserOrEmpty();
         final Long currentClientId = userOpt.filter(u -> u.getRole() == User.Role.CLIENT)
@@ -83,18 +82,5 @@ public class CommerceReviewPageAttributes {
         final boolean expanded = formExpanded
                 || Boolean.TRUE.equals(mav.getModel().get("commerceReviewFormExpanded"));
         mav.addObject("commerceReviewFormExpanded", Boolean.valueOf(expanded));
-    }
-
-    private Map<Long, Client> prefetchClients(final List<Long> userIds) {
-        if (userIds == null || userIds.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        final Map<Long, Client> map = new HashMap<>();
-        for (final Long userId : userIds) {
-            if (userId != null) {
-                clientService.findByUserId(userId).ifPresent(c -> map.put(userId, c));
-            }
-        }
-        return map;
     }
 }

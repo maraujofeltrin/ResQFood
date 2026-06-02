@@ -108,8 +108,7 @@ public class PackServiceImpl implements PackService {
 
     private boolean hasParticipatedInPackAuction(final Long packId, final Long viewerUserId) {
         return auctionService.findByPackId(packId)
-                .map(auction -> auctionService.getBidHistory(auction.getId()).stream()
-                        .anyMatch(bid -> viewerUserId.equals(bid.getClient().getUserId())))
+                .map(auction -> auctionService.hasClientBidOnAuction(auction.getId(), viewerUserId))
                 .orElse(false);
     }
 

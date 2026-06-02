@@ -4,6 +4,7 @@ import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
+import org.hibernate.Hibernate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -109,6 +110,21 @@ public class CommerceJpaDaoTest {
         assertEquals(userId, commerce.get().getUserId());
         assertEquals(COMMERCIAL_NAME, commerce.get().getCommercialName());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerces"));
+    }
+
+    @Test
+    public void testFindByUserIdEagerlyLoadsUser() {
+        // 1. Setup
+        commerceDao.createCommerce(userId, COMMERCIAL_NAME, CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+        em.flush();
+
+        // 2. Ejercicio
+        final Optional<Commerce> commerce = commerceDao.findByUserId(userId);
+
+        // 3. Asserts
+        assertTrue(commerce.isPresent());
+        assertTrue(Hibernate.isInitialized(commerce.get().getUser()));
+        assertEquals(EMAIL, commerce.get().getUser().getEmail());
     }
 
     @Test
@@ -241,6 +257,21 @@ public class CommerceJpaDaoTest {
         assertEquals(1, restaurants.size());
         assertEquals(Commerce.Category.RESTAURANT, restaurants.get(0).getCategory());
         assertEquals("Restaurant Place", restaurants.get(0).getCommercialName());
+    }
+
+    @Test
+    public void testFilterCommercesEagerlyLoadsUser() {
+        // 1. Setup
+        commerceDao.createCommerce(userId, COMMERCIAL_NAME, CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+        em.flush();
+
+        // 2. Ejercicio
+        final java.util.List<Commerce> commerces = commerceDao.filterCommerces(null, null, null, 1, 10);
+
+        // 3. Asserts
+        assertFalse(commerces.isEmpty());
+        assertTrue(Hibernate.isInitialized(commerces.get(0).getUser()));
+        assertNotNull(commerces.get(0).getUser().getEmail());
     }
 
     @Test

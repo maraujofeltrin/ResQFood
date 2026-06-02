@@ -3,8 +3,6 @@ package ar.edu.itba.paw.webapp.controller.commerce;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.reservation.PickupByCodeError;
 import ar.edu.itba.paw.models.reservation.Reservation;
-import ar.edu.itba.paw.services.user.ClientService;
-import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.reservation.ReservationServiceResult;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
@@ -26,18 +24,12 @@ import javax.validation.Valid;
 public class CommercePickupController {
 
     private final ReservationService reservationService;
-    private final PackService packService;
-    private final ClientService clientService;
     private final AuthenticatedUserResolver authResolver;
 
     @Autowired
     public CommercePickupController(final ReservationService reservationService,
-                                    final PackService packService,
-                                    final ClientService clientService,
                                     final AuthenticatedUserResolver authResolver) {
         this.reservationService = reservationService;
-        this.packService = packService;
-        this.clientService = clientService;
         this.authResolver = authResolver;
     }
 
@@ -68,14 +60,12 @@ public class CommercePickupController {
             mav.addObject("pickupSuccess", true);
             mav.addObject("confirmedReservation", confirmed);
 
-            if (confirmed.getPackId() != null) {
-                packService.findById(confirmed.getPackId())
-                        .ifPresent(pack -> mav.addObject("confirmedPack", pack));
+            if (confirmed.getPack() != null) {
+                mav.addObject("confirmedPack", confirmed.getPack());
             }
 
-            if (confirmed.getCustomerId() != null) {
-                clientService.findByUserId(confirmed.getCustomerId())
-                        .ifPresent(client -> mav.addObject("confirmedClientName", client.getFullName()));
+            if (confirmed.getCustomer() != null) {
+                mav.addObject("confirmedClientName", confirmed.getCustomer().getFullName());
             }
         } else {
             final String key;

@@ -4,6 +4,7 @@ import ar.edu.itba.paw.models.user.CommerceReview;
 import ar.edu.itba.paw.models.user.CommerceReviewException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface CommerceReviewService {
@@ -26,4 +27,6 @@ public interface CommerceReviewService {
     CommerceReview upsertReview(long clientUserId, long commerceUserId, int rating, String body) throws CommerceReviewException;
 
     Optional<Double> averageRatingForCommerce(long commerceUserId);
+
+    Map<Long, Double> findAverageRatingsForCommerceIds(List<Long> commerceUserIds);
 }

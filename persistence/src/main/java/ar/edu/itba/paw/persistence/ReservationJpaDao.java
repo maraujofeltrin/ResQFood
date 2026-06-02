@@ -13,6 +13,9 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +45,21 @@ public class ReservationJpaDao implements ReservationDao {
     }
 
     @Override
+    public Optional<Reservation> findByIdWithDetails(final Long id) {
+        return em.createQuery(
+                "SELECT r FROM Reservation r "
+                        + "JOIN FETCH r.customer "
+                        + "JOIN FETCH r.pack p "
+                        + "JOIN FETCH p.commerce "
+                        + "WHERE r.id = :id",
+                Reservation.class)
+                .setParameter("id", id)
+                .getResultList()
+                .stream()
+                .findFirst();
+    }
+
+    @Override
     public List<Reservation> findByCustomerId(final Long customerId) {
         return em.createQuery("FROM Reservation r WHERE r.customer.userId = :customerId", Reservation.class)
                 .setParameter("customerId", customerId)
@@ -57,7 +75,9 @@ public class ReservationJpaDao implements ReservationDao {
 
     @Override
     public List<Reservation> findByPackId(final Long packId) {
-        return em.createQuery("FROM Reservation r WHERE r.pack.id = :packId", Reservation.class)
+        return em.createQuery(
+                "FROM Reservation r JOIN FETCH r.customer WHERE r.pack.id = :packId ORDER BY r.reservationDate DESC",
+                Reservation.class)
                 .setParameter("packId", packId)
                 .getResultList();
     }
@@ -95,7 +115,13 @@ public class ReservationJpaDao implements ReservationDao {
 
     @Override
     public Optional<Reservation> findByPickupCode(final String pickupCode) {
-        return em.createQuery("FROM Reservation r WHERE r.pickupCode = :code", Reservation.class)
+        return em.createQuery(
+                "SELECT r FROM Reservation r "
+                        + "JOIN FETCH r.customer "
+                        + "JOIN FETCH r.pack p "
+                        + "JOIN FETCH p.commerce "
+                        + "WHERE r.pickupCode = :code",
+                Reservation.class)
             .setParameter("code", pickupCode)
             .setMaxResults(1)
             .getResultList()
@@ -158,15 +184,36 @@ public class ReservationJpaDao implements ReservationDao {
     @Override
     public List<Reservation> filterReservations(final Long commerceId, final Long customerId, final String query,
             final Reservation.Status status, final boolean excludeAuctionPacks, final int page, final int pageSize) {
-        final StringBuilder jpql = new StringBuilder("SELECT r ");
+        final StringBuilder idJpql = new StringBuilder("SELECT r.id ");
         final Map<String, Object> params = new LinkedHashMap<>();
-        appendReservationFilters(jpql, params, commerceId, customerId, query, status, excludeAuctionPacks);
-        jpql.append("ORDER BY r.reservationDate DESC ");
+        appendReservationFilters(idJpql, params, commerceId, customerId, query, status, excludeAuctionPacks);
+        idJpql.append("ORDER BY r.reservationDate DESC, r.id DESC ");
 
-        return JpqlQuerySupport.createQuery(em, jpql.toString(), params, Reservation.class)
+        final List<Long> ids = JpqlQuerySupport.createQuery(em, idJpql.toString(), params, Long.class)
                 .setMaxResults(pageSize)
                 .setFirstResult(Pagination.offset(page, pageSize))
                 .getResultList();
+
+        if (ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        final List<Reservation> reservations = em.createQuery(
+                "SELECT r FROM Reservation r " +
+                "JOIN FETCH r.customer " +
+                "JOIN FETCH r.pack p " +
+                "JOIN FETCH p.commerce " +
+                "WHERE r.id IN :ids", Reservation.class)
+                .setParameter("ids", ids)
+                .getResultList();
+
+        final Map<Long, Integer> positions = new HashMap<>();
+        for (int index = 0; index < ids.size(); index++) {
+            positions.put(ids.get(index), Integer.valueOf(index));
+        }
+        reservations.sort(Comparator.comparingInt(
+                r -> positions.getOrDefault(r.getId(), Integer.MAX_VALUE)));
+        return reservations;
     }
 
     @Override

@@ -6,6 +6,7 @@ import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
+import org.hibernate.Hibernate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -128,6 +129,25 @@ public class ReservationTokenJpaDaoTest {
         assertTrue(found.isPresent());
         assertEquals(reservationId, found.get().getReservationId());
         assertEquals(ReservationToken.Action.ACCEPT, found.get().getAction());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservation_tokens"));
+    }
+
+    @Test
+    public void testFindByTokenEagerlyLoadsReservationAndPack() {
+        // 1. Setup
+        reservationTokenDao.create("token123", reservationId, ReservationToken.Action.ACCEPT, TOKEN_CREATED,
+                TOKEN_EXPIRES);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final Optional<ReservationToken> found = reservationTokenDao.findByToken("token123");
+
+        // 3. Asserts
+        assertTrue(found.isPresent());
+        assertTrue(Hibernate.isInitialized(found.get().getReservation()));
+        assertNotNull(found.get().getReservation().getPack());
+        assertTrue(Hibernate.isInitialized(found.get().getReservation().getPack()));
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservation_tokens"));
     }
 
