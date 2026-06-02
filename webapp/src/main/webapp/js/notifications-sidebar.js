@@ -1,8 +1,33 @@
 /**
- * Notification sidebar drawer: open/close on bell click, backdrop, Escape.
+ * Notification sidebar drawer: open/close, and mutation actions (read/unread/delete).
  */
 (function () {
   var initialized = false;
+
+  function getContextPath(sidebar) {
+    var path = sidebar && sidebar.getAttribute("data-context-path");
+    if (path && path.length > 0) {
+      return path;
+    }
+    return "";
+  }
+
+  function postNotificationAction(contextPath, url, onSuccess) {
+    fetch(contextPath + url, {
+      method: "POST",
+      credentials: "same-origin",
+    })
+      .then(function (response) {
+        if (response.ok) {
+          onSuccess();
+          return;
+        }
+        console.warn("Notification action failed:", url, response.status);
+      })
+      .catch(function (err) {
+        console.warn("Notification action error:", url, err);
+      });
+  }
 
   function initNotificationSidebar() {
     if (initialized) {
@@ -19,6 +44,7 @@
     }
 
     initialized = true;
+    var contextPath = getContextPath(sidebar);
 
     function isOpen() {
       return sidebar.classList.contains("notifications-sidebar--open");
@@ -52,6 +78,29 @@
       }
     }
 
+    function reloadPage() {
+      window.location.reload();
+    }
+
+    function resolveActionUrl(action, notificationId) {
+      if (action === "mark-all-read") {
+        return "/notifications/read-all";
+      }
+      if (!notificationId) {
+        return null;
+      }
+      if (action === "mark-read") {
+        return "/notifications/" + notificationId + "/read";
+      }
+      if (action === "mark-unread") {
+        return "/notifications/" + notificationId + "/unread";
+      }
+      if (action === "delete") {
+        return "/notifications/" + notificationId + "/delete";
+      }
+      return null;
+    }
+
     bell.addEventListener("click", function (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -69,6 +118,30 @@
         bell.focus();
       });
     }
+
+    sidebar.addEventListener("click", function (e) {
+      var target = e.target.closest("[data-action]");
+      if (!target || !sidebar.contains(target)) {
+        return;
+      }
+
+      var action = target.getAttribute("data-action");
+      if (!action) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      var item = target.closest("[data-notification-id]");
+      var notificationId = item ? item.getAttribute("data-notification-id") : null;
+      var url = resolveActionUrl(action, notificationId);
+      if (!url) {
+        return;
+      }
+
+      postNotificationAction(contextPath, url, reloadPage);
+    });
 
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && isOpen()) {
