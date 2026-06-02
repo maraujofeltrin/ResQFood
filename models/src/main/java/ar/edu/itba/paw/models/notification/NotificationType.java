@@ -1,0 +1,10 @@
+package ar.edu.itba.paw.models.notification;
+
+public enum NotificationType {
+    RESERVATION_REQUESTED_COMMERCE,
+    RESERVATION_CODE_CLIENT,
+    AUCTION_WINNER_CLIENT,
+    AUCTION_WINNER_COMMERCE,
+    RESERVATION_REJECTED_CLIENT,
+    AUCTION_OUTBID_CLIENT
+}
