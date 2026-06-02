@@ -2,6 +2,8 @@ DROP TABLE IF EXISTS tokens CASCADE;
 DROP TABLE IF EXISTS bids CASCADE;
 DROP TABLE IF EXISTS auctions CASCADE;
 DROP TABLE IF EXISTS reservation_tokens CASCADE;
+DROP TABLE IF EXISTS client_notification_preferences CASCADE;
+DROP TABLE IF EXISTS notifications CASCADE;
 DROP TABLE IF EXISTS commerce_reviews CASCADE;
 DROP TABLE IF EXISTS pack_tags CASCADE;
 DROP TABLE IF EXISTS reservations CASCADE;
@@ -20,6 +22,8 @@ CREATE SEQUENCE IF NOT EXISTS reservations_id_seq START WITH 1;
 CREATE SEQUENCE IF NOT EXISTS commerce_reviews_id_seq START WITH 1;
 CREATE SEQUENCE IF NOT EXISTS auctions_id_seq START WITH 1;
 CREATE SEQUENCE IF NOT EXISTS bids_id_seq START WITH 1;
+CREATE SEQUENCE IF NOT EXISTS notifications_id_seq START WITH 1;
+CREATE SEQUENCE IF NOT EXISTS client_notification_preferences_id_seq START WITH 1;
 CREATE TABLE images (
     id INTEGER IDENTITY PRIMARY KEY,
     data BLOB NOT NULL,
@@ -163,6 +167,36 @@ CREATE TABLE bids (
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
     FOREIGN KEY (client_id) REFERENCES clients(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE notifications (
+    id INTEGER IDENTITY PRIMARY KEY,
+    recipient_id BIGINT NOT NULL,
+    type VARCHAR(64) NOT NULL,
+    reservation_id BIGINT,
+    auction_id BIGINT,
+    pack_id BIGINT,
+    pack_title VARCHAR(255),
+    commerce_name VARCHAR(255),
+    amount DOUBLE,
+    pickup_code VARCHAR(32),
+    pickup_date TIMESTAMP,
+    created_at TIMESTAMP NOT NULL,
+    read_at TIMESTAMP,
+    deleted_at TIMESTAMP,
+    FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE SET NULL,
+    FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE SET NULL,
+    FOREIGN KEY (pack_id) REFERENCES packs(id) ON DELETE SET NULL
+);
+
+CREATE TABLE client_notification_preferences (
+    id INTEGER IDENTITY PRIMARY KEY,
+    client_id BIGINT NOT NULL,
+    type VARCHAR(64) NOT NULL,
+    mail_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    FOREIGN KEY (client_id) REFERENCES clients(user_id) ON DELETE CASCADE,
+    UNIQUE (client_id, type)
 );
 
 CREATE TABLE tokens (
