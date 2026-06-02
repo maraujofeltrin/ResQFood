@@ -103,6 +103,8 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                         antMatcher(HttpMethod.GET, "/profile/change-password"), antMatcher(HttpMethod.POST, "/profile/change-password"),
                         antMatcher(HttpMethod.POST, "/profile/account"), antMatcher(HttpMethod.POST, "/profile/settings/locale")).authenticated()
                 .anyRequest().authenticated()
+                .and().sessionManagement()
+                .invalidSessionUrl("/login?sessionExpired=true")
                 .and().formLogin()
                 .loginPage("/login")
                 .usernameParameter("email")

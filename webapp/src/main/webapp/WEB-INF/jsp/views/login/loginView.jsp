@@ -30,6 +30,14 @@ uri="http://itba.edu.ar/paw/tags" %>
           </div>
         </c:if>
 
+        <c:if test="${not empty param.sessionExpired}">
+          <div
+            class="bg-primary-container text-on-primary-container rounded-lg p-4 mb-6 text-sm"
+          >
+            <spring:message code="login.info.sessionExpired" />
+          </div>
+        </c:if>
+
         <c:if test="${not empty param.pendingVerification}">
           <div
             class="bg-primary-container text-on-primary-container rounded-lg p-4 mb-6 text-sm"
