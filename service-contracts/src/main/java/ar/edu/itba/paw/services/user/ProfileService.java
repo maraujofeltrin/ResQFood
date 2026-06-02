@@ -29,6 +29,4 @@ public interface ProfileService {
             String closingTime,
             byte[] profilePhoto,
             String profilePhotoContentType);
-
-    void updateNotificationsPreference(long userId, boolean wantsNotifications);
 }
