@@ -1,5 +1,6 @@
 <%@ tag language="java" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <%@ taglib prefix="paw" uri="http://itba.edu.ar/paw/tags" %>
@@ -30,17 +31,16 @@
       </sec:authorize>
       <sec:authorize access="isAuthenticated()">
           <spring:message code="notification.bell.label" var="notificationBellLabel"/>
-          <button type="button"
-                  id="notification-bell"
-                  class="notification-bell text-primary"
-                  aria-controls="notification-sidebar"
-                  aria-expanded="false"
-                  aria-label="${notificationBellLabel}">
+          <c:set var="onNotificationsPage" value="${fn:endsWith(request.requestURI, '/notifications')}" />
+          <a href="${pageContext.request.contextPath}/notifications"
+             id="notification-bell"
+             class="notification-bell text-primary no-underline"
+             aria-label="${notificationBellLabel}"<c:if test="${onNotificationsPage}"> aria-current="page"</c:if>>
               <span class="material-symbols-outlined text-[1.35rem]" data-icon="notifications">notifications</span>
               <c:if test="${navUnreadNotificationCount > 0}">
                   <span class="notification-bell__badge" aria-hidden="true">${navUnreadNotificationCount}</span>
               </c:if>
-          </button>
+          </a>
           <spring:message code="layout.nav.profile" var="navProfileTitle"/>
           <spring:message code="profile.avatar.alt" var="navProfileAvatarAlt"/>
           <a href="${pageContext.request.contextPath}/profile"
@@ -63,6 +63,3 @@
     </div>
   </div>
 </nav>
-<sec:authorize access="isAuthenticated()">
-  <paw:notificationSidebar />
-</sec:authorize>

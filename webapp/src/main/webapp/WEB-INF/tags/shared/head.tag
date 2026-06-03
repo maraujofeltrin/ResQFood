@@ -40,8 +40,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script src="${pageContext.request.contextPath}/css/tailwind-config.js"></script>
-    <script defer src="${pageContext.request.contextPath}/js/notifications-sidebar.js"></script>
-
     <%-- Custom Head Content, e.g. <style> for specific pages --%>
     <jsp:doBody />
 </head>

@@ -1,35 +1,4 @@
-/* ── Notification sidebar (drawer) ───────────────────────── */
-
-.notifications-backdrop {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s ease;
-}
-
-.notifications-backdrop--visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.notifications-backdrop:not(.hidden).notifications-backdrop--visible {
-  display: block;
-}
-
-.notifications-sidebar {
-  transform: translateX(100%);
-  transition: transform 0.25s ease-out;
-  will-change: transform;
-}
-
-.notifications-sidebar.notifications-sidebar--open {
-  transform: translateX(0);
-}
-
-body.notifications-sidebar-open {
-  overflow: hidden;
-}
-
-/* ── Bell ────────────────────────────────────────────────── */
+/* ── Notification bell (navbar) ─────────────────────────── */
 
 .notification-bell {
   position: relative;
@@ -72,17 +41,43 @@ body.notifications-sidebar-open {
   border-radius: 9999px;
 }
 
-/* ── Sidebar header close ────────────────────────────────── */
+/* ── Notifications page (main layout, aligned with pack-detail-main) ─ */
 
-.notification-sidebar__close:focus-visible {
-  outline: 2px solid #059669;
-  outline-offset: 2px;
+.notifications-page-main {
+  padding-top: 6rem;
+  padding-bottom: 3rem;
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  flex-grow: 1;
+  width: 100%;
+}
+
+.notification-page__unread-badge {
+  position: static;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  font-size: 0.75rem;
+}
+
+.notifications-page__header {
+  text-align: left;
+}
+
+.notifications-page__list {
+  max-height: none;
 }
 
 /* ── List items ──────────────────────────────────────────── */
 
 .notification-item {
   border-bottom: 1px solid rgba(194, 201, 194, 0.15);
+}
+
+.notification-item:last-child {
+  border-bottom: none;
 }
 
 .notification-item--unread {
