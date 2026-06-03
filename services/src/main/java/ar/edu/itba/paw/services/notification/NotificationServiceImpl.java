@@ -65,14 +65,14 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     @Override
     public void notifyReservationRequested(final Reservation reservation, final String commerceEmail,
-            final String baseUrl, final String acceptToken, final String rejectToken, final String pickupDateStr,
+            final String acceptToken, final String rejectToken, final String pickupDateStr,
             final Locale commerceLocale) {
         final ReservationSnapshot snapshot = snapshotFromReservation(reservation);
         final Long commerceUserId = snapshot.commerceUserId();
         createWebNotification(commerceUserId, NotificationType.RESERVATION_REQUESTED_COMMERCE, reservation.getId(),
                 null, snapshot);
         sendMailSafely(() -> reservationMailService.sendReservationRequestToCommerce(reservation, commerceEmail,
-                baseUrl, acceptToken, rejectToken, pickupDateStr, commerceLocale),
+                acceptToken, rejectToken, pickupDateStr, commerceLocale),
                 "notifyReservationRequested");
     }
 

@@ -19,10 +19,9 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import javax.servlet.http.HttpSession;
 
 @Controller
 @RequestMapping("/verify-email")
@@ -48,12 +47,18 @@ public class EmailVerificationController {
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(verifiedUser.getEmail());
         final Authentication authentication =
-                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
         final SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
         securityContext.setAuthentication(authentication);
         SecurityContextHolder.setContext(securityContext);
+
+        final HttpSession existingSession = request.getSession(false);
+        if (existingSession != null) {
+            existingSession.invalidate();
+        }
+
         request.getSession(true).setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
-                securityContext);
+            securityContext);
 
         return "redirect:/?verified=true";
     }
@@ -71,10 +76,7 @@ public class EmailVerificationController {
             return "verify-email/resend";
         }
 
-        final String appBaseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .build()
-                .toUriString();
-        emailVerificationTokenService.resendVerificationMail(form.getEmail(), appBaseUrl);
+        emailVerificationTokenService.resendVerificationMail(form.getEmail());
 
         return "redirect:/login?pendingVerification=true";
     }

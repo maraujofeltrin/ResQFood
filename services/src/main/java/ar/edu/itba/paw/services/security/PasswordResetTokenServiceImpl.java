@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class PasswordResetTokenServiceImpl implements PasswordResetTokenService {
@@ -25,19 +26,22 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
     private final UserDao userDao;
     private final PasswordResetMailService passwordResetMailService;
     private final PasswordEncoder passwordEncoder;
+    private final String baseUrl;
 
     @Autowired
     public PasswordResetTokenServiceImpl(final TokenDao tokenDao, final UserDao userDao,
-            final PasswordResetMailService passwordResetMailService, final PasswordEncoder passwordEncoder) {
+            final PasswordResetMailService passwordResetMailService, final PasswordEncoder passwordEncoder,
+            @Value("${app.base-url}") final String baseUrl) {
         this.tokenDao = tokenDao;
         this.userDao = userDao;
         this.passwordResetMailService = passwordResetMailService;
         this.passwordEncoder = passwordEncoder;
+        this.baseUrl = baseUrl;
     }
 
     @Transactional
     @Override
-    public void requestPasswordReset(final String email, final String baseUrl) {
+    public void requestPasswordReset(final String email) {
         final Optional<User> user = userDao.findByEmail(email);
         if (user.isPresent()) {
             final User requestUser = user.get();
@@ -50,6 +54,7 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public boolean isPasswordResetTokenValid(final String token) {
         final Optional<Token> maybeToken = tokenDao.findByTokenAndType(token, TokenType.PASSWORD_RESET);
@@ -78,6 +83,7 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
         tokenDao.markAsUsed(token, TokenType.PASSWORD_RESET);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<String> getEmailByToken(final String token) {
         return tokenDao.findByTokenAndType(token, TokenType.PASSWORD_RESET)

@@ -88,7 +88,7 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public Reservation createReservation(final long packId, final long userId, final int quantity,
             final double unitPrice,
-            final String pickupWindow, final String baseUrl) {
+            final String pickupWindow, final boolean isAuction) {
         if (quantity < 1) {
             throw new IllegalArgumentException("quantity must be >= 1");
         }
@@ -131,9 +131,8 @@ public class ReservationServiceImpl implements ReservationService {
         final java.util.Locale commerceLocale = commerceUser.getLocale();
 
         final String pickupDateStr = computePickupDateStr(reservation);
-        final boolean auctionReservation = baseUrl == null || baseUrl.trim().isEmpty();
 
-        if (auctionReservation) {
+        if (isAuction) {
             notificationService.notifyAuctionWinnerForClient(reservation, user.getEmail(), pickupDateStr,
                 user.getLocale());
             notificationService.notifyAuctionWinnerForCommerce(reservation, commerceEmail, pickupDateStr,
@@ -149,7 +148,7 @@ public class ReservationServiceImpl implements ReservationService {
             reservationTokenDao.create(rejectToken, reservation.getId(), ReservationToken.Action.REJECT,
                     tokenCreatedAt, tokenExpiresAt);
 
-            notificationService.notifyReservationRequested(reservation, commerceEmail, baseUrl,
+            notificationService.notifyReservationRequested(reservation, commerceEmail,
                 acceptToken, rejectToken, pickupDateStr, commerceLocale);
             notificationService.notifyReservationCodeIssued(reservation, user.getEmail(), pickupDateStr,
                 user.getLocale());
@@ -179,11 +178,13 @@ public class ReservationServiceImpl implements ReservationService {
         return sb.toString();
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<Reservation> findById(final Long id) {
         return reservationDao.findById(id);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Reservation> findByCustomerId(final Long customerId) {
         if (customerId == null) {
@@ -192,6 +193,7 @@ public class ReservationServiceImpl implements ReservationService {
         return reservationDao.findByCustomerId(customerId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Reservation> findByCommerceId(final Long commerceId) {
         if (commerceId == null) {
@@ -200,6 +202,7 @@ public class ReservationServiceImpl implements ReservationService {
         return reservationDao.findByCommerceId(commerceId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Reservation> findByPackId(final Long packId) {
         if (packId == null) {
@@ -210,6 +213,7 @@ public class ReservationServiceImpl implements ReservationService {
 
 
 
+    @Transactional(readOnly = true)
     @Override
     public String computePickupDateStr(final Reservation reservation) {
         if (reservation == null || reservation.getReservationDate() == null) {
@@ -348,6 +352,7 @@ public class ReservationServiceImpl implements ReservationService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public DirectReservationCheck checkDirectPackReservation(final long packId, final int quantity) {
         final Optional<Pack> packOpt = packDao.findById(packId)
@@ -433,6 +438,7 @@ public class ReservationServiceImpl implements ReservationService {
         return reservationDao.countFilteredReservations(commerceId, customerId, query, status, excludeAuctionPacks);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public boolean hasActiveReservation(Long packId, Long customerId) {
         return reservationDao.hasActiveReservation(packId, customerId);

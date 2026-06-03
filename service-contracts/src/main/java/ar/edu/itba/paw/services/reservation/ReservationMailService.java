@@ -5,8 +5,8 @@ import java.util.Locale;
 
 public interface ReservationMailService {
 
-    void sendReservationRequestToCommerce(Reservation reservation, String commerceEmail, String baseUrl,
-        String acceptToken, String rejectToken, String pickupDateStr, Locale locale);
+    void sendReservationRequestToCommerce(Reservation reservation, String commerceEmail,
+            String acceptToken, String rejectToken, String pickupDateStr, Locale locale);
 
     void sendReservationCodeToClient(Reservation reservation, String clientEmail, String pickupDateStr,
         Locale locale);

@@ -127,9 +127,6 @@ public class ReservationActionController {
         }
 
         final double finalPrice = check.getUnitPrice();
-        final String appBaseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
-            .build()
-            .toUriString();
         final User authenticatedUser = authResolver.resolveUser();
 
         try {
@@ -139,7 +136,7 @@ public class ReservationActionController {
                     quantity,
                     finalPrice,
                     null,
-                    appBaseUrl);
+                    false);
             redirectAttributes.addFlashAttribute("reservationAlertKind", "success");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
                     messageSource.getMessage("reservation.alert.success", null,

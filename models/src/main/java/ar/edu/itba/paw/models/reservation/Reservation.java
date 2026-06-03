@@ -135,4 +135,17 @@ public class Reservation {
                 + ", pickupCode=" + pickupCode + ", pickupConfirmationDate=" + pickupConfirmationDate + ", quantity="
                 + quantity + ", pickupWindow=" + pickupWindow + "]";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Reservation)) return false;
+        Reservation that = (Reservation) o;
+        return id != null && id.equals(that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hashCode(id);
+    }
 }

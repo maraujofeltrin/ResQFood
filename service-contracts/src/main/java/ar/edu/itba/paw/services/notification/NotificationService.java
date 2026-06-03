@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public interface NotificationService {
 
-    void notifyReservationRequested(Reservation reservation, String commerceEmail, String baseUrl,
+    void notifyReservationRequested(Reservation reservation, String commerceEmail,
             String acceptToken, String rejectToken, String pickupDateStr, Locale commerceLocale);
 
     void notifyReservationCodeIssued(Reservation reservation, String clientEmail,

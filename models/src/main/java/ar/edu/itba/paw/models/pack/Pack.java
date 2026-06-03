@@ -175,4 +175,17 @@ public class Pack {
                 + description + ", originalPrice=" + originalPrice + ", finalPrice=" + finalPrice + ", stock="
                 + stock + ", active=" + active + ", tags=" + tags + ", hasImage=" + (image != null) + "]";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Pack)) return false;
+        Pack that = (Pack) o;
+        return id != null && id.equals(that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hashCode(id);
+    }
 }

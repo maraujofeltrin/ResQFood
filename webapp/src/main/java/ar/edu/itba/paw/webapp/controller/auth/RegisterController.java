@@ -78,12 +78,11 @@ public class RegisterController {
         if (bindingResult.hasErrors()) {
             return registerView(registerForm);
         }
-        final String appBaseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
         final Locale locale = RequestContextUtils.getLocale(request);
         final User user = assembler.toUser(registerForm, locale);
         final Client clientProfile = assembler.toClientProfile(registerForm);
         final Commerce commerceProfile = assembler.toCommerceProfile(registerForm);
-        final RegisterResult result = userService.tryRegister(user, clientProfile, commerceProfile, appBaseUrl);
+        final RegisterResult result = userService.tryRegister(user, clientProfile, commerceProfile);
         switch (result.getOutcome()) {
             case DUPLICATE_EMAIL:
                 bindingResult.reject("user.email.duplicate");

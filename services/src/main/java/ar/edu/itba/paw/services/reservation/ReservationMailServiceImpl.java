@@ -66,25 +66,29 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     private final String mailFrom;
     private final String mailFromName;
 
+    private final String baseUrl;
+
     @Autowired
     public ReservationMailServiceImpl(final JavaMailSender mailSender,
             final PackDao packDao,
             final ClientService clientService,
             @Value("${mail.username}") final String mailFrom,
             @Value("${mail.from-name:ResQFood}") final String mailFromName,
-            final ZoneId displayZone) {
+            final ZoneId displayZone,
+            @Value("${app.base-url}") final String baseUrl) {
         this.mailSender = mailSender;
         this.packDao = packDao;
         this.clientService = clientService;
         this.mailFrom = mailFrom;
         this.mailFromName = mailFromName;
         this.displayZone = displayZone;
+        this.baseUrl = baseUrl;
     }
 
     @Async
     @Override
     public void sendReservationRequestToCommerce(final Reservation reservation, final String commerceEmail,
-            final String baseUrl, final String acceptToken, final String rejectToken, final String pickupDateStr,
+            final String acceptToken, final String rejectToken, final String pickupDateStr,
             final Locale locale) {
 
         final String normalizedBase = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;

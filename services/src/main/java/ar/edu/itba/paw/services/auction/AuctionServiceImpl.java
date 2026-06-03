@@ -85,16 +85,19 @@ public class AuctionServiceImpl implements AuctionService {
         return createdAuction;
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<Auction> findById(final long id) {
         return auctionDao.findById(id);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<Auction> findByPackId(final long packId) {
         return auctionDao.findByPackId(packId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Auction> filterAuctions(final String query, final List<PackTag> tags, final String city,
             final List<String> timeRanges, final AuctionSortOption sort, final int page, final int pageSize,
@@ -103,12 +106,14 @@ public class AuctionServiceImpl implements AuctionService {
                 commerceUserId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public int countFilteredAuctions(final String query, final List<PackTag> tags, final String city,
             final List<String> timeRanges, final boolean requirePositiveStock, final Long commerceUserId) {
         return auctionDao.countFilteredAuctions(query, tags, city, timeRanges, requirePositiveStock, commerceUserId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Auction> findByCommerceId(final long commerceId) {
         return auctionDao.findByCommerceId(commerceId);
@@ -180,7 +185,7 @@ public class AuctionServiceImpl implements AuctionService {
                             1,
                             auction.getCurrentBid(),
                             null,
-                            ""
+                            true
                     );
                 } catch (final RuntimeException e) {
                     final Long packId = auction.getPack() != null ? auction.getPack().getId() : null;
@@ -226,11 +231,13 @@ public class AuctionServiceImpl implements AuctionService {
         return CancelAuctionResult.success();
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Bid> getBidHistory(final long auctionId) {
         return bidDao.findByAuctionId(auctionId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public boolean isClientLeading(final long auctionId, final long userId) {
         final Optional<Auction> auctionOpt = auctionDao.findById(auctionId);
@@ -242,32 +249,38 @@ public class AuctionServiceImpl implements AuctionService {
     }
 
 
+    @Transactional(readOnly = true)
     @Override
     public List<Auction> filterParticipatedAuctions(final long clientId, final Auction.Status status,
                                                      final String query, final int page, final int pageSize) {
         return auctionDao.filterParticipatedAuctions(clientId, status, query, page, pageSize);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public int countParticipatedAuctions(final long clientId, final Auction.Status status, final String query) {
         return auctionDao.countParticipatedAuctions(clientId, status, query);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Set<Long> findPackIdsWithAuction(final Collection<Long> packIds) {
         return auctionDao.findPackIdsWithAuction(packIds);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<Long, Double> getMaxBidsByClientForAuctions(final long clientUserId, final Collection<Long> auctionIds) {
         return bidDao.findMaxBidsByClientForAuctions(clientUserId, auctionIds);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Set<Long> findAuctionIdsWhereClientLeads(final long clientUserId, final Collection<Long> auctionIds) {
         return bidDao.findAuctionIdsWhereClientLeads(clientUserId, auctionIds);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<AuctionPackSummary> findSummariesByPackIds(final Collection<Long> packIds) {
         if (packIds == null || packIds.isEmpty()) {
@@ -292,6 +305,7 @@ public class AuctionServiceImpl implements AuctionService {
         return summaries;
     }
 
+    @Transactional(readOnly = true)
     @Override
     public boolean hasClientBidOnAuction(final long auctionId, final long clientUserId) {
         return bidDao.existsByAuctionIdAndClientUserId(auctionId, clientUserId);

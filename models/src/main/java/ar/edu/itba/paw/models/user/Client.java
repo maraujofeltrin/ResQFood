@@ -92,4 +92,17 @@ public class Client {
         return "Client [userId=" + getUserId() + ", name=" + name + ", lastName=" + lastName
                 + ", notificationsVisibilityPreferences=" + notificationsVisibilityPreferences + "]";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Client)) return false;
+        Client that = (Client) o;
+        return userId != null && userId.equals(that.getUserId());
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hashCode(userId);
+    }
 }

@@ -148,11 +148,11 @@ class NotificationServiceImplTest {
         doAnswer(inv -> {
             mailSent.incrementAndGet();
             return null;
-        }).when(reservationMailService).sendReservationRequestToCommerce(any(), anyString(), anyString(),
+        }).when(reservationMailService).sendReservationRequestToCommerce(any(), anyString(),
                 anyString(), anyString(), anyString(), any());
 
         // 2. Ejercicio
-        notificationService.notifyReservationRequested(reservation, "shop@test.com", "http://app", "a", "r",
+        notificationService.notifyReservationRequested(reservation, "shop@test.com", "a", "r",
                 "01/01/2026", Locale.forLanguageTag("es"));
 
         // 3. Asserts

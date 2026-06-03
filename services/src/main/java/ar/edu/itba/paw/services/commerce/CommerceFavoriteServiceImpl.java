@@ -26,17 +26,20 @@ public class CommerceFavoriteServiceImpl implements CommerceFavoriteService {
         this.commerceDao = commerceDao;
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Commerce> listFavoriteCommerces(final long clientUserId, final int page, final int pageSize) {
         final int safeSize = Math.max(1, Math.min(pageSize, 48));
         return commerceFavoriteDao.findFavoriteCommercesForClient(clientUserId, page, safeSize);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public int countFavoriteCommerces(final long clientUserId) {
         return commerceFavoriteDao.countFavoriteCommercesForClient(clientUserId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public boolean isFavorite(final long clientUserId, final long commerceId) {
         return commerceFavoriteDao.exists(clientUserId, commerceId);

@@ -125,11 +125,13 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<User> findByEmail(final String email) {
         return userDao.findByEmail(email);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<User> findById(final Long id) {
         return userDao.findById(id);
@@ -163,8 +165,7 @@ public class UserServiceImpl implements UserService {
 
     @Transactional
     @Override
-    public RegisterResult tryRegister(final User user, final Client clientProfile, final Commerce commerceProfile,
-            final String appBaseUrl) {
+    public RegisterResult tryRegister(final User user, final Client clientProfile, final Commerce commerceProfile) {
         LOGGER.debug("Registration initiated for email={}", user.getEmail());
         final Optional<User> existingUser = findByEmail(user.getEmail());
         if (existingUser.isPresent()) {
@@ -172,7 +173,7 @@ public class UserServiceImpl implements UserService {
             return RegisterResult.duplicateEmail();
         }
         final User created = createUser(user, clientProfile, commerceProfile);
-        emailVerificationTokenService.sendVerificationMail(created.getId(), created.getEmail(), appBaseUrl,
+        emailVerificationTokenService.sendVerificationMail(created.getId(), created.getEmail(),
                 created.getLocale());
         return RegisterResult.createdPendingVerification(created);
     }

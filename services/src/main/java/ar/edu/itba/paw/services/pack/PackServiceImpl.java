@@ -55,11 +55,13 @@ public class PackServiceImpl implements PackService {
         return packDao.findById(id);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Pack> findAll() {
         return packDao.findAll();
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Pack> findByCommerceId(Long commerceId) {
         return packDao.findByCommerceId(commerceId);
@@ -84,6 +86,7 @@ public class PackServiceImpl implements PackService {
         return access;
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<Pack> findVisibleForDetail(final Long packId, final Long viewerUserId) {
         final Optional<Pack> packOpt = packDao.findById(packId);
@@ -141,6 +144,7 @@ public class PackServiceImpl implements PackService {
         return new CommercePackAccess.Granted(updatedPack);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Pack> filterPacks(final String query, final List<PackTag> tags,
                                   final String city, final List<String> timeRanges,
@@ -151,6 +155,7 @@ public class PackServiceImpl implements PackService {
                 commerceUserId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public int countFilteredPacks(final String query, final List<PackTag> tags,
                                   final String city, final List<String> timeRanges,
@@ -158,6 +163,7 @@ public class PackServiceImpl implements PackService {
         return packDao.countFilteredPacks(query, tags, city, timeRanges, requirePositiveStock, commerceUserId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public CommercePackAccess resolvePackForDirectEdit(final long packId) {
         final Optional<Pack> packOpt = packDao.findById(packId);
@@ -170,11 +176,13 @@ public class PackServiceImpl implements PackService {
         return new CommercePackAccess.Granted(packOpt.get());
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize) {
         return packDao.filterCommercePacks(commerceId, hasAuction, page, pageSize);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public int countCommercePacks(Long commerceId, Boolean hasAuction) {
         return packDao.countCommercePacks(commerceId, hasAuction);

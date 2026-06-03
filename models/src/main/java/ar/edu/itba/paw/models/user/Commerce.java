@@ -266,4 +266,17 @@ public class Commerce {
                 + province + ", postalCode=" + postalCode + ", openingTime=" + openingTime + ", closingTime="
                 + closingTime + "]";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Commerce)) return false;
+        Commerce that = (Commerce) o;
+        return userId != null && userId.equals(that.getUserId());
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hashCode(userId);
+    }
 }

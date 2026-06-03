@@ -29,23 +29,27 @@ public class PackFavoriteServiceImpl implements PackFavoriteService {
         this.auctionDao = auctionDao;
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Pack> listActiveFavoritePacks(final long clientUserId, final int limit) {
         final int safeMax = Math.max(1, Math.min(limit, 48));
         return packFavoriteDao.findActiveFavoritePacksForClient(clientUserId, 1, safeMax);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Pack> listActiveFavoritePacks(final long clientUserId, final int page, final int pageSize) {
         final int safeSize = Math.max(1, Math.min(pageSize, 48));
         return packFavoriteDao.findActiveFavoritePacksForClient(clientUserId, page, safeSize);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public int countActiveFavoritePacks(final long clientUserId) {
         return packFavoriteDao.countActiveFavoritePacksForClient(clientUserId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public boolean isFavorite(final long clientUserId, final long packId) {
         return packFavoriteDao.exists(clientUserId, packId);

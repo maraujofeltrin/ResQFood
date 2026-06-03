@@ -12,9 +12,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.servlet.ServletContext;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Optional;
 
 @Controller
@@ -23,32 +20,10 @@ public class ImageController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageController.class);
 
     private final ImageService imageService;
-    private final ServletContext servletContext;
-    private byte[] placeholderBytes;
-    private String placeholderContentType;
 
     @Autowired
-    public ImageController(final ImageService imageService, final ServletContext servletContext) {
+    public ImageController(final ImageService imageService) {
         this.imageService = imageService;
-        this.servletContext = servletContext;
-    }
-
-    private synchronized byte[] getPlaceholderBytes() {
-        if (placeholderBytes == null) {
-            try (InputStream is = servletContext.getResourceAsStream("/images/pack-placeholder.svg")) {
-                if (is != null) {
-                    placeholderBytes = is.readAllBytes();
-                    placeholderContentType = "image/svg+xml";
-                }
-            } catch (final IOException ex) {
-                LOGGER.warn("Could not load pack placeholder image resource", ex);
-            }
-            if (placeholderBytes == null) {
-                placeholderBytes = new byte[0];
-                placeholderContentType = "application/octet-stream";
-            }
-        }
-        return placeholderBytes;
     }
 
     /** Only numeric path segments match so {@code /images/pack-placeholder.svg} is served as a static file. */
@@ -64,7 +39,7 @@ public class ImageController {
                 return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType)).body(image.getData());
             }
         }
-        final byte[] placeholder = getPlaceholderBytes();
-        return ResponseEntity.ok().contentType(MediaType.parseMediaType(placeholderContentType)).body(placeholder);
+        LOGGER.debug("Image not found for id {}", id);
+        return ResponseEntity.notFound().build();
     }
 }

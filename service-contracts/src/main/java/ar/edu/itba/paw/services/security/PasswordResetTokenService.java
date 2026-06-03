@@ -4,7 +4,7 @@ import java.util.Optional;
 
 public interface PasswordResetTokenService {
 
-    void requestPasswordReset(final String email, final String baseUrl);
+    void requestPasswordReset(final String email);
 
     boolean isPasswordResetTokenValid(final String token);
     void resetPassword(final String token, final String rawPassword);

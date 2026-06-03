@@ -34,6 +34,7 @@ public class ProfileServiceImpl implements ProfileService {
         this.notificationService = notificationService;
     }
 
+    @Transactional(readOnly = true)
     @Override
     public ProfileSettingsOverview getSettingsOverview(final long userId) {
         final User user = userService.findById(userId)
