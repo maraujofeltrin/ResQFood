@@ -1,14 +1,17 @@
 package ar.edu.itba.paw.persistence;
 
+import ar.edu.itba.paw.models.pack.ClientPackFavorite;
+import ar.edu.itba.paw.models.pack.ClientPackFavoriteId;
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.persistence.util.Pagination;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -17,14 +20,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Favorites are stored in {@code client_pack_favorites} without a dedicated JPA entity.
- * Native SQL is intentional for this join table; see {@link #findActiveFavoritePacksForClient}.
+ * Pack favorites are mapped by {@link ClientPackFavorite} on {@code client_pack_favorites}.
+ * List queries use a two-step pattern (pack ids, then fetch) to preserve order and avoid fetch pagination issues.
  */
 @Primary
 @Repository
 public class PackFavoriteJpaDao implements PackFavoriteDao {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PackFavoriteJpaDao.class);
+    private static final String ACTIVE_FAVORITE_FILTER =
+            " f.client.userId = :cid AND p.active = true AND p.deleted = false";
 
     @PersistenceContext
     private EntityManager em;
@@ -34,27 +38,24 @@ public class PackFavoriteJpaDao implements PackFavoriteDao {
         final int safePage = Math.max(1, page);
         final int safeSize = Math.max(1, pageSize);
 
-        final javax.persistence.Query idQuery = em.createNativeQuery("SELECT f.pack_id FROM client_pack_favorites f INNER JOIN packs p ON p.id = f.pack_id WHERE f.client_id = :cid AND p.active = TRUE AND p.deleted = FALSE ORDER BY f.created_at DESC");
-        idQuery.setParameter("cid", clientId);
-        idQuery.setFirstResult(Pagination.offset(safePage, safeSize));
-        idQuery.setMaxResults(safeSize);
-        final List<?> rawIds = idQuery.getResultList();
-        final List<Long> ids = new ArrayList<>();
-        for (final Object o : rawIds) {
-            if (o instanceof Number) {
-                ids.add(((Number) o).longValue());
-            } else {
-                ids.add(Long.parseLong(o.toString()));
-            }
-        }
+        @SuppressWarnings("unchecked")
+        final List<Long> ids = em.createQuery(
+                        "SELECT f.pack.id FROM ClientPackFavorite f JOIN f.pack p WHERE"
+                                + ACTIVE_FAVORITE_FILTER
+                                + " ORDER BY f.createdAt DESC",
+                        Long.class)
+                .setParameter("cid", clientId)
+                .setFirstResult(Pagination.offset(safePage, safeSize))
+                .setMaxResults(safeSize)
+                .getResultList();
 
         if (ids.isEmpty()) {
             return Collections.emptyList();
         }
 
         final List<Pack> packs = em.createQuery(
-                "SELECT DISTINCT p FROM Pack p LEFT JOIN FETCH p.tags JOIN FETCH p.commerce WHERE p.id IN :ids",
-                Pack.class)
+                        "SELECT DISTINCT p FROM Pack p LEFT JOIN FETCH p.tags JOIN FETCH p.commerce WHERE p.id IN :ids",
+                        Pack.class)
                 .setParameter("ids", ids)
                 .getResultList();
 
@@ -68,57 +69,52 @@ public class PackFavoriteJpaDao implements PackFavoriteDao {
 
     @Override
     public int countActiveFavoritePacksForClient(final long clientId) {
-        final javax.persistence.Query q = em.createNativeQuery("SELECT COUNT(*) FROM client_pack_favorites f INNER JOIN packs p ON p.id = f.pack_id WHERE f.client_id = :cid AND p.active = TRUE AND p.deleted = FALSE");
-        q.setParameter("cid", clientId);
-        final Object res = q.getSingleResult();
-        if (res instanceof Number) {
-            return ((Number) res).intValue();
-        }
-        return Integer.parseInt(res.toString());
+        final Long count = em.createQuery(
+                        "SELECT COUNT(f) FROM ClientPackFavorite f JOIN f.pack p WHERE" + ACTIVE_FAVORITE_FILTER,
+                        Long.class)
+                .setParameter("cid", clientId)
+                .getSingleResult();
+        return count != null ? count.intValue() : 0;
     }
 
     @Override
     public boolean exists(final long clientId, final long packId) {
-        final javax.persistence.Query q = em.createNativeQuery("SELECT COUNT(*) FROM client_pack_favorites WHERE client_id = :cid AND pack_id = :pid");
-        q.setParameter("cid", clientId);
-        q.setParameter("pid", packId);
-        final Object res = q.getSingleResult();
-        if (res instanceof Number) {
-            return ((Number) res).intValue() > 0;
-        }
-        return Integer.parseInt(res.toString()) > 0;
+        final Long count = em.createQuery(
+                        "SELECT COUNT(f) FROM ClientPackFavorite f"
+                                + " WHERE f.client.userId = :cid AND f.pack.id = :pid",
+                        Long.class)
+                .setParameter("cid", clientId)
+                .setParameter("pid", packId)
+                .getSingleResult();
+        return count != null && count.longValue() > 0L;
     }
 
     @Override
     public void insert(final long clientId, final long packId) {
-        em.createNativeQuery("INSERT INTO client_pack_favorites (client_id, pack_id) VALUES (:cid, :pid)")
-                .setParameter("cid", clientId)
-                .setParameter("pid", packId)
-                .executeUpdate();
+        final ClientPackFavorite favorite = new ClientPackFavorite(
+                em.getReference(Client.class, clientId),
+                em.getReference(Pack.class, packId),
+                LocalDateTime.now(ZoneOffset.UTC));
+        em.persist(favorite);
+        em.flush();
     }
 
     @Override
     public void delete(final long clientId, final long packId) {
-        em.createNativeQuery("DELETE FROM client_pack_favorites WHERE client_id = :cid AND pack_id = :pid")
-                .setParameter("cid", clientId)
-                .setParameter("pid", packId)
-                .executeUpdate();
+        final ClientPackFavorite favorite = em.find(
+                ClientPackFavorite.class, new ClientPackFavoriteId(clientId, packId));
+        if (favorite != null) {
+            em.remove(favorite);
+            em.flush();
+        }
     }
 
     @Override
     public List<Long> findClientIdsByPack(final long packId) {
-        final javax.persistence.Query q = em.createNativeQuery(
-                "SELECT client_id FROM client_pack_favorites WHERE pack_id = :pid");
-        q.setParameter("pid", packId);
-        final List<?> rawIds = q.getResultList();
-        final List<Long> ids = new ArrayList<>();
-        for (final Object o : rawIds) {
-            if (o instanceof Number) {
-                ids.add(((Number) o).longValue());
-            } else {
-                ids.add(Long.parseLong(o.toString()));
-            }
-        }
-        return ids;
+        return em.createQuery(
+                        "SELECT f.client.userId FROM ClientPackFavorite f WHERE f.pack.id = :pid",
+                        Long.class)
+                .setParameter("pid", packId)
+                .getResultList();
     }
 }
