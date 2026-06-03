@@ -88,4 +88,17 @@ public class ReservationToken {
         return "ReservationToken [token=" + token + ", reservationId=" + getReservationId() + ", action=" + action
                 + ", used=" + used + ", createdAt=" + createdAt + ", expiresAt=" + expiresAt + "]";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ReservationToken)) return false;
+        ReservationToken that = (ReservationToken) o;
+        return token != null && token.equals(that.getToken());
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hashCode(token);
+    }
 }

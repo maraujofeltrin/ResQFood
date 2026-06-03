@@ -41,4 +41,17 @@ public class Image {
     public String getContentType() {
         return contentType;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Image)) return false;
+        Image that = (Image) o;
+        return id != null && id.equals(that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hashCode(id);
+    }
 }

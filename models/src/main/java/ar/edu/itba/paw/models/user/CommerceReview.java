@@ -97,4 +97,17 @@ public class CommerceReview {
                 + getClientUserId() + ", rating=" + rating + ", body=" + body + ", createdAt=" + createdAt
                 + ", updatedAt=" + updatedAt + "]";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof CommerceReview)) return false;
+        CommerceReview that = (CommerceReview) o;
+        return id != null && id.equals(that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hashCode(id);
+    }
 }
