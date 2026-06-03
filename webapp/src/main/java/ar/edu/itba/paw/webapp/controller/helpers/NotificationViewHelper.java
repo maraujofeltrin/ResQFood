@@ -51,6 +51,9 @@ public final class NotificationViewHelper {
             case AUCTION_WINNER_COMMERCE -> new Object[]{safe(item.getPackTitle())};
             case RESERVATION_REJECTED_CLIENT -> new Object[]{safe(item.getCommerceName()), safe(item.getPackTitle())};
             case AUCTION_OUTBID_CLIENT -> new Object[]{formatAmount(item.getAmount()), safe(item.getPackTitle()), safe(item.getCommerceName())};
+            case FAVORITE_PACK_RESTOCKED -> new Object[]{safe(item.getCommerceName()), safe(item.getPackTitle())};
+            case FAVORITE_COMMERCE_NEW_PACK -> new Object[]{safe(item.getCommerceName()), safe(item.getPackTitle())};
+            case AUCTION_LOST_CLIENT -> new Object[]{safe(item.getPackTitle()), safe(item.getCommerceName())};
         };
     }
 
