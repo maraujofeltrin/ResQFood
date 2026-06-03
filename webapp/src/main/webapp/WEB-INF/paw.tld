@@ -29,7 +29,6 @@
 
     <!-- Notifications -->
     <tag-file><name>notificationSidebar</name><path>/WEB-INF/tags/notification/sidebar.tag</path></tag-file>
-    <tag-file><name>notificationItem</name><path>/WEB-INF/tags/notification/notificationItem.tag</path></tag-file>
 
     <!-- Pack catalog & pack detail -->
     <tag-file><name>catalogHeader</name><path>/WEB-INF/tags/packs/catalogHeader.tag</path></tag-file>

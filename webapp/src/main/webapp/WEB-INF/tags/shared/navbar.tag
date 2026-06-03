@@ -37,7 +37,9 @@
                   aria-expanded="false"
                   aria-label="${notificationBellLabel}">
               <span class="material-symbols-outlined text-[1.35rem]" data-icon="notifications">notifications</span>
-              <span class="notification-bell__badge" aria-hidden="true">2</span>
+              <c:if test="${navUnreadNotificationCount > 0}">
+                  <span class="notification-bell__badge" aria-hidden="true">${navUnreadNotificationCount}</span>
+              </c:if>
           </button>
           <spring:message code="layout.nav.profile" var="navProfileTitle"/>
           <spring:message code="profile.avatar.alt" var="navProfileAvatarAlt"/>
