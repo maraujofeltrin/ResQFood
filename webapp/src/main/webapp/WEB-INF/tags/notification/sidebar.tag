@@ -16,8 +16,7 @@
        role="dialog"
        aria-modal="true"
        aria-labelledby="notification-sidebar-title"
-       aria-hidden="true"
-       data-context-path="${pageContext.request.contextPath}">
+       aria-hidden="true">
     <header class="notifications-sidebar__header shrink-0 p-4 bg-surface-container-low flex justify-between items-center gap-3">
         <h2 id="notification-sidebar-title" class="font-bold text-on-surface text-base m-0">
             <c:out value="${notificationSidebarTitle}"/>
@@ -38,17 +37,20 @@
     </header>
 
     <div class="notifications-sidebar__body flex-1 overflow-y-auto min-h-0">
-        <c:choose>
-            <c:when test="${empty recentNotifications}">
-                <p class="p-6 text-sm text-on-surface-variant text-center m-0">
-                    <spring:message code="notification.empty"/>
-                </p>
-            </c:when>
-            <c:otherwise>
-                <c:forEach var="n" items="${recentNotifications}">
-                    <paw:notificationItem id="${n.id}" read="${n.read}" title="${n.title}" body="${n.body}" time="${n.time}"/>
-                </c:forEach>
-            </c:otherwise>
-        </c:choose>
+        <paw:notificationItem read="${false}"
+                              titleCode="notification.demo.outbid.title"
+                              bodyCode="notification.demo.outbid.body"
+                              timeCode="notification.demo.outbid.time"
+                              demoId="demo-1"/>
+        <paw:notificationItem read="${false}"
+                              titleCode="notification.demo.code.title"
+                              bodyCode="notification.demo.code.body"
+                              timeCode="notification.demo.code.time"
+                              demoId="demo-2"/>
+        <paw:notificationItem read="${true}"
+                              titleCode="notification.demo.rejected.title"
+                              bodyCode="notification.demo.rejected.body"
+                              timeCode="notification.demo.rejected.time"
+                              demoId="demo-3"/>
     </div>
 </aside>
