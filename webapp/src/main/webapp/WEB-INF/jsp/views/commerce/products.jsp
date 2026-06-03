@@ -25,7 +25,7 @@ uri="http://itba.edu.ar/paw/tags" %>
           <h1
             class="text-4xl md:text-5xl font-headline font-extrabold text-primary tracking-tight mb-2"
           >
-            Mis productos
+            <spring:message code="commerce.products.title" />
           </h1>
           <p class="text-secondary font-body">
             <spring:message code="commerce.dashboard.subtitle" />
