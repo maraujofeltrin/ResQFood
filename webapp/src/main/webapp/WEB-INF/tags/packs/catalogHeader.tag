@@ -47,10 +47,6 @@
                     <paw:auctionSortDropdown
                         availableSorts="${availableAuctionSorts}"
                         currentSort="${currentAuctionSort}"
-                        baseUrl="/packs"
-                        searchQuery="${searchQuery}"
-                        selectedTags="${selectedTags}"
-                        selectedTypes="${selectedTypes}"
                         classes="w-full"
                     />
                 </c:when>
@@ -58,11 +54,6 @@
                     <paw:sortDropdown
                         availableSorts="${availableSorts}"
                         currentSort="${currentSort}"
-                        baseUrl="/packs"
-                        searchQuery="${searchQuery}"
-                        selectedTags="${selectedTags}"
-                        selectedTypes="${selectedTypes}"
-                        currentAuctionSort="${currentAuctionSort}"
                         classes="w-full"
                     />
                 </c:otherwise>

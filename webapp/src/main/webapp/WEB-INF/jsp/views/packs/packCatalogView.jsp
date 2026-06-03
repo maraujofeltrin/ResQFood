@@ -35,6 +35,19 @@
             />
 
             <c:if test="${catalogMode ne 'ALL'}">
+                <c:url var="catalogExploreUrl" value="/packs">
+                    <c:if test="${not empty param.q}"><c:param name="q" value="${param.q}"/></c:if>
+                    <c:forEach var="tag" items="${selectedTags}">
+                        <c:param name="tags" value="${tag.name()}"/>
+                    </c:forEach>
+                    <c:if test="${currentSort != null && currentSort.name() != 'DATE_DESC'}"><c:param name="sort" value="${currentSort.name()}"/></c:if>
+                    <c:if test="${selectedMunicipality != null}"><c:param name="location" value="${selectedMunicipality.name()}"/></c:if>
+                    <c:forEach var="tr" items="${selectedTimeRanges}">
+                        <c:param name="timeRange" value="${tr}"/>
+                    </c:forEach>
+                    <c:if test="${catalogMode eq 'AUCTIONS'}"><c:param name="auctionSort" value="${currentAuctionSort.name()}"/></c:if>
+                    <c:if test="${selectedCommerceCategory != null}"><c:param name="commerceCategory" value="${selectedCommerceCategory.name()}"/></c:if>
+                </c:url>
                 <paw:catalogBackLink exploreUrl="${catalogExploreUrl}" />
             </c:if>
 
@@ -44,13 +57,25 @@
 
 
             <c:if test="${catalogMode eq 'ALL' and not empty auctionsCarousel}">
+                <c:url var="auctionsViewAllUrl" value="/packs">
+                    <c:if test="${not empty param.q}"><c:param name="q" value="${param.q}"/></c:if>
+                    <c:forEach var="tag" items="${selectedTags}">
+                        <c:param name="tags" value="${tag.name()}"/>
+                    </c:forEach>
+                    <c:if test="${selectedMunicipality != null}"><c:param name="location" value="${selectedMunicipality.name()}"/></c:if>
+                    <c:forEach var="tr" items="${selectedTimeRanges}">
+                        <c:param name="timeRange" value="${tr}"/>
+                    </c:forEach>
+                    <c:param name="types" value="auctions"/>
+                    <c:param name="auctionSort" value="${currentAuctionSort.name()}"/>
+                </c:url>
                 <section class="mb-14">
                     <div class="flex items-center justify-between gap-4 mb-6">
                         <div class="flex items-center gap-3">
                             <h2 class="text-2xl font-headline font-bold text-on-surface"><spring:message code="pack.catalog.lastChance.title"/></h2>
                             <span class="auction-badge"><spring:message code="pack.catalog.lastChance.badge"/></span>
                         </div>
-                        <a href="${pageContext.request.contextPath}${auctionsViewAllUrl}" class="text-sm font-semibold text-primary hover:underline">
+                        <a href="${auctionsViewAllUrl}" class="text-sm font-semibold text-primary hover:underline">
                             <spring:message code="pack.catalog.lastChance.viewAll"/>
                         </a>
                     </div>
@@ -77,13 +102,19 @@
             </c:if>
 
             <c:if test="${catalogMode eq 'ALL'}">
+                <c:url var="commercesViewAllUrl" value="/packs">
+                    <c:if test="${not empty param.q}"><c:param name="q" value="${param.q}"/></c:if>
+                    <c:if test="${selectedMunicipality != null}"><c:param name="location" value="${selectedMunicipality.name()}"/></c:if>
+                    <c:if test="${selectedCommerceCategory != null}"><c:param name="commerceCategory" value="${selectedCommerceCategory.name()}"/></c:if>
+                    <c:param name="types" value="commerces"/>
+                </c:url>
                 <section class="mb-14">
                     <div class="flex items-center justify-between gap-4 mb-6">
                         <div class="flex items-center gap-3">
                             <h2 class="text-2xl font-headline font-bold text-on-surface"><spring:message code="pack.catalog.commerces.title" text="Explora por Comercio"/></h2>
                         </div>
                         <c:if test="${not empty commercesCarousel}">
-                            <a href="${pageContext.request.contextPath}${commercesViewAllUrl}" class="text-sm font-semibold text-primary hover:underline">
+                            <a href="${commercesViewAllUrl}" class="text-sm font-semibold text-primary hover:underline">
                                 <spring:message code="pack.catalog.lastChance.viewAll"/>
                             </a>
                         </c:if>
@@ -222,7 +253,7 @@
                             </c:choose>
                         </div>
                         <paw:pagination currentPage="${currentPage}" totalPages="${totalPages}"
-                                        baseUrl="${pageContext.request.contextPath}${paginationBaseUrl}" />
+                                        formId="catalogForm" />
                     </c:otherwise>
                 </c:choose>
             </section>

@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.ModelAndView;
 import ar.edu.itba.paw.webapp.form.CatalogFilterForm;
 
-import java.nio.charset.StandardCharsets;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -256,134 +256,6 @@ public class PackCatalogModelBuilder {
             }
         }
 
-
-
-        final StringBuilder baseUrlBuilder = new StringBuilder("/packs");
-        boolean firstParam = true;
-        if (hasQuery) {
-            baseUrlBuilder.append(firstParam ? "?" : "&").append("q=")
-                    .append(java.net.URLEncoder.encode(trimmedQuery, StandardCharsets.UTF_8));
-            firstParam = false;
-        }
-        if (!selectedTags.isEmpty()) {
-            for (final PackTag tag : selectedTags) {
-                baseUrlBuilder.append(firstParam ? "?" : "&").append("tags=").append(tag.name());
-                firstParam = false;
-            }
-        }
-        for (final String selectedType : selectedTypes) {
-            baseUrlBuilder.append(firstParam ? "?" : "&").append("types=").append(selectedType);
-            firstParam = false;
-        }
-        if (catalogMode != CatalogMode.AUCTIONS && catalogMode != CatalogMode.COMMERCES && sortOption != PackSortOption.DATE_DESC) {
-            baseUrlBuilder.append(firstParam ? "?" : "&").append("sort=").append(sortOption.name());
-            firstParam = false;
-        }
-        if (municipality != null) {
-            baseUrlBuilder.append(firstParam ? "?" : "&").append("location=").append(municipality.name());
-            firstParam = false;
-        }
-        if (!safeTimeRange.isEmpty()) {
-            for (final String tr : safeTimeRange) {
-                baseUrlBuilder.append(firstParam ? "?" : "&").append("timeRange=").append(tr);
-                firstParam = false;
-            }
-        }
-        if (catalogMode == CatalogMode.AUCTIONS) {
-            baseUrlBuilder.append(firstParam ? "?" : "&").append("auctionSort=").append(auctionSortOption.name());
-            firstParam = false;
-        }
-        if (catalogMode == CatalogMode.COMMERCES && commerceCategory != null) {
-            baseUrlBuilder.append(firstParam ? "?" : "&").append("commerceCategory=").append(commerceCategory.name());
-            firstParam = false;
-        }
-
-        final StringBuilder auctionsViewAllBuilder = new StringBuilder("/packs");
-        boolean viewAllFirstParam = true;
-        if (hasQuery) {
-            auctionsViewAllBuilder.append(viewAllFirstParam ? "?" : "&").append("q=")
-                    .append(java.net.URLEncoder.encode(trimmedQuery, StandardCharsets.UTF_8));
-            viewAllFirstParam = false;
-        }
-        if (hasTags) {
-            for (final PackTag tag : selectedTags) {
-                auctionsViewAllBuilder.append(viewAllFirstParam ? "?" : "&").append("tags=").append(tag.name());
-                viewAllFirstParam = false;
-            }
-        }
-        if (municipality != null) {
-            auctionsViewAllBuilder.append(viewAllFirstParam ? "?" : "&").append("location=").append(municipality.name());
-            viewAllFirstParam = false;
-        }
-        if (!safeTimeRange.isEmpty()) {
-            for (final String tr : safeTimeRange) {
-                auctionsViewAllBuilder.append(viewAllFirstParam ? "?" : "&").append("timeRange=").append(tr);
-                viewAllFirstParam = false;
-            }
-        }
-        auctionsViewAllBuilder.append(viewAllFirstParam ? "?" : "&").append("types=").append(TYPE_AUCTIONS);
-        auctionsViewAllBuilder.append("&auctionSort=").append(auctionSortOption.name());
-
-
-
-        final StringBuilder commercesViewAllBuilder = new StringBuilder("/packs");
-        boolean commViewFirst = true;
-        if (hasQuery) {
-            commercesViewAllBuilder.append(commViewFirst ? "?" : "&").append("q=")
-                    .append(java.net.URLEncoder.encode(trimmedQuery, StandardCharsets.UTF_8));
-            commViewFirst = false;
-        }
-        if (municipality != null) {
-            commercesViewAllBuilder.append(commViewFirst ? "?" : "&").append("location=").append(municipality.name());
-            commViewFirst = false;
-        }
-        if (commerceCategory != null) {
-            commercesViewAllBuilder.append(commViewFirst ? "?" : "&").append("commerceCategory=").append(commerceCategory.name());
-            commViewFirst = false;
-        }
-        commercesViewAllBuilder.append(commViewFirst ? "?" : "&").append("types=").append(TYPE_COMMERCES);
-
-        final String catalogExploreUrl;
-        if (catalogMode != CatalogMode.ALL) {
-            final StringBuilder exploreUrlBuilder = new StringBuilder("/packs");
-            boolean exploreFirst = true;
-            if (hasQuery) {
-                exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("q=")
-                        .append(java.net.URLEncoder.encode(trimmedQuery, StandardCharsets.UTF_8));
-                exploreFirst = false;
-            }
-            if (!selectedTags.isEmpty()) {
-                for (final PackTag tag : selectedTags) {
-                    exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("tags=").append(tag.name());
-                    exploreFirst = false;
-                }
-            }
-            if (sortOption != PackSortOption.DATE_DESC) {
-                exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("sort=").append(sortOption.name());
-                exploreFirst = false;
-            }
-            if (municipality != null) {
-                exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("location=").append(municipality.name());
-                exploreFirst = false;
-            }
-            if (!safeTimeRange.isEmpty()) {
-                for (final String tr : safeTimeRange) {
-                    exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("timeRange=").append(tr);
-                    exploreFirst = false;
-                }
-            }
-            if (catalogMode == CatalogMode.AUCTIONS) {
-                exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("auctionSort=").append(auctionSortOption.name());
-                exploreFirst = false;
-            }
-            if (commerceCategory != null) {
-                exploreUrlBuilder.append(exploreFirst ? "?" : "&").append("commerceCategory=").append(commerceCategory.name());
-            }
-            catalogExploreUrl = exploreUrlBuilder.toString();
-        } else {
-            catalogExploreUrl = "/packs";
-        }
-
         mav.addObject("packs", packs);
         mav.addObject("auctions", auctions);
         mav.addObject("auctionsCarousel", carouselAuctions);
@@ -407,10 +279,7 @@ public class PackCatalogModelBuilder {
         mav.addObject("currentAuctionSort", auctionSortOption);
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
-        mav.addObject("paginationBaseUrl", baseUrlBuilder.toString());
-        mav.addObject("auctionsViewAllUrl", auctionsViewAllBuilder.toString());
-        mav.addObject("commercesViewAllUrl", commercesViewAllBuilder.toString());
-        mav.addObject("catalogExploreUrl", catalogExploreUrl);
+
 
 
         return mav;

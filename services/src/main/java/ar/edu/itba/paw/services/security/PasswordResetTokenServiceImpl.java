@@ -54,6 +54,7 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public boolean isPasswordResetTokenValid(final String token) {
         final Optional<Token> maybeToken = tokenDao.findByTokenAndType(token, TokenType.PASSWORD_RESET);
@@ -82,6 +83,7 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
         tokenDao.markAsUsed(token, TokenType.PASSWORD_RESET);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<String> getEmailByToken(final String token) {
         return tokenDao.findByTokenAndType(token, TokenType.PASSWORD_RESET)

@@ -177,11 +177,13 @@ public class ReservationServiceImpl implements ReservationService {
         return sb.toString();
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<Reservation> findById(final Long id) {
         return reservationDao.findById(id);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Reservation> findByCustomerId(final Long customerId) {
         if (customerId == null) {
@@ -190,6 +192,7 @@ public class ReservationServiceImpl implements ReservationService {
         return reservationDao.findByCustomerId(customerId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Reservation> findByCommerceId(final Long commerceId) {
         if (commerceId == null) {
@@ -198,6 +201,7 @@ public class ReservationServiceImpl implements ReservationService {
         return reservationDao.findByCommerceId(commerceId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Reservation> findByPackId(final Long packId) {
         if (packId == null) {
@@ -208,6 +212,7 @@ public class ReservationServiceImpl implements ReservationService {
 
 
 
+    @Transactional(readOnly = true)
     @Override
     public String computePickupDateStr(final Reservation reservation) {
         if (reservation == null || reservation.getReservationDate() == null) {
@@ -346,6 +351,7 @@ public class ReservationServiceImpl implements ReservationService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public DirectReservationCheck checkDirectPackReservation(final long packId, final int quantity) {
         final Optional<Pack> packOpt = packDao.findById(packId)
@@ -431,6 +437,7 @@ public class ReservationServiceImpl implements ReservationService {
         return reservationDao.countFilteredReservations(commerceId, customerId, query, status, excludeAuctionPacks);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public boolean hasActiveReservation(Long packId, Long customerId) {
         return reservationDao.hasActiveReservation(packId, customerId);

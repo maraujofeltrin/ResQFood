@@ -25,6 +25,7 @@ public class ClientServiceImpl implements ClientService {
         return clientDao.createClient(userId, name, lastName, notificationsVisibilityPreferences);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<Client> findByUserId(final Long userId) {
         return clientDao.findByUserId(userId);

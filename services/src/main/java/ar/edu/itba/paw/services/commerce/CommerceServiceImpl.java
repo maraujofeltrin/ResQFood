@@ -37,6 +37,7 @@ public class CommerceServiceImpl implements CommerceService {
         this.auctionService = auctionService;
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<Commerce> findByUserId(final Long userId) {
         return commerceDao.findByUserId(userId);
@@ -79,6 +80,7 @@ public class CommerceServiceImpl implements CommerceService {
         LOGGER.info("Commerce profile updated for userId={}", userId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public java.util.List<Commerce> filterCommerces(String query, String cityFilter, Commerce.Category categoryFilter, int page, int pageSize) {
         if (page < 1) {
@@ -90,11 +92,13 @@ public class CommerceServiceImpl implements CommerceService {
         return commerceDao.filterCommerces(query, cityFilter, categoryFilter, page, pageSize);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public int countFilteredCommerces(String query, String cityFilter, Commerce.Category categoryFilter) {
         return commerceDao.countFilteredCommerces(query, cityFilter, categoryFilter);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public CommercePublicOffers getPublicOffers(final long commerceUserId, final int page, final int pageSize) {
         final Long commerceFilter = Long.valueOf(commerceUserId);

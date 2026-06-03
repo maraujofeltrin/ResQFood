@@ -2,11 +2,6 @@
 <%@ taglib prefix="paw" uri="http://itba.edu.ar/paw/tags" %>
 <%@ attribute name="availableSorts" required="true" type="ar.edu.itba.paw.models.pack.PackSortOption[]" %>
 <%@ attribute name="currentSort" required="true" type="ar.edu.itba.paw.models.pack.PackSortOption" %>
-<%@ attribute name="baseUrl" required="true" type="java.lang.String" %>
-<%@ attribute name="searchQuery" required="false" type="java.lang.String" %>
-<%@ attribute name="selectedTags" required="false" type="java.util.List" %>
-<%@ attribute name="selectedTypes" required="false" type="java.util.List" %>
-<%@ attribute name="currentAuctionSort" required="false" type="ar.edu.itba.paw.models.auction.AuctionSortOption" %>
 <%@ attribute name="classes" required="false" type="java.lang.String" %>
 
 <paw:inlineFormSelectDropdown
