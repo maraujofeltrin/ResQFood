@@ -84,4 +84,17 @@ public class Token {
         return "Token [token=" + token + ", userId=" + getUserId() + ", used=" + used + ", type=" + type
                 + ", createdAt=" + createdAt + ", expiresAt=" + expiresAt + "]";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Token)) return false;
+        Token that = (Token) o;
+        return token != null && token.equals(that.getToken());
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hashCode(token);
+    }
 }

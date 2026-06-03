@@ -83,4 +83,17 @@ public class Bid {
         return "Bid [id=" + id + ", auctionId=" + getAuctionId() + ", clientId=" + getClientId()
                 + ", amount=" + amount + ", timestamp=" + timestamp + "]";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Bid)) return false;
+        Bid that = (Bid) o;
+        return id != null && id.equals(that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hashCode(id);
+    }
 }

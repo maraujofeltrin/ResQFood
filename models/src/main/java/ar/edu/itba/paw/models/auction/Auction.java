@@ -137,4 +137,17 @@ public class Auction {
                 + ", currentBidderId=" + currentBidderId + ", endTime=" + endTime
                 + ", status=" + status + ", createdAt=" + createdAt + "]";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Auction)) return false;
+        Auction that = (Auction) o;
+        return id != null && id.equals(that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hashCode(id);
+    }
 }

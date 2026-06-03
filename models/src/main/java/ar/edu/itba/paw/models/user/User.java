@@ -136,4 +136,17 @@ public class User {
         return "User [id=" + id + ", email=" + email + ", name=" + name + ", phone=" + phone + ", role="
             + role + ", verified=" + verified + ", locale=" + locale + ", profileImageId=" + getProfileImageId() + "]";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User)) return false;
+        User that = (User) o;
+        return id != null && id.equals(that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hashCode(id);
+    }
 }
