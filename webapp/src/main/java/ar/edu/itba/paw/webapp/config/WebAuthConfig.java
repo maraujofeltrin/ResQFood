@@ -108,7 +108,7 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                         antMatcher(HttpMethod.GET, "/profile/change-password"), antMatcher(HttpMethod.POST, "/profile/change-password"),
                         antMatcher(HttpMethod.POST, "/profile/account"), antMatcher(HttpMethod.POST, "/profile/settings/locale"),
                         antMatcher(HttpMethod.POST, "/profile/settings/mail-preferences")).authenticated()
-                .requestMatchers(antMatcher(HttpMethod.GET, "/notifications"), antMatcher(HttpMethod.GET, "/notifications/unread-count")).authenticated()
+                .requestMatchers(antMatcher(HttpMethod.GET, "/notifications")).authenticated()
                 .requestMatchers(antMatcher(HttpMethod.POST, "/notifications/read-all"),
                         antMatcher(HttpMethod.POST, "/notifications/*/read"), antMatcher(HttpMethod.POST, "/notifications/*/unread"),
                         antMatcher(HttpMethod.POST, "/notifications/*/delete")).authenticated()
