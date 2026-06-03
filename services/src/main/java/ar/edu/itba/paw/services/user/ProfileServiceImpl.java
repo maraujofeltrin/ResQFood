@@ -2,15 +2,17 @@ package ar.edu.itba.paw.services.user;
 
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.Municipality;
-import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.services.notification.ClientMailPreferenceView;
+import ar.edu.itba.paw.services.notification.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
@@ -22,13 +24,14 @@ public class ProfileServiceImpl implements ProfileService {
 
     private final UserService userService;
     private final CommerceService commerceService;
-    private final ClientService clientService;
+    private final NotificationService notificationService;
 
     @Autowired
-    public ProfileServiceImpl(final UserService userService, final CommerceService commerceService, final ClientService clientService) {
+    public ProfileServiceImpl(final UserService userService, final CommerceService commerceService,
+                              final NotificationService notificationService) {
         this.userService = userService;
         this.commerceService = commerceService;
-        this.clientService = clientService;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -40,7 +43,7 @@ public class ProfileServiceImpl implements ProfileService {
                 ? SupportedUserLocales.CODE_EN
                 : SupportedUserLocales.CODE_ES;
         ProfileCommerceSection commerceSection = null;
-        Boolean notificationsPref = null;
+        List<ClientMailPreferenceView> mailPreferences = List.of();
         String displayName = user.getName();
         if (user.getRole() == User.Role.COMMERCE) {
             commerceSection = commerceService.findByUserId(userId)
@@ -50,9 +53,7 @@ public class ProfileServiceImpl implements ProfileService {
                 displayName = commerceSection.getCommercialName();
             }
         } else if (user.getRole() == User.Role.CLIENT) {
-            notificationsPref = clientService.findByUserId(userId)
-                    .map(Client::getNotificationsVisibilityPreferences)
-                    .orElse(null);
+            mailPreferences = notificationService.getClientMailPreferences(userId);
         }
         return new ProfileSettingsOverview(
                 displayName,
@@ -63,7 +64,7 @@ public class ProfileServiceImpl implements ProfileService {
                 selectedLang,
                 SupportedUserLocales.languageCodes(),
                 commerceSection,
-                notificationsPref);
+                mailPreferences);
     }
 
     @Transactional
@@ -130,12 +131,4 @@ public class ProfileServiceImpl implements ProfileService {
                 c.getClosingTime());
     }
 
-    @Transactional
-    @Override
-    public void updateNotificationsPreference(long userId, boolean wantsNotifications) {
-        final Client client = clientService.findByUserId(userId)
-                .orElseThrow(() -> new NoSuchElementException("Client not found: " + userId));
-        client.setNotificationsVisibilityPreferences(wantsNotifications);
-        clientService.update(client);
-    }
 }
