@@ -1,10 +1,8 @@
 package ar.edu.itba.paw.webapp.controller.user;
 
-import ar.edu.itba.paw.models.notification.NotificationType;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.user.User;
-import ar.edu.itba.paw.services.notification.NotificationService;
 import ar.edu.itba.paw.services.user.ProfileAccountUpdateException;
 import ar.edu.itba.paw.services.user.ProfileCommerceSection;
 import ar.edu.itba.paw.services.user.ProfileService;
@@ -30,10 +28,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.validation.Valid;
 import java.io.IOException;
-import java.util.EnumMap;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Controller
@@ -44,16 +39,9 @@ public class ProfileController {
     private static final String NAV_PROFILE = "profile";
     private static final String NAV_SETTINGS = "settings";
 
-    private static final List<NotificationType> CLIENT_MAIL_TYPES = List.of(
-            NotificationType.RESERVATION_CODE_CLIENT,
-            NotificationType.AUCTION_WINNER_CLIENT,
-            NotificationType.RESERVATION_REJECTED_CLIENT,
-            NotificationType.AUCTION_OUTBID_CLIENT);
-
     private final AuthenticatedUserResolver authenticatedUserResolver;
     private final ProfileService profileService;
     private final UserService userService;
-    private final NotificationService notificationService;
     private final ProfileAccountFormValidator profileAccountFormValidator;
 
     @Autowired
@@ -61,12 +49,10 @@ public class ProfileController {
             final AuthenticatedUserResolver authenticatedUserResolver,
             final ProfileService profileService,
             final UserService userService,
-            final NotificationService notificationService,
             final ProfileAccountFormValidator profileAccountFormValidator) {
         this.authenticatedUserResolver = authenticatedUserResolver;
         this.profileService = profileService;
         this.userService = userService;
-        this.notificationService = notificationService;
         this.profileAccountFormValidator = profileAccountFormValidator;
     }
 
@@ -155,31 +141,18 @@ public class ProfileController {
         return "redirect:/profile/settings";
     }
 
-    @PostMapping("/profile/settings/mail-preferences")
-    public String updateMailPreferences(
-            @RequestParam final Map<String, String> params,
+    @PostMapping("/profile/settings/notifications")
+    public String updateNotificationsPreference(
+            @RequestParam(value = "notificationsVisibilityPreferences", required = false) final boolean wantsNotifications,
             final RedirectAttributes redirectAttributes) {
         final User user = authenticatedUserResolver.resolveUser();
-        if (user.getRole() != User.Role.CLIENT) {
-            return "redirect:/profile/settings";
-        }
         try {
-            notificationService.updateClientMailPreferences(user.getId(), parseClientMailParams(params));
+            profileService.updateNotificationsPreference(user.getId(), wantsNotifications);
             redirectAttributes.addFlashAttribute("profileNotificationsUpdateSuccess", true);
-        } catch (final RuntimeException ex) {
-            LOGGER.debug("Could not update mail preferences userId={}", user.getId(), ex);
+        } catch (final NoSuchElementException ex) {
             redirectAttributes.addFlashAttribute("profileNotificationsUpdateError", true);
         }
         return "redirect:/profile/settings";
-    }
-
-    private static Map<NotificationType, Boolean> parseClientMailParams(final Map<String, String> params) {
-        final Map<NotificationType, Boolean> parsed = new EnumMap<>(NotificationType.class);
-        for (final NotificationType type : CLIENT_MAIL_TYPES) {
-            final String key = "mailPreferences[" + type.name() + "]";
-            parsed.put(type, "true".equalsIgnoreCase(params.get(key)));
-        }
-        return parsed;
     }
 
     private String renderProfileWithAccountErrors(

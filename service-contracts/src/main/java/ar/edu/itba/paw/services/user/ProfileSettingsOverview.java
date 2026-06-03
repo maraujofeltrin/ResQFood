@@ -1,7 +1,5 @@
 package ar.edu.itba.paw.services.user;
 
-import ar.edu.itba.paw.services.notification.ClientMailPreferenceView;
-
 import java.util.List;
 import java.util.Objects;
 
@@ -9,7 +7,6 @@ import java.util.Objects;
  * Datos mostrados en la pantalla de perfil, construidos desde el {@link ar.edu.itba.paw.models.user.User}
  * persistido. Si hay {@link #profileImageId}, la URL de la foto es {@code /images/{id}}; si no, {@link #profileImageFileName}.
  * Para rol COMMERCE, {@link #commerce} contiene datos del comercio; para CLIENT es {@code null}.
- * Para CLIENT, {@link #mailPreferences} lista preferencias de mail por tipo; para COMMERCE es {@code null}.
  */
 public final class ProfileSettingsOverview {
 
@@ -23,7 +20,7 @@ public final class ProfileSettingsOverview {
     private final String selectedLanguageCode;
     private final List<String> languageCodes;
     private final ProfileCommerceSection commerce;
-    private final List<ClientMailPreferenceView> mailPreferences;
+    private final Boolean notificationsVisibilityPreferences;
 
     public ProfileSettingsOverview(
             final String fullName,
@@ -34,7 +31,7 @@ public final class ProfileSettingsOverview {
             final String selectedLanguageCode,
             final List<String> languageCodes,
             final ProfileCommerceSection commerce,
-            final List<ClientMailPreferenceView> mailPreferences) {
+            final Boolean notificationsVisibilityPreferences) {
         this.fullName = Objects.requireNonNull(fullName);
         this.phone = Objects.requireNonNull(phone);
         this.email = Objects.requireNonNull(email);
@@ -43,7 +40,7 @@ public final class ProfileSettingsOverview {
         this.selectedLanguageCode = Objects.requireNonNull(selectedLanguageCode);
         this.languageCodes = List.copyOf(languageCodes);
         this.commerce = commerce;
-        this.mailPreferences = mailPreferences == null ? null : List.copyOf(mailPreferences);
+        this.notificationsVisibilityPreferences = notificationsVisibilityPreferences;
     }
 
     public String getFullName() {
@@ -78,7 +75,7 @@ public final class ProfileSettingsOverview {
         return commerce;
     }
 
-    public List<ClientMailPreferenceView> getMailPreferences() {
-        return mailPreferences;
+    public Boolean getNotificationsVisibilityPreferences() {
+        return notificationsVisibilityPreferences;
     }
 }

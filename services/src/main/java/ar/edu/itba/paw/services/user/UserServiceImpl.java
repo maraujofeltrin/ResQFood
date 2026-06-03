@@ -1,10 +1,8 @@
 package ar.edu.itba.paw.services.user;
 
-import ar.edu.itba.paw.models.notification.NotificationType;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
-import ar.edu.itba.paw.persistence.ClientNotificationPreferenceDao;
 import ar.edu.itba.paw.persistence.ClientDao;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.UserDao;
@@ -17,10 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.EnumMap;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
@@ -34,33 +29,24 @@ public class UserServiceImpl implements UserService {
     private static final Set<String> ALLOWED_PROFILE_IMAGE_TYPES = Set.of(
             "image/jpeg", "image/png", "image/webp", "image/gif");
 
-    private static final List<NotificationType> CLIENT_MAIL_TYPES = List.of(
-            NotificationType.RESERVATION_CODE_CLIENT,
-            NotificationType.AUCTION_WINNER_CLIENT,
-            NotificationType.RESERVATION_REJECTED_CLIENT,
-            NotificationType.AUCTION_OUTBID_CLIENT);
-
     private final UserDao userDao;
     private final ClientDao clientDao;
     private final CommerceDao commerceDao;
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationTokenService emailVerificationTokenService;
     private final ImageService imageService;
-    private final ClientNotificationPreferenceDao clientNotificationPreferenceDao;
 
     @Autowired
     public UserServiceImpl(final UserDao userDao, final ClientDao clientDao, final CommerceDao commerceDao,
             final PasswordEncoder passwordEncoder,
             final EmailVerificationTokenService emailVerificationTokenService,
-            final ImageService imageService,
-            final ClientNotificationPreferenceDao clientNotificationPreferenceDao) {
+            final ImageService imageService) {
         this.userDao = userDao;
         this.clientDao = clientDao;
         this.commerceDao = commerceDao;
         this.passwordEncoder = passwordEncoder;
         this.emailVerificationTokenService = emailVerificationTokenService;
         this.imageService = imageService;
-        this.clientNotificationPreferenceDao = clientNotificationPreferenceDao;
     }
 
     @Transactional
@@ -81,20 +67,6 @@ public class UserServiceImpl implements UserService {
 
 
 
-    private void syncClientMailPreferencesFromRegister(final long userId,
-            final Boolean notificationsVisibilityPreferences) {
-        if (!Boolean.FALSE.equals(notificationsVisibilityPreferences)) {
-            return;
-        }
-        final Map<NotificationType, Boolean> disabled = new EnumMap<>(NotificationType.class);
-        for (final NotificationType type : CLIENT_MAIL_TYPES) {
-            disabled.put(type, false);
-        }
-        for (final Map.Entry<NotificationType, Boolean> entry : disabled.entrySet()) {
-            clientNotificationPreferenceDao.upsert(userId, entry.getKey(), entry.getValue());
-        }
-    }
-
     private void persistProfileByRole(final User user, final Client clientProfile, final Commerce commerceProfile) {
         if (user.getRole() == User.Role.CLIENT) {
             if (clientProfile == null) {
@@ -107,15 +79,11 @@ public class UserServiceImpl implements UserService {
                 client.setLastName(clientProfile.getLastName());
                 client.setNotificationsVisibilityPreferences(clientProfile.getNotificationsVisibilityPreferences());
                 clientDao.update(client);
-                syncClientMailPreferencesFromRegister(user.getId(),
-                        clientProfile.getNotificationsVisibilityPreferences());
             } else {
                 clientDao.createClient(
                         user.getId(),
                         clientProfile.getName(),
                         clientProfile.getLastName(),
-                        clientProfile.getNotificationsVisibilityPreferences());
-                syncClientMailPreferencesFromRegister(user.getId(),
                         clientProfile.getNotificationsVisibilityPreferences());
             }
             return;

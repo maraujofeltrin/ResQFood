@@ -152,30 +152,25 @@
                             <c:if test="${empty profile.commerce}">
                                 <hr class="my-8 border-outline-variant/30 max-w-xl mx-auto sm:mx-0" />
                                 <h3 class="text-lg font-headline font-bold text-on-surface mb-2 max-w-xl mx-auto sm:mx-0">
-                                    <spring:message code="profile.mailPreferences.title"/>
+                                    <spring:message code="profile.section.notifications"/>
                                 </h3>
                                 <p class="text-secondary text-sm font-body mb-6 max-w-xl mx-auto sm:mx-0 text-center sm:text-left">
-                                    <spring:message code="profile.mailPreferences.hint"/>
+                                    <spring:message code="profile.section.notificationsHint"/>
                                 </p>
-                                <form action="${pageContext.request.contextPath}/profile/settings/mail-preferences" method="post" class="space-y-4 max-w-xl mx-auto m-0">
-                                    <c:forEach var="pref" items="${profile.mailPreferences}">
-                                        <c:set var="prefTypeName" value="${pref.type}"/>
-                                        <div class="flex items-start gap-3 justify-center sm:justify-start text-left">
-                                            <div class="flex items-center h-5 mt-1 shrink-0">
-                                                <input id="mailPref_${prefTypeName}"
-                                                       name="mailPreferences[${prefTypeName}]"
-                                                       type="checkbox"
-                                                       value="true"
-                                                       ${pref.mailEnabled ? 'checked' : ''}
-                                                       class="w-5 h-5 rounded border-outline text-primary focus:ring-primary focus:ring-2 bg-surface-container-low cursor-pointer" />
-                                            </div>
-                                            <div class="flex flex-col">
-                                                <label for="mailPref_${prefTypeName}" class="text-sm font-bold text-on-surface cursor-pointer">
-                                                    <spring:message code="profile.mailPreferences.type.${prefTypeName}"/>
-                                                </label>
-                                            </div>
+                                <form action="${pageContext.request.contextPath}/profile/settings/notifications" method="post" class="space-y-4 max-w-xl mx-auto m-0">
+                                    <div class="flex items-start gap-3 justify-center sm:justify-start text-left">
+                                        <div class="flex items-center h-5 mt-1 shrink-0">
+                                            <input id="notificationsVisibilityPreferences" name="notificationsVisibilityPreferences" type="checkbox" value="true" ${profile.notificationsVisibilityPreferences ? 'checked' : ''} class="w-5 h-5 rounded border-outline text-primary focus:ring-primary focus:ring-2 bg-surface-container-low cursor-pointer" />
                                         </div>
-                                    </c:forEach>
+                                        <div class="flex flex-col">
+                                            <label for="notificationsVisibilityPreferences" class="text-sm font-bold text-on-surface cursor-pointer">
+                                                <spring:message code="profile.notifications.emails"/>
+                                            </label>
+                                            <p class="text-xs text-on-surface-variant leading-relaxed font-body mt-1">
+                                                <spring:message code="profile.notifications.emailsHelp"/>
+                                            </p>
+                                        </div>
+                                    </div>
                                     <div class="pt-2 flex justify-center sm:justify-start">
                                         <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-primary text-on-primary font-semibold shadow-soft hover:brightness-110 transition-colors border-0 cursor-pointer font-headline">
                                             <spring:message code="profile.notifications.save"/>
