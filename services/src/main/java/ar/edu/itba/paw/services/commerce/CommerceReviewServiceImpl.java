@@ -28,21 +28,25 @@ public class CommerceReviewServiceImpl implements CommerceReviewService {
         this.reservationDao = reservationDao;
     }
 
+    @Transactional(readOnly = true)
     @Override
     public boolean canClientReviewCommerce(final long clientUserId, final long commerceUserId) {
         return reservationDao.hasPaidReservationWithCommerce(clientUserId, commerceUserId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<CommerceReview> findClientReview(final long clientUserId, final long commerceUserId) {
         return commerceReviewDao.findByClientAndCommerce(clientUserId, commerceUserId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<CommerceReview> findReviewsForCommerce(final long commerceUserId, final int page, final int pageSize) {
         return commerceReviewDao.findByCommerceId(commerceUserId, Math.max(1, page), Math.max(1, pageSize));
     }
 
+    @Transactional(readOnly = true)
     @Override
     public int countReviewsForCommerce(final long commerceUserId) {
         return commerceReviewDao.countByCommerceId(commerceUserId);
@@ -65,11 +69,13 @@ public class CommerceReviewServiceImpl implements CommerceReviewService {
                 .orElseGet(() -> commerceReviewDao.createReview(commerceUserId, clientUserId, rating, normalizedBody));
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<Double> averageRatingForCommerce(final long commerceUserId) {
         return Optional.ofNullable(commerceReviewDao.averageRatingByCommerceId(commerceUserId));
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Map<Long, Double> findAverageRatingsForCommerceIds(final List<Long> commerceUserIds) {
         return commerceReviewDao.findAverageRatingsForCommerceIds(commerceUserIds);

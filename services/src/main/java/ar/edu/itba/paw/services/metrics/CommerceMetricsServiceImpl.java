@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -44,6 +45,7 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
     }
 
 
+    @Transactional(readOnly = true)
     @Override
     public CommerceMetrics getCommerceMetrics(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
         if (from.isAfter(to)) {
@@ -104,6 +106,7 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
                 canceledReservations, averageTicket, uniqueClients, topPacks, topClients, clientRetention);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public int countSoldToday(final Long commerceId) {
         final ZonedDateTime nowInBiz = ZonedDateTime.now(displayZone);

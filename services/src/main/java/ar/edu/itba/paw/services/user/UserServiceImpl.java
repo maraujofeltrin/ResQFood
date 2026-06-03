@@ -125,11 +125,13 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<User> findByEmail(final String email) {
         return userDao.findByEmail(email);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<User> findById(final Long id) {
         return userDao.findById(id);

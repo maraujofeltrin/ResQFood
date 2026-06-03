@@ -30,11 +30,13 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
         this.reservationService = reservationService;
     }
 
+    @Transactional(readOnly = true)
     @Override
     public TokenValidationResult validateOnly(final String token, final ReservationToken.Action action) {
         return resolveValidation(token, action);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<Long> findReservationIdByToken(final String token) {
         return reservationTokenDao.findByToken(token).map(t -> t.getReservation().getId());
