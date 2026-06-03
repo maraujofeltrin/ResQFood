@@ -11,11 +11,15 @@ import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.AuctionDao;
+import ar.edu.itba.paw.persistence.BidDao;
 import ar.edu.itba.paw.persistence.ClientNotificationPreferenceDao;
 import ar.edu.itba.paw.persistence.CommerceDao;
+import ar.edu.itba.paw.persistence.CommerceFavoriteDao;
 import ar.edu.itba.paw.persistence.NotificationDao;
+import ar.edu.itba.paw.persistence.PackFavoriteDao;
 import ar.edu.itba.paw.services.reservation.ReservationMailService;
 import ar.edu.itba.paw.services.user.UserService;
+import ar.edu.itba.paw.models.auction.Bid;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,8 +27,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,6 +45,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceImplTest {
 
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("America/Argentina/Buenos_Aires");
+
     @Mock
     private NotificationDao notificationDao;
     @Mock
@@ -51,6 +59,12 @@ class NotificationServiceImplTest {
     private CommerceDao commerceDao;
     @Mock
     private UserService userService;
+    @Mock
+    private PackFavoriteDao packFavoriteDao;
+    @Mock
+    private CommerceFavoriteDao commerceFavoriteDao;
+    @Mock
+    private BidDao bidDao;
 
     private NotificationServiceImpl notificationService;
 
@@ -87,7 +101,11 @@ class NotificationServiceImplTest {
                 reservationMailService,
                 auctionDao,
                 commerceDao,
-                userService);
+                userService,
+                packFavoriteDao,
+                commerceFavoriteDao,
+                bidDao,
+                BUSINESS_ZONE);
     }
 
     @Test
@@ -216,5 +234,110 @@ class NotificationServiceImplTest {
 
         // 3. Asserts
         assertTrue(result.isPresent());
+    }
+
+    @Test
+    void testNotifyPackRestockedCreatesNotificationAndSendsMail() {
+        // 1. Setup
+        final Pack pack = packRef(10L, 100L);
+        when(packFavoriteDao.findClientIdsByPack(10L)).thenReturn(List.of(5L));
+        when(commerceDao.findByUserId(100L)).thenReturn(Optional.of(commerceRef(100L)));
+        when(clientNotificationPreferenceDao.findByClientAndType(eq(5L), eq(NotificationType.FAVORITE_PACK_RESTOCKED)))
+                .thenReturn(Optional.of(new ClientNotificationPreference(1L, clientRef(5L),
+                        NotificationType.FAVORITE_PACK_RESTOCKED, true)));
+        when(userService.findById(5L)).thenReturn(Optional.of(
+                new User(5L, "c@test.com", "p", "C", null, User.Role.CLIENT, false)));
+
+        final AtomicReference<NotificationType> savedType = new AtomicReference<>();
+        doAnswer(inv -> {
+            savedType.set(inv.getArgument(1));
+            return notificationWithRecipient(5L, NotificationType.FAVORITE_PACK_RESTOCKED);
+        }).when(notificationDao).create(eq(5L), eq(NotificationType.FAVORITE_PACK_RESTOCKED),
+                any(), any(), eq(10L), any(), any(), any(), any(), any(), any());
+
+        final AtomicInteger mailSent = new AtomicInteger();
+        doAnswer(inv -> {
+            mailSent.incrementAndGet();
+            return null;
+        }).when(reservationMailService).sendFavoritePackRestockedToClient(any(), any(), any(), any());
+
+        // 2. Ejercicio
+        notificationService.notifyPackRestocked(pack);
+
+        // 3. Asserts
+        assertEquals(NotificationType.FAVORITE_PACK_RESTOCKED, savedType.get());
+        assertEquals(1, mailSent.get());
+    }
+
+    @Test
+    void testNotifyPackPublishedCreatesNotificationAndSendsMail() {
+        // 1. Setup
+        final Pack pack = packRef(10L, 100L);
+        when(commerceFavoriteDao.findClientIdsByCommerce(100L)).thenReturn(List.of(5L));
+        when(commerceDao.findByUserId(100L)).thenReturn(Optional.of(commerceRef(100L)));
+        when(clientNotificationPreferenceDao.findByClientAndType(eq(5L), eq(NotificationType.FAVORITE_COMMERCE_NEW_PACK)))
+                .thenReturn(Optional.of(new ClientNotificationPreference(1L, clientRef(5L),
+                        NotificationType.FAVORITE_COMMERCE_NEW_PACK, true)));
+        when(userService.findById(5L)).thenReturn(Optional.of(
+                new User(5L, "c@test.com", "p", "C", null, User.Role.CLIENT, false)));
+
+        final AtomicReference<NotificationType> savedType = new AtomicReference<>();
+        doAnswer(inv -> {
+            savedType.set(inv.getArgument(1));
+            return notificationWithRecipient(5L, NotificationType.FAVORITE_COMMERCE_NEW_PACK);
+        }).when(notificationDao).create(eq(5L), eq(NotificationType.FAVORITE_COMMERCE_NEW_PACK),
+                any(), any(), eq(10L), any(), any(), any(), any(), any(), any());
+
+        final AtomicInteger mailSent = new AtomicInteger();
+        doAnswer(inv -> {
+            mailSent.incrementAndGet();
+            return null;
+        }).when(reservationMailService).sendFavoriteCommerceNewPackToClient(any(), any(), any(), any());
+
+        // 2. Ejercicio
+        notificationService.notifyPackPublished(pack);
+
+        // 3. Asserts
+        assertEquals(NotificationType.FAVORITE_COMMERCE_NEW_PACK, savedType.get());
+        assertEquals(1, mailSent.get());
+    }
+
+    @Test
+    void testNotifyAuctionFinishedCreatesLostNotificationsAndSendsMail() {
+        // 1. Setup
+        final Pack pack = packRef(10L, 100L);
+        final Auction auction = new Auction(3L, pack, 100.0, 5.0, 120.0, 7L,
+                LocalDateTime.now(ZoneOffset.UTC).plusHours(2), Auction.Status.ACTIVE, LocalDateTime.now());
+        final Bid winnerBid = new Bid(1L, auction, clientRef(7L), 120.0, LocalDateTime.now());
+        final Bid loserBid = new Bid(2L, auction, clientRef(5L), 110.0, LocalDateTime.now());
+        
+        when(auctionDao.findById(3L)).thenReturn(Optional.of(auction));
+        when(commerceDao.findByUserId(100L)).thenReturn(Optional.of(commerceRef(100L)));
+        when(bidDao.findByAuctionId(3L)).thenReturn(List.of(winnerBid, loserBid));
+        when(clientNotificationPreferenceDao.findByClientAndType(eq(5L), eq(NotificationType.AUCTION_LOST_CLIENT)))
+                .thenReturn(Optional.of(new ClientNotificationPreference(1L, clientRef(5L),
+                        NotificationType.AUCTION_LOST_CLIENT, true)));
+        when(userService.findById(5L)).thenReturn(Optional.of(
+                new User(5L, "loser@test.com", "p", "L", null, User.Role.CLIENT, false)));
+
+        final AtomicReference<NotificationType> savedType = new AtomicReference<>();
+        doAnswer(inv -> {
+            savedType.set(inv.getArgument(1));
+            return notificationWithRecipient(5L, NotificationType.AUCTION_LOST_CLIENT);
+        }).when(notificationDao).create(eq(5L), eq(NotificationType.AUCTION_LOST_CLIENT),
+                any(), eq(3L), eq(10L), any(), any(), eq(120.0), any(), any(), any());
+
+        final AtomicInteger mailSent = new AtomicInteger();
+        doAnswer(inv -> {
+            mailSent.incrementAndGet();
+            return null;
+        }).when(reservationMailService).sendAuctionFinishedLostToClient(any(), any(), any(), any());
+
+        // 2. Ejercicio
+        notificationService.notifyAuctionFinished(3L);
+
+        // 3. Asserts
+        assertEquals(NotificationType.AUCTION_LOST_CLIENT, savedType.get());
+        assertEquals(1, mailSent.get());
     }
 }

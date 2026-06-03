@@ -10,6 +10,7 @@ import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.commerce.CommercePackAccess;
+import ar.edu.itba.paw.services.notification.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,14 +30,16 @@ public class PackServiceImpl implements PackService {
     private final ImageDao imageDao;
     private final AuctionService auctionService;
     private final ReservationService reservationService;
+    private final NotificationService notificationService;
 
     @Autowired
     public PackServiceImpl(final PackDao packDao, final ImageDao imageDao, final AuctionService auctionService,
-            final ReservationService reservationService) {
+            final ReservationService reservationService, final NotificationService notificationService) {
         this.packDao = packDao;
         this.imageDao = imageDao;
         this.auctionService = auctionService;
         this.reservationService = reservationService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -46,6 +49,7 @@ public class PackServiceImpl implements PackService {
                            Long imageId) {
         final Pack createdPack = packDao.createPack(commerceId, title, description, originalPrice, finalPrice, stock, tags, imageId);
         LOGGER.info("Pack created: packId={}, commerceId={}", createdPack.getId(), commerceId);
+        notificationService.notifyPackPublished(createdPack);
         return createdPack;
     }
 
@@ -126,6 +130,7 @@ public class PackServiceImpl implements PackService {
             return access;
         }
         final Pack packToUpdate = ((CommercePackAccess.Granted) access).pack();
+        final int oldStock = packToUpdate.getStock();
 
         packToUpdate.setTitle(title);
         packToUpdate.setDescription(description);
@@ -141,6 +146,9 @@ public class PackServiceImpl implements PackService {
 
         final Pack updatedPack = packDao.update(packToUpdate);
         LOGGER.info("Pack updated: packId={}", packId);
+        if (oldStock == 0 && updatedPack.getStock() > 0) {
+            notificationService.notifyPackRestocked(updatedPack);
+        }
         return new CommercePackAccess.Granted(updatedPack);
     }
 

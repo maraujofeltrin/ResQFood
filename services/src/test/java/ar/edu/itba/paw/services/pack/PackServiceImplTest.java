@@ -13,6 +13,7 @@ import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommercePackAccess;
 import ar.edu.itba.paw.services.reservation.ReservationService;
+import ar.edu.itba.paw.services.notification.NotificationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -51,6 +53,9 @@ class PackServiceImplTest {
 
     @Mock
     private ReservationService reservationService;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private PackServiceImpl packService;
@@ -467,5 +472,65 @@ class PackServiceImplTest {
         assertInstanceOf(CommercePackAccess.Granted.class, access);
         final CommercePackAccess.Granted granted = (CommercePackAccess.Granted) access;
         assertEquals(11L, granted.pack().getId());
+    }
+
+    @Test
+    void testCreatePackTriggersNotification() {
+        // 1. Setup
+        final Pack persisted = newPack(1L, 5L, "T", "D", 10.0, 7.0, 3, true, false, Collections.emptyList(), null);
+        when(packDao.createPack(eq(5L), eq("T"), eq("D"), eq(10.0), eq(7.0), eq(3), eq(Collections.emptyList()),
+                isNull())).thenReturn(persisted);
+        final AtomicReference<Pack> notifiedPack = new AtomicReference<>();
+        doAnswer(inv -> {
+            notifiedPack.set(inv.getArgument(0));
+            return null;
+        }).when(notificationService).notifyPackPublished(any(Pack.class));
+
+        // 2. Ejercicio
+        final Pack created = packService.createPack(5L, "T", "D", 10.0, 7.0, 3, Collections.emptyList(), null);
+
+        // 3. Asserts
+        assertNotNull(created);
+        assertEquals(1L, created.getId());
+        assertNotNull(notifiedPack.get());
+        assertEquals(1L, notifiedPack.get().getId());
+    }
+
+    @Test
+    void testUpdatePackRestockTriggersNotification() {
+        // 1. Setup
+        final Pack existing = newPack(3L, 5L, "old", "oldD", 1.0, 1.0, 0, true, false, Collections.emptyList(), null);
+        when(packDao.findById(3L)).thenReturn(Optional.of(existing));
+        when(packDao.update(any(Pack.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        
+        final AtomicReference<Pack> restockedPack = new AtomicReference<>();
+        doAnswer(inv -> {
+            restockedPack.set(inv.getArgument(0));
+            return null;
+        }).when(notificationService).notifyPackRestocked(any(Pack.class));
+
+        // 2. Ejercicio
+        final CommercePackAccess access = packService.updatePack(3L, "old", "oldD", 1.0, 1.0, 5, Collections.emptyList(), null);
+
+        // 3. Asserts
+        assertTrue(access instanceof CommercePackAccess.Granted);
+        assertNotNull(restockedPack.get());
+        assertEquals(3L, restockedPack.get().getId());
+        assertEquals(5, restockedPack.get().getStock());
+    }
+
+    @Test
+    void testUpdatePackNoRestockDoesNotTriggerNotification() {
+        // 1. Setup
+        final Pack existing = newPack(3L, 5L, "old", "oldD", 1.0, 1.0, 2, true, false, Collections.emptyList(), null);
+        when(packDao.findById(3L)).thenReturn(Optional.of(existing));
+        when(packDao.update(any(Pack.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // 2. Ejercicio
+        final CommercePackAccess access = packService.updatePack(3L, "old", "oldD", 1.0, 1.0, 5, Collections.emptyList(), null);
+
+        // 3. Asserts
+        assertInstanceOf(CommercePackAccess.Granted.class, access);
+        assertEquals(5, ((CommercePackAccess.Granted) access).pack().getStock());
     }
 }

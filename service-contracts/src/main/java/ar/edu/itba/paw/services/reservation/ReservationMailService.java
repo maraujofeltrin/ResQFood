@@ -21,4 +21,10 @@ public interface ReservationMailService {
 
     void sendAuctionOutbidToClient(String clientEmail, String packTitle, String commerceName, double newAmount,
             Locale locale);
+
+    void sendFavoritePackRestockedToClient(String email, String packTitle, String commerceName, Locale locale);
+
+    void sendFavoriteCommerceNewPackToClient(String email, String packTitle, String commerceName, Locale locale);
+
+    void sendAuctionFinishedLostToClient(String email, String packTitle, String commerceName, Locale locale);
 }

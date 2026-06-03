@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -382,5 +383,26 @@ class AuctionServiceImplTest {
 
         // 3. Asserts
         assertTrue(summaries.isEmpty());
+    }
+
+    @Test
+    void testCloseExpiredAuctionsTriggersNotification() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Auction expiredAuction = new Auction(AUCTION_ID, pack, 1000.0, 10.0, null, null,
+                LocalDateTime.now(ZoneOffset.UTC).minusHours(1), Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.findExpiredActive()).thenReturn(List.of(expiredAuction));
+        final AtomicLong notifiedAuctionId = new AtomicLong();
+        doAnswer(inv -> {
+            notifiedAuctionId.set(inv.getArgument(0));
+            return null;
+        }).when(notificationService).notifyAuctionFinished(anyLong());
+
+        // 2. Ejercicio
+        final int closed = auctionService.closeExpiredAuctions();
+
+        // 3. Asserts
+        assertEquals(1, closed);
+        assertEquals(AUCTION_ID, notifiedAuctionId.get());
     }
 }

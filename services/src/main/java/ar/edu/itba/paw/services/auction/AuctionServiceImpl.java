@@ -196,6 +196,7 @@ public class AuctionServiceImpl implements AuctionService {
                 }
             }
 
+            notificationService.notifyAuctionFinished(auction.getId());
         }
 
         return closed;

@@ -26,7 +26,9 @@
     var types = [
       "RESERVATION_REQUESTED_COMMERCE", "RESERVATION_CODE_CLIENT",
       "AUCTION_WINNER_CLIENT", "AUCTION_WINNER_COMMERCE",
-      "RESERVATION_REJECTED_CLIENT", "AUCTION_OUTBID_CLIENT"
+      "RESERVATION_REJECTED_CLIENT", "AUCTION_OUTBID_CLIENT",
+      "FAVORITE_PACK_RESTOCKED", "FAVORITE_COMMERCE_NEW_PACK",
+      "AUCTION_LOST_CLIENT"
     ];
     for (var i = 0; i < types.length; i++) {
       typeTitles[types[i]] = sidebar.getAttribute("data-title-" + types[i]) || types[i];

@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.notification;
 
 import ar.edu.itba.paw.models.auction.Auction;
+import ar.edu.itba.paw.models.auction.Bid;
 import ar.edu.itba.paw.models.notification.ClientNotificationPreference;
 import ar.edu.itba.paw.models.notification.Notification;
 import ar.edu.itba.paw.models.notification.NotificationType;
@@ -9,9 +10,12 @@ import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.AuctionDao;
+import ar.edu.itba.paw.persistence.BidDao;
 import ar.edu.itba.paw.persistence.ClientNotificationPreferenceDao;
 import ar.edu.itba.paw.persistence.CommerceDao;
+import ar.edu.itba.paw.persistence.CommerceFavoriteDao;
 import ar.edu.itba.paw.persistence.NotificationDao;
+import ar.edu.itba.paw.persistence.PackFavoriteDao;
 import ar.edu.itba.paw.services.reservation.ReservationMailService;
 import ar.edu.itba.paw.services.user.UserService;
 import org.slf4j.Logger;
@@ -21,12 +25,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,7 +43,10 @@ public class NotificationServiceImpl implements NotificationService {
             NotificationType.RESERVATION_CODE_CLIENT,
             NotificationType.AUCTION_WINNER_CLIENT,
             NotificationType.RESERVATION_REJECTED_CLIENT,
-            NotificationType.AUCTION_OUTBID_CLIENT);
+            NotificationType.AUCTION_OUTBID_CLIENT,
+            NotificationType.FAVORITE_PACK_RESTOCKED,
+            NotificationType.FAVORITE_COMMERCE_NEW_PACK,
+            NotificationType.AUCTION_LOST_CLIENT);
 
     private final NotificationDao notificationDao;
     private final ClientNotificationPreferenceDao clientNotificationPreferenceDao;
@@ -46,6 +54,10 @@ public class NotificationServiceImpl implements NotificationService {
     private final AuctionDao auctionDao;
     private final CommerceDao commerceDao;
     private final UserService userService;
+    private final PackFavoriteDao packFavoriteDao;
+    private final CommerceFavoriteDao commerceFavoriteDao;
+    private final BidDao bidDao;
+    private final ZoneId businessZone;
 
     @Autowired
     public NotificationServiceImpl(final NotificationDao notificationDao,
@@ -53,13 +65,21 @@ public class NotificationServiceImpl implements NotificationService {
             final ReservationMailService reservationMailService,
             final AuctionDao auctionDao,
             final CommerceDao commerceDao,
-            final UserService userService) {
+            final UserService userService,
+            final PackFavoriteDao packFavoriteDao,
+            final CommerceFavoriteDao commerceFavoriteDao,
+            final BidDao bidDao,
+            final ZoneId businessZone) {
         this.notificationDao = notificationDao;
         this.clientNotificationPreferenceDao = clientNotificationPreferenceDao;
         this.reservationMailService = reservationMailService;
         this.auctionDao = auctionDao;
         this.commerceDao = commerceDao;
         this.userService = userService;
+        this.packFavoriteDao = packFavoriteDao;
+        this.commerceFavoriteDao = commerceFavoriteDao;
+        this.bidDao = bidDao;
+        this.businessZone = businessZone;
     }
 
     @Transactional
@@ -135,7 +155,7 @@ public class NotificationServiceImpl implements NotificationService {
         final Long packId = pack != null ? pack.getId() : null;
         final String packTitle = pack != null ? pack.getTitle() : null;
         final String commerceName = resolveCommerceName(pack);
-        final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        final LocalDateTime now = currentTimestamp();
 
         notificationDao.create(previousBidderId, NotificationType.AUCTION_OUTBID_CLIENT, null, auctionId, packId,
                 packTitle, commerceName, newAmount, null, null, now);
@@ -147,6 +167,85 @@ public class NotificationServiceImpl implements NotificationService {
                 final Locale locale = clientUser.getLocale() != null ? clientUser.getLocale() : Locale.forLanguageTag("es");
                 sendMailSafely(() -> reservationMailService.sendAuctionOutbidToClient(clientUser.getEmail(),
                         packTitle, commerceName, newAmount, locale), "notifyAuctionOutbid");
+            }
+        }
+    }
+
+    @Transactional
+    @Override
+    public void notifyPackRestocked(final Pack pack) {
+        if (pack == null) return;
+        final List<Long> clientIds = packFavoriteDao.findClientIdsByPack(pack.getId());
+        final String packTitle = pack.getTitle();
+        final String commerceName = resolveCommerceName(pack);
+        final LocalDateTime now = currentTimestamp();
+        for (final Long clientId : clientIds) {
+            notificationDao.create(clientId, NotificationType.FAVORITE_PACK_RESTOCKED, null, null, pack.getId(),
+                    packTitle, commerceName, null, null, null, now);
+            if (shouldSendClientMail(clientId, NotificationType.FAVORITE_PACK_RESTOCKED)) {
+                final User clientUser = userService.findById(clientId).orElse(null);
+                if (clientUser != null) {
+                    final Locale locale = clientUser.getLocale() != null ? clientUser.getLocale() : Locale.forLanguageTag("es");
+                    sendMailSafely(() -> reservationMailService.sendFavoritePackRestockedToClient(clientUser.getEmail(),
+                            packTitle, commerceName, locale), "notifyPackRestocked");
+                }
+            }
+        }
+    }
+
+    @Transactional
+    @Override
+    public void notifyPackPublished(final Pack pack) {
+        if (pack == null) return;
+        final List<Long> clientIds = commerceFavoriteDao.findClientIdsByCommerce(pack.getCommerceId());
+        final String packTitle = pack.getTitle();
+        final String commerceName = resolveCommerceName(pack);
+        final LocalDateTime now = currentTimestamp();
+        for (final Long clientId : clientIds) {
+            notificationDao.create(clientId, NotificationType.FAVORITE_COMMERCE_NEW_PACK, null, null, pack.getId(),
+                    packTitle, commerceName, null, null, null, now);
+            if (shouldSendClientMail(clientId, NotificationType.FAVORITE_COMMERCE_NEW_PACK)) {
+                final User clientUser = userService.findById(clientId).orElse(null);
+                if (clientUser != null) {
+                    final Locale locale = clientUser.getLocale() != null ? clientUser.getLocale() : Locale.forLanguageTag("es");
+                    sendMailSafely(() -> reservationMailService.sendFavoriteCommerceNewPackToClient(clientUser.getEmail(),
+                            packTitle, commerceName, locale), "notifyPackPublished");
+                }
+            }
+        }
+    }
+
+    @Transactional
+    @Override
+    public void notifyAuctionFinished(final long auctionId) {
+        final Auction auction = auctionDao.findById(auctionId).orElse(null);
+        if (auction == null) return;
+        final Pack pack = auction.getPack();
+        final Long packId = pack != null ? pack.getId() : null;
+        final String packTitle = pack != null ? pack.getTitle() : null;
+        final String commerceName = resolveCommerceName(pack);
+        final Long winnerId = auction.getCurrentBidderId();
+        final Double winningAmount = auction.getCurrentBid();
+        final List<Bid> bids = bidDao.findByAuctionId(auctionId);
+        final Set<Long> bidderIds = bids.stream()
+                .map(Bid::getClientId)
+                .collect(Collectors.toSet());
+        
+        final LocalDateTime now = currentTimestamp();
+        for (final Long bidderId : bidderIds) {
+            if (winnerId != null && winnerId.equals(bidderId)) {
+                // Winner already notified by createReservation
+                continue;
+            }
+            notificationDao.create(bidderId, NotificationType.AUCTION_LOST_CLIENT, null, auctionId, packId,
+                    packTitle, commerceName, winningAmount, null, null, now);
+            if (shouldSendClientMail(bidderId, NotificationType.AUCTION_LOST_CLIENT)) {
+                final User clientUser = userService.findById(bidderId).orElse(null);
+                if (clientUser != null) {
+                    final Locale locale = clientUser.getLocale() != null ? clientUser.getLocale() : Locale.forLanguageTag("es");
+                    sendMailSafely(() -> reservationMailService.sendAuctionFinishedLostToClient(clientUser.getEmail(),
+                            packTitle, commerceName, locale), "notifyAuctionFinished");
+                }
             }
         }
     }
@@ -168,7 +267,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     @Override
     public Optional<NotificationItemView> markRead(final long notificationId) {
-        return notificationDao.markRead(notificationId, LocalDateTime.now(ZoneOffset.UTC)).map(this::toView);
+        return notificationDao.markRead(notificationId, currentTimestamp()).map(this::toView);
     }
 
     @Transactional
@@ -180,13 +279,13 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     @Override
     public int markAllRead(final long userId) {
-        return notificationDao.markAllRead(userId, LocalDateTime.now(ZoneOffset.UTC));
+        return notificationDao.markAllRead(userId, currentTimestamp());
     }
 
     @Transactional
     @Override
     public Optional<NotificationItemView> softDelete(final long notificationId) {
-        return notificationDao.softDelete(notificationId, LocalDateTime.now(ZoneOffset.UTC)).map(this::toView);
+        return notificationDao.softDelete(notificationId, currentTimestamp()).map(this::toView);
     }
 
     @Transactional(readOnly = true)
@@ -213,7 +312,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     private void createWebNotification(final Long recipientId, final NotificationType type,
             final Long reservationId, final Long auctionId, final ReservationSnapshot snapshot) {
-        final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        final LocalDateTime now = currentTimestamp();
         notificationDao.create(recipientId, type, reservationId, auctionId, snapshot.packId(),
                 snapshot.packTitle(), snapshot.commerceName(), snapshot.amount(), snapshot.pickupCode(),
                 snapshot.pickupDate(), now);
@@ -241,6 +340,10 @@ public class NotificationServiceImpl implements NotificationService {
         return clientNotificationPreferenceDao.findByClientAndType(clientId, type)
                 .map(ClientNotificationPreference::isMailEnabled)
                 .orElse(true);
+    }
+
+    private LocalDateTime currentTimestamp() {
+        return LocalDateTime.now(businessZone);
     }
 
     private void sendMailSafely(final Runnable mailAction, final String context) {

@@ -17,6 +17,9 @@
 <spring:message code="notification.type.AUCTION_WINNER_COMMERCE.title" var="titleAuctionWinnerCommerce"/>
 <spring:message code="notification.type.RESERVATION_REJECTED_CLIENT.title" var="titleReservationRejectedClient"/>
 <spring:message code="notification.type.AUCTION_OUTBID_CLIENT.title" var="titleAuctionOutbidClient"/>
+<spring:message code="notification.type.FAVORITE_PACK_RESTOCKED.title" var="titleFavoritePackRestocked"/>
+<spring:message code="notification.type.FAVORITE_COMMERCE_NEW_PACK.title" var="titleFavoriteCommerceNewPack"/>
+<spring:message code="notification.type.AUCTION_LOST_CLIENT.title" var="titleAuctionLostClient"/>
 
 <div id="notification-backdrop"
      class="notifications-backdrop fixed inset-0 z-[55] bg-on-surface/40 backdrop-blur-sm hidden"
@@ -38,7 +41,10 @@
        data-title-AUCTION_WINNER_CLIENT="${titleAuctionWinnerClient}"
        data-title-AUCTION_WINNER_COMMERCE="${titleAuctionWinnerCommerce}"
        data-title-RESERVATION_REJECTED_CLIENT="${titleReservationRejectedClient}"
-       data-title-AUCTION_OUTBID_CLIENT="${titleAuctionOutbidClient}">
+       data-title-AUCTION_OUTBID_CLIENT="${titleAuctionOutbidClient}"
+       data-title-FAVORITE_PACK_RESTOCKED="${titleFavoritePackRestocked}"
+       data-title-FAVORITE_COMMERCE_NEW_PACK="${titleFavoriteCommerceNewPack}"
+       data-title-AUCTION_LOST_CLIENT="${titleAuctionLostClient}">
     <header class="notifications-sidebar__header shrink-0 p-4 bg-surface-container-low flex justify-between items-center gap-3">
         <h2 id="notification-sidebar-title" class="font-bold text-on-surface text-base m-0">
             <c:out value="${sidebarTitle}"/>

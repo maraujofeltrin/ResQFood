@@ -48,7 +48,10 @@ public class ProfileController {
             NotificationType.RESERVATION_CODE_CLIENT,
             NotificationType.AUCTION_WINNER_CLIENT,
             NotificationType.RESERVATION_REJECTED_CLIENT,
-            NotificationType.AUCTION_OUTBID_CLIENT);
+            NotificationType.AUCTION_OUTBID_CLIENT,
+            NotificationType.FAVORITE_PACK_RESTOCKED,
+            NotificationType.FAVORITE_COMMERCE_NEW_PACK,
+            NotificationType.AUCTION_LOST_CLIENT);
 
     private final AuthenticatedUserResolver authenticatedUserResolver;
     private final ProfileService profileService;

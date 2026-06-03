@@ -104,4 +104,21 @@ public class PackFavoriteJpaDao implements PackFavoriteDao {
                 .setParameter("pid", packId)
                 .executeUpdate();
     }
+
+    @Override
+    public List<Long> findClientIdsByPack(final long packId) {
+        final javax.persistence.Query q = em.createNativeQuery(
+                "SELECT client_id FROM client_pack_favorites WHERE pack_id = :pid");
+        q.setParameter("pid", packId);
+        final List<?> rawIds = q.getResultList();
+        final List<Long> ids = new ArrayList<>();
+        for (final Object o : rawIds) {
+            if (o instanceof Number) {
+                ids.add(((Number) o).longValue());
+            } else {
+                ids.add(Long.parseLong(o.toString()));
+            }
+        }
+        return ids;
+    }
 }

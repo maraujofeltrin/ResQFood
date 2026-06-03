@@ -142,4 +142,17 @@ public class CommerceFavoriteJpaDaoTest {
         // 3. Asserts
         assertEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "client_commerce_favorites"));
     }
+
+    @Test
+    public void testFindClientIdsByCommerceWhenFavoritesExist() {
+        // 1. Setup
+        commerceFavoriteDao.insert(clientUserId, commerceUserId1);
+
+        // 2. Ejercicio
+        final List<Long> ids = commerceFavoriteDao.findClientIdsByCommerce(commerceUserId1);
+
+        // 3. Asserts
+        assertEquals(1, ids.size());
+        assertTrue(ids.contains(clientUserId));
+    }
 }

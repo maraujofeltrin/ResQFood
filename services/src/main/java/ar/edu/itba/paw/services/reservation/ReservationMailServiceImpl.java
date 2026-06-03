@@ -167,6 +167,44 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         sendHtmlMail(clientEmail, subject, html, "Could not send auction outbid mail");
     }
 
+    @Async
+    @Override
+    public void sendFavoritePackRestockedToClient(final String clientEmail, final String packTitle,
+            final String commerceName, final Locale locale) {
+        final String subject = mailMessages.getMessage("mail.subject.favoritePackRestocked", null, locale);
+        final Context context = new Context(locale);
+        context.setVariable("packTitle", packTitle);
+        context.setVariable("commerceName", commerceName);
+        final String html = templateEngine.process("favorite-pack-restocked", context);
+        sendHtmlMail(clientEmail, subject, html, "Could not send favorite pack restocked mail");
+    }
+
+    @Async
+    @Override
+    public void sendFavoriteCommerceNewPackToClient(final String clientEmail, final String packTitle,
+            final String commerceName, final Locale locale) {
+        final String subject = mailMessages.getMessage("mail.subject.favoriteCommerceNewPack",
+                new Object[]{commerceName != null ? commerceName : ""}, locale);
+        final Context context = new Context(locale);
+        context.setVariable("packTitle", packTitle);
+        context.setVariable("commerceName", commerceName);
+        final String html = templateEngine.process("favorite-commerce-new-pack", context);
+        sendHtmlMail(clientEmail, subject, html, "Could not send favorite commerce new pack mail");
+    }
+
+    @Async
+    @Override
+    public void sendAuctionFinishedLostToClient(final String clientEmail, final String packTitle,
+            final String commerceName, final Locale locale) {
+        final String subject = mailMessages.getMessage("mail.subject.auctionFinishedLost",
+                new Object[]{packTitle != null ? packTitle : ""}, locale);
+        final Context context = new Context(locale);
+        context.setVariable("packTitle", packTitle);
+        context.setVariable("commerceName", commerceName);
+        final String html = templateEngine.process("auction-finished-lost", context);
+        sendHtmlMail(clientEmail, subject, html, "Could not send auction finished lost mail");
+    }
+
     private String buildClientHtml(final Reservation reservation, final String packLabel, final String pickupDateStr,
             final Locale locale) {
         final String reservationDateStr = reservation.getReservationDate() != null

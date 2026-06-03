@@ -2,6 +2,7 @@ package ar.edu.itba.paw.services.notification;
 
 import ar.edu.itba.paw.models.notification.NotificationType;
 import ar.edu.itba.paw.models.reservation.Reservation;
+import ar.edu.itba.paw.models.pack.Pack;
 
 import java.util.List;
 import java.util.Locale;
@@ -25,6 +26,12 @@ public interface NotificationService {
     void notifyReservationRejected(Reservation reservation, String clientEmail, Locale clientLocale);
 
     void notifyAuctionOutbid(long previousBidderId, long auctionId, double newAmount);
+
+    void notifyPackRestocked(Pack pack);
+
+    void notifyPackPublished(Pack pack);
+
+    void notifyAuctionFinished(long auctionId);
 
     List<NotificationItemView> findRecentForUser(long userId, int limit);
 

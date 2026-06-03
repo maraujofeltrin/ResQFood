@@ -110,4 +110,21 @@ public class CommerceFavoriteJpaDao implements CommerceFavoriteDao {
                 .setParameter("comId", commerceId)
                 .executeUpdate();
     }
+
+    @Override
+    public List<Long> findClientIdsByCommerce(final long commerceId) {
+        final javax.persistence.Query q = em.createNativeQuery(
+                "SELECT client_id FROM client_commerce_favorites WHERE commerce_id = :cid");
+        q.setParameter("cid", commerceId);
+        final List<?> rawIds = q.getResultList();
+        final List<Long> ids = new ArrayList<>();
+        for (final Object o : rawIds) {
+            if (o instanceof Number) {
+                ids.add(((Number) o).longValue());
+            } else {
+                ids.add(Long.parseLong(o.toString()));
+            }
+        }
+        return ids;
+    }
 }

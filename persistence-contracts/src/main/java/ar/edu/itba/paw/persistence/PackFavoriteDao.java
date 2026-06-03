@@ -18,4 +18,6 @@ public interface PackFavoriteDao {
     void insert(long clientId, long packId);
 
     void delete(long clientId, long packId);
+
+    List<Long> findClientIdsByPack(long packId);
 }
