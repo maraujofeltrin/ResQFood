@@ -47,7 +47,12 @@ public class NotificationJpaDao implements NotificationDao {
     @Override
     public List<Notification> findRecentByRecipient(final Long userId, final int limit) {
         return em.createQuery(
-                "FROM Notification n WHERE n.recipient.id = :uid AND n.deletedAt IS NULL ORDER BY n.createdAt DESC",
+                "FROM Notification n " +
+                "LEFT JOIN FETCH n.reservation " +
+                "LEFT JOIN FETCH n.auction " +
+                "LEFT JOIN FETCH n.pack " +
+                "WHERE n.recipient.id = :uid AND n.deletedAt IS NULL " +
+                "ORDER BY n.createdAt DESC",
                 Notification.class)
                 .setParameter("uid", userId)
                 .setMaxResults(Math.max(1, limit))
