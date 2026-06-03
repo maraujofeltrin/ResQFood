@@ -28,8 +28,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Collections;
 import java.util.stream.Collectors;
@@ -207,8 +207,6 @@ public class ReservationListModelBuilder {
             .collect(Collectors.toList());
         final Map<Long, Double> myMaxBids = auctionService
             .getMaxBidsByClientForAuctions(currentUser.getId(), auctionIds);
-        final Set<Long> leadingIds = auctionService
-            .findAuctionIdsWhereClientLeads(currentUser.getId(), auctionIds);
 
         for (final Auction auction : auctionsPage) {
             auctionEndLabels.put(auction.getId(), formatUtcDateTimeForDisplay(auction.getEndTime()));
@@ -221,7 +219,7 @@ public class ReservationListModelBuilder {
             auctionMyMaxBid.put(auction.getId(), myMaxBids.getOrDefault(auction.getId(), 0d));
 
             final String badge = clientParticipationAuctionBadge(auction,
-                leadingIds.contains(auction.getId()));
+                Objects.equals(auction.getCurrentBidderId(), currentUser.getId()));
             if (badge != null) {
             auctionParticipationBadges.put(auction.getId(), badge);
             }

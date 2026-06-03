@@ -91,8 +91,6 @@ public interface AuctionService {
 
     Map<Long, Double> getMaxBidsByClientForAuctions(long clientUserId, Collection<Long> auctionIds);
 
-    Set<Long> findAuctionIdsWhereClientLeads(long clientUserId, Collection<Long> auctionIds);
-
     List<AuctionPackSummary> findSummariesByPackIds(Collection<Long> packIds);
 
     boolean hasClientBidOnAuction(long auctionId, long clientUserId);

@@ -277,12 +277,6 @@ public class AuctionServiceImpl implements AuctionService {
 
     @Transactional(readOnly = true)
     @Override
-    public Set<Long> findAuctionIdsWhereClientLeads(final long clientUserId, final Collection<Long> auctionIds) {
-        return bidDao.findAuctionIdsWhereClientLeads(clientUserId, auctionIds);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
     public List<AuctionPackSummary> findSummariesByPackIds(final Collection<Long> packIds) {
         if (packIds == null || packIds.isEmpty()) {
             return Collections.emptyList();
