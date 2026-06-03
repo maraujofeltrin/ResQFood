@@ -13,7 +13,6 @@ import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.BidDao;
 import ar.edu.itba.paw.persistence.ClientNotificationPreferenceDao;
-import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.CommerceFavoriteDao;
 import ar.edu.itba.paw.persistence.NotificationDao;
 import ar.edu.itba.paw.persistence.PackFavoriteDao;
@@ -55,8 +54,6 @@ class NotificationServiceImplTest {
     private ReservationMailService reservationMailService;
     @Mock
     private AuctionDao auctionDao;
-    @Mock
-    private CommerceDao commerceDao;
     @Mock
     private UserService userService;
     @Mock
@@ -100,7 +97,6 @@ class NotificationServiceImplTest {
                 clientNotificationPreferenceDao,
                 reservationMailService,
                 auctionDao,
-                commerceDao,
                 userService,
                 packFavoriteDao,
                 commerceFavoriteDao,
@@ -112,7 +108,6 @@ class NotificationServiceImplTest {
     void testNotifyReservationCodeIssuedWhenClientMailDisabledCreatesWebNotificationOnly() {
         // 1. Setup
         final Reservation reservation = reservationRef(1L, 5L, 10L, 100L);
-        when(commerceDao.findByUserId(100L)).thenReturn(Optional.of(commerceRef(100L)));
         when(clientNotificationPreferenceDao.findByClientAndType(eq(5L), eq(NotificationType.RESERVATION_CODE_CLIENT)))
                 .thenReturn(Optional.of(new ClientNotificationPreference(1L, clientRef(5L),
                         NotificationType.RESERVATION_CODE_CLIENT, false)));
@@ -135,7 +130,6 @@ class NotificationServiceImplTest {
     void testNotifyReservationCodeIssuedWhenNoPreferenceSendsMail() {
         // 1. Setup
         final Reservation reservation = reservationRef(1L, 5L, 10L, 100L);
-        when(commerceDao.findByUserId(100L)).thenReturn(Optional.of(commerceRef(100L)));
         when(clientNotificationPreferenceDao.findByClientAndType(anyLong(), any())).thenReturn(Optional.empty());
         doAnswer(inv -> notificationWithRecipient(5L, NotificationType.RESERVATION_CODE_CLIENT))
                 .when(notificationDao).create(anyLong(), eq(NotificationType.RESERVATION_CODE_CLIENT),
@@ -158,7 +152,6 @@ class NotificationServiceImplTest {
     void testNotifyReservationRequestedAlwaysSendsCommerceMail() {
         // 1. Setup
         final Reservation reservation = reservationRef(1L, 5L, 10L, 100L);
-        when(commerceDao.findByUserId(100L)).thenReturn(Optional.of(commerceRef(100L)));
         doAnswer(inv -> notificationWithRecipient(100L, NotificationType.RESERVATION_REQUESTED_COMMERCE))
                 .when(notificationDao).create(eq(100L), eq(NotificationType.RESERVATION_REQUESTED_COMMERCE),
                         any(), any(), any(), any(), any(), any(), any(), any(), any());
@@ -184,7 +177,6 @@ class NotificationServiceImplTest {
         final Auction auction = new Auction(3L, pack, 100.0, 5.0, 120.0, 7L,
                 LocalDateTime.now(ZoneOffset.UTC).plusHours(2), Auction.Status.ACTIVE, LocalDateTime.now());
         when(auctionDao.findById(3L)).thenReturn(Optional.of(auction));
-        when(commerceDao.findByUserId(100L)).thenReturn(Optional.of(commerceRef(100L)));
         when(userService.findById(7L)).thenReturn(Optional.of(
                 new User(7L, "bidder@test.com", "p", "B", null, User.Role.CLIENT, false)));
         when(clientNotificationPreferenceDao.findByClientAndType(eq(7L), eq(NotificationType.AUCTION_OUTBID_CLIENT)))
@@ -241,7 +233,6 @@ class NotificationServiceImplTest {
         // 1. Setup
         final Pack pack = packRef(10L, 100L);
         when(packFavoriteDao.findClientIdsByPack(10L)).thenReturn(List.of(5L));
-        when(commerceDao.findByUserId(100L)).thenReturn(Optional.of(commerceRef(100L)));
         when(clientNotificationPreferenceDao.findByClientAndType(eq(5L), eq(NotificationType.FAVORITE_PACK_RESTOCKED)))
                 .thenReturn(Optional.of(new ClientNotificationPreference(1L, clientRef(5L),
                         NotificationType.FAVORITE_PACK_RESTOCKED, true)));
@@ -274,7 +265,6 @@ class NotificationServiceImplTest {
         // 1. Setup
         final Pack pack = packRef(10L, 100L);
         when(commerceFavoriteDao.findClientIdsByCommerce(100L)).thenReturn(List.of(5L));
-        when(commerceDao.findByUserId(100L)).thenReturn(Optional.of(commerceRef(100L)));
         when(clientNotificationPreferenceDao.findByClientAndType(eq(5L), eq(NotificationType.FAVORITE_COMMERCE_NEW_PACK)))
                 .thenReturn(Optional.of(new ClientNotificationPreference(1L, clientRef(5L),
                         NotificationType.FAVORITE_COMMERCE_NEW_PACK, true)));
@@ -312,7 +302,6 @@ class NotificationServiceImplTest {
         final Bid loserBid = new Bid(2L, auction, clientRef(5L), 110.0, LocalDateTime.now());
         
         when(auctionDao.findById(3L)).thenReturn(Optional.of(auction));
-        when(commerceDao.findByUserId(100L)).thenReturn(Optional.of(commerceRef(100L)));
         when(bidDao.findByAuctionId(3L)).thenReturn(List.of(winnerBid, loserBid));
         when(clientNotificationPreferenceDao.findByClientAndType(eq(5L), eq(NotificationType.AUCTION_LOST_CLIENT)))
                 .thenReturn(Optional.of(new ClientNotificationPreference(1L, clientRef(5L),

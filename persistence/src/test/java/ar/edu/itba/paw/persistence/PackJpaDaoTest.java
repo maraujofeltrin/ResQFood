@@ -107,6 +107,8 @@ public class PackJpaDaoTest {
         assertEquals(created.getId(), pack.get().getId());
         assertEquals("Title", pack.get().getTitle());
         assertEquals(1, pack.get().getTags().size());
+        assertTrue(Hibernate.isInitialized(pack.get().getCommerce()));
+        assertNotNull(pack.get().getCommerce().getCommercialName());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 

@@ -7,12 +7,10 @@ import ar.edu.itba.paw.models.notification.Notification;
 import ar.edu.itba.paw.models.notification.NotificationType;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
-import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.BidDao;
 import ar.edu.itba.paw.persistence.ClientNotificationPreferenceDao;
-import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.CommerceFavoriteDao;
 import ar.edu.itba.paw.persistence.NotificationDao;
 import ar.edu.itba.paw.persistence.PackFavoriteDao;
@@ -52,7 +50,6 @@ public class NotificationServiceImpl implements NotificationService {
     private final ClientNotificationPreferenceDao clientNotificationPreferenceDao;
     private final ReservationMailService reservationMailService;
     private final AuctionDao auctionDao;
-    private final CommerceDao commerceDao;
     private final UserService userService;
     private final PackFavoriteDao packFavoriteDao;
     private final CommerceFavoriteDao commerceFavoriteDao;
@@ -64,7 +61,6 @@ public class NotificationServiceImpl implements NotificationService {
             final ClientNotificationPreferenceDao clientNotificationPreferenceDao,
             final ReservationMailService reservationMailService,
             final AuctionDao auctionDao,
-            final CommerceDao commerceDao,
             final UserService userService,
             final PackFavoriteDao packFavoriteDao,
             final CommerceFavoriteDao commerceFavoriteDao,
@@ -74,7 +70,6 @@ public class NotificationServiceImpl implements NotificationService {
         this.clientNotificationPreferenceDao = clientNotificationPreferenceDao;
         this.reservationMailService = reservationMailService;
         this.auctionDao = auctionDao;
-        this.commerceDao = commerceDao;
         this.userService = userService;
         this.packFavoriteDao = packFavoriteDao;
         this.commerceFavoriteDao = commerceFavoriteDao;
@@ -154,7 +149,7 @@ public class NotificationServiceImpl implements NotificationService {
         final Pack pack = auction.getPack();
         final Long packId = pack != null ? pack.getId() : null;
         final String packTitle = pack != null ? pack.getTitle() : null;
-        final String commerceName = resolveCommerceName(pack);
+        final String commerceName = commerceCommercialName(pack);
         final LocalDateTime now = currentTimestamp();
 
         notificationDao.create(previousBidderId, NotificationType.AUCTION_OUTBID_CLIENT, null, auctionId, packId,
@@ -177,7 +172,7 @@ public class NotificationServiceImpl implements NotificationService {
         if (pack == null) return;
         final List<Long> clientIds = packFavoriteDao.findClientIdsByPack(pack.getId());
         final String packTitle = pack.getTitle();
-        final String commerceName = resolveCommerceName(pack);
+        final String commerceName = commerceCommercialName(pack);
         final LocalDateTime now = currentTimestamp();
         for (final Long clientId : clientIds) {
             notificationDao.create(clientId, NotificationType.FAVORITE_PACK_RESTOCKED, null, null, pack.getId(),
@@ -199,7 +194,7 @@ public class NotificationServiceImpl implements NotificationService {
         if (pack == null) return;
         final List<Long> clientIds = commerceFavoriteDao.findClientIdsByCommerce(pack.getCommerceId());
         final String packTitle = pack.getTitle();
-        final String commerceName = resolveCommerceName(pack);
+        final String commerceName = commerceCommercialName(pack);
         final LocalDateTime now = currentTimestamp();
         for (final Long clientId : clientIds) {
             notificationDao.create(clientId, NotificationType.FAVORITE_COMMERCE_NEW_PACK, null, null, pack.getId(),
@@ -223,7 +218,7 @@ public class NotificationServiceImpl implements NotificationService {
         final Pack pack = auction.getPack();
         final Long packId = pack != null ? pack.getId() : null;
         final String packTitle = pack != null ? pack.getTitle() : null;
-        final String commerceName = resolveCommerceName(pack);
+        final String commerceName = commerceCommercialName(pack);
         final Long winnerId = auction.getCurrentBidderId();
         final Double winningAmount = auction.getCurrentBid();
         final List<Bid> bids = bidDao.findByAuctionId(auctionId);
@@ -323,17 +318,15 @@ public class NotificationServiceImpl implements NotificationService {
         final Long packId = pack != null ? pack.getId() : null;
         final String packTitle = pack != null ? pack.getTitle() : null;
         final Long commerceUserId = pack != null ? pack.getCommerceId() : null;
-        return new ReservationSnapshot(packId, packTitle, resolveCommerceName(pack), commerceUserId,
+        return new ReservationSnapshot(packId, packTitle, commerceCommercialName(pack), commerceUserId,
                 reservation.getFinalPrice(), reservation.getPickupCode(), reservation.getReservationDate());
     }
 
-    private String resolveCommerceName(final Pack pack) {
-        if (pack == null || pack.getCommerceId() == null) {
+    private String commerceCommercialName(final Pack pack) {
+        if (pack == null || pack.getCommerce() == null) {
             return null;
         }
-        return commerceDao.findByUserId(pack.getCommerceId())
-                .map(Commerce::getCommercialName)
-                .orElse(null);
+        return pack.getCommerce().getCommercialName();
     }
 
     private boolean shouldSendClientMail(final Long clientId, final NotificationType type) {

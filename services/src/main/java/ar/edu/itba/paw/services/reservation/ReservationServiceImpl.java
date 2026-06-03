@@ -7,9 +7,7 @@ import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationRejectionError;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.user.User;
-import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.persistence.AuctionDao;
-import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
@@ -58,7 +56,6 @@ public class ReservationServiceImpl implements ReservationService {
     private final ReservationDao reservationDao;
     private final ReservationTokenDao reservationTokenDao;
     private final PackDao packDao;
-    private final CommerceDao commerceDao;
     private final NotificationService notificationService;
     private final AuctionDao auctionDao;
     private final ZoneId displayZone;
@@ -70,7 +67,6 @@ public class ReservationServiceImpl implements ReservationService {
             final ReservationTokenDao reservationTokenDao,
             final PackDao packDao,
             final NotificationService notificationService,
-            final CommerceDao commerceDao,
             final AuctionDao auctionDao,
             final ZoneId displayZone) {
         this.userService = userService;
@@ -79,7 +75,6 @@ public class ReservationServiceImpl implements ReservationService {
         this.reservationTokenDao = reservationTokenDao;
         this.packDao = packDao;
         this.notificationService = notificationService;
-        this.commerceDao = commerceDao;
         this.auctionDao = auctionDao;
         this.displayZone = displayZone;
     }
@@ -111,7 +106,15 @@ public class ReservationServiceImpl implements ReservationService {
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final double lineTotal = unitPrice * quantity;
 
-        final Reservation reservation = reservationDao.createReservation(
+        final Pack pack = packDao.findById(packId)
+                .orElseThrow(() -> new IllegalStateException("Pack not found after stock update: " + packId));
+        final Long commerceId = pack.getCommerceId();
+        final User commerceUser = userService.findById(commerceId)
+                .orElseThrow(() -> new IllegalStateException("Commerce user not found for id: " + commerceId));
+        final String commerceEmail = commerceUser.getEmail();
+        final java.util.Locale commerceLocale = commerceUser.getLocale();
+
+        final Reservation persisted = reservationDao.createReservation(
                 user.getId(),
                 packId,
                 now,
@@ -122,14 +125,8 @@ public class ReservationServiceImpl implements ReservationService {
                 quantity,
                 pickupWindow);
 
-        final Long commerceId = packDao.findById(packId)
-                .orElseThrow(() -> new IllegalStateException("Pack not found after stock update: " + packId))
-                .getCommerceId();
-        final User commerceUser = userService.findById(commerceId)
-                .orElseThrow(() -> new IllegalStateException("Commerce user not found for id: " + commerceId));
-        final String commerceEmail = commerceUser.getEmail();
-        final java.util.Locale commerceLocale = commerceUser.getLocale();
-
+        final Reservation reservation = reservationDao.findByIdWithDetails(persisted.getId())
+                .orElseThrow(() -> new IllegalStateException("Reservation not found: " + persisted.getId()));
         final String pickupDateStr = computePickupDateStr(reservation);
 
         if (isAuction) {
@@ -231,33 +228,26 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         try {
-            final Pack pack = packDao.findById(reservation.getPack().getId()).orElse(null);
-            if (pack != null) {
-                final Long commerceId = pack.getCommerceId();
-                if (commerceId != null) {
-                    final Optional<Commerce> maybeCommerce = commerceDao.findByUserId(commerceId);
-                    if (maybeCommerce.isPresent()) {
-                        final Commerce commerce = maybeCommerce.get();
-                        final String closing = commerce.getClosingTime();
-                        if (closing != null) {
-                            try {
-                                final LocalTime closeT = LocalTime.parse(closing);
-                                final LocalTime resTime = ZonedDateTime.of(reservation.getReservationDate(), ZoneOffset.UTC)
-                                        .withZoneSameInstant(displayZone)
-                                        .toLocalTime();
-                                if (resTime.isAfter(closeT) || resTime.equals(closeT)) {
-                                    pickupDate = pickupDate.plusDays(1);
-                                }
-                            } catch (final Exception e) {
-                                LOGGER.debug("computePickupDateStr: closing time parse fallback reservationId={} packId={}",
-                                        reservation.getId(), reservation.getPack().getId(), e);
-                            }
+            final Pack pack = reservation.getPack();
+            if (pack != null && pack.getCommerce() != null) {
+                final String closing = pack.getCommerce().getClosingTime();
+                if (closing != null) {
+                    try {
+                        final LocalTime closeT = LocalTime.parse(closing);
+                        final LocalTime resTime = ZonedDateTime.of(reservation.getReservationDate(), ZoneOffset.UTC)
+                                .withZoneSameInstant(displayZone)
+                                .toLocalTime();
+                        if (resTime.isAfter(closeT) || resTime.equals(closeT)) {
+                            pickupDate = pickupDate.plusDays(1);
                         }
+                    } catch (final Exception e) {
+                        LOGGER.debug("computePickupDateStr: closing time parse fallback reservationId={} packId={}",
+                                reservation.getId(), pack.getId(), e);
                     }
                 }
             }
         } catch (final Exception e) {
-            LOGGER.debug("computePickupDateStr: commerce/pack lookup fallback reservationId={}",
+            LOGGER.debug("computePickupDateStr: pack/commerce access fallback reservationId={}",
                     reservation.getId(), e);
         }
 
@@ -323,7 +313,9 @@ public class ReservationServiceImpl implements ReservationService {
             return ReservationServiceResult.failure(ReservationRejectionError.STOCK_RESTORE_FAILED);
         }
 
-        final Reservation canceledReservation = reservationDao.updateStatus(reservation.getId(), Reservation.Status.CANCELED);
+        reservationDao.updateStatus(reservation.getId(), Reservation.Status.CANCELED);
+        final Reservation canceledReservation = reservationDao.findByIdWithDetails(reservation.getId())
+                .orElseThrow(() -> new IllegalStateException("Reservation not found after cancel: " + reservationId));
         final User clientUser = userService.findById(canceledReservation.getCustomer().getUserId())
                 .orElseThrow(() -> new IllegalStateException("Customer user not found for reservation id: "
                         + canceledReservation.getId()));

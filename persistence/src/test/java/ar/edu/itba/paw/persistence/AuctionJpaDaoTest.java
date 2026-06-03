@@ -8,6 +8,7 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
+import org.hibernate.Hibernate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -113,11 +114,16 @@ public class AuctionJpaDaoTest {
         em.flush();
 
         // 2. Ejercicio
+        em.flush();
+        em.clear();
         final Optional<Auction> found = auctionDao.findById(created.getId());
 
         // 3. Asserts
         assertTrue(found.isPresent());
         assertEquals(created.getId(), found.get().getId());
+        assertTrue(Hibernate.isInitialized(found.get().getPack()));
+        assertTrue(Hibernate.isInitialized(found.get().getPack().getCommerce()));
+        assertNotNull(found.get().getPack().getCommerce().getCommercialName());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
     }
 
