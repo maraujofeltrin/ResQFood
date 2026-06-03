@@ -64,7 +64,7 @@ public class ReservationListController {
     }
 
     @PostMapping("/{id}/reject")
-    @PreAuthorize("@own.canWriteReservation(#id, authentication.principal.id)")
+    @PreAuthorize("@own.canWriteReservation(#reservationId, authentication.principal.id)")
     public String rejectReservationFromCard(@PathVariable("id") final Long reservationId,
             @RequestParam(value = "page", required = false) final Integer page,
             @RequestParam(value = "q", required = false) final String query,
