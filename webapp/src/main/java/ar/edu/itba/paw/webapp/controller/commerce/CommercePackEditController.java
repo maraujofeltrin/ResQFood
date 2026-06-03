@@ -3,7 +3,6 @@ package ar.edu.itba.paw.webapp.controller.commerce;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.models.image.Image;
-import ar.edu.itba.paw.services.commerce.CommercePackAccess;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.image.ImageService;
 import ar.edu.itba.paw.services.pack.PackService;
@@ -62,18 +61,6 @@ public class CommercePackEditController {
         this.imageService = imageService;
     }
 
-    private Pack resolveEditPack(final long packId, final long commerceId, final String forbiddenActionKey) {
-        final CommercePackAccess access = packService.resolvePackForDirectEdit(packId);
-        if (access instanceof CommercePackAccess.NotFound) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-        if (access instanceof CommercePackAccess.ForbiddenAuction) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    messageSource.getMessage(forbiddenActionKey, null, LocaleContextHolder.getLocale()));
-        }
-        return ((CommercePackAccess.Granted) access).pack();
-    }
-
     @RequestMapping(value = "/edit-pack/{packId}", method = RequestMethod.GET)
     @PreAuthorize("@own.canWritePack(#packId, authentication.principal.id)")
     public ModelAndView editPackForm(@PathVariable("packId") final long packId,
@@ -86,7 +73,7 @@ public class CommercePackEditController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        final Pack pack = resolveEditPack(packId, commerceId, "commerce.editPack.error.auctionForbidden.editadas");
+        final Pack pack = packService.resolvePackForDirectEdit(packId);
 
         if (form.getTitle() == null) {
             form.setTitle(pack.getTitle());
@@ -161,7 +148,7 @@ public class CommercePackEditController {
                 imageId = savedImage.getId();
             }
 
-            CommercePackAccess access = packService.updatePack(
+            packService.updatePack(
                     packId,
                     form.getTitle(),
                     form.getDescription(),
@@ -171,14 +158,6 @@ public class CommercePackEditController {
                     form.getTags(),
                     imageId
             );
-
-            if (access instanceof CommercePackAccess.NotFound) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-            }
-            if (access instanceof CommercePackAccess.ForbiddenAuction) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                        messageSource.getMessage("commerce.editPack.error.auctionForbidden.editadas", null, LocaleContextHolder.getLocale()));
-            }
 
             redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
             redirectAttributes.addFlashAttribute("dashboardAlertMessage",
@@ -222,14 +201,7 @@ public class CommercePackEditController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        CommercePackAccess access = packService.deletePack(packId);
-        if (access instanceof CommercePackAccess.NotFound) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-        if (access instanceof CommercePackAccess.ForbiddenAuction) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    messageSource.getMessage("commerce.editPack.error.auctionForbidden.eliminadas", null, LocaleContextHolder.getLocale()));
-        }
+        packService.deletePack(packId);
 
         redirectAttributes.addFlashAttribute("dashboardAlertKind", "success");
         redirectAttributes.addFlashAttribute("dashboardAlertMessage",

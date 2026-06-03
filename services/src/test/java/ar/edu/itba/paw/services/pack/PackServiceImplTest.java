@@ -4,6 +4,7 @@ import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.image.Image;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.pack.PackDirectEditException;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.models.user.Client;
@@ -11,7 +12,6 @@ import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.persistence.ImageDao;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.services.auction.AuctionService;
-import ar.edu.itba.paw.services.commerce.CommercePackAccess;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -340,15 +340,16 @@ class PackServiceImplTest {
     }
 
     @Test
-    void testUpdatePackWhenPackNotFoundThrowsIllegalArgumentException() {
+    void testUpdatePackWhenPackNotFoundThrowsPackDirectEditException() {
         // 1. Setup
         when(packDao.findById(999L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
-        final CommercePackAccess result = packService.updatePack(999L, "t", "d", 1.0, 1.0, 1, Collections.emptyList(), null);
+        final PackDirectEditException exception = assertThrows(PackDirectEditException.class,
+                () -> packService.updatePack(999L, "t", "d", 1.0, 1.0, 1, Collections.emptyList(), null));
 
         // 3. Asserts
-        assertTrue(result instanceof CommercePackAccess.NotFound);
+        assertEquals(PackDirectEditException.Reason.NOT_FOUND, exception.getReason());
     }
 
     @Test
@@ -362,12 +363,9 @@ class PackServiceImplTest {
         final List<PackTag> tags = Collections.singletonList(PackTag.VEGAN);
 
         // 2. Ejercicio
-        final CommercePackAccess access =
-                packService.updatePack(3L, "NewTitle", "NewDesc", 10.0, 8.0, 12, tags, 77L);
+        final Pack result = packService.updatePack(3L, "NewTitle", "NewDesc", 10.0, 8.0, 12, tags, 77L);
 
         // 3. Asserts
-        assertTrue(access instanceof CommercePackAccess.Granted);
-        final Pack result = ((CommercePackAccess.Granted) access).pack();
         assertEquals("NewTitle", result.getTitle());
         assertEquals("NewDesc", result.getDescription());
         assertEquals(12, result.getStock());
@@ -384,12 +382,9 @@ class PackServiceImplTest {
         when(packDao.update(any(Pack.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // 2. Ejercicio
-        final CommercePackAccess access =
-                packService.updatePack(4L, "x", "y", 1.0, 1.0, 2, null, null);
+        final Pack result = packService.updatePack(4L, "x", "y", 1.0, 1.0, 2, null, null);
 
         // 3. Asserts
-        assertTrue(access instanceof CommercePackAccess.Granted);
-        final Pack result = ((CommercePackAccess.Granted) access).pack();
         assertTrue(result.getTags().isEmpty());
     }
 
@@ -402,42 +397,41 @@ class PackServiceImplTest {
         when(packDao.update(any(Pack.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // 2. Ejercicio
-        final CommercePackAccess access =
-                packService.updatePack(5L, "x2", "y2", 2.0, 2.0, 3, Collections.emptyList(), null);
+        final Pack result = packService.updatePack(5L, "x2", "y2", 2.0, 2.0, 3, Collections.emptyList(), null);
 
         // 3. Asserts
-        assertTrue(access instanceof CommercePackAccess.Granted);
-        final Pack result = ((CommercePackAccess.Granted) access).pack();
         assertEquals(99L, result.getImageId());
     }
 
     @Test
-    void testResolvePackForDirectEditWhenPackMissingReturnsNotFound() {
+    void testResolvePackForDirectEditWhenPackMissingThrowsNotFound() {
         // 1. Setup
         when(packDao.findById(1L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
-        final CommercePackAccess access = packService.resolvePackForDirectEdit(1L);
+        final PackDirectEditException exception = assertThrows(PackDirectEditException.class,
+                () -> packService.resolvePackForDirectEdit(1L));
 
         // 3. Asserts
-        assertInstanceOf(CommercePackAccess.NotFound.class, access);
+        assertEquals(PackDirectEditException.Reason.NOT_FOUND, exception.getReason());
     }
 
     @Test
-    void testResolvePackForDirectEditWhenPackDeletedReturnsNotFound() {
+    void testResolvePackForDirectEditWhenPackDeletedThrowsNotFound() {
         // 1. Setup
         final Pack pack = newPack(7L, 100L, "p", "d", 1.0, 1.0, 1, true, true, Collections.emptyList(), null);
         when(packDao.findById(7L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
-        final CommercePackAccess access = packService.resolvePackForDirectEdit(7L);
+        final PackDirectEditException exception = assertThrows(PackDirectEditException.class,
+                () -> packService.resolvePackForDirectEdit(7L));
 
         // 3. Asserts
-        assertInstanceOf(CommercePackAccess.NotFound.class, access);
+        assertEquals(PackDirectEditException.Reason.NOT_FOUND, exception.getReason());
     }
 
     @Test
-    void testResolvePackForDirectEditWhenAuctionExistsReturnsForbiddenAuction() {
+    void testResolvePackForDirectEditWhenAuctionExistsThrowsForbiddenAuction() {
         // 1. Setup
         final Pack pack = newPack(8L, 200L, "a", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
         when(packDao.findById(8L)).thenReturn(Optional.of(pack));
@@ -447,25 +441,25 @@ class PackServiceImplTest {
         when(auctionService.findByPackId(8L)).thenReturn(Optional.of(auction));
 
         // 2. Ejercicio
-        final CommercePackAccess access = packService.resolvePackForDirectEdit(8L);
+        final PackDirectEditException exception = assertThrows(PackDirectEditException.class,
+                () -> packService.resolvePackForDirectEdit(8L));
 
         // 3. Asserts
-        assertInstanceOf(CommercePackAccess.ForbiddenAuction.class, access);
+        assertEquals(PackDirectEditException.Reason.FORBIDDEN_AUCTION, exception.getReason());
+        assertEquals(PackDirectEditException.ForbiddenAction.EDIT, exception.getForbiddenAction());
     }
 
     @Test
-    void testResolvePackForDirectEditWhenPackValidAndNoAuctionReturnsGranted() {
+    void testResolvePackForDirectEditWhenPackValidAndNoAuctionReturnsPack() {
         // 1. Setup
         final Pack pack = newPack(11L, 300L, "ok", "d", 2.0, 1.0, 3, true, false, Collections.emptyList(), null);
         when(packDao.findById(11L)).thenReturn(Optional.of(pack));
         when(auctionService.findByPackId(11L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
-        final CommercePackAccess access = packService.resolvePackForDirectEdit(11L);
+        final Pack result = packService.resolvePackForDirectEdit(11L);
 
         // 3. Asserts
-        assertInstanceOf(CommercePackAccess.Granted.class, access);
-        final CommercePackAccess.Granted granted = (CommercePackAccess.Granted) access;
-        assertEquals(11L, granted.pack().getId());
+        assertEquals(11L, result.getId());
     }
 }

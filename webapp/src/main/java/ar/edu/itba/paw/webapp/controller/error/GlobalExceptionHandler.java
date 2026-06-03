@@ -5,10 +5,14 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import ar.edu.itba.paw.models.pack.PackDirectEditException;
 import ar.edu.itba.paw.services.security.OwnershipResourceNotFoundException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -21,6 +25,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class GlobalExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    private final MessageSource messageSource;
+
+    @Autowired
+    public GlobalExceptionHandler(final MessageSource messageSource) {
+        this.messageSource = messageSource;
+    }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ModelAndView handleMaxUploadSize(final MaxUploadSizeExceededException e,
@@ -72,6 +83,24 @@ public class GlobalExceptionHandler {
         LOGGER.debug("Ownership resource not found for {} {}: {}", request.getMethod(), request.getRequestURI(),
                 e.getMessage());
         response.sendError(HttpServletResponse.SC_NOT_FOUND);
+    }
+
+    @ExceptionHandler(PackDirectEditException.class)
+    public void handlePackDirectEdit(final PackDirectEditException e,
+            final HttpServletRequest request,
+            final HttpServletResponse response) throws IOException {
+        if (e.getReason() == PackDirectEditException.Reason.NOT_FOUND) {
+            LOGGER.debug("Pack not found for direct edit on {} {}: {}", request.getMethod(), request.getRequestURI(),
+                    e.getMessage());
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        final String messageKey = e.getForbiddenAction() == PackDirectEditException.ForbiddenAction.DELETE
+                ? "commerce.editPack.error.auctionForbidden.eliminadas"
+                : "commerce.editPack.error.auctionForbidden.editadas";
+        final String message = messageSource.getMessage(messageKey, null, LocaleContextHolder.getLocale());
+        LOGGER.debug("Pack direct edit forbidden on {} {}: {}", request.getMethod(), request.getRequestURI(), message);
+        response.sendError(HttpServletResponse.SC_FORBIDDEN, message);
     }
 
     @ExceptionHandler(Exception.class)

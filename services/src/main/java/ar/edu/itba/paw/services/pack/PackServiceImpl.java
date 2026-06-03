@@ -1,15 +1,13 @@
 package ar.edu.itba.paw.services.pack;
 
-import ar.edu.itba.paw.models.pack.PackTag;
-
-import ar.edu.itba.paw.models.pack.PackSortOption;
-
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.pack.PackDirectEditException;
+import ar.edu.itba.paw.models.pack.PackSortOption;
+import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.persistence.ImageDao;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
-import ar.edu.itba.paw.services.commerce.CommercePackAccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,15 +73,10 @@ public class PackServiceImpl implements PackService {
 
     @Transactional
     @Override
-    public CommercePackAccess deletePack(long packId) {
-        CommercePackAccess access = resolvePackForDirectEdit(packId);
-        if (!(access instanceof CommercePackAccess.Granted)) {
-            LOGGER.warn("Failed to soft-delete pack: packId={}, accessType={}", packId, access.getClass().getSimpleName());
-            return access;
-        }
+    public void deletePack(final long packId) {
+        requirePackForDirectEdit(packId, PackDirectEditException.ForbiddenAction.DELETE);
         packDao.softDelete(packId);
         LOGGER.info("Pack soft-deleted: packId={}", packId);
-        return access;
     }
 
     @Transactional(readOnly = true)
@@ -117,15 +110,10 @@ public class PackServiceImpl implements PackService {
 
     @Transactional
     @Override
-    public CommercePackAccess updatePack(long packId, String title, String description, Double originalPrice,
-                           Double finalPrice, Integer stock, List<PackTag> tags,
-                           Long imageId) {
-        CommercePackAccess access = resolvePackForDirectEdit(packId);
-        if (!(access instanceof CommercePackAccess.Granted)) {
-            LOGGER.warn("Failed to update pack: packId={}, accessType={}", packId, access.getClass().getSimpleName());
-            return access;
-        }
-        final Pack packToUpdate = ((CommercePackAccess.Granted) access).pack();
+    public Pack updatePack(final long packId, final String title, final String description,
+            final Double originalPrice, final Double finalPrice, final Integer stock, final List<PackTag> tags,
+            final Long imageId) {
+        final Pack packToUpdate = requirePackForDirectEdit(packId, PackDirectEditException.ForbiddenAction.EDIT);
 
         packToUpdate.setTitle(title);
         packToUpdate.setDescription(description);
@@ -141,7 +129,7 @@ public class PackServiceImpl implements PackService {
 
         final Pack updatedPack = packDao.update(packToUpdate);
         LOGGER.info("Pack updated: packId={}", packId);
-        return new CommercePackAccess.Granted(updatedPack);
+        return updatedPack;
     }
 
     @Transactional(readOnly = true)
@@ -165,15 +153,24 @@ public class PackServiceImpl implements PackService {
 
     @Transactional(readOnly = true)
     @Override
-    public CommercePackAccess resolvePackForDirectEdit(final long packId) {
+    public Pack resolvePackForDirectEdit(final long packId) {
+        return requirePackForDirectEdit(packId, PackDirectEditException.ForbiddenAction.EDIT);
+    }
+
+    private Pack requirePackForDirectEdit(final long packId,
+            final PackDirectEditException.ForbiddenAction forbiddenAction) {
         final Optional<Pack> packOpt = packDao.findById(packId);
         if (packOpt.isEmpty() || Boolean.TRUE.equals(packOpt.get().getDeleted())) {
-            return new CommercePackAccess.NotFound();
+            LOGGER.warn("Pack not available for direct edit: packId={}", packId);
+            throw new PackDirectEditException(PackDirectEditException.Reason.NOT_FOUND,
+                    "Pack not found or deleted: " + packId);
         }
         if (auctionService.findByPackId(packId).isPresent()) {
-            return new CommercePackAccess.ForbiddenAuction();
+            LOGGER.warn("Pack tied to auction cannot be edited directly: packId={}", packId);
+            throw new PackDirectEditException(PackDirectEditException.Reason.FORBIDDEN_AUCTION, forbiddenAction,
+                    "Pack is tied to an auction: " + packId);
         }
-        return new CommercePackAccess.Granted(packOpt.get());
+        return packOpt.get();
     }
 
     @Transactional(readOnly = true)
