@@ -48,13 +48,13 @@
         <c:if test="${not empty profileNotificationsUpdateSuccess}">
             <div class="mb-8 max-w-2xl mx-auto lg:mx-0 rounded-2xl bg-primary-container/50 px-4 py-3 text-on-primary-container font-body text-sm font-medium text-center lg:text-left"
                  role="status">
-                <spring:message code="profile.notifications.flashSuccess"/>
+                <spring:message code="profile.mailPreferences.flashSuccess"/>
             </div>
         </c:if>
         <c:if test="${not empty profileNotificationsUpdateError}">
             <div class="mb-8 max-w-2xl mx-auto lg:mx-0 rounded-2xl bg-error-container/40 px-4 py-3 text-on-error-container font-body text-sm font-medium text-center lg:text-left"
                  role="alert">
-                <spring:message code="profile.notifications.flashError"/>
+                <spring:message code="profile.mailPreferences.flashError"/>
             </div>
         </c:if>
 
