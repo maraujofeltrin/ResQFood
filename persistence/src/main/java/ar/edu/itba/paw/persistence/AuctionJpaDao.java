@@ -45,7 +45,9 @@ public class AuctionJpaDao implements AuctionDao {
 
     @Override
     public Optional<Auction> findById(final long id) {
-        return em.createQuery("SELECT a FROM Auction a JOIN FETCH a.pack p WHERE a.id = :id", Auction.class)
+        return em.createQuery(
+                        "SELECT a FROM Auction a JOIN FETCH a.pack p JOIN FETCH p.commerce WHERE a.id = :id",
+                        Auction.class)
             .setParameter("id", id)
             .getResultList()
             .stream()
@@ -54,7 +56,9 @@ public class AuctionJpaDao implements AuctionDao {
 
     @Override
     public Optional<Auction> findByPackId(final long packId) {
-        return em.createQuery("SELECT a FROM Auction a JOIN FETCH a.pack p WHERE p.id = :packId", Auction.class)
+        return em.createQuery(
+                        "SELECT a FROM Auction a JOIN FETCH a.pack p JOIN FETCH p.commerce WHERE p.id = :packId",
+                        Auction.class)
             .setParameter("packId", packId)
             .getResultList()
             .stream()
@@ -253,7 +257,7 @@ public class AuctionJpaDao implements AuctionDao {
 
     @Override
     public List<Auction> findExpiredActive() {
-        return em.createQuery("SELECT a FROM Auction a JOIN FETCH a.pack p WHERE a.status = :activeStatus AND a.endTime <= :now AND p.deleted = false", Auction.class)
+        return em.createQuery("SELECT a FROM Auction a JOIN FETCH a.pack p JOIN FETCH p.commerce WHERE a.status = :activeStatus AND a.endTime <= :now AND p.deleted = false", Auction.class)
                 .setParameter("activeStatus", Auction.Status.ACTIVE)
                 .setParameter("now", LocalDateTime.now(ZoneOffset.UTC))
                 .getResultList();

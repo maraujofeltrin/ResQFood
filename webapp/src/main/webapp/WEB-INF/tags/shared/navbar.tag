@@ -1,7 +1,9 @@
 <%@ tag language="java" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<%@ taglib prefix="paw" uri="http://itba.edu.ar/paw/tags" %>
 <nav class="fixed top-0 w-full z-50 bg-surface-container-lowest/80 backdrop-blur-md shadow-soft font-headline antialiased">
   <div class="flex justify-between items-center px-6 py-4 max-w-screen-2xl mx-auto gap-4">
     <div class="flex items-center gap-8 flex-shrink-0">
@@ -21,13 +23,24 @@
       </div>
     </div>
     
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-6">
       <sec:authorize access="!isAuthenticated()">
           <a href="${pageContext.request.contextPath}/login" class="text-on-surface-variant hover:text-primary font-medium transition-colors flex items-center gap-2">
 			  <span class="material-symbols-outlined text-[1.25rem]" data-icon="login">login</span>
 			  <spring:message code="layout.nav.login" text="Iniciar sesión"/></a>
       </sec:authorize>
       <sec:authorize access="isAuthenticated()">
+          <spring:message code="notification.bell.label" var="notificationBellLabel"/>
+          <c:set var="onNotificationsPage" value="${fn:endsWith(request.requestURI, '/notifications')}" />
+          <a href="${pageContext.request.contextPath}/notifications"
+             id="notification-bell"
+             class="notification-bell text-primary no-underline"
+             aria-label="${notificationBellLabel}"<c:if test="${onNotificationsPage}"> aria-current="page"</c:if>>
+              <span class="material-symbols-outlined text-[1.35rem]" data-icon="notifications">notifications</span>
+              <c:if test="${navUnreadNotificationCount > 0}">
+                  <span class="notification-bell__badge" aria-hidden="true">${navUnreadNotificationCount}</span>
+              </c:if>
+          </a>
           <spring:message code="layout.nav.profile" var="navProfileTitle"/>
           <spring:message code="profile.avatar.alt" var="navProfileAvatarAlt"/>
           <a href="${pageContext.request.contextPath}/profile"

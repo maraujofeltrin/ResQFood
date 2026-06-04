@@ -91,20 +91,6 @@ public class BidJpaDao implements BidDao {
     }
 
     @Override
-    public Set<Long> findAuctionIdsWhereClientLeads(final long clientUserId, final Collection<Long> auctionIds) {
-        if (auctionIds == null || auctionIds.isEmpty()) {
-            return Collections.emptySet();
-        }
-        final List<Long> ids = em.createQuery(
-                        "SELECT a.id FROM Auction a WHERE a.id IN :ids AND a.currentBidderId = :clientId",
-                        Long.class)
-                .setParameter("ids", new ArrayList<>(auctionIds))
-                .setParameter("clientId", clientUserId)
-                .getResultList();
-        return new HashSet<>(ids);
-    }
-
-    @Override
     public Set<Long> findAuctionIdsWithBids(final Collection<Long> auctionIds) {
         if (auctionIds == null || auctionIds.isEmpty()) {
             return Collections.emptySet();

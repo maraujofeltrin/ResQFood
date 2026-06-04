@@ -18,4 +18,6 @@ public interface CommerceFavoriteDao {
     void insert(long clientId, long commerceId);
 
     void delete(long clientId, long commerceId);
+
+    List<Long> findClientIdsByCommerce(long commerceId);
 }

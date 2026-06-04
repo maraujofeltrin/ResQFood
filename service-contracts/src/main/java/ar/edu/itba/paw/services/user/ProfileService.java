@@ -30,5 +30,4 @@ public interface ProfileService {
             byte[] profilePhoto,
             String profilePhotoContentType);
 
-    void updateNotificationsPreference(long userId, boolean wantsNotifications);
 }

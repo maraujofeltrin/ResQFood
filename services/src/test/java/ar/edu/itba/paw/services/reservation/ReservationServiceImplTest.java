@@ -11,8 +11,8 @@ import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
-import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
+import ar.edu.itba.paw.services.notification.NotificationService;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.services.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,9 +60,7 @@ class ReservationServiceImplTest {
     @Mock
     private PackDao packDao;
     @Mock
-    private ReservationMailService reservationMailService;
-    @Mock
-    private CommerceDao commerceDao;
+    private NotificationService notificationService;
     @Mock
     private AuctionDao auctionDao;
 
@@ -109,8 +107,7 @@ class ReservationServiceImplTest {
                 reservationDao,
                 reservationTokenDao,
                 packDao,
-                reservationMailService,
-                commerceDao,
+                notificationService,
                 auctionDao,
                 TEST_ZONE);
     }
@@ -129,10 +126,12 @@ class ReservationServiceImplTest {
         when(packDao.decrementStock(packId, 1)).thenReturn(true);
         when(reservationDao.findByPickupCode(anyString())).thenReturn(Optional.empty());
         lenient().when(auctionDao.findByPackId(anyLong())).thenReturn(Optional.empty());
+        final Reservation createdReservation = new Reservation(1L, clientRef(1L), pack, null, 5.0,
+                Reservation.Status.RESERVED, "CODE1", null, 1, "pw");
         when(reservationDao.createReservation(eq(1L), eq(packId), any(LocalDateTime.class), eq(5.0),
                 eq(Reservation.Status.RESERVED), anyString(), isNull(), eq(1), eq("pw")))
-                .thenAnswer(inv -> new Reservation(1L, clientRef(1L), packRef(packId), inv.getArgument(2), 5.0, Reservation.Status.RESERVED,
-                        inv.getArgument(5), null, 1, "pw"));
+                .thenReturn(createdReservation);
+        when(reservationDao.findByIdWithDetails(1L)).thenReturn(Optional.of(createdReservation));
         when(packDao.findById(packId)).thenReturn(Optional.of(pack));
         when(userService.findById(commerceUserId)).thenReturn(Optional.of(commerceUser));
         final List<ReservationToken> createdTokens = new CopyOnWriteArrayList<>();
@@ -148,12 +147,12 @@ class ReservationServiceImplTest {
         doAnswer(inv -> {
             sentToCommerce.incrementAndGet();
             return null;
-        }).when(reservationMailService).sendReservationRequestToCommerce(any(Reservation.class), anyString(),
+        }).when(notificationService).notifyReservationRequested(any(Reservation.class), anyString(),
                 anyString(), anyString(), anyString(), any(Locale.class));
         doAnswer(inv -> {
             sentToClient.incrementAndGet();
             return null;
-        }).when(reservationMailService).sendReservationCodeToClient(any(Reservation.class), anyString(), anyString(),
+        }).when(notificationService).notifyReservationCodeIssued(any(Reservation.class), anyString(), anyString(),
                 any(Locale.class));
 
         // 2. Ejercicio
@@ -182,10 +181,12 @@ class ReservationServiceImplTest {
         when(packDao.decrementStock(packId, 1)).thenReturn(true);
         when(reservationDao.findByPickupCode(anyString())).thenReturn(Optional.empty());
         lenient().when(auctionDao.findByPackId(anyLong())).thenReturn(Optional.empty());
+        final Reservation auctionReservation = new Reservation(1L, clientRef(7L), pack, null, 7.5,
+                Reservation.Status.RESERVED, "CODE2", null, 1, null);
         when(reservationDao.createReservation(eq(7L), eq(packId), any(LocalDateTime.class), eq(7.5),
                 eq(Reservation.Status.RESERVED), anyString(), isNull(), eq(1), isNull()))
-                .thenAnswer(inv -> new Reservation(1L, clientRef(7L), packRef(packId), inv.getArgument(2), 7.5, Reservation.Status.RESERVED,
-                        inv.getArgument(5), null, 1, null));
+                .thenReturn(auctionReservation);
+        when(reservationDao.findByIdWithDetails(1L)).thenReturn(Optional.of(auctionReservation));
         when(packDao.findById(packId)).thenReturn(Optional.of(pack));
         when(userService.findById(commerceUserId)).thenReturn(Optional.of(commerceUser));
         final AtomicInteger tokenCreates = new AtomicInteger();
@@ -200,12 +201,12 @@ class ReservationServiceImplTest {
         doAnswer(inv -> {
             sentAuctionToClient.incrementAndGet();
             return null;
-        }).when(reservationMailService).sendAuctionWinnerCodeToClient(any(Reservation.class), anyString(), anyString(),
+        }).when(notificationService).notifyAuctionWinnerForClient(any(Reservation.class), anyString(), anyString(),
                 any(Locale.class));
         doAnswer(inv -> {
             sentAuctionToCommerce.incrementAndGet();
             return null;
-        }).when(reservationMailService).sendAuctionWinnerCodeToCommerce(any(Reservation.class), anyString(),
+        }).when(notificationService).notifyAuctionWinnerForCommerce(any(Reservation.class), anyString(),
                 anyString(), any(Locale.class));
 
         // 2. Ejercicio
@@ -289,20 +290,22 @@ class ReservationServiceImplTest {
         final long packId = 500L;
         final long reservationId = 42L;
         final LocalDateTime resDate = LocalDateTime.now();
-        final Reservation reserved = new Reservation(reservationId, clientRef(101L), packRef(packId), resDate, 25.0,
+        final Pack pack = newPack(packId, 100L, "t", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
+        final Reservation reserved = new Reservation(reservationId, clientRef(101L), pack, resDate, 25.0,
                 Reservation.Status.RESERVED, "HHHHH", null, 3, null);
-        final Reservation canceled = new Reservation(reservationId, clientRef(101L), packRef(packId), resDate, 25.0,
+        final Reservation canceled = new Reservation(reservationId, clientRef(101L), pack, resDate, 25.0,
                 Reservation.Status.CANCELED, "HHHHH", null, 3, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reserved));
         when(packDao.incrementStock(packId, 3)).thenReturn(true);
         when(reservationDao.updateStatus(reservationId, Reservation.Status.CANCELED)).thenReturn(canceled);
+        when(reservationDao.findByIdWithDetails(reservationId)).thenReturn(Optional.of(canceled));
         final User clientUser = new User(101L, "client@example.org", "pwd", "Client", null, User.Role.CLIENT, false);
         when(userService.findById(101L)).thenReturn(Optional.of(clientUser));
         final AtomicInteger sentRejected = new AtomicInteger();
         doAnswer(inv -> {
             sentRejected.incrementAndGet();
             return null;
-        }).when(reservationMailService).sendReservationRejectedToClient(any(Reservation.class), anyString(),
+        }).when(notificationService).notifyReservationRejected(any(Reservation.class), anyString(),
                 any(Locale.class));
 
         // 2. Ejercicio

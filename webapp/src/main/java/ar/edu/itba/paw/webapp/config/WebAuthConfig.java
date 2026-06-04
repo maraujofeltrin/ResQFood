@@ -106,7 +106,12 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                 .requestMatchers(antMatcher(HttpMethod.GET, "/reservations/**")).authenticated()
                 .requestMatchers(antMatcher(HttpMethod.GET, "/profile"), antMatcher(HttpMethod.GET, "/profile/settings"),
                         antMatcher(HttpMethod.GET, "/profile/change-password"), antMatcher(HttpMethod.POST, "/profile/change-password"),
-                        antMatcher(HttpMethod.POST, "/profile/account"), antMatcher(HttpMethod.POST, "/profile/settings/locale")).authenticated()
+                        antMatcher(HttpMethod.POST, "/profile/account"), antMatcher(HttpMethod.POST, "/profile/settings/locale"),
+                        antMatcher(HttpMethod.POST, "/profile/settings/mail-preferences")).authenticated()
+                .requestMatchers(antMatcher(HttpMethod.GET, "/notifications")).authenticated()
+                .requestMatchers(antMatcher(HttpMethod.POST, "/notifications/read-all"),
+                        antMatcher(HttpMethod.POST, "/notifications/*/read"), antMatcher(HttpMethod.POST, "/notifications/*/unread"),
+                        antMatcher(HttpMethod.POST, "/notifications/*/delete")).authenticated()
                 .anyRequest().authenticated()
                 .and().sessionManagement()
                 .invalidSessionUrl("/login?sessionExpired=true")

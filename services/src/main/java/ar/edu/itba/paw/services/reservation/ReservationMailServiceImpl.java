@@ -109,9 +109,6 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     @Override
     public void sendReservationCodeToClient(final Reservation reservation, final String clientEmail,
             final String pickupDateStr, final Locale locale) {
-        if (!clientWantsNonCriticalEmails(reservation.getCustomer().getUserId())) {
-            return;
-        }
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
         final String subject = mailMessages.getMessage("mail.subject.clientPickupCode",
                 new Object[]{packMailInfo.localName()}, locale);
@@ -123,9 +120,6 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     @Override
     public void sendAuctionWinnerCodeToClient(final Reservation reservation, final String clientEmail,
             final String pickupDateStr, final Locale locale) {
-        if (!clientWantsNonCriticalEmails(reservation.getCustomer().getUserId())) {
-            return;
-        }
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
         final String subject = mailMessages.getMessage("mail.subject.auctionWinnerClient",
                 new Object[]{packMailInfo.localName()}, locale);
@@ -151,14 +145,64 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     @Override
     public void sendReservationRejectedToClient(final Reservation reservation, final String clientEmail,
             final Locale locale) {
-        if (!clientWantsNonCriticalEmails(reservation.getCustomer().getUserId())) {
-            return;
-        }
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
         final String subject = mailMessages.getMessage("mail.subject.clientRejected",
                 new Object[]{packMailInfo.localName()}, locale);
         final String html = buildClientRejectedHtml(reservation, packMailInfo.packLabel(), locale);
         sendHtmlMail(clientEmail, subject, html, "Could not send rejection mail");
+    }
+
+    @Async
+    @Override
+    public void sendAuctionOutbidToClient(final String clientEmail, final String packTitle,
+            final String commerceName, final double newAmount, final Locale locale) {
+        final String subject = mailMessages.getMessage("mail.subject.auctionOutbid",
+                new Object[]{packTitle != null ? packTitle : mailMessages.getMessage("mail.label.packFallback",
+                        new Object[]{""}, locale)}, locale);
+        final Context context = new Context(locale);
+        context.setVariable("packTitle", packTitle);
+        context.setVariable("commerceName", commerceName);
+        context.setVariable("newAmount", newAmount);
+        final String html = templateEngine.process("auction-outbid", context);
+        sendHtmlMail(clientEmail, subject, html, "Could not send auction outbid mail");
+    }
+
+    @Async
+    @Override
+    public void sendFavoritePackRestockedToClient(final String clientEmail, final String packTitle,
+            final String commerceName, final Locale locale) {
+        final String subject = mailMessages.getMessage("mail.subject.favoritePackRestocked", null, locale);
+        final Context context = new Context(locale);
+        context.setVariable("packTitle", packTitle);
+        context.setVariable("commerceName", commerceName);
+        final String html = templateEngine.process("favorite-pack-restocked", context);
+        sendHtmlMail(clientEmail, subject, html, "Could not send favorite pack restocked mail");
+    }
+
+    @Async
+    @Override
+    public void sendFavoriteCommerceNewPackToClient(final String clientEmail, final String packTitle,
+            final String commerceName, final Locale locale) {
+        final String subject = mailMessages.getMessage("mail.subject.favoriteCommerceNewPack",
+                new Object[]{commerceName != null ? commerceName : ""}, locale);
+        final Context context = new Context(locale);
+        context.setVariable("packTitle", packTitle);
+        context.setVariable("commerceName", commerceName);
+        final String html = templateEngine.process("favorite-commerce-new-pack", context);
+        sendHtmlMail(clientEmail, subject, html, "Could not send favorite commerce new pack mail");
+    }
+
+    @Async
+    @Override
+    public void sendAuctionFinishedLostToClient(final String clientEmail, final String packTitle,
+            final String commerceName, final Locale locale) {
+        final String subject = mailMessages.getMessage("mail.subject.auctionFinishedLost",
+                new Object[]{packTitle != null ? packTitle : ""}, locale);
+        final Context context = new Context(locale);
+        context.setVariable("packTitle", packTitle);
+        context.setVariable("commerceName", commerceName);
+        final String html = templateEngine.process("auction-finished-lost", context);
+        sendHtmlMail(clientEmail, subject, html, "Could not send auction finished lost mail");
     }
 
     private String buildClientHtml(final Reservation reservation, final String packLabel, final String pickupDateStr,
@@ -259,15 +303,6 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         final String fullName = (client.getName() == null ? "" : client.getName())
                 + (client.getLastName() == null ? "" : (" " + client.getLastName()));
         return fullName.trim().isEmpty() ? fallbackClientName : fullName.trim();
-    }
-
-    private boolean clientWantsNonCriticalEmails(final Long customerId) {
-        if (customerId == null) {
-            return true;
-        }
-        return clientService.findByUserId(customerId)
-                .map(client -> client.getNotificationsVisibilityPreferences() == null || client.getNotificationsVisibilityPreferences())
-                .orElse(true);
     }
 
     private void sendHtmlMail(final String toEmail, final String subject, final String html,

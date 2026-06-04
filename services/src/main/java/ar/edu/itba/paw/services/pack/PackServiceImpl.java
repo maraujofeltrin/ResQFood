@@ -7,6 +7,7 @@ import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.persistence.ImageDao;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.services.auction.AuctionService;
+import ar.edu.itba.paw.services.notification.NotificationService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,14 +28,16 @@ public class PackServiceImpl implements PackService {
     private final ImageDao imageDao;
     private final AuctionService auctionService;
     private final ReservationService reservationService;
+    private final NotificationService notificationService;
 
     @Autowired
     public PackServiceImpl(final PackDao packDao, final ImageDao imageDao, final AuctionService auctionService,
-            final ReservationService reservationService) {
+            final ReservationService reservationService, final NotificationService notificationService) {
         this.packDao = packDao;
         this.imageDao = imageDao;
         this.auctionService = auctionService;
         this.reservationService = reservationService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -44,6 +47,7 @@ public class PackServiceImpl implements PackService {
                            Long imageId) {
         final Pack createdPack = packDao.createPack(commerceId, title, description, originalPrice, finalPrice, stock, tags, imageId);
         LOGGER.info("Pack created: packId={}, commerceId={}", createdPack.getId(), commerceId);
+        notificationService.notifyPackPublished(createdPack);
         return createdPack;
     }
 
@@ -114,6 +118,7 @@ public class PackServiceImpl implements PackService {
             final Double originalPrice, final Double finalPrice, final Integer stock, final List<PackTag> tags,
             final Long imageId) {
         final Pack packToUpdate = requirePackForDirectEdit(packId, PackDirectEditException.ForbiddenAction.EDIT);
+        final int oldStock = packToUpdate.getStock();
 
         packToUpdate.setTitle(title);
         packToUpdate.setDescription(description);
@@ -129,6 +134,9 @@ public class PackServiceImpl implements PackService {
 
         final Pack updatedPack = packDao.update(packToUpdate);
         LOGGER.info("Pack updated: packId={}", packId);
+        if (oldStock == 0 && updatedPack.getStock() > 0) {
+            notificationService.notifyPackRestocked(updatedPack);
+        }
         return updatedPack;
     }
 

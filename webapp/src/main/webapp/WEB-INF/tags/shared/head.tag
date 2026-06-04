@@ -33,13 +33,13 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/auction.css"/>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/commerce-reviews-dashboard.css"/>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/favorites.css"/>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/notifications.css"/>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="anonymous" href="https://fonts.gstatic.com" rel="preconnect"/>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script src="${pageContext.request.contextPath}/css/tailwind-config.js"></script>
-
     <%-- Custom Head Content, e.g. <style> for specific pages --%>
     <jsp:doBody />
 </head>

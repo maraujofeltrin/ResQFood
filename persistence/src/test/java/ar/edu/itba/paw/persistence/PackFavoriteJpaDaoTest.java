@@ -161,4 +161,17 @@ public class PackFavoriteJpaDaoTest {
         // 3. Asserts
         assertEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "client_pack_favorites"));
     }
+
+    @Test
+    public void testFindClientIdsByPackWhenFavoritesExist() {
+        // 1. Setup
+        packFavoriteDao.insert(clientUserId, packActive.getId());
+
+        // 2. Ejercicio
+        final List<Long> ids = packFavoriteDao.findClientIdsByPack(packActive.getId());
+
+        // 3. Asserts
+        assertEquals(1, ids.size());
+        assertTrue(ids.contains(clientUserId));
+    }
 }

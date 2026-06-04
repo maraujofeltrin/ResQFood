@@ -192,23 +192,6 @@ public class BidJpaDaoTest {
     }
 
     @Test
-    public void testFindAuctionIdsWhereClientLeads() {
-        // 1. Setup
-        final Pack pack2 = packDao.createPack(commerceId, "Pack 2", "Desc", 1000.0, 500.0, 1,
-                Collections.emptyList(), null);
-        final Auction auction2 = auctionDao.createAuction(pack2.getId(), 500.0, 500.0, AUCTION_END_TIME);
-        auctionDao.updateCurrentBid(auctionId, 700.0, clientId);
-        em.flush();
-
-        // 2. Ejercicio
-        final Set<Long> result = bidDao.findAuctionIdsWhereClientLeads(clientId, Set.of(auctionId, auction2.getId()));
-
-        // 3. Asserts
-        assertTrue(result.contains(auctionId));
-        assertFalse(result.contains(auction2.getId()));
-    }
-
-    @Test
     public void testFindAuctionIdsWithBids() {
         // 1. Setup
         bidDao.createBid(auctionId, clientId, 600.0);

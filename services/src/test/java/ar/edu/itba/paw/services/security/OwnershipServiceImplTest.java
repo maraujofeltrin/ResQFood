@@ -9,6 +9,7 @@ import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.persistence.AuctionDao;
+import ar.edu.itba.paw.persistence.NotificationDao;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
@@ -44,6 +45,9 @@ class OwnershipServiceImplTest {
 
     @Mock
     private ReservationTokenDao reservationTokenDao;
+
+    @Mock
+    private NotificationDao notificationDao;
 
     @InjectMocks
     private OwnershipServiceImpl ownershipService;
@@ -140,5 +144,55 @@ class OwnershipServiceImplTest {
 
         // 3. Asserts
         assertTrue(result);
+    }
+
+    @Test
+    void canWriteNotification_whenRecipient_returnsTrue() {
+        // 1. Setup
+        when(notificationDao.findById(5L)).thenReturn(Optional.of(
+                new ar.edu.itba.paw.models.notification.Notification(
+                        5L,
+                        new ar.edu.itba.paw.models.user.User(10L, "u@test.com", "p", "U", null,
+                                ar.edu.itba.paw.models.user.User.Role.CLIENT, false),
+                        ar.edu.itba.paw.models.notification.NotificationType.RESERVATION_CODE_CLIENT,
+                        null, null, null, null, null, null, null, null,
+                        java.time.LocalDateTime.now(), null, null)));
+        when(notificationDao.belongsToRecipient(5L, 10L)).thenReturn(true);
+
+        // 2. Ejercicio
+        final boolean result = ownershipService.canWriteNotification(5L, 10L);
+
+        // 3. Asserts
+        assertTrue(result);
+    }
+
+    @Test
+    void canWriteNotification_whenNotRecipient_returnsFalse() {
+        // 1. Setup
+        when(notificationDao.findById(5L)).thenReturn(Optional.of(
+                new ar.edu.itba.paw.models.notification.Notification(
+                        5L,
+                        new ar.edu.itba.paw.models.user.User(10L, "u@test.com", "p", "U", null,
+                                ar.edu.itba.paw.models.user.User.Role.CLIENT, false),
+                        ar.edu.itba.paw.models.notification.NotificationType.RESERVATION_CODE_CLIENT,
+                        null, null, null, null, null, null, null, null,
+                        java.time.LocalDateTime.now(), null, null)));
+        when(notificationDao.belongsToRecipient(5L, 10L)).thenReturn(false);
+
+        // 2. Ejercicio
+        final boolean result = ownershipService.canWriteNotification(5L, 10L);
+
+        // 3. Asserts
+        assertFalse(result);
+    }
+
+    @Test
+    void canWriteNotification_whenMissing_throwsNotFound() {
+        // 1. Setup
+        when(notificationDao.findById(5L)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio & 3. Asserts
+        assertThrows(OwnershipResourceNotFoundException.class,
+                () -> ownershipService.canWriteNotification(5L, 10L));
     }
 }
