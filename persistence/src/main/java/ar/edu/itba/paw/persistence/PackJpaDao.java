@@ -163,7 +163,8 @@ public class PackJpaDao implements PackDao {
 
     @Override
     public List<Pack> filterCommercePacks(final Long commerceId, final Boolean hasAuction, final int page, final int pageSize) {
-        final StringBuilder jpql = new StringBuilder("SELECT p FROM Pack p WHERE p.commerce.userId = :cid AND p.deleted = false");
+        final StringBuilder jpql = new StringBuilder(
+                "SELECT p FROM Pack p LEFT JOIN FETCH p.image WHERE p.commerce.userId = :cid AND p.deleted = false");
         final Map<String, Object> params = new LinkedHashMap<>();
         params.put("cid", commerceId);
         if (hasAuction != null) {

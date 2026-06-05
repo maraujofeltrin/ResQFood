@@ -4,6 +4,7 @@ import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
+import ar.edu.itba.paw.models.image.Image;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +55,9 @@ public class PackJpaDaoTest {
 
     @Autowired
     private AuctionDao auctionDao;
+
+    @Autowired
+    private ImageJpaDao imageDao;
 
     @PersistenceContext
     private EntityManager em;
@@ -479,6 +483,110 @@ public class PackJpaDaoTest {
         // 3. Asserts
         assertEquals(1, pageTwo.size());
         assertEquals(second.getId(), pageTwo.get(0).getId());
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testFilterCommercePacksReturnsOnlyNonDeletedPacksForCommerce() {
+        // 1. Setup
+        final Pack visible = packDao.createPack(commerceId, "Visible", "Desc", 1000.0, 500.0, 10, null, null);
+        final Pack deleted = packDao.createPack(commerceId, "Deleted", "Desc", 1000.0, 500.0, 10, null, null);
+        final Long otherCommerceId = userDao.createUser("other@example.com", "pass", "Other", "456", User.Role.COMMERCE)
+                .getId();
+        commerceDao.createCommerce(otherCommerceId, "Other Comm", Commerce.Category.RESTAURANT, "Other St", 1,
+                Municipality.QUILMES, "Prov", "1000", "09:00", "21:00");
+        packDao.createPack(otherCommerceId, "Other Pack", "Desc", 1000.0, 500.0, 10, null, null);
+        em.flush();
+        packDao.softDelete(deleted.getId());
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Pack> filtered = packDao.filterCommercePacks(commerceId, null, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, filtered.size());
+        assertEquals(visible.getId(), filtered.get(0).getId());
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testFilterCommercePacksWhenHasAuctionFalseExcludesAuctionPacks() {
+        // 1. Setup
+        final Pack directPack = packDao.createPack(commerceId, "Direct", "Desc", 1000.0, 500.0, 10, null, null);
+        final Pack auctionPack = packDao.createPack(commerceId, "Auction", "Desc", 1000.0, 500.0, 10, null, null);
+        em.flush();
+        auctionDao.createAuction(auctionPack.getId(), 10.0, 1.0, EXPIRED_AUCTION_END);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Pack> filtered = packDao.filterCommercePacks(commerceId, false, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, filtered.size());
+        assertEquals(directPack.getId(), filtered.get(0).getId());
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
+    }
+
+    @Test
+    public void testFilterCommercePacksEagerlyLoadsImage() {
+        // 1. Setup
+        final Image image = imageDao.saveImage(new byte[] {1, 2, 3}, "image/png");
+        em.flush();
+        packDao.createPack(commerceId, "With Image", "Desc", 1000.0, 500.0, 10, null, image.getId());
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final List<Pack> filtered = packDao.filterCommercePacks(commerceId, null, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, filtered.size());
+        assertTrue(Hibernate.isInitialized(filtered.get(0).getImage()));
+        assertNotNull(filtered.get(0).getImageId());
+        assertEquals(image.getId(), filtered.get(0).getImageId());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "images"));
+    }
+
+    @Test
+    public void testFilterCommercePacksPaginatesByIdDesc() {
+        // 1. Setup
+        packDao.createPack(commerceId, "First", "Desc", 1000.0, 500.0, 5, null, null);
+        em.flush();
+        final Pack second = packDao.createPack(commerceId, "Second", "Desc", 1000.0, 500.0, 5, null, null);
+        em.flush();
+        packDao.createPack(commerceId, "Third", "Desc", 1000.0, 500.0, 5, null, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Pack> pageTwo = packDao.filterCommercePacks(commerceId, null, 2, 1);
+
+        // 3. Asserts
+        assertEquals(1, pageTwo.size());
+        assertEquals(second.getId(), pageTwo.get(0).getId());
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testCountCommercePacksMatchesFilterResults() {
+        // 1. Setup
+        packDao.createPack(commerceId, "Direct One", "Desc", 1000.0, 500.0, 10, null, null);
+        packDao.createPack(commerceId, "Direct Two", "Desc", 1000.0, 500.0, 10, null, null);
+        final Pack auctionPack = packDao.createPack(commerceId, "Auction", "Desc", 1000.0, 500.0, 10, null, null);
+        em.flush();
+        auctionDao.createAuction(auctionPack.getId(), 10.0, 1.0, EXPIRED_AUCTION_END);
+        em.flush();
+
+        // 2. Ejercicio
+        final int allCount = packDao.countCommercePacks(commerceId, null);
+        final int directCount = packDao.countCommercePacks(commerceId, false);
+        final int auctionCount = packDao.countCommercePacks(commerceId, true);
+
+        // 3. Asserts
+        assertEquals(3, allCount);
+        assertEquals(2, directCount);
+        assertEquals(1, auctionCount);
         assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 }
