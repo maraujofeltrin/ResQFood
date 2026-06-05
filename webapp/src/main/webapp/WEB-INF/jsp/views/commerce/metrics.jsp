@@ -217,6 +217,11 @@ uri="http://java.sun.com/jsp/jstl/functions" %>
                       </div>
                     </div>
                   </div>
+                  <a href="${pageContext.request.contextPath}/commerce/edit-pack/${p.packId}"
+                     class="text-secondary hover:text-primary p-2 flex items-center justify-center rounded-full hover:bg-surface-container-highest transition-colors"
+                     title="<spring:message code='commerce.metrics.editPack' />">
+                    <span class="material-symbols-outlined text-[1.25rem]">edit</span>
+                  </a>
                 </div>
               </c:forEach>
             </div>
