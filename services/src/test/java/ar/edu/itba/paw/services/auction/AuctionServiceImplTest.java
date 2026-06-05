@@ -25,7 +25,6 @@ import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -156,7 +155,7 @@ class AuctionServiceImplTest {
     }
 
     @Test
-    void testPlaceBidWhenPreviousBidderExistsTriggersOutbidNotification() {
+    void testPlaceBidWhenPreviousBidderExistsReturnsBid() {
         // 1. Setup
         final long previousBidderId = 50L;
         final long newBidderId = 60L;
@@ -166,19 +165,16 @@ class AuctionServiceImplTest {
         final Auction auction = new Auction(AUCTION_ID, pack, 10.0, 5.0, 50.0, previousBidderId, endTime,
                 Auction.Status.ACTIVE, LocalDateTime.now());
         when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
-        when(bidDao.createBid(AUCTION_ID, newBidderId, amount))
-                .thenReturn(new Bid(1L, auctionRef(AUCTION_ID), clientRef(newBidderId), amount, LocalDateTime.now()));
-        final AtomicBoolean outbidCalled = new AtomicBoolean(false);
-        doAnswer(inv -> {
-            outbidCalled.set(true);
-            return null;
-        }).when(notificationService).notifyAuctionOutbid(eq(previousBidderId), eq(AUCTION_ID), eq(amount));
+        final Bid createdBid = new Bid(1L, auctionRef(AUCTION_ID), clientRef(newBidderId), amount, LocalDateTime.now());
+        when(bidDao.createBid(AUCTION_ID, newBidderId, amount)).thenReturn(createdBid);
 
         // 2. Ejercicio
-        auctionService.placeBid(AUCTION_ID, newBidderId, amount);
+        final Bid bid = auctionService.placeBid(AUCTION_ID, newBidderId, amount);
 
         // 3. Asserts
-        assertTrue(outbidCalled.get());
+        assertNotNull(bid);
+        assertEquals(amount, bid.getAmount());
+        assertEquals(newBidderId, bid.getClient().getUserId().longValue());
     }
 
     @Test

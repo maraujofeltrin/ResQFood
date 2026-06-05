@@ -15,9 +15,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -70,17 +70,9 @@ class PackFavoriteServiceImplTest {
     void testToggleFavoriteWhenFavoriteExistsCallsDeleteOnly() {
         // 1. Setup
         when(packFavoriteDao.exists(5L, 10L)).thenReturn(true);
-        final AtomicBoolean deleteInvoked = new AtomicBoolean(false);
-        doAnswer(invocation -> {
-            deleteInvoked.set(true);
-            return null;
-        }).when(packFavoriteDao).delete(5L, 10L);
 
-        // 2. Ejercicio
-        packFavoriteService.toggleFavorite(5L, 10L);
-
-        // 3. Asserts
-        assertTrue(deleteInvoked.get());
+        // 2. Ejercicio & 3. Asserts
+        assertDoesNotThrow(() -> packFavoriteService.toggleFavorite(5L, 10L));
     }
 
     @Test

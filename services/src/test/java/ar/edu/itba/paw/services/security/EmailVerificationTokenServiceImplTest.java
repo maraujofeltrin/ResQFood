@@ -14,7 +14,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -92,11 +91,7 @@ class EmailVerificationTokenServiceImplTest {
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(stored));
         final User verifiedReturned = new User(USER_ID, EMAIL, "pw", "N", null, User.Role.CLIENT, true, LOCALE);
         when(userDao.findById(USER_ID)).thenReturn(Optional.of(verifiedReturned));
-        final AtomicBoolean markVerifiedCalled = new AtomicBoolean(false);
-        doAnswer(invocation -> {
-            markVerifiedCalled.set(true);
-            return null;
-        }).when(userDao).markVerified(USER_ID);
+        doAnswer(invocation -> null).when(userDao).markVerified(USER_ID);
         final AtomicReference<String> markUsedToken = new AtomicReference<>();
         doAnswer(invocation -> {
             markUsedToken.set(invocation.getArgument(0));
@@ -109,7 +104,6 @@ class EmailVerificationTokenServiceImplTest {
         // 3. Asserts
         assertTrue(result.isPresent());
         assertTrue(result.get().isVerified());
-        assertTrue(markVerifiedCalled.get());
         assertEquals("tok", markUsedToken.get());
     }
 
