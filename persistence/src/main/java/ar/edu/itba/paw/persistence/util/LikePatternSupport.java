@@ -26,4 +26,10 @@ public final class LikePatternSupport {
         jpql.append("LOWER(").append(fieldExpression).append(") LIKE LOWER(")
                 .append(parameterReference).append(") ESCAPE '\\'");
     }
+
+    public static void appendEscapedLikeNative(final StringBuilder sql, final String columnExpression,
+                                               final String parameterReference) {
+        sql.append("LOWER(").append(columnExpression).append(") LIKE LOWER(")
+                .append(parameterReference).append(") ESCAPE '\\'");
+    }
 }

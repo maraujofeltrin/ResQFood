@@ -441,4 +441,44 @@ public class PackJpaDaoTest {
         assertNotNull(packs.get(0).getCommerce().getCommercialName());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
+
+    @Test
+    public void testFilterPacksOrdersByPriceAscWhenMultiplePacksExist() {
+        // 1. Setup
+        final Pack cheapest = packDao.createPack(commerceId, "Cheap", "Desc", 1000.0, 100.0, 5, null, null);
+        final Pack mid = packDao.createPack(commerceId, "Mid", "Desc", 1000.0, 300.0, 5, null, null);
+        final Pack expensive = packDao.createPack(commerceId, "Expensive", "Desc", 1000.0, 500.0, 5, null, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Pack> filtered = packDao.filterPacks(null, null, null, null, PackSortOption.PRICE_ASC, 1, 10,
+                false, null);
+
+        // 3. Asserts
+        assertEquals(3, filtered.size());
+        assertEquals(cheapest.getId(), filtered.get(0).getId());
+        assertEquals(mid.getId(), filtered.get(1).getId());
+        assertEquals(expensive.getId(), filtered.get(2).getId());
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testFilterPacksPaginatesSecondPagePreservingSortOrder() {
+        // 1. Setup
+        final Pack first = packDao.createPack(commerceId, "First", "Desc", 1000.0, 500.0, 5, null, null);
+        em.flush();
+        final Pack second = packDao.createPack(commerceId, "Second", "Desc", 1000.0, 500.0, 5, null, null);
+        em.flush();
+        final Pack third = packDao.createPack(commerceId, "Third", "Desc", 1000.0, 500.0, 5, null, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Pack> pageTwo = packDao.filterPacks(null, null, null, null, PackSortOption.DATE_DESC, 2, 1,
+                false, null);
+
+        // 3. Asserts
+        assertEquals(1, pageTwo.size());
+        assertEquals(second.getId(), pageTwo.get(0).getId());
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
 }

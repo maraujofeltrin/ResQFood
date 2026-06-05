@@ -10,6 +10,7 @@ import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.persistence.util.JpqlQuerySupport;
 import ar.edu.itba.paw.persistence.util.LikePatternSupport;
 import ar.edu.itba.paw.persistence.util.OpeningTimeFilterJpql;
+import ar.edu.itba.paw.persistence.util.OpeningTimeFilterSql;
 import ar.edu.itba.paw.persistence.util.Pagination;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,9 +19,9 @@ import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -140,15 +141,11 @@ public class PackJpaDao implements PackDao {
             return Collections.emptyList();
         }
         final List<Pack> packs = em.createQuery(
-                        "SELECT DISTINCT p FROM Pack p LEFT JOIN FETCH p.tags JOIN FETCH p.commerce WHERE p.id IN :ids",
+                        "SELECT DISTINCT p FROM Pack p LEFT JOIN FETCH p.tags JOIN FETCH p.commerce "
+                                + "WHERE p.id IN :ids ORDER BY " + toOrderByClause(sort),
                         Pack.class)
                 .setParameter("ids", ids)
                 .getResultList();
-        final Map<Long, Integer> positions = new java.util.HashMap<>();
-        for (int index = 0; index < ids.size(); index++) {
-            positions.put(ids.get(index), Integer.valueOf(index));
-        }
-        packs.sort(Comparator.comparingInt(pack -> positions.getOrDefault(pack.getId(), Integer.MAX_VALUE)));
         return packs;
     }
 
@@ -203,15 +200,68 @@ public class PackJpaDao implements PackDao {
                                     final List<String> timeRanges, final PackSortOption sort,
                                     final int page, final int pageSize, final boolean requirePositiveStock,
                                     final Long commerceUserId) {
-        final StringBuilder jpql = new StringBuilder("SELECT p.id FROM Pack p JOIN p.commerce c WHERE p.active = true AND p.deleted = false AND NOT EXISTS (SELECT a.id FROM Auction a WHERE a.pack.id = p.id AND a.status = :activeStatus)");
+        final StringBuilder sql = new StringBuilder(
+                "SELECT p.id FROM packs p INNER JOIN commerces c ON c.user_id = p.commerce_id "
+                        + "WHERE p.active = TRUE AND p.deleted = FALSE "
+                        + "AND NOT EXISTS (SELECT 1 FROM auctions a WHERE a.pack_id = p.id AND a.status = :activeStatus)");
         final Map<String, Object> params = new LinkedHashMap<>();
-        params.put("activeStatus", Auction.Status.ACTIVE);
-        appendOptionalFilters(jpql, params, query, tags, city, timeRanges, requirePositiveStock, commerceUserId);
-        jpql.append(" ORDER BY ").append(toOrderByClause(sort));
-        return JpqlQuerySupport.createQuery(em, jpql.toString(), params, Long.class)
-                .setFirstResult(Pagination.offset(page, pageSize))
-                .setMaxResults(pageSize)
-                .getResultList();
+        params.put("activeStatus", Auction.Status.ACTIVE.name());
+        appendOptionalFiltersNative(sql, params, query, tags, city, timeRanges, requirePositiveStock, commerceUserId);
+        sql.append(" ORDER BY ").append(toNativeOrderByClause(sort));
+
+        final Query idQuery = em.createNativeQuery(sql.toString());
+        for (final Map.Entry<String, Object> entry : params.entrySet()) {
+            idQuery.setParameter(entry.getKey(), entry.getValue());
+        }
+        idQuery.setFirstResult(Pagination.offset(page, pageSize));
+        idQuery.setMaxResults(pageSize);
+
+        final List<?> rawIds = idQuery.getResultList();
+        final List<Long> ids = new ArrayList<>(rawIds.size());
+        for (final Object rawId : rawIds) {
+            if (rawId instanceof Number) {
+                ids.add(((Number) rawId).longValue());
+            } else {
+                ids.add(Long.parseLong(rawId.toString()));
+            }
+        }
+        return ids;
+    }
+
+    private void appendOptionalFiltersNative(final StringBuilder sql, final Map<String, Object> params,
+                                             final String query, final List<PackTag> tags, final String city,
+                                             final List<String> timeRanges, final boolean requirePositiveStock,
+                                             final Long commerceUserId) {
+        if (commerceUserId != null) {
+            sql.append(" AND p.commerce_id = :commerceUserId");
+            params.put("commerceUserId", commerceUserId);
+        }
+        if (requirePositiveStock) {
+            sql.append(" AND p.stock > 0");
+        }
+        final Optional<String> searchPattern = LikePatternSupport.escapeAndWrap(query);
+        if (searchPattern.isPresent()) {
+            sql.append(" AND (");
+            LikePatternSupport.appendEscapedLikeNative(sql, "p.title", ":search");
+            sql.append(" OR ");
+            LikePatternSupport.appendEscapedLikeNative(sql, "c.commercial_name", ":search");
+            sql.append(")");
+            params.put("search", searchPattern.get());
+        }
+        final Municipality municipality = Municipality.fromCityName(city);
+        if (municipality != null) {
+            sql.append(" AND c.city = :city");
+            params.put("city", municipality.getCityName());
+        }
+        OpeningTimeFilterSql.appendTimeRangeConditions(sql, "c.opening_time", timeRanges);
+        if (tags != null && !tags.isEmpty()) {
+            for (int index = 0; index < tags.size(); index++) {
+                final String paramName = "tag" + index;
+                sql.append(" AND EXISTS (SELECT 1 FROM pack_tags pt WHERE pt.pack_id = p.id AND pt.tag = :")
+                        .append(paramName).append(")");
+                params.put(paramName, tags.get(index).name());
+            }
+        }
     }
 
     private void appendOptionalFilters(final StringBuilder jpql, final Map<String, Object> params,
@@ -250,20 +300,14 @@ public class PackJpaDao implements PackDao {
         }
     }
 
-    private String toOrderByClause(final PackSortOption sort) {
+    private String toNativeOrderByClause(final PackSortOption sort) {
         final PackSortOption safeSort = sort != null ? sort : PackSortOption.DATE_DESC;
-        switch (safeSort) {
-            case TITLE_ASC:
-                return "p.title ASC, p.id DESC";
-            case PRICE_ASC:
-                return "p.finalPrice ASC, p.id DESC";
-            case PRICE_DESC:
-                return "p.finalPrice DESC, p.id DESC";
-            case DISCOUNT_DESC:
-                return "(p.originalPrice - p.finalPrice) DESC, p.id DESC";
-            case DATE_DESC:
-            default:
-                return "p.id DESC";
-        }
+        return safeSort.getOrderByClause().replace("packs.", "p.");
+    }
+
+    private String toOrderByClause(final PackSortOption sort) {
+        return toNativeOrderByClause(sort)
+                .replace("final_price", "finalPrice")
+                .replace("original_price", "originalPrice");
     }
 }
