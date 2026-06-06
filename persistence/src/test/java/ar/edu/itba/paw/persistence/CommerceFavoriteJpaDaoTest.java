@@ -14,6 +14,8 @@ import org.springframework.test.jdbc.JdbcTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -154,5 +156,60 @@ public class CommerceFavoriteJpaDaoTest {
         // 3. Asserts
         assertEquals(1, ids.size());
         assertTrue(ids.contains(clientUserId));
+    }
+
+    @Test
+    public void testFindFavoriteCommercesForClientOrdersByCreatedAtDesc() {
+        // 1. Setup
+        commerceFavoriteDao.insert(clientUserId, commerceUserId1);
+        commerceFavoriteDao.insert(clientUserId, commerceUserId2);
+
+        jdbcTemplate.update(
+                "UPDATE client_commerce_favorites SET created_at = ? WHERE client_id = ? AND commerce_id = ?",
+                Timestamp.valueOf(LocalDateTime.of(2024, 1, 1, 10, 0)),
+                clientUserId,
+                commerceUserId1);
+        jdbcTemplate.update(
+                "UPDATE client_commerce_favorites SET created_at = ? WHERE client_id = ? AND commerce_id = ?",
+                Timestamp.valueOf(LocalDateTime.of(2024, 6, 1, 10, 0)),
+                clientUserId,
+                commerceUserId2);
+
+        // 2. Ejercicio
+        final List<Commerce> favorites = commerceFavoriteDao.findFavoriteCommercesForClient(clientUserId, 1, 10);
+
+        // 3. Asserts
+        assertEquals(2, favorites.size());
+        assertEquals(commerceUserId2, favorites.get(0).getUserId());
+        assertEquals(commerceUserId1, favorites.get(1).getUserId());
+    }
+
+    @Test
+    public void testFindFavoriteCommercesForClientPaginatesSecondPagePreservingOrder() {
+        // 1. Setup
+        commerceFavoriteDao.insert(clientUserId, commerceUserId1);
+        commerceFavoriteDao.insert(clientUserId, commerceUserId2);
+
+        jdbcTemplate.update(
+                "UPDATE client_commerce_favorites SET created_at = ? WHERE client_id = ? AND commerce_id = ?",
+                Timestamp.valueOf(LocalDateTime.of(2024, 1, 1, 10, 0)),
+                clientUserId,
+                commerceUserId1);
+        jdbcTemplate.update(
+                "UPDATE client_commerce_favorites SET created_at = ? WHERE client_id = ? AND commerce_id = ?",
+                Timestamp.valueOf(LocalDateTime.of(2024, 6, 1, 10, 0)),
+                clientUserId,
+                commerceUserId2);
+
+        // 2. Ejercicio
+        final List<Commerce> page1 = commerceFavoriteDao.findFavoriteCommercesForClient(clientUserId, 1, 1);
+        final List<Commerce> page2 = commerceFavoriteDao.findFavoriteCommercesForClient(clientUserId, 2, 1);
+
+        // 3. Asserts
+        assertEquals(1, page1.size());
+        assertEquals(commerceUserId2, page1.get(0).getUserId());
+
+        assertEquals(1, page2.size());
+        assertEquals(commerceUserId1, page2.get(0).getUserId());
     }
 }
