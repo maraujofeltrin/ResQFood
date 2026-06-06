@@ -11,12 +11,14 @@ import ar.edu.itba.paw.services.user.ProfileService;
 import ar.edu.itba.paw.services.user.ProfileSettingsOverview;
 import ar.edu.itba.paw.services.user.SupportedUserLocales;
 import ar.edu.itba.paw.services.user.UserService;
+import ar.edu.itba.paw.webapp.auth.AuthUserLocaleSupport;
 import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.form.ProfileAccountForm;
 import ar.edu.itba.paw.webapp.validation.ProfileAccountFormValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -148,6 +150,8 @@ public class ProfileController {
         }
         try {
             userService.updatePreferredLocale(user.getId(), resolved);
+            AuthUserLocaleSupport.updateSessionLocale(
+                    SecurityContextHolder.getContext().getAuthentication(), resolved);
         } catch (final IllegalArgumentException | NoSuchElementException ex) {
             LOGGER.debug("Could not persist preferred locale userId={} lang={}", Long.valueOf(user.getId()),
                     resolved, ex);

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Locale;
 
 @Service
 public class AuthUserDetailsService implements UserDetailsService {
@@ -36,11 +37,13 @@ public class AuthUserDetailsService implements UserDetailsService {
         final Collection<? extends GrantedAuthority> authorities =
                 Collections.singleton(new SimpleGrantedAuthority(roleName));
 
+        final Locale locale = user.getLocale() != null ? user.getLocale() : Locale.forLanguageTag("es");
         return new AuthUser(
                 user.getId(),
                 user.getEmail(),
                 user.getPassword(),
                 user.isVerified(),
+                locale,
                 authorities);
     }
 }

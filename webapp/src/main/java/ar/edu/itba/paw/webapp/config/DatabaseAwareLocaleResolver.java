@@ -1,16 +1,14 @@
 package ar.edu.itba.paw.webapp.config;
 
-import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.user.UserService;
-import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
+import ar.edu.itba.paw.webapp.auth.AuthUser;
+import ar.edu.itba.paw.webapp.auth.AuthUserLocaleSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 
@@ -20,7 +18,7 @@ import java.util.Locale;
 
 /**
  * Locale resolver that:
- * - Uses the user's preferred locale (from DB) if authenticated
+ * - Uses the user's preferred locale from {@link ar.edu.itba.paw.webapp.auth.AuthUser} if authenticated
  * - Falls back to Accept-Language header if not authenticated
  * - Defaults to Spanish if neither is available
  */
@@ -30,54 +28,38 @@ public class DatabaseAwareLocaleResolver implements LocaleResolver {
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseAwareLocaleResolver.class);
 
     private final AcceptHeaderLocaleResolver acceptHeaderResolver;
-    private final AuthenticatedUserResolver authenticatedUserResolver;
     private final UserService userService;
 
     @Autowired
-    public DatabaseAwareLocaleResolver(
-            final AuthenticatedUserResolver authenticatedUserResolver,
-            final UserService userService) {
-        this.authenticatedUserResolver = authenticatedUserResolver;
+    public DatabaseAwareLocaleResolver(final UserService userService) {
         this.userService = userService;
         this.acceptHeaderResolver = new AcceptHeaderLocaleResolver();
         this.acceptHeaderResolver.setDefaultLocale(Locale.forLanguageTag("es"));
     }
 
-    private static boolean isUnauthorized(final Throwable e) {
-        return e instanceof ResponseStatusException
-                && ((ResponseStatusException) e).getStatus() == HttpStatus.UNAUTHORIZED;
-    }
-
     @Override
     public Locale resolveLocale(final HttpServletRequest request) {
-        try {
-            final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            final User user = authenticatedUserResolver.resolveUser(auth);
-            if (user != null && user.getLocale() != null) {
-                return user.getLocale();
-            }
-        } catch (final Exception e) {
-            if (!isUnauthorized(e)) {
-                LOGGER.warn("Could not resolve locale from authenticated session; falling back to header", e);
-            }
+        final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        final Locale preferred = AuthUserLocaleSupport.authUserFrom(auth)
+                .map(AuthUser::getLocale)
+                .orElse(null);
+        if (preferred != null) {
+            return preferred;
         }
-
         return acceptHeaderResolver.resolveLocale(request);
     }
 
     @Override
     public void setLocale(final HttpServletRequest request, final HttpServletResponse response,
             final Locale locale) {
-        try {
-            final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            final User user = authenticatedUserResolver.resolveUser(auth);
-            if (user != null) {
-                userService.updatePreferredLocale(user.getId(), locale);
-            }
-        } catch (final Exception e) {
-            if (!isUnauthorized(e)) {
+        final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AuthUserLocaleSupport.authUserFrom(auth).ifPresent(authUser -> {
+            try {
+                userService.updatePreferredLocale(authUser.getId(), locale);
+                authUser.setLocale(locale);
+            } catch (final RuntimeException e) {
                 LOGGER.warn("Could not persist preferred locale for authenticated user", e);
             }
-        }
+        });
     }
 }
