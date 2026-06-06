@@ -13,9 +13,8 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -181,39 +180,104 @@ public class ReservationJpaDao implements ReservationDao {
         }
     }
 
+    private void appendReservationFiltersNative(final StringBuilder sql, final Map<String, Object> params,
+            final Long commerceId, final Long customerId, final String query, final Reservation.Status status,
+            final boolean excludeAuctionPacks) {
+        final boolean needsPack = commerceId != null || (query != null && !query.isBlank()) || excludeAuctionPacks;
+        final boolean needsCommerce = commerceId != null || (query != null && !query.isBlank());
+        if (needsPack) {
+            sql.append("LEFT JOIN packs p ON p.id = r.pack_id ");
+        }
+        if (needsCommerce) {
+            sql.append("JOIN commerces c ON c.user_id = p.commerce_id ");
+        }
+        sql.append("WHERE 1=1 ");
+
+        if (commerceId != null) {
+            sql.append("AND p.commerce_id = :commerceId ");
+            params.put("commerceId", commerceId);
+        }
+        if (customerId != null) {
+            sql.append("AND r.customer_id = :customerId ");
+            params.put("customerId", customerId);
+        }
+        if (status != null) {
+            sql.append("AND r.status = :status ");
+            params.put("status", status.name());
+        }
+
+        final Optional<String> searchPattern = LikePatternSupport.escapeAndWrap(query);
+        if (searchPattern.isPresent()) {
+            final String pattern = searchPattern.get();
+            sql.append("AND (");
+            LikePatternSupport.appendEscapedLikeNative(sql, "p.title", ":search");
+            sql.append(" OR ");
+            LikePatternSupport.appendEscapedLikeNative(sql, "p.description", ":search");
+            params.put("search", pattern);
+
+            if (commerceId != null) {
+                sql.append(" OR EXISTS (SELECT 1 FROM clients cl WHERE cl.user_id = r.customer_id AND ");
+                LikePatternSupport.appendEscapedLikeNative(sql, "(cl.name || ' ' || cl.last_name)", ":search");
+                sql.append(") ");
+            } else if (customerId != null) {
+                sql.append(" OR ");
+                LikePatternSupport.appendEscapedLikeNative(sql, "c.commercial_name", ":search");
+            }
+            sql.append(") ");
+        }
+
+        if (excludeAuctionPacks) {
+            sql.append("AND NOT EXISTS (SELECT 1 FROM auctions a WHERE a.pack_id = p.id) ");
+        }
+    }
+
+    private List<Long> queryReservationIds(final Long commerceId, final Long customerId, final String query,
+            final Reservation.Status status, final boolean excludeAuctionPacks, final int page, final int pageSize) {
+        final StringBuilder sql = new StringBuilder("SELECT r.id FROM reservations r ");
+        final Map<String, Object> params = new LinkedHashMap<>();
+        appendReservationFiltersNative(sql, params, commerceId, customerId, query, status, excludeAuctionPacks);
+        sql.append("ORDER BY r.reservation_date DESC, r.id DESC");
+
+        final javax.persistence.Query idQuery = em.createNativeQuery(sql.toString());
+        for (final Map.Entry<String, Object> entry : params.entrySet()) {
+            idQuery.setParameter(entry.getKey(), entry.getValue());
+        }
+        idQuery.setFirstResult(Pagination.offset(page, pageSize));
+        idQuery.setMaxResults(pageSize);
+        return parseLongIds(idQuery.getResultList());
+    }
+
+    private List<Long> parseLongIds(final List<?> rawIds) {
+        final List<Long> ids = new ArrayList<>(rawIds.size());
+        for (final Object rawId : rawIds) {
+            if (rawId instanceof Number) {
+                ids.add(((Number) rawId).longValue());
+            } else {
+                ids.add(Long.parseLong(rawId.toString()));
+            }
+        }
+        return ids;
+    }
+
     @Override
     public List<Reservation> filterReservations(final Long commerceId, final Long customerId, final String query,
             final Reservation.Status status, final boolean excludeAuctionPacks, final int page, final int pageSize) {
-        final StringBuilder idJpql = new StringBuilder("SELECT r.id ");
-        final Map<String, Object> params = new LinkedHashMap<>();
-        appendReservationFilters(idJpql, params, commerceId, customerId, query, status, excludeAuctionPacks);
-        idJpql.append("ORDER BY r.reservationDate DESC, r.id DESC ");
-
-        final List<Long> ids = JpqlQuerySupport.createQuery(em, idJpql.toString(), params, Long.class)
-                .setMaxResults(pageSize)
-                .setFirstResult(Pagination.offset(page, pageSize))
-                .getResultList();
-
+        final List<Long> ids = queryReservationIds(commerceId, customerId, query, status, excludeAuctionPacks, page,
+                pageSize);
         if (ids.isEmpty()) {
             return Collections.emptyList();
         }
 
-        final List<Reservation> reservations = em.createQuery(
-                "SELECT r FROM Reservation r " +
-                "JOIN FETCH r.customer " +
-                "JOIN FETCH r.pack p " +
-                "JOIN FETCH p.commerce " +
-                "WHERE r.id IN :ids", Reservation.class)
+        return em.createQuery(
+                "SELECT r FROM Reservation r "
+                        + "JOIN FETCH r.customer "
+                        + "JOIN FETCH r.pack p "
+                        + "JOIN FETCH p.commerce "
+                        + "WHERE r.id IN :ids "
+                        + "ORDER BY r.reservationDate DESC, r.id DESC",
+                Reservation.class)
                 .setParameter("ids", ids)
                 .getResultList();
-
-        final Map<Long, Integer> positions = new HashMap<>();
-        for (int index = 0; index < ids.size(); index++) {
-            positions.put(ids.get(index), Integer.valueOf(index));
-        }
-        reservations.sort(Comparator.comparingInt(
-                r -> positions.getOrDefault(r.getId(), Integer.MAX_VALUE)));
-        return reservations;
     }
 
     @Override
