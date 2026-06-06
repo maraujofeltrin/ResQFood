@@ -14,10 +14,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Pack favorites are mapped by {@link ClientPackFavorite} on {@code client_pack_favorites}.
@@ -38,32 +35,25 @@ public class PackFavoriteJpaDao implements PackFavoriteDao {
         final int safePage = Math.max(1, page);
         final int safeSize = Math.max(1, pageSize);
 
-        @SuppressWarnings("unchecked")
-        final List<Long> ids = em.createQuery(
-                        "SELECT f.pack.id FROM ClientPackFavorite f JOIN f.pack p WHERE"
-                                + ACTIVE_FAVORITE_FILTER
-                                + " ORDER BY f.createdAt DESC",
-                        Long.class)
-                .setParameter("cid", clientId)
-                .setFirstResult(Pagination.offset(safePage, safeSize))
-                .setMaxResults(safeSize)
-                .getResultList();
-
+        final List<Long> ids = queryActiveFavoritePackIds(clientId, safePage, safeSize);
         if (ids.isEmpty()) {
             return Collections.emptyList();
         }
 
         final List<Pack> packs = em.createQuery(
-                        "SELECT DISTINCT p FROM Pack p LEFT JOIN FETCH p.tags JOIN FETCH p.commerce WHERE p.id IN :ids",
+                        "SELECT p FROM Pack p JOIN FETCH p.commerce WHERE p.id IN :ids ORDER BY "
+                                + buildPackIdPositionOrderByClause(ids),
                         Pack.class)
                 .setParameter("ids", ids)
                 .getResultList();
 
-        final Map<Long, Integer> positions = new HashMap<>();
-        for (int i = 0; i < ids.size(); i++) {
-            positions.put(ids.get(i), Integer.valueOf(i));
-        }
-        packs.sort(Comparator.comparingInt(pack -> positions.getOrDefault(pack.getId(), Integer.MAX_VALUE)));
+        // Tags fetched separately: DISTINCT + LEFT JOIN FETCH tags + ORDER BY CASE is rejected by PostgreSQL.
+        em.createQuery(
+                        "SELECT DISTINCT p FROM Pack p LEFT JOIN FETCH p.tags WHERE p.id IN :ids",
+                        Pack.class)
+                .setParameter("ids", ids)
+                .getResultList();
+
         return packs;
     }
 
@@ -116,5 +106,38 @@ public class PackFavoriteJpaDao implements PackFavoriteDao {
                         Long.class)
                 .setParameter("pid", packId)
                 .getResultList();
+    }
+
+    private List<Long> queryActiveFavoritePackIds(final long clientId, final int page, final int pageSize) {
+        final javax.persistence.Query idQuery = em.createNativeQuery(
+                "SELECT f.pack_id FROM client_pack_favorites f "
+                        + "INNER JOIN packs p ON p.id = f.pack_id "
+                        + "WHERE f.client_id = :cid AND p.active = TRUE AND p.deleted = FALSE "
+                        + "ORDER BY f.created_at DESC");
+        idQuery.setParameter("cid", clientId);
+        idQuery.setFirstResult(Pagination.offset(page, pageSize));
+        idQuery.setMaxResults(pageSize);
+        return parseLongIds(idQuery.getResultList());
+    }
+
+    private List<Long> parseLongIds(final List<?> rawIds) {
+        final List<Long> ids = new ArrayList<>(rawIds.size());
+        for (final Object rawId : rawIds) {
+            if (rawId instanceof Number) {
+                ids.add(((Number) rawId).longValue());
+            } else {
+                ids.add(Long.parseLong(rawId.toString()));
+            }
+        }
+        return ids;
+    }
+
+    private String buildPackIdPositionOrderByClause(final List<Long> ids) {
+        final StringBuilder orderBy = new StringBuilder("CASE p.id ");
+        for (int index = 0; index < ids.size(); index++) {
+            orderBy.append("WHEN ").append(ids.get(index).longValue()).append(" THEN ").append(index).append(' ');
+        }
+        orderBy.append("ELSE ").append(ids.size()).append(" END");
+        return orderBy.toString();
     }
 }
