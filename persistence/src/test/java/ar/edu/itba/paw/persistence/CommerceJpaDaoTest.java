@@ -66,7 +66,7 @@ public class CommerceJpaDaoTest {
     @BeforeEach
     public void setUp() {
         jdbcTemplate = new JdbcTemplate(dataSource);
-        JdbcTestUtils.deleteFromTables(jdbcTemplate, "bids", "auctions", "reservation_tokens", "pack_tags", "reservations", "client_pack_favorites", "packs", "images", "commerces", "clients", "tokens", "users");
+        JdbcTestUtils.deleteFromTables(jdbcTemplate, "bids", "auctions", "reservation_tokens", "pack_tags", "reservations", "client_pack_favorites", "packs", "images", "commerce_reviews", "commerces", "clients", "tokens", "users");
 
         userId = userDao.createUser(EMAIL, PASSWORD, NAME, PHONE, User.Role.COMMERCE).getId();
         em.flush();
@@ -272,6 +272,63 @@ public class CommerceJpaDaoTest {
         assertFalse(commerces.isEmpty());
         assertTrue(Hibernate.isInitialized(commerces.get(0).getUser()));
         assertNotNull(commerces.get(0).getUser().getEmail());
+    }
+
+    @Test
+    public void testFilterCommercesPaginatesSecondPagePreservingOrder() {
+        // 1. Setup
+        final Commerce commerceA = commerceDao.createCommerce(userId, "Commerce A", CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+
+        final Long userIdB = userDao.createUser("b@example.com", PASSWORD, NAME, PHONE, User.Role.COMMERCE).getId();
+        final Commerce commerceB = commerceDao.createCommerce(userIdB, "Commerce B", CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+
+        final Long userIdC = userDao.createUser("c@example.com", PASSWORD, NAME, PHONE, User.Role.COMMERCE).getId();
+        final Commerce commerceC = commerceDao.createCommerce(userIdC, "Commerce C", CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+
+        final Long clientId = userDao.createUser("client@example.com", PASSWORD, "Client", PHONE, User.Role.CLIENT).getId();
+        final Client client = clientDao.createClient(clientId, "Client", "Last", true);
+
+        em.flush();
+
+        em.persist(new ar.edu.itba.paw.models.user.CommerceReview(
+                null, commerceA, client, 5, "Excellent!", java.time.LocalDateTime.now(), java.time.LocalDateTime.now()));
+        em.persist(new ar.edu.itba.paw.models.user.CommerceReview(
+                null, commerceB, client, 2, "Poor", java.time.LocalDateTime.now(), java.time.LocalDateTime.now()));
+
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final java.util.List<Commerce> page1 = commerceDao.filterCommerces(null, null, null, 1, 2);
+        final java.util.List<Commerce> page2 = commerceDao.filterCommerces(null, null, null, 2, 2);
+
+        // 3. Asserts
+        assertEquals(2, page1.size());
+        assertEquals("Commerce A", page1.get(0).getCommercialName());
+        assertEquals("Commerce B", page1.get(1).getCommercialName());
+
+        assertEquals(1, page2.size());
+        assertEquals("Commerce C", page2.get(0).getCommercialName());
+    }
+
+    @Test
+    public void testFilterCommercesOrdersByCommercialNameWhenRatingTied() {
+        // 1. Setup
+        commerceDao.createCommerce(userId, "Zebra Bakery", CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+
+        final Long otherUserId = userDao.createUser("other@example.com", PASSWORD, NAME, PHONE, User.Role.COMMERCE).getId();
+        commerceDao.createCommerce(otherUserId, "Alpha Bakery", CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final java.util.List<Commerce> results = commerceDao.filterCommerces(null, null, null, 1, 10);
+
+        // 3. Asserts
+        assertEquals(2, results.size());
+        assertEquals("Alpha Bakery", results.get(0).getCommercialName());
+        assertEquals("Zebra Bakery", results.get(1).getCommercialName());
     }
 
     @Test

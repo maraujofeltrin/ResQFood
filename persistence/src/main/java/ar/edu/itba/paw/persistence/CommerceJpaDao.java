@@ -3,14 +3,15 @@ package ar.edu.itba.paw.persistence;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.persistence.util.Pagination;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,58 +51,17 @@ public class CommerceJpaDao implements CommerceDao {
 
     @Override
     public List<Commerce> filterCommerces(String query, String cityFilter, Commerce.Category categoryFilter, int page, int pageSize) {
-        final StringBuilder jpql = new StringBuilder("SELECT c.userId FROM Commerce c LEFT JOIN CommerceReview r ON c.userId = r.commerce.userId");
-        final java.util.Map<String, Object> params = new java.util.HashMap<>();
-        final List<String> conditions = new java.util.ArrayList<>();
-
-        if (query != null && !query.trim().isEmpty()) {
-            conditions.add("LOWER(c.commercialName) LIKE :query");
-            params.put("query", "%" + query.trim().toLowerCase() + "%");
-        }
-
-        if (cityFilter != null && !cityFilter.trim().isEmpty()) {
-            final Municipality m = Municipality.fromCityName(cityFilter);
-            if (m != null) {
-                conditions.add("c.city = :city");
-                params.put("city", m);
-            }
-        }
-
-        if (categoryFilter != null) {
-            conditions.add("c.category = :category");
-            params.put("category", categoryFilter);
-        }
-
-        if (!conditions.isEmpty()) {
-            jpql.append(" WHERE ").append(String.join(" AND ", conditions));
-        }
-
-        jpql.append(" GROUP BY c.userId, c.commercialName ORDER BY COALESCE(AVG(r.rating), 0.0) DESC, c.commercialName ASC");
-
-        final javax.persistence.TypedQuery<Long> idQuery = em.createQuery(jpql.toString(), Long.class);
-        for (final java.util.Map.Entry<String, Object> entry : params.entrySet()) {
-            idQuery.setParameter(entry.getKey(), entry.getValue());
-        }
-
-        final List<Long> ids = idQuery.setFirstResult((page - 1) * pageSize)
-                .setMaxResults(pageSize)
-                .getResultList();
-
+        final List<Long> ids = queryCommerceIds(query, cityFilter, categoryFilter, page, pageSize);
         if (ids.isEmpty()) {
             return Collections.emptyList();
         }
 
-        final List<Commerce> commerces = em.createQuery(
-                "SELECT c FROM Commerce c JOIN FETCH c.user WHERE c.userId IN :ids", Commerce.class)
+        return em.createQuery(
+                        "SELECT c FROM Commerce c JOIN FETCH c.user WHERE c.userId IN :ids ORDER BY "
+                                + buildCommerceUserIdPositionOrderByClause(ids),
+                        Commerce.class)
                 .setParameter("ids", ids)
                 .getResultList();
-
-        final Map<Long, Integer> positions = new HashMap<>();
-        for (int i = 0; i < ids.size(); i++) {
-            positions.put(ids.get(i), Integer.valueOf(i));
-        }
-        commerces.sort(Comparator.comparingInt(c -> positions.getOrDefault(c.getUserId(), Integer.MAX_VALUE)));
-        return commerces;
     }
 
     @Override
@@ -114,6 +74,70 @@ public class CommerceJpaDao implements CommerceDao {
         cq.where(buildPredicates(cb, root, query, cityFilter, categoryFilter));
 
         return em.createQuery(cq).getSingleResult().intValue();
+    }
+
+    private List<Long> queryCommerceIds(final String query, final String cityFilter,
+            final Commerce.Category categoryFilter, final int page, final int pageSize) {
+        final StringBuilder sql = new StringBuilder(
+                "SELECT c.user_id FROM commerces c "
+                        + "LEFT JOIN commerce_reviews r ON c.user_id = r.commerce_user_id");
+        final Map<String, Object> params = new LinkedHashMap<>();
+        final List<String> conditions = new ArrayList<>();
+
+        if (query != null && !query.trim().isEmpty()) {
+            conditions.add("LOWER(c.commercial_name) LIKE :query");
+            params.put("query", "%" + query.trim().toLowerCase() + "%");
+        }
+
+        if (cityFilter != null && !cityFilter.trim().isEmpty()) {
+            final Municipality m = Municipality.fromCityName(cityFilter);
+            if (m != null) {
+                conditions.add("c.city = :city");
+                params.put("city", m.getCityName());
+            }
+        }
+
+        if (categoryFilter != null) {
+            conditions.add("c.category = :category");
+            params.put("category", categoryFilter.name());
+        }
+
+        if (!conditions.isEmpty()) {
+            sql.append(" WHERE ").append(String.join(" AND ", conditions));
+        }
+
+        sql.append(" GROUP BY c.user_id, c.commercial_name "
+                + "ORDER BY COALESCE(AVG(r.rating), 0) DESC, c.commercial_name ASC");
+
+        final javax.persistence.Query idQuery = em.createNativeQuery(sql.toString());
+        for (final Map.Entry<String, Object> entry : params.entrySet()) {
+            idQuery.setParameter(entry.getKey(), entry.getValue());
+        }
+
+        idQuery.setFirstResult(Pagination.offset(page, pageSize));
+        idQuery.setMaxResults(pageSize);
+        return parseLongIds(idQuery.getResultList());
+    }
+
+    private List<Long> parseLongIds(final List<?> rawIds) {
+        final List<Long> ids = new ArrayList<>(rawIds.size());
+        for (final Object rawId : rawIds) {
+            if (rawId instanceof Number) {
+                ids.add(((Number) rawId).longValue());
+            } else {
+                ids.add(Long.parseLong(rawId.toString()));
+            }
+        }
+        return ids;
+    }
+
+    private String buildCommerceUserIdPositionOrderByClause(final List<Long> ids) {
+        final StringBuilder orderBy = new StringBuilder("CASE c.userId ");
+        for (int index = 0; index < ids.size(); index++) {
+            orderBy.append("WHEN ").append(ids.get(index).longValue()).append(" THEN ").append(index).append(' ');
+        }
+        orderBy.append("ELSE ").append(ids.size()).append(" END");
+        return orderBy.toString();
     }
 
     private javax.persistence.criteria.Predicate[] buildPredicates(
