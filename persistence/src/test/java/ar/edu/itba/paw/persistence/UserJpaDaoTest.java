@@ -103,19 +103,40 @@ public class UserJpaDaoTest {
     public void testUpdateProfileImageWhenUserExists() {
         // 1. Setup
         final User user = userDao.createUser(EMAIL, PASSWORD, NAME, PHONE, ROLE);
-        final Image image = imageDao.saveImage(new byte[] {1, 2, 3}, "image/png");
         em.flush();
-        final long imageId = image.getId();
+        final Image image = imageDao.saveImage(new byte[] {1, 2, 3}, "image/png");
 
-        // 2. Ejercicio
-        userDao.updateProfileImage(user.getId(), imageId);
+        // 2. Ejercicio — sin em.flush() entre saveImage y updateProfileImage (flujo de producción)
+        userDao.updateProfileImage(user.getId(), image.getId());
         em.flush();
         em.clear();
 
         // 3. Asserts
         final Optional<User> loaded = userDao.findById(user.getId());
         assertTrue(loaded.isPresent());
-        assertEquals(imageId, loaded.get().getProfileImageId().longValue());
+        assertEquals(image.getId(), loaded.get().getProfileImageId().longValue());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "users"));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "images"));
+    }
+
+    @Test
+    public void testUpdateProfileImageAfterSaveImageWithoutManualFlush() {
+        // 1. Setup
+        final User user = userDao.createUser(EMAIL, PASSWORD, NAME, PHONE, ROLE);
+        em.flush();
+
+        // 2. Ejercicio — reproduce saveImage → updateProfileImage sin flush del test
+        final Image image = imageDao.saveImage(new byte[] {9, 8, 7}, "image/png");
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "images"),
+                "saveImage debe persistir la fila antes de referenciarla por FK");
+        userDao.updateProfileImage(user.getId(), image.getId());
+        em.flush();
+        em.clear();
+
+        // 3. Asserts
+        final Optional<User> loaded = userDao.findById(user.getId());
+        assertTrue(loaded.isPresent());
+        assertEquals(image.getId(), loaded.get().getProfileImageId().longValue());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "users"));
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "images"));
     }

@@ -52,9 +52,8 @@ public class ImageJpaDaoTest {
 
         // 2. Ejercicio
         final Image saved = imageDao.saveImage(data, contentType);
-        em.flush();
 
-        // 3. Asserts
+        // 3. Asserts — el DAO debe dejar la fila visible sin flush manual del test
         assertNotNull(saved.getId());
         assertArrayEquals(data, saved.getData());
         assertEquals(contentType, saved.getContentType());

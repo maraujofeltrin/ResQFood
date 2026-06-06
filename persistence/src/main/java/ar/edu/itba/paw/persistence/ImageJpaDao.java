@@ -19,6 +19,7 @@ public class ImageJpaDao implements ImageDao {
     public Image saveImage(byte[] data, String contentType) {
         final Image image = new Image(null, data, contentType);
         em.persist(image);
+        em.flush();
         return image;
     }
 
