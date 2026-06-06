@@ -317,7 +317,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
             mailSender.send(message);
         } catch (final MessagingException | UnsupportedEncodingException e) {
             LOGGER.error("Failed to send reservation mail: {}", errorMessage, e);
-            throw new IllegalStateException(errorMessage, e);
+            throw new ar.edu.itba.paw.models.notification.MailDeliveryException(errorMessage, e);
         }
     }
 

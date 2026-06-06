@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.image;
 
 import ar.edu.itba.paw.models.image.Image;
+import ar.edu.itba.paw.models.image.ProfileImageException;
 import ar.edu.itba.paw.persistence.ImageDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,11 +28,11 @@ public class ImageServiceImpl implements ImageService {
     public Image saveImage(byte[] data, String contentType) {
         if (data == null || data.length == 0) {
             LOGGER.debug("saveImage rejected: empty data");
-            throw new IllegalArgumentException("Image data cannot be null or empty");
+            throw new ProfileImageException(ProfileImageException.Reason.DATA_EMPTY);
         }
         if (contentType == null || contentType.isEmpty()) {
             LOGGER.debug("saveImage rejected: missing content type");
-            throw new IllegalArgumentException("Image content type cannot be null or empty");
+            throw new ProfileImageException(ProfileImageException.Reason.INVALID_TYPE);
         }
         return imageDao.saveImage(data, contentType);
     }

@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.metrics;
 
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.reservation.MetricsQueryException;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.persistence.PackDao;
@@ -49,7 +50,7 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
     @Override
     public CommerceMetrics getCommerceMetrics(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
         if (from.isAfter(to)) {
-            throw new IllegalArgumentException("from must be <= to");
+            throw new MetricsQueryException(MetricsQueryException.Reason.INVALID_DATE_RANGE);
         }
         LOGGER.debug("getCommerceMetrics commerceId={}", commerceId);
         final List<Object[]> rows = reservationDao.countPaidReservationsPerDay(commerceId, from, to);

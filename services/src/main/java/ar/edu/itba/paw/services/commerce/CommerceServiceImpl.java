@@ -5,6 +5,7 @@ import ar.edu.itba.paw.models.auction.AuctionSortOption;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.CommerceProfileException;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.services.auction.AuctionService;
@@ -49,16 +50,16 @@ public class CommerceServiceImpl implements CommerceService {
             final Integer streetNumber, final Municipality city, final String province, final String postalCode,
             final String openingTime, final String closingTime) {
         if (category == null) {
-            throw new IllegalArgumentException("Category is required");
+            throw new CommerceProfileException(CommerceProfileException.Reason.MISSING_CATEGORY);
         }
         final String open = openingTime == null ? "" : openingTime.trim();
         final String close = closingTime == null ? "" : closingTime.trim();
         if (open.isEmpty() || close.isEmpty()) {
-            throw new IllegalArgumentException("Opening and closing times are required");
+            throw new CommerceProfileException(CommerceProfileException.Reason.MISSING_TIMES);
         }
         final String st = street == null ? "" : street.trim();
         if (st.isEmpty() || city == null) {
-            throw new IllegalArgumentException("Street and city are required");
+            throw new CommerceProfileException(CommerceProfileException.Reason.MISSING_ADDRESS);
         }
         final Commerce current = commerceDao.findByUserId(userId)
                 .orElseThrow(() -> {
@@ -66,7 +67,7 @@ public class CommerceServiceImpl implements CommerceService {
                     return new NoSuchElementException("Commerce not found for user: " + userId);
                 });
         if (province == null || !Commerce.PROVINCE_BUENOS_AIRES.equalsIgnoreCase(province.trim())) {
-            throw new IllegalArgumentException("Commerce province must be " + Commerce.PROVINCE_BUENOS_AIRES);
+            throw new CommerceProfileException(CommerceProfileException.Reason.INVALID_PROVINCE);
         }
         current.setCategory(category);
         current.setStreet(st);

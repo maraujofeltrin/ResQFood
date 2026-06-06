@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.image;
 
 import ar.edu.itba.paw.models.image.Image;
+import ar.edu.itba.paw.models.image.ProfileImageException;
 import ar.edu.itba.paw.persistence.ImageDao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,16 +44,16 @@ class ImageServiceImplTest {
     }
 
     @Test
-    void testSaveImageWhenDataEmptyThrowsIllegalArgumentException() {
+    void testSaveImageWhenDataEmptyThrowsProfileImageException() {
         // 1. Setup
         final byte[] data = new byte[0];
 
         // 2. Ejercicio
-        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final ProfileImageException ex = assertThrows(ProfileImageException.class,
                 () -> imageService.saveImage(data, "image/png"));
 
         // 3. Asserts
-        assertEquals("Image data cannot be null or empty", ex.getMessage());
+        assertEquals(ProfileImageException.Reason.DATA_EMPTY, ex.getReason());
     }
 
     @Test

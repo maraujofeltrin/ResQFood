@@ -1,6 +1,8 @@
 package ar.edu.itba.paw.services.user;
 
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.CommerceProfileException;
+import ar.edu.itba.paw.models.image.ProfileImageException;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.commerce.CommerceService;
@@ -97,7 +99,7 @@ public class ProfileServiceImpl implements ProfileService {
                         postalCode,
                         openingTime != null ? openingTime.trim() : "",
                         closingTime != null ? closingTime.trim() : "");
-            } catch (final IllegalArgumentException | NoSuchElementException e) {
+            } catch (final IllegalArgumentException | CommerceProfileException | NoSuchElementException e) {
                 LOGGER.debug("Commerce profile update rejected userId={}", userId, e);
                 throw new ProfileAccountUpdateException(ProfileAccountUpdateException.Kind.COMMERCE, e);
             }
@@ -105,7 +107,7 @@ public class ProfileServiceImpl implements ProfileService {
         if (profilePhoto != null && profilePhoto.length > 0) {
             try {
                 userService.updateProfilePhoto(userId, profilePhoto, profilePhotoContentType);
-            } catch (final IllegalArgumentException | NoSuchElementException e) {
+            } catch (final IllegalArgumentException | ProfileImageException | NoSuchElementException e) {
                 LOGGER.debug("Profile photo update rejected userId={}", userId, e);
                 throw new ProfileAccountUpdateException(ProfileAccountUpdateException.Kind.PHOTO, e);
             }

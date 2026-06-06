@@ -79,7 +79,7 @@ public class PasswordResetMailServiceImpl implements PasswordResetMailService {
             mailSender.send(message);
         } catch (final MessagingException | UnsupportedEncodingException e) {
             LOGGER.error("Could not send password reset mail", e);
-            throw new IllegalStateException("Could not send password reset mail", e);
+            throw new ar.edu.itba.paw.models.notification.MailDeliveryException("Could not send password reset mail", e);
         }
     }
 }

@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.services.security;
 
+import ar.edu.itba.paw.models.security.PasswordResetException;
 import ar.edu.itba.paw.models.security.Token;
 import ar.edu.itba.paw.models.security.TokenType;
 import ar.edu.itba.paw.models.user.User;
@@ -67,16 +68,16 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
         final Token resetToken = tokenDao.findByTokenAndType(token, TokenType.PASSWORD_RESET)
                 .orElseThrow(() -> {
                     LOGGER.warn("Password reset failed: token not found");
-                    return new IllegalStateException("Password reset failed");
+                    return new PasswordResetException(PasswordResetException.Reason.TOKEN_NOT_FOUND);
                 });
         if (!isValid(resetToken)) {
             LOGGER.warn("Password reset failed: invalid or expired token userId={}", resetToken.getUser().getId());
-            throw new IllegalStateException("Password reset failed");
+            throw new PasswordResetException(PasswordResetException.Reason.TOKEN_EXPIRED);
         }
         final User user = userDao.findById(resetToken.getUser().getId())
                 .orElseThrow(() -> {
                     LOGGER.warn("Password reset failed: user not found userId={}", resetToken.getUser().getId());
-                    return new IllegalStateException("Password reset failed");
+                    return new PasswordResetException(PasswordResetException.Reason.USER_NOT_FOUND);
                 });
         final String encodedPassword = passwordEncoder.encode(rawPassword);
         userDao.updatePassword(user.getId(), encodedPassword);

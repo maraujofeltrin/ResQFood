@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.services.commerce;
 
+import ar.edu.itba.paw.models.auction.AuctionCreationException;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.services.auction.AuctionService;
@@ -68,7 +69,7 @@ public class CommerceOfferServiceImpl implements CommerceOfferService {
                     .toLocalDateTime();
         } catch (final DateTimeParseException e) {
             LOGGER.warn("Invalid auction end date/time format");
-            throw new IllegalArgumentException("Invalid auction end date or time", e);
+            throw new AuctionCreationException(AuctionCreationException.Reason.INVALID_END_DATE);
         }
     }
 }

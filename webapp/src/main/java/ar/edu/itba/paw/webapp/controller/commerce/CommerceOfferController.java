@@ -124,7 +124,8 @@ public class CommerceOfferController {
             }
             return new ModelAndView("redirect:/commerce/products");
 
-        } catch (final IllegalArgumentException e) {
+        } catch (final ar.edu.itba.paw.models.auction.AuctionCreationException
+                | ar.edu.itba.paw.models.image.ProfileImageException e) {
             LOGGER.debug("Create offer validation failed", e);
             final ModelAndView mav = new ModelAndView("commerce/createOfferView");
             mav.addObject("availableTags", PackTag.values());

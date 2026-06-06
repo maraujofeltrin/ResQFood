@@ -1,8 +1,10 @@
 package ar.edu.itba.paw.services.user;
 
+import ar.edu.itba.paw.models.image.ProfileImageException;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.models.user.UserRegistrationException;
 import ar.edu.itba.paw.persistence.ClientDao;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.UserDao;
@@ -70,7 +72,7 @@ public class UserServiceImpl implements UserService {
     private void persistProfileByRole(final User user, final Client clientProfile, final Commerce commerceProfile) {
         if (user.getRole() == User.Role.CLIENT) {
             if (clientProfile == null) {
-                throw new IllegalArgumentException("Client profile data is required for CLIENT users");
+                throw new UserRegistrationException(UserRegistrationException.Reason.MISSING_CLIENT_PROFILE);
             }
             final Optional<Client> existingClient = clientDao.findByUserId(user.getId());
             if (existingClient.isPresent()) {
@@ -91,10 +93,10 @@ public class UserServiceImpl implements UserService {
 
         if (user.getRole() == User.Role.COMMERCE) {
             if (commerceProfile == null) {
-                throw new IllegalArgumentException("Commerce profile data is required for COMMERCE users");
+                throw new UserRegistrationException(UserRegistrationException.Reason.MISSING_COMMERCE_PROFILE);
             }
             if (!Commerce.PROVINCE_BUENOS_AIRES.equalsIgnoreCase(commerceProfile.getProvince())) {
-                throw new IllegalArgumentException("Commerce province must be " + Commerce.PROVINCE_BUENOS_AIRES);
+                throw new UserRegistrationException(UserRegistrationException.Reason.INVALID_PROVINCE);
             }
             final Optional<Commerce> existingCommerce = commerceDao.findByUserId(user.getId());
             if (existingCommerce.isPresent()) {
@@ -182,13 +184,13 @@ public class UserServiceImpl implements UserService {
     @Override
     public void updateProfilePhoto(final long userId, final byte[] data, final String contentType) {
         if (data == null || data.length == 0) {
-            throw new IllegalArgumentException("Image data cannot be null or empty");
+            throw new ProfileImageException(ProfileImageException.Reason.DATA_EMPTY);
         }
         if (data.length > MAX_PROFILE_IMAGE_BYTES) {
-            throw new IllegalArgumentException("Image exceeds maximum size");
+            throw new ProfileImageException(ProfileImageException.Reason.SIZE_EXCEEDED);
         }
         if (contentType == null || contentType.isEmpty() || !ALLOWED_PROFILE_IMAGE_TYPES.contains(contentType)) {
-            throw new IllegalArgumentException("Invalid or unsupported image content type");
+            throw new ProfileImageException(ProfileImageException.Reason.INVALID_TYPE);
         }
         userDao.findById(userId).orElseThrow(() -> {
             LOGGER.warn("updateProfilePhoto: user not found userId={}", userId);

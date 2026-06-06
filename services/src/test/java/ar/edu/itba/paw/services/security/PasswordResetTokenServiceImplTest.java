@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.services.security;
 
+import ar.edu.itba.paw.models.security.PasswordResetException;
 import ar.edu.itba.paw.models.security.Token;
 import ar.edu.itba.paw.models.security.TokenType;
 import ar.edu.itba.paw.models.user.User;
@@ -177,20 +178,20 @@ class PasswordResetTokenServiceImplTest {
     }
 
     @Test
-    void testResetPasswordWhenTokenUnknownThrowsIllegalStateException() {
+    void testResetPasswordWhenTokenUnknownThrowsPasswordResetException() {
         // 1. Setup
         when(tokenDao.findByTokenAndType("bad", TokenType.PASSWORD_RESET)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
-        final IllegalStateException thrown = assertThrows(IllegalStateException.class,
+        final PasswordResetException thrown = assertThrows(PasswordResetException.class,
                 () -> service.resetPassword("bad", "x"));
 
         // 3. Asserts
-        assertTrue(thrown.getMessage().contains("Password reset failed"));
+        assertEquals(PasswordResetException.Reason.TOKEN_NOT_FOUND, thrown.getReason());
     }
 
     @Test
-    void testResetPasswordWhenTokenExpiredThrowsIllegalStateException() {
+    void testResetPasswordWhenTokenExpiredThrowsPasswordResetException() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
         final Token expired = new Token("exp", userRef(USER_ID), false, TokenType.PASSWORD_RESET, now.minusDays(1),
@@ -198,11 +199,11 @@ class PasswordResetTokenServiceImplTest {
         when(tokenDao.findByTokenAndType("exp", TokenType.PASSWORD_RESET)).thenReturn(Optional.of(expired));
 
         // 2. Ejercicio
-        final IllegalStateException thrown = assertThrows(IllegalStateException.class,
+        final PasswordResetException thrown = assertThrows(PasswordResetException.class,
                 () -> service.resetPassword("exp", "x"));
 
         // 3. Asserts
-        assertTrue(thrown.getMessage().contains("Password reset failed"));
+        assertEquals(PasswordResetException.Reason.TOKEN_EXPIRED, thrown.getReason());
     }
 
     @Test

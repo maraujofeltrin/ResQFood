@@ -165,7 +165,7 @@ public class CommercePackEditController {
 
             return new ModelAndView("redirect:/commerce/products");
 
-        } catch (final IllegalArgumentException e) {
+        } catch (final ar.edu.itba.paw.models.image.ProfileImageException e) {
             LOGGER.debug("Edit pack rejected by validation", e);
             final ModelAndView mav = new ModelAndView("commerce/editPack");
             mav.addObject("editMode", true);

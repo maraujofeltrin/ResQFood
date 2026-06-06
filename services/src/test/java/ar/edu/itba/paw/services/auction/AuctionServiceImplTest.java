@@ -3,6 +3,7 @@ package ar.edu.itba.paw.services.auction;
 import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.auction.Bid;
 import ar.edu.itba.paw.models.auction.BidFailureReason;
+import ar.edu.itba.paw.models.auction.AuctionCreationException;
 import ar.edu.itba.paw.models.auction.BidPlacementException;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
@@ -111,18 +112,18 @@ class AuctionServiceImplTest {
     }
 
     @Test
-    void testCreateAuctionWhenPackInactiveThrowsIllegalArgumentException() {
+    void testCreateAuctionWhenPackInactiveThrowsAuctionCreationException() {
         // 1. Setup
         final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, false, null);
         when(packDao.findById(PACK_ID)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
         final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
-        final IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        final AuctionCreationException exception = assertThrows(AuctionCreationException.class,
                 () -> auctionService.createAuction(PACK_ID, 100.0, 10.0, endTime));
 
         // 3. Asserts
-        assertTrue(exception.getMessage().contains("inactive pack"));
+        assertEquals(AuctionCreationException.Reason.PACK_INACTIVE, exception.getReason());
     }
 
     @Test

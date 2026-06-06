@@ -4,6 +4,7 @@ import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.PickupByCodeError;
 import ar.edu.itba.paw.models.reservation.Reservation;
+import ar.edu.itba.paw.models.reservation.ReservationCreationException;
 import ar.edu.itba.paw.models.reservation.ReservationRejectionError;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.user.User;
@@ -85,22 +86,22 @@ public class ReservationServiceImpl implements ReservationService {
             final double unitPrice,
             final String pickupWindow, final boolean isAuction) {
         if (quantity < 1) {
-            throw new IllegalArgumentException("quantity must be >= 1");
+            throw new ReservationCreationException(ReservationCreationException.Reason.INVALID_QUANTITY);
         }
         if (pickupWindow != null && pickupWindow.length() > PICKUP_WINDOW_MAX_LEN) {
-            throw new IllegalArgumentException("pickup_window must be at most " + PICKUP_WINDOW_MAX_LEN + " characters");
+            throw new ReservationCreationException(ReservationCreationException.Reason.PICKUP_WINDOW_TOO_LONG);
         }
 
         final User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalStateException("User not found for id: " + userId));
         if (user.getRole() != User.Role.CLIENT) {
-            throw new IllegalStateException("Only CLIENT users can create reservations");
+            throw new ReservationCreationException(ReservationCreationException.Reason.NOT_A_CLIENT);
         }
         clientService.findByUserId(userId)
                 .orElseThrow(() -> new IllegalStateException("Client profile not found for user id: " + userId));
 
         if (!packDao.decrementStock(packId, quantity)) {
-            throw new IllegalStateException("Could not decrement stock for pack: " + packId);
+            throw new ReservationCreationException(ReservationCreationException.Reason.INSUFFICIENT_STOCK, String.valueOf(packId));
         }
 
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
@@ -260,7 +261,7 @@ public class ReservationServiceImpl implements ReservationService {
         final Reservation reservation = reservationDao.findById(id)
                 .orElseThrow(() -> new IllegalStateException("Reservation not found: " + id));
         if (reservation.getStatus() != Reservation.Status.RESERVED) {
-            throw new IllegalStateException("Cannot confirm pickup: reservation status is " + reservation.getStatus());
+            throw new ReservationCreationException(ReservationCreationException.Reason.INVALID_STATUS, reservation.getStatus().name());
         }
         final Reservation confirmed = reservationDao.confirmPickup(id, LocalDateTime.now(ZoneOffset.UTC));
         LOGGER.info("Pickup confirmed for reservationId={}", id);
@@ -327,20 +328,24 @@ public class ReservationServiceImpl implements ReservationService {
         return ReservationServiceResult.success(canceledReservation);
     }
 
-    private RuntimeException toRejectionException(final ReservationServiceResult<ReservationRejectionError> result) {
+    private ReservationCreationException toRejectionException(final ReservationServiceResult<ReservationRejectionError> result) {
         final ReservationRejectionError error = result.error()
                 .orElse(ReservationRejectionError.INVALID_STATUS);
         switch (error) {
-            case INVALID_PARAMS:
             case RESERVATION_NOT_FOUND:
+                return new ReservationCreationException(ReservationCreationException.Reason.RESERVATION_NOT_FOUND);
             case PACK_NOT_FOUND:
-                return new IllegalArgumentException(error.name());
+                return new ReservationCreationException(ReservationCreationException.Reason.PACK_NOT_FOUND);
             case ALREADY_CANCELED:
+                return new ReservationCreationException(ReservationCreationException.Reason.ALREADY_CANCELED);
             case ALREADY_COMPLETED:
-            case INVALID_STATUS:
+                return new ReservationCreationException(ReservationCreationException.Reason.ALREADY_COMPLETED);
             case STOCK_RESTORE_FAILED:
+                return new ReservationCreationException(ReservationCreationException.Reason.STOCK_RESTORE_FAILED);
+            case INVALID_PARAMS:
+            case INVALID_STATUS:
             default:
-                return new IllegalStateException(error.name());
+                return new ReservationCreationException(ReservationCreationException.Reason.INVALID_STATUS);
         }
     }
 

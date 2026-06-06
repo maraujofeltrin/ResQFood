@@ -79,7 +79,7 @@ public class EmailVerificationMailServiceImpl implements EmailVerificationMailSe
             mailSender.send(message);
         } catch (final MessagingException | UnsupportedEncodingException e) {
             LOGGER.error("Could not send email verification mail", e);
-            throw new IllegalStateException("Could not send email verification mail", e);
+            throw new ar.edu.itba.paw.models.notification.MailDeliveryException("Could not send email verification mail", e);
         }
     }
 }

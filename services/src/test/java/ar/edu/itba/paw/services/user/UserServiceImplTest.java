@@ -1,10 +1,12 @@
 package ar.edu.itba.paw.services.user;
 
 import ar.edu.itba.paw.models.image.Image;
+import ar.edu.itba.paw.models.image.ProfileImageException;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.models.user.UserRegistrationException;
 import ar.edu.itba.paw.persistence.ClientDao;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.UserDao;
@@ -197,16 +199,16 @@ class UserServiceImplTest {
     }
 
     @Test
-    void testUpdateProfilePhotoWhenInvalidContentTypeThrowsIllegalArgumentException() {
+    void testUpdateProfilePhotoWhenInvalidContentTypeThrowsProfileImageException() {
         // 1. Setup
         // sin stub de userDao: falla validación antes de consultar
 
         // 2. Ejercicio
-        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+        final ProfileImageException thrown = assertThrows(ProfileImageException.class,
                 () -> userService.updateProfilePhoto(1L, new byte[] { 1 }, "application/pdf"));
 
         // 3. Asserts
-        assertEquals("Invalid or unsupported image content type", thrown.getMessage());
+        assertEquals(ProfileImageException.Reason.INVALID_TYPE, thrown.getReason());
     }
 
     @Test
@@ -240,7 +242,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void testCreateUserWhenClientRoleWithoutProfileThrowsIllegalArgumentException() {
+    void testCreateUserWhenClientRoleWithoutProfileThrowsUserRegistrationException() {
         // 1. Setup
         final User toCreate = new User(null, "cl@required.com", "pw", "N", null, User.Role.CLIENT, false);
         final User persisted =
@@ -250,15 +252,15 @@ class UserServiceImplTest {
                 eq(Locale.forLanguageTag("es")))).thenReturn(persisted);
 
         // 2. Ejercicio
-        final IllegalArgumentException thrown =
-                assertThrows(IllegalArgumentException.class, () -> userService.createUser(toCreate, null, null));
+        final UserRegistrationException thrown =
+                assertThrows(UserRegistrationException.class, () -> userService.createUser(toCreate, null, null));
 
         // 3. Asserts
-        assertEquals("Client profile data is required for CLIENT users", thrown.getMessage());
+        assertEquals(UserRegistrationException.Reason.MISSING_CLIENT_PROFILE, thrown.getReason());
     }
 
     @Test
-    void testCreateUserWhenCommerceRoleWithoutProfileThrowsIllegalArgumentException() {
+    void testCreateUserWhenCommerceRoleWithoutProfileThrowsUserRegistrationException() {
         // 1. Setup
         final User toCreate =
                 new User(null, "co@required.com", "pw", "N", "111", User.Role.COMMERCE, false);
@@ -269,49 +271,49 @@ class UserServiceImplTest {
                 eq(Locale.forLanguageTag("es")))).thenReturn(persisted);
 
         // 2. Ejercicio
-        final IllegalArgumentException thrown =
-                assertThrows(IllegalArgumentException.class, () -> userService.createUser(toCreate, null, null));
+        final UserRegistrationException thrown =
+                assertThrows(UserRegistrationException.class, () -> userService.createUser(toCreate, null, null));
 
         // 3. Asserts
-        assertEquals("Commerce profile data is required for COMMERCE users", thrown.getMessage());
+        assertEquals(UserRegistrationException.Reason.MISSING_COMMERCE_PROFILE, thrown.getReason());
     }
 
     @Test
-    void testUpdateProfilePhotoWhenDataNullThrowsIllegalArgumentException() {
+    void testUpdateProfilePhotoWhenDataNullThrowsProfileImageException() {
         // 1. Setup
 
         // 2. Ejercicio
-        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+        final ProfileImageException thrown = assertThrows(ProfileImageException.class,
                 () -> userService.updateProfilePhoto(1L, null, "image/png"));
 
         // 3. Asserts
-        assertEquals("Image data cannot be null or empty", thrown.getMessage());
+        assertEquals(ProfileImageException.Reason.DATA_EMPTY, thrown.getReason());
     }
 
     @Test
-    void testUpdateProfilePhotoWhenDataEmptyThrowsIllegalArgumentException() {
+    void testUpdateProfilePhotoWhenDataEmptyThrowsProfileImageException() {
         // 1. Setup
 
         // 2. Ejercicio
-        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+        final ProfileImageException thrown = assertThrows(ProfileImageException.class,
                 () -> userService.updateProfilePhoto(1L, new byte[0], "image/png"));
 
         // 3. Asserts
-        assertEquals("Image data cannot be null or empty", thrown.getMessage());
+        assertEquals(ProfileImageException.Reason.DATA_EMPTY, thrown.getReason());
     }
 
     @Test
-    void testUpdateProfilePhotoWhenExceedsMaxSizeThrowsIllegalArgumentException() {
+    void testUpdateProfilePhotoWhenExceedsMaxSizeThrowsProfileImageException() {
         // 1. Setup
         final byte[] huge = new byte[5 * 1024 * 1024 + 1];
         Arrays.fill(huge, (byte) 7);
 
         // 2. Ejercicio
-        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+        final ProfileImageException thrown = assertThrows(ProfileImageException.class,
                 () -> userService.updateProfilePhoto(1L, huge, "image/png"));
 
         // 3. Asserts
-        assertEquals("Image exceeds maximum size", thrown.getMessage());
+        assertEquals(ProfileImageException.Reason.SIZE_EXCEEDED, thrown.getReason());
     }
 
     @Test

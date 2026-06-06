@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.auction;
 
 import ar.edu.itba.paw.models.auction.Auction;
+import ar.edu.itba.paw.models.auction.AuctionCreationException;
 import ar.edu.itba.paw.models.auction.AuctionSortOption;
 import ar.edu.itba.paw.models.auction.Bid;
 import ar.edu.itba.paw.models.auction.BidFailureReason;
@@ -57,27 +58,27 @@ public class AuctionServiceImpl implements AuctionService {
     @Override
     public Auction createAuction(final long packId, final double initialPrice, final double minBidIncrement, final LocalDateTime endTime) {
         final Pack pack = packDao.findById(packId)
-                .orElseThrow(() -> new IllegalArgumentException("Pack not found: " + packId));
+                .orElseThrow(() -> new AuctionCreationException(AuctionCreationException.Reason.PACK_NOT_FOUND, String.valueOf(packId)));
 
         if (!pack.getActive()) {
-            throw new IllegalArgumentException("Cannot create auction for inactive pack: " + packId);
+            throw new AuctionCreationException(AuctionCreationException.Reason.PACK_INACTIVE, String.valueOf(packId));
         }
 
         if (auctionDao.findByPackId(packId).isPresent()) {
-            throw new IllegalArgumentException("Pack already has an auction: " + packId);
+            throw new AuctionCreationException(AuctionCreationException.Reason.ALREADY_HAS_AUCTION, String.valueOf(packId));
         }
 
         if (initialPrice <= 0) {
-            throw new IllegalArgumentException("Initial price must be positive");
+            throw new AuctionCreationException(AuctionCreationException.Reason.INVALID_INITIAL_PRICE);
         }
 
         if (minBidIncrement <= 0) {
-            throw new IllegalArgumentException("Minimum bid increment must be positive");
+            throw new AuctionCreationException(AuctionCreationException.Reason.INVALID_MIN_INCREMENT);
         }
 
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         if (endTime.isBefore(now)) {
-            throw new IllegalArgumentException("End time must be in the future");
+            throw new AuctionCreationException(AuctionCreationException.Reason.END_TIME_IN_PAST);
         }
 
         final Auction createdAuction = auctionDao.createAuction(packId, initialPrice, minBidIncrement, endTime);

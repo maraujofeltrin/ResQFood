@@ -3,6 +3,7 @@ package ar.edu.itba.paw.services.reservation;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
+import ar.edu.itba.paw.models.reservation.ReservationCreationException;
 import ar.edu.itba.paw.models.reservation.ReservationRejectionError;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.user.Client;
@@ -224,11 +225,11 @@ class ReservationServiceImplTest {
         // 1. Setup
 
         // 2. Ejercicio
-        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final ReservationCreationException ex = assertThrows(ReservationCreationException.class,
                 () -> reservationService.createReservation(20L, 2L, 0, 5.0, "pw", false));
 
         // 3. Asserts
-        assertTrue(ex.getMessage().contains("quantity"));
+        assertEquals(ReservationCreationException.Reason.INVALID_QUANTITY, ex.getReason());
     }
 
     @Test
@@ -241,11 +242,11 @@ class ReservationServiceImplTest {
         final String longPickup = sb.toString();
 
         // 2. Ejercicio
-        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final ReservationCreationException ex = assertThrows(ReservationCreationException.class,
                 () -> reservationService.createReservation(30L, 3L, 1, 5.0, longPickup, false));
 
         // 3. Asserts
-        assertTrue(ex.getMessage().contains("pickup_window"));
+        assertEquals(ReservationCreationException.Reason.PICKUP_WINDOW_TOO_LONG, ex.getReason());
     }
 
     @Test

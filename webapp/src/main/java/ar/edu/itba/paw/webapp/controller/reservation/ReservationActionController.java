@@ -141,7 +141,7 @@ public class ReservationActionController {
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
                     messageSource.getMessage("reservation.alert.success", null,
                             LocaleContextHolder.getLocale()));
-        } catch (final IllegalArgumentException | IllegalStateException ex) {
+        } catch (final ar.edu.itba.paw.models.reservation.ReservationCreationException ex) {
             LOGGER.debug("Direct reservation declined for packId={} clientId={}", Long.valueOf(packId),
                     Long.valueOf(authenticatedUser.getId()), ex);
             redirectAttributes.addFlashAttribute("reservationAlertKind", "error");

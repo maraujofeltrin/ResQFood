@@ -4,6 +4,7 @@ import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.CommerceProfileException;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.services.auction.AuctionService;
@@ -89,15 +90,15 @@ class CommerceServiceImplTest {
     }
 
     @Test
-    void testUpdateProfileFieldsWhenCategoryNullThrowsIllegalArgumentException() {
+    void testUpdateProfileFieldsWhenCategoryNullThrowsCommerceProfileException() {
         // 1. Setup
 
         // 2. Ejercicio
-        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+        final CommerceProfileException thrown = assertThrows(CommerceProfileException.class,
                 () -> commerceService.updateProfileFields(1L, null, "S", 1, Municipality.AVELLANEDA, "Buenos Aires", null, "09:00", "17:00"));
 
         // 3. Asserts
-        assertEquals("Category is required", thrown.getMessage());
+        assertEquals(CommerceProfileException.Reason.MISSING_CATEGORY, thrown.getReason());
     }
 
     @Test
