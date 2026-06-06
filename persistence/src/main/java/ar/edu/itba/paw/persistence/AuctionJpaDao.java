@@ -8,20 +8,19 @@ import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.persistence.util.JpqlQuerySupport;
 import ar.edu.itba.paw.persistence.util.LikePatternSupport;
 import ar.edu.itba.paw.persistence.util.OpeningTimeFilterJpql;
+import ar.edu.itba.paw.persistence.util.OpeningTimeFilterSql;
 import ar.edu.itba.paw.persistence.util.Pagination;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.TypedQuery;
+import javax.persistence.Query;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -118,65 +117,111 @@ public class AuctionJpaDao implements AuctionDao {
         OpeningTimeFilterJpql.appendTimeRangeConditions(jpql, "c.openingTime", timeRanges);
     }
 
-    private void appendAllTagsFilter(final StringBuilder jpql, final Map<String, Object> params, final List<PackTag> tags) {
-        jpql.append("AND t IN (:tags) ");
-        params.put("tags", tags);
-        jpql.append("GROUP BY a.id HAVING COUNT(DISTINCT t) = :requiredTagCount ");
-        params.put("requiredTagCount", Long.valueOf(tags.size()));
-    }
-
     private void appendAllTagsCountFilter(final StringBuilder jpql, final Map<String, Object> params, final List<PackTag> tags) {
         jpql.append("AND (SELECT COUNT(DISTINCT t2) FROM Pack p2 JOIN p2.tags t2 WHERE p2.id = p.id AND t2 IN (:tags)) = :requiredTagCount ");
         params.put("tags", tags);
         params.put("requiredTagCount", Long.valueOf(tags.size()));
     }
 
-    private String toOrderByClause(final AuctionSortOption sort, final boolean groupedByAuctionId) {
-        final AuctionSortOption safeSort = sort != null ? sort : AuctionSortOption.TIME_REMAINING_ASC;
-        if (groupedByAuctionId) {
-            switch (safeSort) {
-                case TIME_REMAINING_DESC:
-                    return "MIN(a.endTime) DESC";
-                case PRICE_ASC:
-                    return "MIN(COALESCE(a.currentBid, a.initialPrice)) ASC";
-                case PRICE_DESC:
-                    return "MIN(COALESCE(a.currentBid, a.initialPrice)) DESC";
-                case TIME_REMAINING_ASC:
-                default:
-                    return "MIN(a.endTime) ASC";
+    private void appendCatalogFiltersNative(final StringBuilder sql, final Map<String, Object> params,
+                                            final String query, final List<PackTag> tags, final String city,
+                                            final List<String> timeRanges, final boolean requirePositiveStock,
+                                            final Long commerceUserId) {
+        if (commerceUserId != null) {
+            sql.append(" AND p.commerce_id = :commerceUserId");
+            params.put("commerceUserId", commerceUserId);
+        }
+        if (requirePositiveStock) {
+            sql.append(" AND p.stock > 0");
+        }
+        final Optional<String> searchPattern = LikePatternSupport.escapeAndWrap(query);
+        if (searchPattern.isPresent()) {
+            sql.append(" AND (");
+            LikePatternSupport.appendEscapedLikeNative(sql, "p.title", ":search");
+            sql.append(" OR ");
+            LikePatternSupport.appendEscapedLikeNative(sql, "c.commercial_name", ":search");
+            sql.append(")");
+            params.put("search", searchPattern.get());
+        }
+        final Municipality municipality = Municipality.fromCityName(city);
+        if (municipality != null) {
+            sql.append(" AND c.city = :city");
+            params.put("city", municipality.getCityName());
+        }
+        OpeningTimeFilterSql.appendTimeRangeConditions(sql, "c.opening_time", timeRanges);
+        if (tags != null && !tags.isEmpty()) {
+            for (int index = 0; index < tags.size(); index++) {
+                final String paramName = "tag" + index;
+                sql.append(" AND EXISTS (SELECT 1 FROM pack_tags pt WHERE pt.pack_id = p.id AND pt.tag = :")
+                        .append(paramName).append(")");
+                params.put(paramName, tags.get(index).name());
             }
         }
-        switch (safeSort) {
-            case TIME_REMAINING_DESC:
-                return "a.endTime DESC";
-            case PRICE_ASC:
-                return "COALESCE(a.currentBid, a.initialPrice) ASC";
-            case PRICE_DESC:
-                return "COALESCE(a.currentBid, a.initialPrice) DESC";
-            case TIME_REMAINING_ASC:
-            default:
-                return "a.endTime ASC";
+    }
+
+    private void appendParticipatedSearchFiltersNative(final StringBuilder sql, final Map<String, Object> params,
+                                                         final String query) {
+        final Optional<String> searchPattern = LikePatternSupport.escapeAndWrap(query);
+        if (searchPattern.isEmpty()) {
+            return;
         }
+        sql.append(" AND (");
+        LikePatternSupport.appendEscapedLikeNative(sql, "p.title", ":search");
+        sql.append(" OR ");
+        LikePatternSupport.appendEscapedLikeNative(sql, "p.description", ":search");
+        sql.append(" OR ");
+        LikePatternSupport.appendEscapedLikeNative(sql, "c.commercial_name", ":search");
+        sql.append(")");
+        params.put("search", searchPattern.get());
+    }
+
+    private String toNativeOrderByClause(final AuctionSortOption sort) {
+        final AuctionSortOption safeSort = sort != null ? sort : AuctionSortOption.TIME_REMAINING_ASC;
+        return safeSort.getOrderByClause();
+    }
+
+    private String toJpqlOrderByClause(final AuctionSortOption sort) {
+        return toNativeOrderByClause(sort)
+                .replace("end_time", "endTime")
+                .replace("current_bid", "currentBid")
+                .replace("initial_price", "initialPrice");
+    }
+
+    private List<Long> parseLongIds(final List<?> rawIds) {
+        final List<Long> ids = new ArrayList<>(rawIds.size());
+        for (final Object rawId : rawIds) {
+            if (rawId instanceof Number) {
+                ids.add(((Number) rawId).longValue());
+            } else {
+                ids.add(Long.parseLong(rawId.toString()));
+            }
+        }
+        return ids;
     }
 
     private List<Long> queryAuctionIds(final String query, final List<PackTag> tags, final String city,
                                        final List<String> timeRanges, final AuctionSortOption sort,
                                        final int page, final int pageSize, final boolean requirePositiveStock,
                                        final Long commerceUserId) {
-        final boolean withTags = tags != null && !tags.isEmpty();
-        final StringBuilder jpql = new StringBuilder("SELECT a.id ");
+        final StringBuilder sql = new StringBuilder(
+                "SELECT a.id FROM auctions a "
+                        + "INNER JOIN packs p ON p.id = a.pack_id "
+                        + "INNER JOIN commerces c ON c.user_id = p.commerce_id "
+                        + "WHERE a.status = :activeStatus AND a.end_time > :now "
+                        + "AND p.active = TRUE AND p.deleted = FALSE");
         final Map<String, Object> params = new LinkedHashMap<>();
-        appendFilterFromClause(jpql, withTags);
-        appendCommonCatalogFilters(jpql, params, query, city, timeRanges, requirePositiveStock, commerceUserId);
-        if (withTags) {
-            appendAllTagsFilter(jpql, params, tags);
-        }
-        jpql.append("ORDER BY ").append(toOrderByClause(sort, withTags));
+        params.put("activeStatus", Auction.Status.ACTIVE.name());
+        params.put("now", LocalDateTime.now(ZoneOffset.UTC));
+        appendCatalogFiltersNative(sql, params, query, tags, city, timeRanges, requirePositiveStock, commerceUserId);
+        sql.append(" ORDER BY ").append(toNativeOrderByClause(sort));
 
-        return JpqlQuerySupport.createQuery(em, jpql.toString(), params, Long.class)
-                .setMaxResults(pageSize)
-                .setFirstResult(Pagination.offset(page, pageSize))
-                .getResultList();
+        final Query idQuery = em.createNativeQuery(sql.toString());
+        for (final Map.Entry<String, Object> entry : params.entrySet()) {
+            idQuery.setParameter(entry.getKey(), entry.getValue());
+        }
+        idQuery.setFirstResult(Pagination.offset(page, pageSize));
+        idQuery.setMaxResults(pageSize);
+        return parseLongIds(idQuery.getResultList());
     }
 
     @Override
@@ -192,18 +237,12 @@ public class AuctionJpaDao implements AuctionDao {
             return Collections.emptyList();
         }
 
-        final List<Auction> auctions = em.createQuery(
-                        "SELECT a FROM Auction a JOIN FETCH a.pack p JOIN FETCH p.commerce WHERE a.id IN :ids",
+        return em.createQuery(
+                        "SELECT a FROM Auction a JOIN FETCH a.pack p JOIN FETCH p.commerce "
+                                + "WHERE a.id IN :ids ORDER BY " + toJpqlOrderByClause(sort),
                         Auction.class)
                 .setParameter("ids", ids)
                 .getResultList();
-
-        final Map<Long, Integer> positions = new HashMap<>();
-        for (int index = 0; index < ids.size(); index++) {
-            positions.put(ids.get(index), Integer.valueOf(index));
-        }
-        auctions.sort(Comparator.comparingInt(auction -> positions.getOrDefault(auction.getId(), Integer.MAX_VALUE)));
-        return auctions;
     }
 
     @Override
@@ -287,54 +326,51 @@ public class AuctionJpaDao implements AuctionDao {
         }
     }
 
+    private String buildIdPositionOrderByClause(final List<Long> ids) {
+        final StringBuilder orderBy = new StringBuilder("CASE a.id ");
+        for (int index = 0; index < ids.size(); index++) {
+            orderBy.append("WHEN ").append(ids.get(index).longValue()).append(" THEN ").append(index).append(' ');
+        }
+        orderBy.append("ELSE ").append(ids.size()).append(" END");
+        return orderBy.toString();
+    }
+
     @Override
     public List<Auction> filterParticipatedAuctions(final long clientId, final Auction.Status status, final String query, final int page, final int pageSize) {
-        final StringBuilder idJpql = new StringBuilder("SELECT a.id, MAX(b.timestamp) ");
-        idJpql.append("FROM Auction a JOIN a.pack p JOIN p.commerce c, Bid b WHERE a.id = b.auction.id ");
-        idJpql.append("AND p.deleted = false AND b.client.userId = :clientId ");
-
+        final StringBuilder sql = new StringBuilder(
+                "SELECT a.id FROM auctions a "
+                        + "INNER JOIN packs p ON p.id = a.pack_id "
+                        + "INNER JOIN commerces c ON c.user_id = p.commerce_id "
+                        + "INNER JOIN bids b ON b.auction_id = a.id AND b.client_id = :clientId "
+                        + "WHERE p.deleted = FALSE");
         final Map<String, Object> params = new LinkedHashMap<>();
         params.put("clientId", Long.valueOf(clientId));
 
         if (status != null) {
-            idJpql.append("AND a.status = :auctionStatus ");
-            params.put("auctionStatus", status);
+            sql.append(" AND a.status = :auctionStatus");
+            params.put("auctionStatus", status.name());
+        }
+        appendParticipatedSearchFiltersNative(sql, params, query);
+        sql.append(" GROUP BY a.id ORDER BY MAX(b.timestamp) DESC");
+
+        final Query idQuery = em.createNativeQuery(sql.toString());
+        for (final Map.Entry<String, Object> entry : params.entrySet()) {
+            idQuery.setParameter(entry.getKey(), entry.getValue());
+        }
+        idQuery.setFirstResult(Pagination.offset(page, pageSize));
+        idQuery.setMaxResults(pageSize);
+
+        final List<Long> ids = parseLongIds(idQuery.getResultList());
+        if (ids.isEmpty()) {
+            return Collections.emptyList();
         }
 
-        final Optional<String> pattern = LikePatternSupport.escapeAndWrap(query);
-        if (pattern.isPresent()) {
-            idJpql.append("AND (");
-            LikePatternSupport.appendEscapedLike(idJpql, "p.title", ":search");
-            idJpql.append(" OR ");
-            LikePatternSupport.appendEscapedLike(idJpql, "p.description", ":search");
-            idJpql.append(" OR ");
-            LikePatternSupport.appendEscapedLike(idJpql, "c.commercialName", ":search");
-            idJpql.append(") ");
-            params.put("search", pattern.get());
-        }
-        idJpql.append("GROUP BY a.id ORDER BY MAX(b.timestamp) DESC");
-
-        final List<Object[]> results = JpqlQuerySupport.createQuery(em, idJpql.toString(), params, Object[].class)
-                .setMaxResults(pageSize)
-                .setFirstResult(Pagination.offset(page, pageSize))
-                .getResultList();
-        if (results.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        final List<Long> ids = new ArrayList<>();
-        for (final Object[] row : results) {
-            ids.add((Long) row[0]);
-        }
-
-        final List<Auction> auctions = em.createQuery(
-                "SELECT a FROM Auction a JOIN FETCH a.pack p JOIN FETCH p.commerce WHERE a.id IN :ids",
-                Auction.class)
+        return em.createQuery(
+                        "SELECT a FROM Auction a JOIN FETCH a.pack p JOIN FETCH p.commerce "
+                                + "WHERE a.id IN :ids ORDER BY " + buildIdPositionOrderByClause(ids),
+                        Auction.class)
                 .setParameter("ids", ids)
                 .getResultList();
-
-        auctions.sort((a1, a2) -> Integer.compare(ids.indexOf(a1.getId()), ids.indexOf(a2.getId())));
-        return auctions;
     }
 
     @Override

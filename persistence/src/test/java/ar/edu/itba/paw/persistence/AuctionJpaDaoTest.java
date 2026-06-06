@@ -383,4 +383,95 @@ public class AuctionJpaDaoTest {
         assertEquals(1, count);
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "bids"));
     }
+
+    @Test
+    public void testFilterAuctionsOrdersByPriceAscWhenMultipleExist() {
+        // 1. Setup
+        final Pack pack2 = packDao.createPack(commerceId, "Pack 2", "Desc", 1000.0, 500.0, 1, null, null);
+        final Pack pack3 = packDao.createPack(commerceId, "Pack 3", "Desc", 1000.0, 500.0, 1, null, null);
+        final Auction cheapest = auctionDao.createAuction(packId, 100.0, 10.0, AUCTION_END_TIME);
+        final Auction mid = auctionDao.createAuction(pack2.getId(), 300.0, 10.0, AUCTION_END_TIME);
+        final Auction expensive = auctionDao.createAuction(pack3.getId(), 500.0, 10.0, AUCTION_END_TIME);
+        auctionDao.updateCurrentBid(cheapest.getId(), 150.0, clientId);
+        auctionDao.updateCurrentBid(mid.getId(), 350.0, clientId);
+        auctionDao.updateCurrentBid(expensive.getId(), 550.0, clientId);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Auction> filtered = auctionDao.filterAuctions(null, null, null, null,
+                AuctionSortOption.PRICE_ASC, 1, 10, false, null);
+
+        // 3. Asserts
+        assertEquals(3, filtered.size());
+        assertEquals(cheapest.getId(), filtered.get(0).getId());
+        assertEquals(mid.getId(), filtered.get(1).getId());
+        assertEquals(expensive.getId(), filtered.get(2).getId());
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
+    }
+
+    @Test
+    public void testFilterParticipatedAuctionsOrdersByLatestBidDesc() {
+        // 1. Setup
+        final Pack pack2 = packDao.createPack(commerceId, "Pack 2", "Desc", 1000.0, 500.0, 1, null, null);
+        final Auction olderParticipation = auctionDao.createAuction(packId, 500.0, 50.0, AUCTION_END_TIME);
+        final Auction newerParticipation = auctionDao.createAuction(pack2.getId(), 500.0, 50.0, AUCTION_END_TIME);
+        em.flush();
+        bidDao.createBid(olderParticipation.getId(), clientId, 600.0);
+        em.flush();
+        bidDao.createBid(newerParticipation.getId(), clientId, 700.0);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Auction> participated = auctionDao.filterParticipatedAuctions(clientId, null, null, 1, 10);
+
+        // 3. Asserts
+        assertEquals(2, participated.size());
+        assertEquals(newerParticipation.getId(), participated.get(0).getId());
+        assertEquals(olderParticipation.getId(), participated.get(1).getId());
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "bids"));
+    }
+
+    @Test
+    public void testFilterParticipatedAuctionsPaginatesSecondPagePreservingOrder() {
+        // 1. Setup
+        final Pack pack2 = packDao.createPack(commerceId, "Pack 2", "Desc", 1000.0, 500.0, 1, null, null);
+        final Pack pack3 = packDao.createPack(commerceId, "Pack 3", "Desc", 1000.0, 500.0, 1, null, null);
+        final Auction oldest = auctionDao.createAuction(packId, 500.0, 50.0, AUCTION_END_TIME);
+        final Auction middle = auctionDao.createAuction(pack2.getId(), 500.0, 50.0, AUCTION_END_TIME);
+        final Auction newest = auctionDao.createAuction(pack3.getId(), 500.0, 50.0, AUCTION_END_TIME);
+        em.flush();
+        bidDao.createBid(oldest.getId(), clientId, 600.0);
+        em.flush();
+        bidDao.createBid(middle.getId(), clientId, 650.0);
+        em.flush();
+        bidDao.createBid(newest.getId(), clientId, 700.0);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Auction> pageTwo = auctionDao.filterParticipatedAuctions(clientId, null, null, 2, 1);
+
+        // 3. Asserts
+        assertEquals(1, pageTwo.size());
+        assertEquals(middle.getId(), pageTwo.get(0).getId());
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "bids"));
+    }
+
+    @Test
+    public void testFilterAuctionsEagerlyLoadsPackAndCommerce() {
+        // 1. Setup
+        auctionDao.createAuction(packId, 500.0, 50.0, AUCTION_END_TIME);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final List<Auction> filtered = auctionDao.filterAuctions(null, null, null, null, null, 1, 10, false, null);
+
+        // 3. Asserts
+        assertEquals(1, filtered.size());
+        assertTrue(Hibernate.isInitialized(filtered.get(0).getPack()));
+        assertTrue(Hibernate.isInitialized(filtered.get(0).getPack().getCommerce()));
+        assertNotNull(filtered.get(0).getPack().getCommerce().getCommercialName());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
+    }
 }
