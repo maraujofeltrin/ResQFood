@@ -4,25 +4,17 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.persistence.PackDao;
-import ar.edu.itba.paw.services.mail.MailMessageResolver;
+import ar.edu.itba.paw.services.mail.MailSenderSupport;
 import ar.edu.itba.paw.services.user.ClientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
-import org.thymeleaf.templatemode.TemplateMode;
-import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
-import java.io.UnsupportedEncodingException;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -31,40 +23,15 @@ import java.util.Locale;
 import java.util.Optional;
 
 @Service
-public class ReservationMailServiceImpl implements ReservationMailService {
+public class ReservationMailServiceImpl extends MailSenderSupport implements ReservationMailService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReservationMailServiceImpl.class);
 
     private static final DateTimeFormatter MAIL_DATE_FORMATTER = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
-    private static final TemplateEngine templateEngine;
-    private static final ResourceBundleMessageSource mailMessages;
 
-    static {
-        final ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
-        templateResolver.setPrefix("mail/");
-        templateResolver.setSuffix(".html");
-        templateResolver.setTemplateMode(TemplateMode.HTML);
-        templateResolver.setCharacterEncoding("UTF-8");
-
-        final MailMessageResolver messageResolver = new MailMessageResolver();
-
-        templateEngine = new TemplateEngine();
-        templateEngine.setTemplateResolver(templateResolver);
-        templateEngine.setMessageResolver(messageResolver);
-
-        mailMessages = new ResourceBundleMessageSource();
-        mailMessages.setBasename("mail/messages");
-        mailMessages.setDefaultEncoding("UTF-8");
-        mailMessages.setFallbackToSystemLocale(false);
-        mailMessages.setDefaultLocale(Locale.forLanguageTag("es"));
-    }
-
-    private final JavaMailSender mailSender;
     private final PackDao packDao;
     private final ClientService clientService;
     private final ZoneId displayZone;
-    private final String mailFrom;
-    private final String mailFromName;
 
     private final String baseUrl;
 
@@ -76,11 +43,9 @@ public class ReservationMailServiceImpl implements ReservationMailService {
             @Value("${mail.from-name:ResQFood}") final String mailFromName,
             final ZoneId displayZone,
             @Value("${app.base-url}") final String baseUrl) {
-        this.mailSender = mailSender;
+        super(mailSender, mailFrom, mailFromName);
         this.packDao = packDao;
         this.clientService = clientService;
-        this.mailFrom = mailFrom;
-        this.mailFromName = mailFromName;
         this.displayZone = displayZone;
         this.baseUrl = baseUrl;
     }
@@ -97,7 +62,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
 
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
         final String clientName = resolveClientName(reservation.getCustomer().getUserId(), locale);
-        final String subject = mailMessages.getMessage("mail.subject.reservationRequest",
+        final String subject = resolveSubject("mail.subject.reservationRequest",
                 new Object[]{reservation.getId(), clientName}, locale);
         final String html = buildCommerceHtml(reservation, packMailInfo.packLabel(), acceptUrl, rejectUrl,
                 pickupDateStr, locale);
@@ -110,7 +75,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     public void sendReservationCodeToClient(final Reservation reservation, final String clientEmail,
             final String pickupDateStr, final Locale locale) {
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
-        final String subject = mailMessages.getMessage("mail.subject.clientPickupCode",
+        final String subject = resolveSubject("mail.subject.clientPickupCode",
                 new Object[]{packMailInfo.localName()}, locale);
         final String html = buildClientHtml(reservation, packMailInfo.packLabel(), pickupDateStr, locale);
         sendHtmlMail(clientEmail, subject, html, "Could not send client pickup code mail");
@@ -121,7 +86,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     public void sendAuctionWinnerCodeToClient(final Reservation reservation, final String clientEmail,
             final String pickupDateStr, final Locale locale) {
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
-        final String subject = mailMessages.getMessage("mail.subject.auctionWinnerClient",
+        final String subject = resolveSubject("mail.subject.auctionWinnerClient",
                 new Object[]{packMailInfo.localName()}, locale);
         final String html = buildAuctionWinnerHtml(reservation, packMailInfo.packLabel(), pickupDateStr, false,
                 null, locale);
@@ -133,7 +98,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     public void sendAuctionWinnerCodeToCommerce(final Reservation reservation, final String commerceEmail,
             final String pickupDateStr, final Locale locale) {
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
-        final String subject = mailMessages.getMessage("mail.subject.auctionWinnerCommerce",
+        final String subject = resolveSubject("mail.subject.auctionWinnerCommerce",
                 new Object[]{packMailInfo.localName()}, locale);
         final String winnerName = resolveClientName(reservation.getCustomer().getUserId(), locale);
         final String html = buildAuctionWinnerHtml(reservation, packMailInfo.packLabel(), pickupDateStr, true,
@@ -146,63 +111,10 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     public void sendReservationRejectedToClient(final Reservation reservation, final String clientEmail,
             final Locale locale) {
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
-        final String subject = mailMessages.getMessage("mail.subject.clientRejected",
+        final String subject = resolveSubject("mail.subject.clientRejected",
                 new Object[]{packMailInfo.localName()}, locale);
         final String html = buildClientRejectedHtml(reservation, packMailInfo.packLabel(), locale);
         sendHtmlMail(clientEmail, subject, html, "Could not send rejection mail");
-    }
-
-    @Async
-    @Override
-    public void sendAuctionOutbidToClient(final String clientEmail, final String packTitle,
-            final String commerceName, final double newAmount, final Locale locale) {
-        final String subject = mailMessages.getMessage("mail.subject.auctionOutbid",
-                new Object[]{packTitle != null ? packTitle : mailMessages.getMessage("mail.label.packFallback",
-                        new Object[]{""}, locale)}, locale);
-        final Context context = new Context(locale);
-        context.setVariable("packTitle", packTitle);
-        context.setVariable("commerceName", commerceName);
-        context.setVariable("newAmount", newAmount);
-        final String html = templateEngine.process("auction-outbid", context);
-        sendHtmlMail(clientEmail, subject, html, "Could not send auction outbid mail");
-    }
-
-    @Async
-    @Override
-    public void sendFavoritePackRestockedToClient(final String clientEmail, final String packTitle,
-            final String commerceName, final Locale locale) {
-        final String subject = mailMessages.getMessage("mail.subject.favoritePackRestocked", null, locale);
-        final Context context = new Context(locale);
-        context.setVariable("packTitle", packTitle);
-        context.setVariable("commerceName", commerceName);
-        final String html = templateEngine.process("favorite-pack-restocked", context);
-        sendHtmlMail(clientEmail, subject, html, "Could not send favorite pack restocked mail");
-    }
-
-    @Async
-    @Override
-    public void sendFavoriteCommerceNewPackToClient(final String clientEmail, final String packTitle,
-            final String commerceName, final Locale locale) {
-        final String subject = mailMessages.getMessage("mail.subject.favoriteCommerceNewPack",
-                new Object[]{commerceName != null ? commerceName : ""}, locale);
-        final Context context = new Context(locale);
-        context.setVariable("packTitle", packTitle);
-        context.setVariable("commerceName", commerceName);
-        final String html = templateEngine.process("favorite-commerce-new-pack", context);
-        sendHtmlMail(clientEmail, subject, html, "Could not send favorite commerce new pack mail");
-    }
-
-    @Async
-    @Override
-    public void sendAuctionFinishedLostToClient(final String clientEmail, final String packTitle,
-            final String commerceName, final Locale locale) {
-        final String subject = mailMessages.getMessage("mail.subject.auctionFinishedLost",
-                new Object[]{packTitle != null ? packTitle : ""}, locale);
-        final Context context = new Context(locale);
-        context.setVariable("packTitle", packTitle);
-        context.setVariable("commerceName", commerceName);
-        final String html = templateEngine.process("auction-finished-lost", context);
-        sendHtmlMail(clientEmail, subject, html, "Could not send auction finished lost mail");
     }
 
     private String buildClientHtml(final Reservation reservation, final String packLabel, final String pickupDateStr,
@@ -221,7 +133,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         context.setVariable("pickupDateStr", pickupDateStr);
         context.setVariable("priceStr", priceStr);
 
-        return templateEngine.process("client-pickup-code", context);
+        return processTemplate("client-pickup-code", context);
     }
 
     private String buildAuctionWinnerHtml(final Reservation reservation, final String packLabel,
@@ -242,7 +154,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         context.setVariable("showCode", !forCommerce);
         context.setVariable("winnerName", forCommerce ? winnerName : null);
 
-        return templateEngine.process("auction-winner-pickup-code", context);
+        return processTemplate("auction-winner-pickup-code", context);
     }
 
     private String buildClientRejectedHtml(final Reservation reservation, final String packLabel,
@@ -256,7 +168,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         context.setVariable("packLabel", packLabel);
         context.setVariable("reservationDateStr", reservationDateStr);
 
-        return templateEngine.process("client-reservation-rejected", context);
+        return processTemplate("client-reservation-rejected", context);
     }
 
     private String buildCommerceHtml(final Reservation reservation, final String packTitle, final String acceptUrl,
@@ -274,12 +186,12 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         context.setVariable("acceptUrl", acceptUrl);
         context.setVariable("rejectUrl", rejectUrl);
 
-        return templateEngine.process("commerce-reservation", context);
+        return processTemplate("commerce-reservation", context);
     }
 
     private PackMailInfo getPackMailInfo(final Reservation reservation, final Locale locale) {
         final Pack pack = packDao.findById(reservation.getPack().getId()).orElse(null);
-        final String fallbackName = mailMessages.getMessage("mail.label.packFallback",
+        final String fallbackName = resolveSubject("mail.label.packFallback",
                 new Object[]{reservation.getPack().getId()}, locale);
         final String localName = pack != null ? pack.getTitle() : fallbackName;
         final String packLabel = pack != null
@@ -289,7 +201,7 @@ public class ReservationMailServiceImpl implements ReservationMailService {
     }
 
     private String resolveClientName(final Long customerId, final Locale locale) {
-        final String fallbackClientName = mailMessages.getMessage("mail.label.clientFallback", null, locale);
+        final String fallbackClientName = resolveSubject("mail.label.clientFallback", null, locale);
         if (customerId == null) {
             return fallbackClientName;
         }
@@ -303,22 +215,6 @@ public class ReservationMailServiceImpl implements ReservationMailService {
         final String fullName = (client.getName() == null ? "" : client.getName())
                 + (client.getLastName() == null ? "" : (" " + client.getLastName()));
         return fullName.trim().isEmpty() ? fallbackClientName : fullName.trim();
-    }
-
-    private void sendHtmlMail(final String toEmail, final String subject, final String html,
-            final String errorMessage) {
-        try {
-            final MimeMessage message = mailSender.createMimeMessage();
-            final MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(mailFrom, mailFromName);
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            helper.setText(html, true);
-            mailSender.send(message);
-        } catch (final MessagingException | UnsupportedEncodingException e) {
-            LOGGER.error("Failed to send reservation mail: {}", errorMessage, e);
-            throw new ar.edu.itba.paw.models.notification.MailDeliveryException(errorMessage, e);
-        }
     }
 
     private record PackMailInfo(String localName, String packLabel) {

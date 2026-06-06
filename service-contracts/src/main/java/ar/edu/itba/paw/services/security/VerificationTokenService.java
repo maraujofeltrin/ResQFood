@@ -5,7 +5,7 @@ import ar.edu.itba.paw.models.user.User;
 import java.util.Optional;
 import java.util.Locale;
 
-public interface EmailVerificationTokenService {
+public interface VerificationTokenService {
 
     void sendVerificationMail(final Long userId, final String email, final Locale locale);
 

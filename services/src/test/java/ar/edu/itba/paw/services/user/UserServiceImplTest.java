@@ -11,7 +11,7 @@ import ar.edu.itba.paw.persistence.ClientDao;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.UserDao;
 import ar.edu.itba.paw.services.image.ImageService;
-import ar.edu.itba.paw.services.security.EmailVerificationTokenService;
+import ar.edu.itba.paw.services.security.VerificationTokenService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -52,7 +52,7 @@ class UserServiceImplTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private EmailVerificationTokenService emailVerificationTokenService;
+    private VerificationTokenService verificationTokenService;
 
     @Mock
     private ImageService imageService;

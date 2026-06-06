@@ -17,9 +17,9 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
 
 @Service
-public class EmailVerificationTokenServiceImpl implements EmailVerificationTokenService {
+public class VerificationTokenServiceImpl implements VerificationTokenService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(EmailVerificationTokenServiceImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(VerificationTokenServiceImpl.class);
 
     private final TokenDao tokenDao;
     private final UserDao userDao;
@@ -27,7 +27,7 @@ public class EmailVerificationTokenServiceImpl implements EmailVerificationToken
     private final String baseUrl;
 
     @Autowired
-    public EmailVerificationTokenServiceImpl(final TokenDao tokenDao, final UserDao userDao,
+    public VerificationTokenServiceImpl(final TokenDao tokenDao, final UserDao userDao,
             final EmailVerificationMailService emailVerificationMailService,
             @Value("${app.base-url}") final String baseUrl) {
         this.tokenDao = tokenDao;

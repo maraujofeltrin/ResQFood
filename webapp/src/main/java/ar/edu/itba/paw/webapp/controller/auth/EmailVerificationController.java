@@ -1,7 +1,7 @@
 package ar.edu.itba.paw.webapp.controller.auth;
 
 import ar.edu.itba.paw.models.user.User;
-import ar.edu.itba.paw.services.security.EmailVerificationTokenService;
+import ar.edu.itba.paw.services.security.VerificationTokenService;
 import ar.edu.itba.paw.webapp.form.EmailVerificationResendForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,19 +27,19 @@ import javax.servlet.http.HttpSession;
 @RequestMapping("/verify-email")
 public class EmailVerificationController {
 
-    private final EmailVerificationTokenService emailVerificationTokenService;
+    private final VerificationTokenService verificationTokenService;
     private final UserDetailsService userDetailsService;
 
     @Autowired
-    public EmailVerificationController(final EmailVerificationTokenService emailVerificationTokenService,
+    public EmailVerificationController(final VerificationTokenService verificationTokenService,
             final UserDetailsService userDetailsService) {
-        this.emailVerificationTokenService = emailVerificationTokenService;
+        this.verificationTokenService = verificationTokenService;
         this.userDetailsService = userDetailsService;
     }
 
     @GetMapping
     public String verify(@RequestParam final String token, final HttpServletRequest request) {
-        final User verifiedUser = emailVerificationTokenService.verifyEmailAndGetUser(token)
+        final User verifiedUser = verificationTokenService.verifyEmailAndGetUser(token)
                 .orElse(null);
         if (verifiedUser == null) {
             return "redirect:/verify-email/resend?expired=true";
@@ -76,7 +76,7 @@ public class EmailVerificationController {
             return "verify-email/resend";
         }
 
-        emailVerificationTokenService.resendVerificationMail(form.getEmail());
+        verificationTokenService.resendVerificationMail(form.getEmail());
 
         return "redirect:/login?pendingVerification=true";
     }

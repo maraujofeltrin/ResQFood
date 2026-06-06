@@ -7,7 +7,6 @@ import ar.edu.itba.paw.persistence.TokenDao;
 import ar.edu.itba.paw.persistence.UserDao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -27,7 +26,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class EmailVerificationTokenServiceImplTest {
+class VerificationTokenServiceImplTest {
 
     private static final long USER_ID = 42L;
     private static final String EMAIL = "u@example.com";
@@ -42,11 +41,11 @@ class EmailVerificationTokenServiceImplTest {
     @Mock
     private EmailVerificationMailService emailVerificationMailService;
 
-    private EmailVerificationTokenServiceImpl service;
+    private VerificationTokenServiceImpl service;
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        service = new EmailVerificationTokenServiceImpl(tokenDao, userDao, emailVerificationMailService, "https://app.example");
+        service = new VerificationTokenServiceImpl(tokenDao, userDao, emailVerificationMailService, "https://app.example");
     }
 
     private static User userRef(final long id) {

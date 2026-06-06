@@ -14,6 +14,8 @@ import ar.edu.itba.paw.persistence.ClientNotificationPreferenceDao;
 import ar.edu.itba.paw.persistence.CommerceFavoriteDao;
 import ar.edu.itba.paw.persistence.NotificationDao;
 import ar.edu.itba.paw.persistence.PackFavoriteDao;
+import ar.edu.itba.paw.services.auction.AuctionMailService;
+import ar.edu.itba.paw.services.pack.FavoriteMailService;
 import ar.edu.itba.paw.services.reservation.ReservationMailService;
 import ar.edu.itba.paw.services.user.UserService;
 import org.slf4j.Logger;
@@ -49,6 +51,8 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationDao notificationDao;
     private final ClientNotificationPreferenceDao clientNotificationPreferenceDao;
     private final ReservationMailService reservationMailService;
+    private final AuctionMailService auctionMailService;
+    private final FavoriteMailService favoriteMailService;
     private final AuctionDao auctionDao;
     private final UserService userService;
     private final PackFavoriteDao packFavoriteDao;
@@ -60,6 +64,8 @@ public class NotificationServiceImpl implements NotificationService {
     public NotificationServiceImpl(final NotificationDao notificationDao,
             final ClientNotificationPreferenceDao clientNotificationPreferenceDao,
             final ReservationMailService reservationMailService,
+            final AuctionMailService auctionMailService,
+            final FavoriteMailService favoriteMailService,
             final AuctionDao auctionDao,
             final UserService userService,
             final PackFavoriteDao packFavoriteDao,
@@ -69,6 +75,8 @@ public class NotificationServiceImpl implements NotificationService {
         this.notificationDao = notificationDao;
         this.clientNotificationPreferenceDao = clientNotificationPreferenceDao;
         this.reservationMailService = reservationMailService;
+        this.auctionMailService = auctionMailService;
+        this.favoriteMailService = favoriteMailService;
         this.auctionDao = auctionDao;
         this.userService = userService;
         this.packFavoriteDao = packFavoriteDao;
@@ -160,7 +168,7 @@ public class NotificationServiceImpl implements NotificationService {
                     .orElse(null);
             if (clientUser != null) {
                 final Locale locale = clientUser.getLocale() != null ? clientUser.getLocale() : Locale.forLanguageTag("es");
-                sendMailSafely(() -> reservationMailService.sendAuctionOutbidToClient(clientUser.getEmail(),
+                sendMailSafely(() -> auctionMailService.sendAuctionOutbidToClient(clientUser.getEmail(),
                         packTitle, commerceName, newAmount, locale), "notifyAuctionOutbid");
             }
         }
@@ -181,7 +189,7 @@ public class NotificationServiceImpl implements NotificationService {
                 final User clientUser = userService.findById(clientId).orElse(null);
                 if (clientUser != null) {
                     final Locale locale = clientUser.getLocale() != null ? clientUser.getLocale() : Locale.forLanguageTag("es");
-                    sendMailSafely(() -> reservationMailService.sendFavoritePackRestockedToClient(clientUser.getEmail(),
+                    sendMailSafely(() -> favoriteMailService.sendFavoritePackRestockedToClient(clientUser.getEmail(),
                             packTitle, commerceName, locale), "notifyPackRestocked");
                 }
             }
@@ -203,7 +211,7 @@ public class NotificationServiceImpl implements NotificationService {
                 final User clientUser = userService.findById(clientId).orElse(null);
                 if (clientUser != null) {
                     final Locale locale = clientUser.getLocale() != null ? clientUser.getLocale() : Locale.forLanguageTag("es");
-                    sendMailSafely(() -> reservationMailService.sendFavoriteCommerceNewPackToClient(clientUser.getEmail(),
+                    sendMailSafely(() -> favoriteMailService.sendFavoriteCommerceNewPackToClient(clientUser.getEmail(),
                             packTitle, commerceName, locale), "notifyPackPublished");
                 }
             }
@@ -238,7 +246,7 @@ public class NotificationServiceImpl implements NotificationService {
                 final User clientUser = userService.findById(bidderId).orElse(null);
                 if (clientUser != null) {
                     final Locale locale = clientUser.getLocale() != null ? clientUser.getLocale() : Locale.forLanguageTag("es");
-                    sendMailSafely(() -> reservationMailService.sendAuctionFinishedLostToClient(clientUser.getEmail(),
+                    sendMailSafely(() -> auctionMailService.sendAuctionFinishedLostToClient(clientUser.getEmail(),
                             packTitle, commerceName, locale), "notifyAuctionFinished");
                 }
             }

@@ -9,7 +9,7 @@ import ar.edu.itba.paw.persistence.ClientDao;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.UserDao;
 import ar.edu.itba.paw.services.image.ImageService;
-import ar.edu.itba.paw.services.security.EmailVerificationTokenService;
+import ar.edu.itba.paw.services.security.VerificationTokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,19 +35,19 @@ public class UserServiceImpl implements UserService {
     private final ClientDao clientDao;
     private final CommerceDao commerceDao;
     private final PasswordEncoder passwordEncoder;
-    private final EmailVerificationTokenService emailVerificationTokenService;
+    private final VerificationTokenService verificationTokenService;
     private final ImageService imageService;
 
     @Autowired
     public UserServiceImpl(final UserDao userDao, final ClientDao clientDao, final CommerceDao commerceDao,
             final PasswordEncoder passwordEncoder,
-            final EmailVerificationTokenService emailVerificationTokenService,
+            final VerificationTokenService verificationTokenService,
             final ImageService imageService) {
         this.userDao = userDao;
         this.clientDao = clientDao;
         this.commerceDao = commerceDao;
         this.passwordEncoder = passwordEncoder;
-        this.emailVerificationTokenService = emailVerificationTokenService;
+        this.verificationTokenService = verificationTokenService;
         this.imageService = imageService;
     }
 
@@ -175,7 +175,7 @@ public class UserServiceImpl implements UserService {
             return RegisterResult.duplicateEmail();
         }
         final User created = createUser(user, clientProfile, commerceProfile);
-        emailVerificationTokenService.sendVerificationMail(created.getId(), created.getEmail(),
+        verificationTokenService.sendVerificationMail(created.getId(), created.getEmail(),
                 created.getLocale());
         return RegisterResult.createdPendingVerification(created);
     }

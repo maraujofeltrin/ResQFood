@@ -16,6 +16,8 @@ import ar.edu.itba.paw.persistence.ClientNotificationPreferenceDao;
 import ar.edu.itba.paw.persistence.CommerceFavoriteDao;
 import ar.edu.itba.paw.persistence.NotificationDao;
 import ar.edu.itba.paw.persistence.PackFavoriteDao;
+import ar.edu.itba.paw.services.auction.AuctionMailService;
+import ar.edu.itba.paw.services.pack.FavoriteMailService;
 import ar.edu.itba.paw.services.reservation.ReservationMailService;
 import ar.edu.itba.paw.services.user.UserService;
 import ar.edu.itba.paw.models.auction.Bid;
@@ -52,6 +54,10 @@ class NotificationServiceImplTest {
     private ClientNotificationPreferenceDao clientNotificationPreferenceDao;
     @Mock
     private ReservationMailService reservationMailService;
+    @Mock
+    private AuctionMailService auctionMailService;
+    @Mock
+    private FavoriteMailService favoriteMailService;
     @Mock
     private AuctionDao auctionDao;
     @Mock
@@ -96,6 +102,8 @@ class NotificationServiceImplTest {
                 notificationDao,
                 clientNotificationPreferenceDao,
                 reservationMailService,
+                auctionMailService,
+                favoriteMailService,
                 auctionDao,
                 userService,
                 packFavoriteDao,
@@ -250,7 +258,7 @@ class NotificationServiceImplTest {
         doAnswer(inv -> {
             mailSent.incrementAndGet();
             return null;
-        }).when(reservationMailService).sendFavoritePackRestockedToClient(any(), any(), any(), any());
+        }).when(favoriteMailService).sendFavoritePackRestockedToClient(any(), any(), any(), any());
 
         // 2. Ejercicio
         notificationService.notifyPackRestocked(pack);
@@ -282,7 +290,7 @@ class NotificationServiceImplTest {
         doAnswer(inv -> {
             mailSent.incrementAndGet();
             return null;
-        }).when(reservationMailService).sendFavoriteCommerceNewPackToClient(any(), any(), any(), any());
+        }).when(favoriteMailService).sendFavoriteCommerceNewPackToClient(any(), any(), any(), any());
 
         // 2. Ejercicio
         notificationService.notifyPackPublished(pack);
@@ -320,7 +328,7 @@ class NotificationServiceImplTest {
         doAnswer(inv -> {
             mailSent.incrementAndGet();
             return null;
-        }).when(reservationMailService).sendAuctionFinishedLostToClient(any(), any(), any(), any());
+        }).when(auctionMailService).sendAuctionFinishedLostToClient(any(), any(), any(), any());
 
         // 2. Ejercicio
         notificationService.notifyAuctionFinished(3L);
