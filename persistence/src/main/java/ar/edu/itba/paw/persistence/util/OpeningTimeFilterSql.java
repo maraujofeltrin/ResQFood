@@ -19,7 +19,7 @@ public final class OpeningTimeFilterSql {
             return;
         }
         final List<String> conditions = new ArrayList<>();
-        final String hourExpr = "CAST(SUBSTRING(" + openingTimeColumn + ", 1, LOCATE(':', " + openingTimeColumn
+        final String hourExpr = "CAST(SUBSTRING(" + openingTimeColumn + ", 1, POSITION(':' IN " + openingTimeColumn
                 + ") - 1) AS INTEGER)";
         for (final String range : timeRanges) {
             if ("morning".equals(range)) {
@@ -31,7 +31,7 @@ public final class OpeningTimeFilterSql {
             }
         }
         if (!conditions.isEmpty()) {
-            sql.append(" AND ").append(openingTimeColumn).append(" IS NOT NULL AND LOCATE(':', ")
+            sql.append(" AND ").append(openingTimeColumn).append(" IS NOT NULL AND POSITION(':' IN ")
                     .append(openingTimeColumn).append(") > 0 AND (")
                     .append(String.join(" OR ", conditions))
                     .append(")");
