@@ -8,7 +8,7 @@ public class ClientProfileForm {
 
     @NotBlank(message = "{register.validation.clientName.notEmpty}")
     @Size(max = 100, message = "{register.validation.clientName.size}")
-    @Pattern(regexp = "^(?:[a-zA-Z]+|\\s*)$", message = "{register.validation.clientName.pattern}")
+    @Pattern(regexp = "^[\\p{L}]+(?:\\s+[\\p{L}]+)*$", message = "{register.validation.clientName.pattern}")
     private String firstName;
 
     @NotBlank(message = "{register.validation.clientLastName.notEmpty}")
