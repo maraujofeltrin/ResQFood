@@ -327,19 +327,19 @@ public class ReservationJpaDao implements ReservationDao {
     @Override
     public List<Object[]> countPaidReservationsPerDay(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to) {
-        // Native SQL: DATE() aggregation is dialect-specific; no JPA entity for favorites-style bridge tables.
-        final String sql = "SELECT DATE(r.reservation_date) AS day, COUNT(r.*) AS cnt "
-            + "FROM reservations r JOIN packs p ON p.id = r.pack_id "
-            + "WHERE p.commerce_id = :commerceId AND r.status = 'PAID' "
-            + "AND r.reservation_date >= :start AND r.reservation_date < :end "
-            + "GROUP BY DATE(r.reservation_date) ORDER BY day ASC";
-
-        final javax.persistence.Query q = em.createNativeQuery(sql);
-        q.setParameter("commerceId", commerceId);
-        q.setParameter("start", java.sql.Timestamp.valueOf(from));
-        q.setParameter("end", java.sql.Timestamp.valueOf(to));
-
-        return q.getResultList();
+        return em.createQuery(
+                "SELECT FUNCTION('date_trunc', 'day', r.reservationDate), COUNT(r.id) "
+                + "FROM Reservation r JOIN r.pack p "
+                + "WHERE p.commerce.userId = :commerceId AND r.status = :status "
+                + "AND r.reservationDate >= :start AND r.reservationDate < :end "
+                + "GROUP BY FUNCTION('date_trunc', 'day', r.reservationDate) "
+                + "ORDER BY FUNCTION('date_trunc', 'day', r.reservationDate) ASC",
+                Object[].class)
+                .setParameter("commerceId", commerceId)
+                .setParameter("status", Reservation.Status.PAID)
+                .setParameter("start", from)
+                .setParameter("end", to)
+                .getResultList();
     }
 
     @Override

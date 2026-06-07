@@ -14,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
@@ -58,7 +57,7 @@ class CommerceMetricsServiceImplTest {
                 COMMERCE_ID,
                 from,
                 to,
-                Collections.singletonList(new Object[] {LocalDate.of(2030, 1, 1), 5L}),
+                Collections.singletonList(new Object[] {java.sql.Timestamp.valueOf(LocalDateTime.of(2030, 1, 1, 0, 0)), 5L}),
                 0,
                 BigDecimal.ZERO,
                 Optional.empty(),

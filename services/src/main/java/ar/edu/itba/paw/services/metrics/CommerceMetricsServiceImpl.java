@@ -56,19 +56,7 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
         final List<Object[]> rows = reservationDao.countPaidReservationsPerDay(commerceId, from, to);
         final Map<LocalDate, Long> countsByDate = new HashMap<>();
         for (final Object[] row : rows) {
-            final Object dayObj = row[0];
-            final LocalDate d;
-            if (dayObj instanceof java.time.LocalDate) {
-                d = (LocalDate) dayObj;
-            } else if (dayObj instanceof java.sql.Date) {
-                d = ((java.sql.Date) dayObj).toLocalDate();
-            } else if (dayObj instanceof java.sql.Timestamp) {
-                d = ((java.sql.Timestamp) dayObj).toLocalDateTime().toLocalDate();
-            } else if (dayObj instanceof java.util.Date) {
-                d = new java.sql.Date(((java.util.Date) dayObj).getTime()).toLocalDate();
-            } else {
-                throw new IllegalStateException("Unsupported date type: " + (dayObj == null ? "null" : dayObj.getClass()));
-            }
+            final LocalDate d = ((java.sql.Timestamp) row[0]).toLocalDateTime().toLocalDate();
             final Number cntNum = (Number) row[1];
             final Long cnt = cntNum == null ? 0L : cntNum.longValue();
             countsByDate.put(d, cnt);
