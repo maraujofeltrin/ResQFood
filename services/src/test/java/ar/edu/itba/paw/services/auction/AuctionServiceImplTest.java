@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.Set;
@@ -238,14 +239,69 @@ class AuctionServiceImplTest {
         final int page = 1;
         final int pageSize = 10;
         final String query = "search";
-        final List<Auction> expected = List.of(new Auction(AUCTION_ID, null, 10.0, 1.0, null, null, null, Auction.Status.ACTIVE, null));
+        final Auction auction = new Auction(AUCTION_ID, null, 10.0, 1.0, null, null, null, Auction.Status.ACTIVE, null);
+        final List<Auction> expected = List.of(auction);
         when(auctionDao.filterParticipatedAuctions(CLIENT_ID, Auction.Status.ACTIVE, query, page, pageSize)).thenReturn(expected);
+        when(bidDao.findMaxBidsByClientForAuctions(CLIENT_ID, List.of(AUCTION_ID))).thenReturn(Map.of());
 
         // 2. Ejercicio
         final List<Auction> result = auctionService.filterParticipatedAuctions(CLIENT_ID, Auction.Status.ACTIVE, query, page, pageSize);
 
         // 3. Asserts
         assertEquals(expected, result);
+    }
+
+    @Test
+    void testFilterParticipatedAuctionsHydratesMyMaxBid() {
+        // 1. Setup
+        final int page = 1;
+        final int pageSize = 10;
+        final Auction auction = new Auction(AUCTION_ID, null, 10.0, 1.0, null, null, null, Auction.Status.ACTIVE, null);
+        when(auctionDao.filterParticipatedAuctions(CLIENT_ID, null, null, page, pageSize))
+                .thenReturn(List.of(auction));
+        when(bidDao.findMaxBidsByClientForAuctions(CLIENT_ID, List.of(AUCTION_ID)))
+                .thenReturn(Map.of(AUCTION_ID, 50.0));
+
+        // 2. Ejercicio
+        final List<Auction> result = auctionService.filterParticipatedAuctions(CLIENT_ID, null, null, page, pageSize);
+
+        // 3. Asserts
+        assertEquals(1, result.size());
+        assertEquals(50.0, result.get(0).getMyMaxBid());
+    }
+
+    @Test
+    void testFilterParticipatedAuctionsWhenEmptyResultSkipsBidQuery() {
+        // 1. Setup
+        final int page = 1;
+        final int pageSize = 10;
+        when(auctionDao.filterParticipatedAuctions(CLIENT_ID, null, null, page, pageSize))
+                .thenReturn(Collections.emptyList());
+
+        // 2. Ejercicio
+        final List<Auction> result = auctionService.filterParticipatedAuctions(CLIENT_ID, null, null, page, pageSize);
+
+        // 3. Asserts
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testFilterParticipatedAuctionsSetsDefaultMyMaxBidWhenNoBidFound() {
+        // 1. Setup
+        final int page = 1;
+        final int pageSize = 10;
+        final Auction auction = new Auction(AUCTION_ID, null, 10.0, 1.0, null, null, null, Auction.Status.ACTIVE, null);
+        when(auctionDao.filterParticipatedAuctions(CLIENT_ID, null, null, page, pageSize))
+                .thenReturn(List.of(auction));
+        when(bidDao.findMaxBidsByClientForAuctions(CLIENT_ID, List.of(AUCTION_ID)))
+                .thenReturn(Collections.emptyMap());
+
+        // 2. Ejercicio
+        final List<Auction> result = auctionService.filterParticipatedAuctions(CLIENT_ID, null, null, page, pageSize);
+
+        // 3. Asserts
+        assertEquals(1, result.size());
+        assertEquals(0d, result.get(0).getMyMaxBid());
     }
 
     @Test

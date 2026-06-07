@@ -2,7 +2,6 @@ package ar.edu.itba.paw.webapp.controller.helpers;
 
 import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.user.Commerce;
-import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.auction.AuctionService;
@@ -32,7 +31,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Collections;
-import java.util.stream.Collectors;
 
 /**
  * Builds the {@link ModelAndView} for the reservation list view ({@code reservationsView.jsp}).
@@ -85,25 +83,14 @@ public class ReservationListModelBuilder {
         final boolean hasAnyReservations = reservationService.countFilteredReservations(
                 commerceId, null, null, null, false) > 0;
 
-        final Map<Long, Pack> packsByReservationId = new HashMap<>();
-        final Map<Long, String> clientNamesByReservationId = new HashMap<>();
         final Map<Long, String> formattedDates = new HashMap<>();
 
         for (final Reservation reservation : reservations) {
             populateFormattedDate(formattedDates, reservation);
-            if (reservation.getPack() != null) {
-                packsByReservationId.put(reservation.getId(), reservation.getPack());
-            }
-            if (reservation.getCustomer() != null) {
-                clientNamesByReservationId.put(reservation.getId(), reservation.getCustomer().getFullName());
-            }
         }
 
         final ModelAndView mav = new ModelAndView(VIEW_NAME);
         mav.addObject("reservations", reservations);
-        mav.addObject("packsByReservationId", packsByReservationId);
-        mav.addObject("commerceNamesByReservationId", new HashMap<Long, String>());
-        mav.addObject("clientNamesByReservationId", clientNamesByReservationId);
         mav.addObject("formattedReservationDatesById", formattedDates);
         mav.addObject("searchQuery", normalizedQuery == null ? "" : normalizedQuery);
         mav.addObject("selectedStatus", statusFilter == null ? "" : statusFilter.name());
@@ -159,7 +146,7 @@ public class ReservationListModelBuilder {
                     excludeAuctions, page);
         }
 
-        mav.addObject("clientNamesByReservationId", Map.of());
+
         mav.addObject("searchQuery", safeQuery);
         mav.addObject("selectedStatus", statusFilter == null ? "" : statusFilter.name());
         mav.addObject("selectedAuctionStatus", auctionStatusFilter == null ? "" : auctionStatusFilter.name());
@@ -197,42 +184,23 @@ public class ReservationListModelBuilder {
         final List<Auction> auctionsPage = auctionService.filterParticipatedAuctions(
                 currentUser.getId(), auctionStatusFilter, queryParam, safePage, PAGE_SIZE);
 
-        final Map<Long, String> auctionCommerceNames = new HashMap<>();
         final Map<Long, String> auctionEndLabels = new HashMap<>();
-        final Map<Long, Double> auctionMyMaxBid = new HashMap<>();
         final Map<Long, String> auctionParticipationBadges = new HashMap<>();
-
-        final List<Long> auctionIds = auctionsPage.stream()
-            .map(Auction::getId)
-            .collect(Collectors.toList());
-        final Map<Long, Double> myMaxBids = auctionService
-            .getMaxBidsByClientForAuctions(currentUser.getId(), auctionIds);
 
         for (final Auction auction : auctionsPage) {
             auctionEndLabels.put(auction.getId(), formatUtcDateTimeForDisplay(auction.getEndTime()));
-            final Pack p = auction.getPack();
-            final Commerce commerce = p != null ? p.getCommerce() : null;
-            final String commerceName = commerce != null && commerce.getCommercialName() != null
-                && !commerce.getCommercialName().isBlank()
-                ? commerce.getCommercialName() : "-";
-            auctionCommerceNames.put(auction.getId(), commerceName);
-            auctionMyMaxBid.put(auction.getId(), myMaxBids.getOrDefault(auction.getId(), 0d));
 
             final String badge = clientParticipationAuctionBadge(auction,
                 Objects.equals(auction.getCurrentBidderId(), currentUser.getId()));
             if (badge != null) {
-            auctionParticipationBadges.put(auction.getId(), badge);
+                auctionParticipationBadges.put(auction.getId(), badge);
             }
         }
 
         mav.addObject("clientParticipationAuctions", auctionsPage);
-        mav.addObject("auctionCommerceNames", auctionCommerceNames);
         mav.addObject("auctionEndLabels", auctionEndLabels);
-        mav.addObject("auctionMyMaxBid", auctionMyMaxBid);
         mav.addObject("auctionParticipationBadges", auctionParticipationBadges);
         mav.addObject("reservations", List.of());
-        mav.addObject("packsByReservationId", Map.of());
-        mav.addObject("commerceNamesByReservationId", Map.of());
         mav.addObject("formattedReservationDatesById", Map.of());
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
@@ -254,31 +222,16 @@ public class ReservationListModelBuilder {
         final List<Reservation> reservations = reservationService.filterReservations(
                 null, customerId, queryParam, statusFilter, excludeAuctionPacks, safePage, PAGE_SIZE);
 
-        final Map<Long, Pack> packsByReservationId = new HashMap<>();
-        final Map<Long, String> commerceNamesByReservationId = new HashMap<>();
         final Map<Long, String> formattedDates = new HashMap<>();
 
         for (final Reservation reservation : reservations) {
             populateFormattedDate(formattedDates, reservation);
-            if (reservation.getPack() != null) {
-                final Pack pack = reservation.getPack();
-                packsByReservationId.put(reservation.getId(), pack);
-                final Commerce commerce = pack.getCommerce();
-                final String name = commerce != null && commerce.getCommercialName() != null
-                        && !commerce.getCommercialName().isBlank()
-                        ? commerce.getCommercialName() : "-";
-                commerceNamesByReservationId.put(reservation.getId(), name);
-            }
         }
 
         mav.addObject("reservations", reservations);
-        mav.addObject("packsByReservationId", packsByReservationId);
-        mav.addObject("commerceNamesByReservationId", commerceNamesByReservationId);
         mav.addObject("formattedReservationDatesById", formattedDates);
         mav.addObject("clientParticipationAuctions", List.of());
-        mav.addObject("auctionCommerceNames", Map.of());
         mav.addObject("auctionEndLabels", Map.of());
-        mav.addObject("auctionMyMaxBid", Map.of());
         mav.addObject("auctionParticipationBadges", Map.of());
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);

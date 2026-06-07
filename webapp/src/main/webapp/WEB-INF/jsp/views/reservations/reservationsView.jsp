@@ -97,7 +97,7 @@
                     <spring:message code="${messagePrefix}.filters.searchPlaceholder" var="searchPlaceholder"/>
                     <form action="${pageContext.request.contextPath}/reservations" method="get"
                           class="flex flex-col sm:flex-row flex-wrap sm:flex-nowrap items-stretch sm:items-center gap-3 w-full xl:w-auto xl:max-w-3xl xl:flex-shrink-0 xl:justify-end">
-                        <input type="hidden" name="tab" value="${clientReservationsTab}" />
+                        <input type="hidden" name="tab" value="<c:out value='${clientReservationsTab}'/>" />
                         <div class="w-full sm:w-48 min-w-0 flex-shrink-0">
                             <paw:searchBar value="${searchQuery}" placeholder="${searchPlaceholder}" classes="relative w-full" />
                         </div>
@@ -125,7 +125,7 @@
                         </div>
                         <c:if test="${(clientAuctionsView and not empty selectedAuctionStatus) or (not clientAuctionsView and not empty selectedStatus)}">
                             <div class="w-full sm:w-auto flex flex-row items-center justify-end sm:justify-start flex-shrink-0">
-                                <a href="${pageContext.request.contextPath}/reservations?tab=${clientReservationsTab}"
+                                <a href="<c:out value='${pageContext.request.contextPath}/reservations?tab=${clientReservationsTab}'/>"
                                    class="px-4 py-2.5 rounded-full bg-surface-container-high text-on-surface font-semibold hover:bg-surface-container-highest transition no-underline whitespace-nowrap inline-flex items-center justify-center">
                                     <spring:message code="${messagePrefix}.filters.clear" />
                                 </a>
@@ -176,11 +176,19 @@
                             <c:when test="${clientAuctionsView}">
                                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                                     <c:forEach var="auction" items="${clientParticipationAuctions}">
+                                        <c:choose>
+                                            <c:when test="${not empty auction.pack.commerce.commercialName}">
+                                                <c:set var="resolvedAuctionCommerceName" value="${auction.pack.commerce.commercialName}" />
+                                            </c:when>
+                                            <c:otherwise>
+                                                <c:set var="resolvedAuctionCommerceName" value="-" />
+                                            </c:otherwise>
+                                        </c:choose>
                                         <paw:clientAuctionParticipationCard
                                                 auction="${auction}"
-                                                commerceName="${auctionCommerceNames[auction.id]}"
+                                                commerceName="${resolvedAuctionCommerceName}"
                                                 endLabel="${auctionEndLabels[auction.id]}"
-                                                myMaxBid="${auctionMyMaxBid[auction.id]}"
+                                                myMaxBid="${auction.myMaxBid}"
                                                 badgeCode="${auctionParticipationBadges[auction.id]}" />
                                     </c:forEach>
                                 </div>
@@ -188,17 +196,26 @@
                             <c:otherwise>
                                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                                     <c:forEach var="reservation" items="${reservations}">
-                                        <c:set var="pack" value="${packsByReservationId[reservation.id]}" />
-                                        <c:set var="commerceName" value="${commerceNamesByReservationId[reservation.id]}" />
-                                        <c:set var="clientName" value="${clientNamesByReservationId[reservation.id]}" />
                                         <c:set var="dateLabel" value="${formattedReservationDatesById[reservation.id]}" />
+                                        <c:choose>
+                                            <c:when test="${not empty reservation.pack.commerce.commercialName}">
+                                                <c:set var="resolvedCommerceName" value="${reservation.pack.commerce.commercialName}" />
+                                            </c:when>
+                                            <c:otherwise>
+                                                <c:set var="resolvedCommerceName" value="-" />
+                                            </c:otherwise>
+                                        </c:choose>
+                                        <c:set var="cardClientName" value="" />
+                                        <c:if test="${messagePrefix == 'commerce.reservations'}">
+                                            <c:set var="cardClientName" value="${reservation.customer.fullName}" />
+                                        </c:if>
 
                                         <paw:reservationCard
                                                 reservation="${reservation}"
-                                                pack="${pack}"
+                                                pack="${reservation.pack}"
                                                 dateLabel="${dateLabel}"
-                                                commerceName="${commerceName}"
-                                                clientName="${clientName}"
+                                                commerceName="${resolvedCommerceName}"
+                                                clientName="${cardClientName}"
                                             messagePrefix="${messagePrefix}"
                                             currentPage="${currentPage}"
                                             searchQuery="${searchQuery}"

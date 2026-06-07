@@ -366,7 +366,7 @@ public class AuctionJpaDao implements AuctionDao {
         }
 
         return em.createQuery(
-                        "SELECT a FROM Auction a JOIN FETCH a.pack p JOIN FETCH p.commerce "
+                        "SELECT a FROM Auction a JOIN FETCH a.pack p LEFT JOIN FETCH p.image JOIN FETCH p.commerce "
                                 + "WHERE a.id IN :ids ORDER BY " + buildIdPositionOrderByClause(ids),
                         Auction.class)
                 .setParameter("ids", ids)

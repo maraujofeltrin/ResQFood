@@ -22,18 +22,18 @@
 <c:set var="tvAuctions" value="${empty tabAuctionsValue ? 'auctions' : tabAuctionsValue}" />
 <c:set var="xq" value="${empty extraQuery ? '' : extraQuery}" />
 
-<div class="inline-flex items-center bg-surface-variant p-1.5 rounded-full ${tabMarginClass} overflow-x-auto">
-    <a href="${pageContext.request.contextPath}${basePath}?tab=${tvItems}${xq}"
+<div class="inline-flex items-center bg-surface-variant p-1.5 rounded-full <c:out value='${tabMarginClass}'/> overflow-x-auto">
+    <a href="<c:out value='${pageContext.request.contextPath}${basePath}?tab=${tvItems}${xq}'/>"
        class="px-6 py-2.5 text-base font-bold transition-all whitespace-nowrap rounded-full
        ${currentTab == tvItems ? 'bg-surface text-primary shadow-sm' : 'text-secondary hover:text-primary'}">
         <spring:message code="${itemsMessageCode}" /> (${itemsCount})
     </a>
-    <a href="${pageContext.request.contextPath}${basePath}?tab=${tvPacks}${xq}"
+    <a href="<c:out value='${pageContext.request.contextPath}${basePath}?tab=${tvPacks}${xq}'/>"
        class="px-6 py-2.5 text-base font-bold transition-all whitespace-nowrap rounded-full
        ${currentTab == tvPacks ? 'bg-surface text-primary shadow-sm' : 'text-secondary hover:text-primary'}">
         <spring:message code="${packsMessageCode}" /> (${packsCount})
     </a>
-    <a href="${pageContext.request.contextPath}${basePath}?tab=${tvAuctions}${xq}"
+    <a href="<c:out value='${pageContext.request.contextPath}${basePath}?tab=${tvAuctions}${xq}'/>"
        class="px-6 py-2.5 text-base font-bold transition-all whitespace-nowrap rounded-full
        ${currentTab == tvAuctions ? 'bg-surface text-primary shadow-sm' : 'text-secondary hover:text-primary'}">
         <spring:message code="${auctionsMessageCode}" /> (${auctionsCount})

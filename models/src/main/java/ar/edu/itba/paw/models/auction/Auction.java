@@ -47,6 +47,12 @@ public class Auction {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    /**
+     * The maximum bid placed by the currently logged-in client on this auction.
+     */
+    @Transient
+    private Double myMaxBid;
+
     protected Auction() {
         // Just for Hibernate
     }
@@ -127,6 +133,14 @@ public class Auction {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public Double getMyMaxBid() {
+        return myMaxBid;
+    }
+
+    public void setMyMaxBid(final Double myMaxBid) {
+        this.myMaxBid = myMaxBid;
     }
 
     @Override

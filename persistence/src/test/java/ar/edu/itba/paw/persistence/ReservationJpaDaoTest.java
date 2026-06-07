@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import javax.persistence.PersistenceContext;
+import ar.edu.itba.paw.models.image.Image;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.user.Commerce;
@@ -57,6 +58,9 @@ public class ReservationJpaDaoTest {
 
     @Autowired
     private PackDao packDao;
+
+    @Autowired
+    private ImageDao imageDao;
 
     @PersistenceContext
     private javax.persistence.EntityManager em;
@@ -297,6 +301,32 @@ public class ReservationJpaDaoTest {
         // 3. Asserts
         assertFalse(result);
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
+    public void testFilterReservationsEagerlyLoadsPackImage() {
+        // 1. Setup
+        final Image image = imageDao.saveImage(new byte[] {1, 2, 3}, "image/png");
+        em.flush();
+        final Pack packWithImage = packDao.createPack(commerceId, "Pack With Image", "Desc", 1000.0, 500.0, 10,
+                Collections.emptyList(), image.getId());
+        em.flush();
+        reservationDao.createReservation(clientId, packWithImage.getId(), RESERVATION_DATE, 500.0,
+                Reservation.Status.RESERVED, "IMG-CODE", null, 1, null);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final List<Reservation> results = reservationDao.filterReservations(commerceId, null, null, null, false, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, results.size());
+        final Reservation r = results.get(0);
+        assertTrue(Hibernate.isInitialized(r.getPack().getImage()));
+        assertNotNull(r.getPack().getImageId());
+        assertEquals(image.getId(), r.getPack().getImageId());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "images"));
     }
 
     @Test

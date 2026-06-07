@@ -255,7 +255,18 @@ public class AuctionServiceImpl implements AuctionService {
     @Override
     public List<Auction> filterParticipatedAuctions(final long clientId, final Auction.Status status,
                                                      final String query, final int page, final int pageSize) {
-        return auctionDao.filterParticipatedAuctions(clientId, status, query, page, pageSize);
+        final List<Auction> auctions = auctionDao.filterParticipatedAuctions(clientId, status, query, page, pageSize);
+        if (!auctions.isEmpty()) {
+            final List<Long> auctionIds = new ArrayList<>(auctions.size());
+            for (final Auction a : auctions) {
+                auctionIds.add(a.getId());
+            }
+            final Map<Long, Double> maxBids = bidDao.findMaxBidsByClientForAuctions(clientId, auctionIds);
+            for (final Auction a : auctions) {
+                a.setMyMaxBid(maxBids.getOrDefault(a.getId(), 0d));
+            }
+        }
+        return auctions;
     }
 
     @Transactional(readOnly = true)
