@@ -161,13 +161,20 @@
                     <div class="h-[1px] flex-grow bg-outline-variant"></div>
                 </div>
 
+                <c:set var="hasAnyFilter" value="${not empty param.q or not empty selectedTags
+                    or selectedMunicipality != null or not empty selectedTimeRanges
+                    or selectedCommerceCategory != null}"/>
+
                 <c:choose>
                     <c:when test="${catalogMode eq 'AUCTIONS' and empty auctions}">
                         <c:choose>
-                            <c:when test="${not empty param.q or not empty selectedTags}">
+                            <c:when test="${hasAnyFilter}">
                                 <spring:message var="emptyTitle" code="pack.catalog.empty.search.auctions.title"/>
                                 <spring:message var="emptyDesc"  code="pack.catalog.empty.search.auctions.description"/>
-                                <paw:packEmptyState icon="gavel" title="${emptyTitle}" description="${emptyDesc}" />
+                                <c:url var="clearFiltersUrl" value="/packs">
+                                    <c:param name="types" value="auctions"/>
+                                </c:url>
+                                <paw:packEmptyState icon="gavel" title="${emptyTitle}" description="${emptyDesc}" clearFiltersUrl="${clearFiltersUrl}" />
                             </c:when>
                             <c:otherwise>
                                 <spring:message var="emptyTitle" code="pack.catalog.empty.auctions.title"/>
@@ -178,10 +185,13 @@
                     </c:when>
                     <c:when test="${catalogMode eq 'COMMERCES' and empty commerces}">
                         <c:choose>
-                            <c:when test="${not empty param.q or not empty selectedTags}">
+                            <c:when test="${hasAnyFilter}">
                                 <spring:message var="emptyTitle" code="pack.catalog.empty.search.commerces.title" text="No hay comercios para tu búsqueda"/>
                                 <spring:message var="emptyDesc"  code="pack.catalog.empty.search.commerces.description" text="Prueba con otros términos o filtros."/>
-                                <paw:packEmptyState icon="storefront" title="${emptyTitle}" description="${emptyDesc}" />
+                                <c:url var="clearFiltersUrl" value="/packs">
+                                    <c:param name="types" value="commerces"/>
+                                </c:url>
+                                <paw:packEmptyState icon="storefront" title="${emptyTitle}" description="${emptyDesc}" clearFiltersUrl="${clearFiltersUrl}" />
                             </c:when>
                             <c:otherwise>
                                 <spring:message var="emptyTitle" code="pack.catalog.empty.commerces.title" text="No hay comercios disponibles"/>
@@ -192,10 +202,11 @@
                     </c:when>
                     <c:when test="${catalogMode ne 'AUCTIONS' and catalogMode ne 'COMMERCES' and empty packs}">
                         <c:choose>
-                            <c:when test="${not empty param.q or not empty selectedTags}">
+                            <c:when test="${hasAnyFilter}">
                                 <spring:message var="emptyTitle" code="pack.catalog.empty.search.title"/>
                                 <spring:message var="emptyDesc"  code="pack.catalog.empty.search.description"/>
-                                <paw:packEmptyState icon="search_off" title="${emptyTitle}" description="${emptyDesc}" />
+                                <c:url var="clearFiltersUrl" value="/packs"/>
+                                <paw:packEmptyState icon="search_off" title="${emptyTitle}" description="${emptyDesc}" clearFiltersUrl="${clearFiltersUrl}" />
                             </c:when>
                             <c:otherwise>
                                 <spring:message var="emptyTitle" code="pack.catalog.empty.title"/>
