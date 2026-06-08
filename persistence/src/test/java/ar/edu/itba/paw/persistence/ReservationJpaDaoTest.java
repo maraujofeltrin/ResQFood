@@ -469,6 +469,8 @@ public class ReservationJpaDaoTest {
                 assertNull(r.getPack().getAuction());
             }
         }
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
     }
 
     @Test

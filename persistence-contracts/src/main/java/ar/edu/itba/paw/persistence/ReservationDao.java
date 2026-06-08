@@ -62,11 +62,6 @@ public interface ReservationDao {
     long countByStatusInPeriod(Long commerceId, Reservation.Status status, LocalDateTime from, LocalDateTime to);
 
     /**
-     * Counts CANCELED reservations whose {@code reservation_date} falls in {@code [from, to)}.
-     */
-    long countCanceledReservationsInPeriod(Long commerceId, LocalDateTime from, LocalDateTime to);
-
-    /**
      * Average ticket for PAID reservations whose scheduled pickup ({@code pickupConfirmationDate}) falls in {@code [from, to)}.
      */
     BigDecimal averageTicketInPeriod(Long commerceId, LocalDateTime from, LocalDateTime to);

@@ -384,8 +384,13 @@ public class AuctionJpaDaoTest {
         em.flush();
         bidDao.createBid(olderParticipation.getId(), clientId, 600.0);
         em.flush();
+        // Force a past timestamp so both bids have distinct timestamps in HSQLDB
+        jdbcTemplate.update("UPDATE bids SET timestamp = ? WHERE auction_id = ?",
+                java.sql.Timestamp.valueOf(LocalDateTime.of(2025, 1, 1, 10, 0)),
+                olderParticipation.getId());
         bidDao.createBid(newerParticipation.getId(), clientId, 700.0);
         em.flush();
+        em.clear();
 
         // 2. Ejercicio
         final List<Auction> participated = auctionDao.filterParticipatedAuctions(clientId, null, null, 1, 10);

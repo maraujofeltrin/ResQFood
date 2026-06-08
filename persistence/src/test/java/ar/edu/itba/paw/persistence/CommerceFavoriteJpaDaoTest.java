@@ -156,6 +156,7 @@ public class CommerceFavoriteJpaDaoTest {
         // 3. Asserts
         assertEquals(1, ids.size());
         assertTrue(ids.contains(clientUserId));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "client_commerce_favorites"));
     }
 
     @Test

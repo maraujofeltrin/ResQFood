@@ -7,8 +7,10 @@ import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationCreationException;
 import ar.edu.itba.paw.models.reservation.ReservationRejectionError;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
+import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.ReservationDao;
+import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import ar.edu.itba.paw.services.notification.NotificationService;
 import ar.edu.itba.paw.services.pack.DirectReservationCheck;
 import ar.edu.itba.paw.services.pack.PackService;
@@ -33,6 +35,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -56,7 +59,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final UserService userService;
     private final ClientService clientService;
     private final ReservationDao reservationDao;
-    private final ReservationTokenService reservationTokenService;
+    private final ReservationTokenDao reservationTokenDao;
     private final PackService packService;
     private final NotificationService notificationService;
     private final AuctionService auctionService;
@@ -66,7 +69,7 @@ public class ReservationServiceImpl implements ReservationService {
     public ReservationServiceImpl(final UserService userService,
             final ClientService clientService,
             final ReservationDao reservationDao,
-            @Lazy final ReservationTokenService reservationTokenService,
+            final ReservationTokenDao reservationTokenDao,
             @Lazy final PackService packService,
             @Lazy final NotificationService notificationService,
             @Lazy final AuctionService auctionService,
@@ -74,7 +77,7 @@ public class ReservationServiceImpl implements ReservationService {
         this.userService = userService;
         this.clientService = clientService;
         this.reservationDao = reservationDao;
-        this.reservationTokenService = reservationTokenService;
+        this.reservationTokenDao = reservationTokenDao;
         this.packService = packService;
         this.notificationService = notificationService;
         this.auctionService = auctionService;
@@ -142,9 +145,9 @@ public class ReservationServiceImpl implements ReservationService {
             final LocalDateTime tokenCreatedAt = LocalDateTime.now(ZoneOffset.UTC);
             final LocalDateTime tokenExpiresAt = tokenCreatedAt.plusHours(48);
 
-            reservationTokenService.create(acceptToken, reservation.getId(), ReservationToken.Action.ACCEPT,
+            reservationTokenDao.create(acceptToken, reservation.getId(), ReservationToken.Action.ACCEPT,
                     tokenCreatedAt, tokenExpiresAt);
-            reservationTokenService.create(rejectToken, reservation.getId(), ReservationToken.Action.REJECT,
+            reservationTokenDao.create(rejectToken, reservation.getId(), ReservationToken.Action.REJECT,
                     tokenCreatedAt, tokenExpiresAt);
 
             notificationService.notifyReservationRequested(reservation, commerceEmail,
@@ -469,12 +472,6 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Transactional(readOnly = true)
     @Override
-    public long countCanceledReservationsInPeriod(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
-        return reservationDao.countCanceledReservationsInPeriod(commerceId, from, to);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
     public BigDecimal averageTicketInPeriod(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
         return reservationDao.averageTicketInPeriod(commerceId, from, to);
     }
@@ -495,6 +492,135 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public List<Object[]> findTopClientsByPaidReservations(final Long commerceId, final LocalDateTime from, final LocalDateTime to, final int limit) {
         return reservationDao.findTopClientsByPaidReservations(commerceId, from, to, limit);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public TokenValidationResult validateToken(final String token, final ReservationToken.Action action) {
+        return resolveTokenValidation(token, action);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Optional<Long> findReservationIdByToken(final String token) {
+        return reservationTokenDao.findByToken(token).map(t -> t.getReservation().getId());
+    }
+
+    @Transactional
+    @Override
+    public ReservationServiceResult<ReservationTokenActionError> acceptByToken(
+            final String token, final String pickupCode) {
+        final ReservationServiceResult<ReservationTokenActionError> common =
+                validateTokenCommon(token, ReservationToken.Action.ACCEPT);
+        if (common != null) {
+            return common;
+        }
+
+        final ReservationToken rt = reservationTokenDao.findByToken(token).orElseThrow();
+        final Reservation reservation = rt.getReservation();
+
+        if (pickupCode == null || pickupCode.isBlank()) {
+            return ReservationServiceResult.failure(
+                    ReservationTokenActionError.MISSING_PICKUP_CODE, reservation);
+        }
+        final String input = pickupCode.trim().toUpperCase(Locale.ROOT);
+        final String stored = reservation.getPickupCode() == null ? ""
+                : reservation.getPickupCode().trim().toUpperCase(Locale.ROOT);
+        if (!input.equals(stored)) {
+            LOGGER.debug("Accept reservation token: pickup code mismatch reservationId={}", reservation.getId());
+            return ReservationServiceResult.failure(
+                    ReservationTokenActionError.INVALID_PICKUP_CODE, reservation);
+        }
+
+        reservationTokenDao.markAsUsed(token);
+        final Reservation confirmed = confirmPickup(reservation.getId());
+        return ReservationServiceResult.success(confirmed);
+    }
+
+    @Transactional
+    @Override
+    public ReservationServiceResult<ReservationTokenActionError> rejectByToken(final String token) {
+        final ReservationServiceResult<ReservationTokenActionError> common =
+                validateTokenCommon(token, ReservationToken.Action.REJECT);
+        if (common != null) {
+            return common;
+        }
+
+        final ReservationToken rt = reservationTokenDao.findByToken(token).orElseThrow();
+        final Reservation reservation = rt.getReservation();
+        reservationTokenDao.markAsUsed(token);
+        final Reservation canceled = rejectReservation(reservation.getId());
+        return ReservationServiceResult.success(canceled);
+    }
+
+    /**
+     * Shared validation for both accept and reject token flows.
+     *
+     * @return a failure result if validation fails, or {@code null} if the token is valid
+     *         and the caller should proceed with the action-specific logic.
+     */
+    private ReservationServiceResult<ReservationTokenActionError> validateTokenCommon(final String token,
+            final ReservationToken.Action expectedAction) {
+        if (token == null || token.isBlank()) {
+            return ReservationServiceResult.failure(ReservationTokenActionError.INVALID_TOKEN);
+        }
+
+        final Optional<ReservationToken> tokenOpt = reservationTokenDao.findByToken(token);
+        if (tokenOpt.isEmpty()) {
+            return ReservationServiceResult.failure(ReservationTokenActionError.NOT_FOUND);
+        }
+        final ReservationToken reservationToken = tokenOpt.get();
+        if (reservationToken.getAction() != expectedAction) {
+            return ReservationServiceResult.failure(ReservationTokenActionError.NOT_FOUND);
+        }
+
+        final Reservation reservation = reservationToken.getReservation();
+        if (reservation == null) {
+            return ReservationServiceResult.failure(ReservationTokenActionError.NOT_FOUND);
+        }
+
+        if (reservation.getStatus() == Reservation.Status.PAID
+                || reservation.getStatus() == Reservation.Status.CANCELED
+                || reservationToken.isUsed()) {
+            return ReservationServiceResult.failure(ReservationTokenActionError.ALREADY_USED, reservation);
+        }
+        if (LocalDateTime.now(ZoneOffset.UTC).isAfter(reservationToken.getExpiresAt())) {
+            return ReservationServiceResult.failure(ReservationTokenActionError.EXPIRED, reservation);
+        }
+
+        if (reservation.getPack() == null) {
+            return ReservationServiceResult.failure(ReservationTokenActionError.NOT_FOUND, reservation);
+        }
+
+        return null;
+    }
+
+    private TokenValidationResult resolveTokenValidation(final String token, final ReservationToken.Action action) {
+        final Optional<ReservationToken> optionalToken = reservationTokenDao.findByToken(token);
+        if (optionalToken.isEmpty()) {
+            return TokenValidationResult.NOT_FOUND;
+        }
+        final ReservationToken reservationToken = optionalToken.get();
+        final Reservation reservation = reservationToken.getReservation();
+
+        if (reservation != null) {
+            final Reservation.Status status = reservation.getStatus();
+
+            if (status == Reservation.Status.PAID || status == Reservation.Status.CANCELED) {
+                return TokenValidationResult.ALREADY_USED;
+            }
+        }
+
+        if (reservationToken.getAction() != action) {
+            return TokenValidationResult.NOT_FOUND;
+        }
+        if (reservationToken.isUsed()) {
+            return TokenValidationResult.ALREADY_USED;
+        }
+        if (LocalDateTime.now(ZoneOffset.UTC).isAfter(reservationToken.getExpiresAt())) {
+            return TokenValidationResult.EXPIRED;
+        }
+        return TokenValidationResult.SUCCESS;
     }
 
     @Transactional(readOnly = true)

@@ -381,18 +381,6 @@ public class ReservationJpaDao implements ReservationDao {
     }
 
     @Override
-    public long countCanceledReservationsInPeriod(final Long commerceId, final LocalDateTime from,
-            final LocalDateTime to) {
-        final Number count = em.createQuery("SELECT COUNT(r.id) FROM Reservation r JOIN r.pack p WHERE p.commerce.userId = :commerceId AND r.status = :status AND r.reservationDate >= :start AND r.reservationDate < :end", Number.class)
-                .setParameter("commerceId", commerceId)
-                .setParameter("status", Reservation.Status.CANCELED)
-                .setParameter("start", from)
-                .setParameter("end", to)
-                .getSingleResult();
-        return count != null ? count.longValue() : 0L;
-    }
-
-    @Override
     public BigDecimal averageTicketInPeriod(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to) {
         final Double avg = em.createQuery("SELECT AVG(r.finalPrice) FROM Reservation r JOIN r.pack p WHERE p.commerce.userId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end", Double.class)

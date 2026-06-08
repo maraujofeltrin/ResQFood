@@ -44,6 +44,7 @@ public class AuthUserDetailsService implements UserDetailsService {
                 user.getPassword(),
                 user.isVerified(),
                 locale,
+                user.getProfileImageId(),
                 authorities);
     }
 }
