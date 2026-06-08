@@ -166,7 +166,7 @@ public class PackJpaDao implements PackDao {
     @Override
     public List<Pack> filterCommercePacks(final Long commerceId, final Boolean hasAuction, final int page, final int pageSize) {
         final StringBuilder jpql = new StringBuilder(
-                "SELECT p FROM Pack p LEFT JOIN FETCH p.image LEFT JOIN FETCH p.auction "
+                "SELECT p FROM Pack p LEFT JOIN FETCH p.auction "
                         + "WHERE p.commerce.userId = :cid AND p.deleted = false");
         final Map<String, Object> params = new LinkedHashMap<>();
         params.put("cid", commerceId);
@@ -211,7 +211,6 @@ public class PackJpaDao implements PackDao {
 
         return em.createQuery(
                         "SELECT DISTINCT p FROM Pack p "
-                                + "LEFT JOIN FETCH p.image "
                                 + "JOIN FETCH p.commerce "
                                 + "LEFT JOIN FETCH p.auction "
                                 + "WHERE p.id IN :ids "
