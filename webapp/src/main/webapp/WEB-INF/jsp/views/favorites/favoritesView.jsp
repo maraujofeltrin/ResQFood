@@ -73,7 +73,7 @@
                                             subtitle="${pack.description}"
                                             price="$${pack.finalPrice}"
                                             oldPrice="$${pack.originalPrice}"
-                                            commerceName="${commerceNames[pack.id]}"
+                                            commerceName="${pack.commerce.commercialName}"
                                             unavailable="${packUnavailable}"
                                         />
                                     </c:forEach>
@@ -130,7 +130,7 @@
                                             commerceName="${commerce.commercialName}"
                                             category="${commerce.category}"
                                             rating="${commerceRatings[commerce.userId]}"
-                                            imageId="${commerceImages[commerce.userId]}"
+                                            imageId="${commerce.user.profileImageId}"
                                         />
                                     </c:forEach>
                                 </div>
