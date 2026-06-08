@@ -91,7 +91,7 @@ public class RegisterController {
                 return new ModelAndView("redirect:/login?pendingVerification=true");
             default:
                 final User created = result.getUser().orElseThrow(IllegalStateException::new);
-                authenticationHelper.autoLogin(created.getEmail(), registerForm.getCredentials().getPassword());
+                authenticationHelper.autoLogin(created.getEmail(), request);
                 return new ModelAndView("redirect:/");
         }
     }

@@ -36,7 +36,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
 
 @Controller
 public class ProfileController {
@@ -45,15 +44,6 @@ public class ProfileController {
 
     private static final String NAV_PROFILE = "profile";
     private static final String NAV_SETTINGS = "settings";
-
-    private static final Set<NotificationType> CLIENT_MAIL_TYPES = Set.of(
-            NotificationType.RESERVATION_CODE_CLIENT,
-            NotificationType.AUCTION_WINNER_CLIENT,
-            NotificationType.RESERVATION_REJECTED_CLIENT,
-            NotificationType.AUCTION_OUTBID_CLIENT,
-            NotificationType.FAVORITE_PACK_RESTOCKED,
-            NotificationType.FAVORITE_COMMERCE_NEW_PACK,
-            NotificationType.AUCTION_LOST_CLIENT);
 
     private final AuthenticatedUserResolver authenticatedUserResolver;
     private final ProfileService profileService;
@@ -172,10 +162,8 @@ public class ProfileController {
             final RedirectAttributes redirectAttributes) {
         final User user = authenticatedUserResolver.resolveUser();
         final Map<NotificationType, Boolean> parsed = new LinkedHashMap<>();
-        for (final NotificationType type : NotificationType.values()) {
-            if (CLIENT_MAIL_TYPES.contains(type)) {
-                parsed.put(type, allParams.containsKey("mailPref_" + type.name()));
-            }
+        for (final NotificationType type : notificationService.getClientConfigurableMailTypes()) {
+            parsed.put(type, allParams.containsKey("mailPref_" + type.name()));
         }
         try {
             notificationService.updateClientMailPreferences(user.getId(), parsed);

@@ -2,15 +2,9 @@ package ar.edu.itba.paw.webapp.controller.auth;
 
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.security.VerificationTokenService;
+import ar.edu.itba.paw.webapp.auth.AuthenticationHelper;
 import ar.edu.itba.paw.webapp.form.EmailVerificationResendForm;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -21,20 +15,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import javax.servlet.http.HttpSession;
 
 @Controller
 @RequestMapping("/verify-email")
 public class EmailVerificationController {
 
     private final VerificationTokenService verificationTokenService;
-    private final UserDetailsService userDetailsService;
+    private final AuthenticationHelper authenticationHelper;
 
     @Autowired
     public EmailVerificationController(final VerificationTokenService verificationTokenService,
-            final UserDetailsService userDetailsService) {
+            final AuthenticationHelper authenticationHelper) {
         this.verificationTokenService = verificationTokenService;
-        this.userDetailsService = userDetailsService;
+        this.authenticationHelper = authenticationHelper;
     }
 
     @GetMapping
@@ -45,20 +38,7 @@ public class EmailVerificationController {
             return "redirect:/verify-email/resend?expired=true";
         }
 
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(verifiedUser.getEmail());
-        final Authentication authentication =
-            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-        final SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
-        securityContext.setAuthentication(authentication);
-        SecurityContextHolder.setContext(securityContext);
-
-        final HttpSession existingSession = request.getSession(false);
-        if (existingSession != null) {
-            existingSession.invalidate();
-        }
-
-        request.getSession(true).setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
-            securityContext);
+        authenticationHelper.autoLogin(verifiedUser.getEmail(), request);
 
         return "redirect:/?verified=true";
     }

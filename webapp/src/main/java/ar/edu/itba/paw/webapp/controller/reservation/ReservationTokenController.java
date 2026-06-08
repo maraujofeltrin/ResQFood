@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.webapp.controller.reservation;
 
+import ar.edu.itba.paw.models.reservation.AlreadyUsedTokenStatus;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
@@ -185,18 +186,9 @@ public class ReservationTokenController {
     }
 
     private String buildAlreadyUsedView(final String token, final Model model) {
-        final Optional<Long> reservationId = reservationService.findReservationIdByToken(token);
-        if (reservationId.isPresent()) {
-            final Optional<Reservation> reservation = reservationService.findById(reservationId.get());
-            if (reservation.isPresent() && reservation.get().getStatus() != null) {
-                final Reservation.Status status = reservation.get().getStatus();
-                if (status == Reservation.Status.PAID) {
-                    model.addAttribute("alreadyUsedDetailCode", "reservation.token.status.used.accepted");
-                } else if (status == Reservation.Status.CANCELED) {
-                    model.addAttribute("alreadyUsedDetailCode", "reservation.token.status.used.rejected");
-                }
-            }
-        }
+        reservationService.getAlreadyUsedTokenStatus(token)
+                .map(AlreadyUsedTokenStatus::getDetailCode)
+                .ifPresent(code -> model.addAttribute("alreadyUsedDetailCode", code));
         model.addAttribute("tokenStatus", "already-used");
         return "reservations/token-status";
     }

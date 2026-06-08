@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.services.reservation;
 
+import ar.edu.itba.paw.models.reservation.AlreadyUsedTokenStatus;
 import ar.edu.itba.paw.models.reservation.PickupByCodeError;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationRejectionError;
@@ -98,6 +99,8 @@ public interface ReservationService {
     TokenValidationResult validateToken(String token, ReservationToken.Action action);
 
     Optional<Long> findReservationIdByToken(String token);
+
+    Optional<AlreadyUsedTokenStatus> getAlreadyUsedTokenStatus(String token);
 
     /**
      * Valida un token ACCEPT, verifica el pickup code, marca el token como usado

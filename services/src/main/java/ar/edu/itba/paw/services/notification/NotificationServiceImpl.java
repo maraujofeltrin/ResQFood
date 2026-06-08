@@ -377,6 +377,11 @@ public class NotificationServiceImpl implements NotificationService {
                 customerName);
     }
 
+    @Override
+    public Set<NotificationType> getClientConfigurableMailTypes() {
+        return new java.util.LinkedHashSet<>(CLIENT_MAIL_TYPES);
+    }
+
     private record ReservationSnapshot(Long packId, String packTitle, String commerceName, Long commerceUserId,
             Double amount, String pickupCode, LocalDateTime pickupDate) {
     }

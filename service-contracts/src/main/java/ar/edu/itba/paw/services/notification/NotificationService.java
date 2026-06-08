@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public interface NotificationService {
 
@@ -48,4 +49,6 @@ public interface NotificationService {
     List<ClientMailPreferenceView> getClientMailPreferences(long clientId);
 
     void updateClientMailPreferences(long clientId, Map<NotificationType, Boolean> preferencesByType);
+
+    Set<NotificationType> getClientConfigurableMailTypes();
 }

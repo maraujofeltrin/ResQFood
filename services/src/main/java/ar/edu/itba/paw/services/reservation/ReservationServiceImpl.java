@@ -2,6 +2,7 @@ package ar.edu.itba.paw.services.reservation;
 
 import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.reservation.AlreadyUsedTokenStatus;
 import ar.edu.itba.paw.models.reservation.PickupByCodeError;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationCreationException;
@@ -504,6 +505,18 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public Optional<Long> findReservationIdByToken(final String token) {
         return reservationTokenDao.findByToken(token).map(t -> t.getReservation().getId());
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Optional<AlreadyUsedTokenStatus> getAlreadyUsedTokenStatus(final String token) {
+        return findReservationIdByToken(token)
+                .flatMap(this::findById)
+                .map(r -> {
+                    if (r.getStatus() == Reservation.Status.PAID) return AlreadyUsedTokenStatus.ACCEPTED;
+                    if (r.getStatus() == Reservation.Status.CANCELED) return AlreadyUsedTokenStatus.REJECTED;
+                    return null;
+                });
     }
 
     @Transactional
