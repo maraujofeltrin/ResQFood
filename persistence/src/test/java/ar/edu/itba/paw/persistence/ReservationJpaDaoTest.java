@@ -133,39 +133,6 @@ public class ReservationJpaDaoTest {
     }
 
     @Test
-    public void testFindByCustomerIdWhenTwoReservationsExist() {
-        // 1. Setup
-        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0, Reservation.Status.RESERVED,
-                "CODE1", null, 1, null);
-        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0, Reservation.Status.RESERVED,
-                "CODE2", null, 1, null);
-        em.flush();
-
-        // 2. Ejercicio
-        final List<Reservation> reservations = reservationDao.findByCustomerId(clientId);
-
-        // 3. Asserts
-        assertEquals(2, reservations.size());
-        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
-    }
-
-    @Test
-    public void testFindByCommerceIdWhenOneReservationExists() {
-        // 1. Setup
-        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0, Reservation.Status.RESERVED, "CODE",
-                null, 1, null);
-        em.flush();
-
-        // 2. Ejercicio
-        final List<Reservation> reservations = reservationDao.findByCommerceId(commerceId);
-
-        // 3. Asserts
-        assertEquals(1, reservations.size());
-        assertEquals(packId, reservations.get(0).getPackId());
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
-    }
-
-    @Test
     public void testUpdateStatusWhenReservationExists() {
         // 1. Setup
         final Reservation created = reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
@@ -512,7 +479,7 @@ public class ReservationJpaDaoTest {
         em.flush();
 
         // 2. Ejercicio
-        final List<Reservation> results = reservationDao.findByPackId(packId);
+        final List<Reservation> results = reservationDao.findByPackId(packId, 1, 10);
 
         // 3. Asserts
         assertFalse(results.isEmpty());

@@ -151,7 +151,7 @@ public class BidJpaDaoTest {
         em.flush();
 
         // 2. Ejercicio
-        final List<Bid> bids = bidDao.findByAuctionId(auctionId);
+        final List<Bid> bids = bidDao.findByAuctionId(auctionId, 1, 10);
 
         // 3. Asserts
         assertEquals(2, bids.size());
@@ -167,7 +167,7 @@ public class BidJpaDaoTest {
         em.flush();
 
         // 2. Ejercicio
-        final List<Bid> bids = bidDao.findByAuctionId(auctionId);
+        final List<Bid> bids = bidDao.findByAuctionId(auctionId, 1, 10);
 
         // 3. Asserts
         assertFalse(bids.isEmpty());

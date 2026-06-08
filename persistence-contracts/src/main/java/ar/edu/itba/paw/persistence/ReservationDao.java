@@ -15,11 +15,8 @@ public interface ReservationDao {
 
     Optional<Reservation> findByIdWithDetails(final Long id);
 
-    List<Reservation> findByCustomerId(final Long customerId);
-
-    List<Reservation> findByCommerceId(final Long commerceId);
-
-    List<Reservation> findByPackId(final Long packId);
+    List<Reservation> findByPackId(final Long packId, int page, int pageSize);
+    int countByPackId(Long packId);
 
     Reservation updateStatus(final Long id, final Reservation.Status status);
 

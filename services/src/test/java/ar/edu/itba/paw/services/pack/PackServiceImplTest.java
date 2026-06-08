@@ -240,40 +240,6 @@ class PackServiceImplTest {
     }
 
     @Test
-    void testFindAllWhenDaoReturnsListReturnsSameContent() {
-        // 1. Setup
-        final Pack a = newPack(1L, 1L, "A", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
-        final Pack b = newPack(2L, 1L, "B", "d", 2.0, 2.0, 2, true, false, Collections.emptyList(), null);
-        final List<Pack> fromDao = Arrays.asList(a, b);
-        when(packDao.findAll()).thenReturn(fromDao);
-
-        // 2. Ejercicio
-        final List<Pack> result = packService.findAll();
-
-        // 3. Asserts
-        assertEquals(2, result.size());
-        assertEquals("A", result.get(0).getTitle());
-        assertEquals("B", result.get(1).getTitle());
-    }
-
-    @Test
-    void testFindByCommerceIdWhenDaoReturnsListReturnsSameContent() {
-        // 1. Setup
-        final long commerceId = 88L;
-        final Pack only = newPack(9L, commerceId, "C", "d", 3.0, 3.0, 1, true, false, Collections.emptyList(),
-                null);
-        when(packDao.findByCommerceId(commerceId)).thenReturn(Collections.singletonList(only));
-
-        // 2. Ejercicio
-        final List<Pack> result = packService.findByCommerceId(commerceId);
-
-        // 3. Asserts
-        assertEquals(1, result.size());
-        assertEquals(9L, result.get(0).getId());
-        assertEquals(commerceId, result.get(0).getCommerceId());
-    }
-
-    @Test
     void testFilterPacksWhenDaoReturnsListReturnsSameContent() {
         // 1. Setup
         final String query = "pan";

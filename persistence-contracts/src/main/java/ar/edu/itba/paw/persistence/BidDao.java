@@ -12,11 +12,9 @@ public interface BidDao {
 
     Bid createBid(long auctionId, long clientId, double amount);
 
-    List<Bid> findByAuctionId(long auctionId);
+    List<Bid> findByAuctionId(long auctionId, int page, int pageSize);
 
     Optional<Bid> findHighestBid(long auctionId);
-
-    List<Bid> findByClientId(long clientId);
 
     int countByAuctionId(long auctionId);
 

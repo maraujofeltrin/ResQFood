@@ -12,6 +12,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -65,12 +66,27 @@ public class CommerceReviewJpaDao implements CommerceReviewDao {
 
     @Override
     public List<CommerceReview> findByCommerceId(Long commerceUserId, int page, int pageSize) {
-        return em.createQuery(
-                "FROM CommerceReview r JOIN FETCH r.client WHERE r.commerce.userId = :commerce ORDER BY r.createdAt DESC",
-                CommerceReview.class)
+        final List<?> rawIds = em.createNativeQuery(
+                        "SELECT r.id FROM commerce_reviews r "
+                        + "WHERE r.commerce_user_id = :commerce "
+                        + "ORDER BY r.created_at DESC")
                 .setParameter("commerce", commerceUserId)
                 .setFirstResult(Pagination.offset(page, pageSize))
                 .setMaxResults(pageSize)
+                .getResultList();
+        if (rawIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final List<Long> ids = new ArrayList<>(rawIds.size());
+        for (final Object rawId : rawIds) {
+            ids.add(rawId instanceof Number ? ((Number) rawId).longValue() : Long.parseLong(rawId.toString()));
+        }
+        return em.createQuery(
+                        "FROM CommerceReview r JOIN FETCH r.client "
+                        + "WHERE r.id IN :ids "
+                        + "ORDER BY r.createdAt DESC",
+                        CommerceReview.class)
+                .setParameter("ids", ids)
                 .getResultList();
     }
 

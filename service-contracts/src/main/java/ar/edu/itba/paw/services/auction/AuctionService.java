@@ -36,7 +36,6 @@ public interface AuctionService {
     int countFilteredAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges,
                               boolean requirePositiveStock, Long commerceUserId);
 
-    List<Auction> findByCommerceId(long commerceId);
 
     /**
      * Places a bid on an auction. Validates that:
@@ -70,7 +69,7 @@ public interface AuctionService {
     /**
      * Returns the bid history for an auction, ordered by amount descending.
      */
-    List<Bid> getBidHistory(long auctionId);
+    List<Bid> getBidHistory(long auctionId, int page, int pageSize);
 
     /**
      * Checks if the given user is currently leading the given auction.

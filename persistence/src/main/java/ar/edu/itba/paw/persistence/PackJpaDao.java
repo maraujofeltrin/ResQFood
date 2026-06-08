@@ -61,17 +61,6 @@ public class PackJpaDao implements PackDao {
                 .findFirst();
     }
 
-    @Override
-    public List<Pack> findAll() {
-        return em.createQuery("FROM Pack p", Pack.class).getResultList();
-    }
-
-    @Override
-    public List<Pack> findByCommerceId(final Long commerceId) {
-        return em.createQuery("FROM Pack p WHERE p.commerce.userId = :cid AND p.deleted = false ORDER BY p.id DESC", Pack.class)
-                .setParameter("cid", commerceId)
-                .getResultList();
-    }
 
     @Override
     public Pack update(final Pack pack) {
@@ -165,22 +154,36 @@ public class PackJpaDao implements PackDao {
 
     @Override
     public List<Pack> filterCommercePacks(final Long commerceId, final Boolean hasAuction, final int page, final int pageSize) {
-        final StringBuilder jpql = new StringBuilder(
-                "SELECT p FROM Pack p LEFT JOIN FETCH p.auction "
-                        + "WHERE p.commerce.userId = :cid AND p.deleted = false");
-        final Map<String, Object> params = new LinkedHashMap<>();
-        params.put("cid", commerceId);
+        final StringBuilder idSql = new StringBuilder(
+                "SELECT p.id FROM packs p WHERE p.commerce_id = :cid AND p.deleted = FALSE");
         if (hasAuction != null) {
-            if (hasAuction.booleanValue()) {
-                jpql.append(" AND EXISTS (SELECT a.id FROM Auction a WHERE a.pack.id = p.id)");
+            if (hasAuction) {
+                idSql.append(" AND EXISTS (SELECT 1 FROM auctions a WHERE a.pack_id = p.id)");
             } else {
-                jpql.append(" AND NOT EXISTS (SELECT a.id FROM Auction a WHERE a.pack.id = p.id)");
+                idSql.append(" AND NOT EXISTS (SELECT 1 FROM auctions a WHERE a.pack_id = p.id)");
             }
         }
-        jpql.append(" ORDER BY p.id DESC");
-        return JpqlQuerySupport.createQuery(em, jpql.toString(), params, Pack.class)
-                .setFirstResult(Pagination.offset(page, pageSize))
-                .setMaxResults(pageSize)
+        idSql.append(" ORDER BY p.id DESC");
+
+        final Query idQuery = em.createNativeQuery(idSql.toString());
+        idQuery.setParameter("cid", commerceId);
+        idQuery.setFirstResult(Pagination.offset(page, pageSize));
+        idQuery.setMaxResults(pageSize);
+
+        final List<?> rawIds = idQuery.getResultList();
+        if (rawIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final List<Long> ids = new ArrayList<>(rawIds.size());
+        for (final Object rawId : rawIds) {
+            ids.add(rawId instanceof Number ? ((Number) rawId).longValue() : Long.parseLong(rawId.toString()));
+        }
+
+        return em.createQuery(
+                        "SELECT p FROM Pack p LEFT JOIN FETCH p.image LEFT JOIN FETCH p.auction "
+                                + "WHERE p.id IN :ids ORDER BY p.id DESC",
+                        Pack.class)
+                .setParameter("ids", ids)
                 .getResultList();
     }
 

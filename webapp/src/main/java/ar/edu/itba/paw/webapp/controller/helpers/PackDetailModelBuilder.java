@@ -100,7 +100,7 @@ public class PackDetailModelBuilder {
         if (auctionPresent) {
             final long auctionId = auctionOpt.get().getId();
             mav.addObject("auctionId", auctionId);
-            final List<Bid> bidHistory = auctionService.getBidHistory(auctionId);
+            final List<Bid> bidHistory = auctionService.getBidHistory(auctionId, 1, 50);
             final List<BidHistoryViewHelper.BidHistoryRow> bidHistoryItems = BidHistoryViewHelper.buildRows(
                     bidHistory, messageSource, locale);
             mav.addObject("auctionBidHistoryItems", bidHistoryItems);
@@ -156,7 +156,7 @@ public class PackDetailModelBuilder {
         mav.addObject("manageable", manageable);
         
         if (isOwner) {
-            final List<Reservation> reservations = reservationService.findByPackId(pack.getId());
+            final List<Reservation> reservations = reservationService.findByPackId(pack.getId(), 1, 50);
             final List<ReservationHistoryViewHelper.ReservationHistoryRow> reservationHistoryItems =
                 ReservationHistoryViewHelper.buildRows(reservations, messageSource, locale);
             mav.addObject("packReservationHistoryItems", reservationHistoryItems);

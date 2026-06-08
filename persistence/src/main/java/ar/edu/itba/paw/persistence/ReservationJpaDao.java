@@ -60,26 +60,23 @@ public class ReservationJpaDao implements ReservationDao {
     }
 
     @Override
-    public List<Reservation> findByCustomerId(final Long customerId) {
-        return em.createQuery("FROM Reservation r WHERE r.customer.userId = :customerId", Reservation.class)
-                .setParameter("customerId", customerId)
-                .getResultList();
-    }
-
-    @Override
-    public List<Reservation> findByCommerceId(final Long commerceId) {
-        return em.createQuery("SELECT r FROM Reservation r JOIN r.pack p WHERE p.commerce.userId = :commerceId", Reservation.class)
-                .setParameter("commerceId", commerceId)
-                .getResultList();
-    }
-
-    @Override
-    public List<Reservation> findByPackId(final Long packId) {
+    public List<Reservation> findByPackId(final Long packId, final int page, final int pageSize) {
         return em.createQuery(
                 "FROM Reservation r JOIN FETCH r.customer WHERE r.pack.id = :packId ORDER BY r.reservationDate DESC",
                 Reservation.class)
                 .setParameter("packId", packId)
+                .setFirstResult(Pagination.offset(page, pageSize))
+                .setMaxResults(pageSize)
                 .getResultList();
+    }
+
+    @Override
+    public int countByPackId(final Long packId) {
+        final Number count = em.createQuery(
+                "SELECT COUNT(r) FROM Reservation r WHERE r.pack.id = :packId", Number.class)
+                .setParameter("packId", packId)
+                .getSingleResult();
+        return count != null ? count.intValue() : 0;
     }
 
     @Override

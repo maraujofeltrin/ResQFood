@@ -3,6 +3,7 @@ package ar.edu.itba.paw.persistence;
 import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.auction.Bid;
 import ar.edu.itba.paw.models.user.Client;
+import ar.edu.itba.paw.persistence.util.Pagination;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
@@ -37,11 +38,13 @@ public class BidJpaDao implements BidDao {
     }
 
     @Override
-    public List<Bid> findByAuctionId(final long auctionId) {
+    public List<Bid> findByAuctionId(final long auctionId, final int page, final int pageSize) {
         return em.createQuery(
                 "FROM Bid b JOIN FETCH b.client WHERE b.auction.id = :auctionId ORDER BY b.amount DESC, b.timestamp ASC",
                 Bid.class)
                 .setParameter("auctionId", auctionId)
+                .setFirstResult(Pagination.offset(page, pageSize))
+                .setMaxResults(pageSize)
                 .getResultList();
     }
 
@@ -53,13 +56,6 @@ public class BidJpaDao implements BidDao {
             .getResultList()
             .stream()
             .findFirst();
-    }
-
-    @Override
-    public List<Bid> findByClientId(final long clientId) {
-        return em.createQuery("FROM Bid b WHERE b.client.userId = :clientId ORDER BY b.timestamp DESC", Bid.class)
-                .setParameter("clientId", clientId)
-                .getResultList();
     }
 
     @Override

@@ -112,12 +112,6 @@ public class AuctionServiceImpl implements AuctionService {
         return auctionDao.countFilteredAuctions(query, tags, city, timeRanges, requirePositiveStock, commerceUserId);
     }
 
-    @Transactional(readOnly = true)
-    @Override
-    public List<Auction> findByCommerceId(final long commerceId) {
-        return auctionDao.findByCommerceId(commerceId);
-    }
-
     @Transactional
     @Override
     public Bid placeBid(final long auctionId, final long clientId, final double amount) {
@@ -234,8 +228,8 @@ public class AuctionServiceImpl implements AuctionService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<Bid> getBidHistory(final long auctionId) {
-        return bidDao.findByAuctionId(auctionId);
+    public List<Bid> getBidHistory(final long auctionId, final int page, final int pageSize) {
+        return bidDao.findByAuctionId(auctionId, page, pageSize);
     }
 
     @Transactional(readOnly = true)

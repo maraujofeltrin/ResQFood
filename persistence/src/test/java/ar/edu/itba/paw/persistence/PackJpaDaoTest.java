@@ -131,25 +131,6 @@ public class PackJpaDaoTest {
     }
 
     @Test
-    public void testFindByCommerceIdExcludesDeletedPacks() {
-        // 1. Setup
-        final Pack visible = packDao.createPack(commerceId, "Visible", "Desc", 1000.0, 500.0, 10, null, null);
-        final Pack deleted = packDao.createPack(commerceId, "Deleted", "Desc", 1000.0, 500.0, 10, null, null);
-        em.flush();
-        packDao.softDelete(deleted.getId());
-        em.flush();
-        em.clear();
-
-        // 2. Ejercicio
-        final List<Pack> packs = packDao.findByCommerceId(commerceId);
-
-        // 3. Asserts
-        assertEquals(1, packs.size());
-        assertEquals(visible.getId(), packs.get(0).getId());
-        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
-    }
-
-    @Test
     public void testFilterPacksWhenVeganTagProvidedReturnsMatchingPack() {
         // 1. Setup
         final Pack tagged = packDao.createPack(commerceId, "Bread Basket", "Desc", 1000.0, 500.0, 5,
@@ -244,7 +225,7 @@ public class PackJpaDaoTest {
     }
 
     @Test
-    public void testSoftDeleteHidesPackFromFindByCommerceId() {
+    public void testSoftDeleteWhenPackExistsMarksItAsDeleted() {
         // 1. Setup
         final Pack created = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, null, null);
         em.flush();
@@ -255,8 +236,6 @@ public class PackJpaDaoTest {
         em.clear();
 
         // 3. Asserts
-        final List<Pack> packs = packDao.findByCommerceId(commerceId);
-        assertTrue(packs.isEmpty());
         final Optional<Pack> softDeleted = packDao.findById(created.getId());
         assertTrue(softDeleted.isPresent());
         assertTrue(softDeleted.get().getDeleted());

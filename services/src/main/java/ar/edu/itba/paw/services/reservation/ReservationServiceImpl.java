@@ -185,29 +185,18 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<Reservation> findByCustomerId(final Long customerId) {
-        if (customerId == null) {
-            return Collections.emptyList();
-        }
-        return reservationDao.findByCustomerId(customerId);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public List<Reservation> findByCommerceId(final Long commerceId) {
-        if (commerceId == null) {
-            return Collections.emptyList();
-        }
-        return reservationDao.findByCommerceId(commerceId);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public List<Reservation> findByPackId(final Long packId) {
+    public List<Reservation> findByPackId(final Long packId, final int page, final int pageSize) {
         if (packId == null) {
             return Collections.emptyList();
         }
-        return reservationDao.findByPackId(packId);
+        return reservationDao.findByPackId(packId, page, pageSize);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public int countByPackId(final Long packId) {
+        if (packId == null) return 0;
+        return reservationDao.countByPackId(packId);
     }
 
 

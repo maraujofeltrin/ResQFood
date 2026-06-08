@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -227,7 +228,7 @@ public class NotificationServiceImpl implements NotificationService {
         final String commerceName = commerceCommercialName(pack);
         final Long winnerId = auction.getCurrentBidderId();
         final Double winningAmount = auction.getCurrentBid();
-        final List<Bid> bids = auctionService.getBidHistory(auctionId);
+        final List<Bid> bids = auctionService.getBidHistory(auctionId, 1, Integer.MAX_VALUE);
         final Set<Long> bidderIds = bids.stream()
                 .map(Bid::getClientId)
                 .collect(Collectors.toSet());

@@ -205,42 +205,6 @@ class ReservationServiceImplTest {
     }
 
     @Test
-    void testFindByCustomerIdWhenDataExistsReturnsOnlyThatCustomer() {
-        // 1. Setup
-        final List<Reservation> forCustomer = new ArrayList<>();
-        forCustomer.add(new Reservation(1L, clientRef(1L), packRef(10L), LocalDateTime.now(), 10.0, Reservation.Status.RESERVED, "A",
-                null, 1, null));
-        forCustomer.add(new Reservation(3L, clientRef(1L), packRef(12L), LocalDateTime.now(), 30.0, Reservation.Status.PAID, "C", null, 3,
-                null));
-        when(reservationDao.findByCustomerId(1L)).thenReturn(forCustomer);
-
-        // 2. Ejercicio
-        final List<Reservation> reservations = reservationService.findByCustomerId(1L);
-
-        // 3. Asserts
-        assertEquals(2, reservations.size());
-        assertTrue(reservations.stream().allMatch(r -> r.getCustomerId().equals(1L)));
-    }
-
-    @Test
-    void testFindByCommerceIdWhenDataExistsReturnsMatchingPackIds() {
-        // 1. Setup
-        final List<Reservation> forCommerce = new ArrayList<>();
-        forCommerce.add(new Reservation(1L, clientRef(1L), packRef(100L), LocalDateTime.now(), 10.0, Reservation.Status.RESERVED, "D", null,
-                1, null));
-        forCommerce.add(new Reservation(3L, clientRef(3L), packRef(100L), LocalDateTime.now(), 30.0, Reservation.Status.PAID, "F", null, 1,
-                null));
-        when(reservationDao.findByCommerceId(100L)).thenReturn(forCommerce);
-
-        // 2. Ejercicio
-        final List<Reservation> reservations = reservationService.findByCommerceId(100L);
-
-        // 3. Asserts
-        assertEquals(2, reservations.size());
-        assertTrue(reservations.stream().allMatch(r -> r.getPackId().equals(100L)));
-    }
-
-    @Test
     void testTryRejectReservationWhenReservedCancelsRestoresStockAndNotifiesClient() {
         // 1. Setup
         final long packId = 500L;

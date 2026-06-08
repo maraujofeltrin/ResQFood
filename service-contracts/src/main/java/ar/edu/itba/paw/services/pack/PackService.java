@@ -11,8 +11,6 @@ import java.util.Optional;
 public interface PackService {
     Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<PackTag> tags, Long imageId);
     Optional<Pack> findById(Long id);
-    List<Pack> findAll();
-    List<Pack> findByCommerceId(Long commerceId);
     Pack update(Pack pack);
     void deletePack(long packId) throws PackDirectEditException;
 

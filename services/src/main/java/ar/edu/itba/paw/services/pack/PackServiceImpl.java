@@ -60,18 +60,6 @@ public class PackServiceImpl implements PackService {
         return packDao.findById(id);
     }
 
-    @Transactional(readOnly = true)
-    @Override
-    public List<Pack> findAll() {
-        return packDao.findAll();
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public List<Pack> findByCommerceId(Long commerceId) {
-        return packDao.findByCommerceId(commerceId);
-    }
-
     @Transactional
     @Override
     public Pack update(Pack pack) {
