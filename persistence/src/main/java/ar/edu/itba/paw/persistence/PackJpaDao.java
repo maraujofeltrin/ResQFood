@@ -182,6 +182,58 @@ public class PackJpaDao implements PackDao {
     }
 
     @Override
+    public List<Pack> findPublicOffersByCommerce(final Long commerceUserId, final int page, final int pageSize) {
+        final String idSql =
+                "SELECT p.id FROM packs p "
+                        + "WHERE p.commerce_id = :cid AND p.active = TRUE AND p.deleted = FALSE "
+                        + "AND ( "
+                        + "  (p.stock > 0 AND NOT EXISTS (SELECT 1 FROM auctions a WHERE a.pack_id = p.id AND a.status = :activeStatus)) "
+                        + "  OR EXISTS (SELECT 1 FROM auctions a WHERE a.pack_id = p.id AND a.status = :activeStatus) "
+                        + ") "
+                        + "ORDER BY p.id DESC";
+        final Query idQuery = em.createNativeQuery(idSql);
+        idQuery.setParameter("cid", commerceUserId);
+        idQuery.setParameter("activeStatus", Auction.Status.ACTIVE.name());
+        idQuery.setFirstResult(Pagination.offset(page, pageSize));
+        idQuery.setMaxResults(pageSize);
+
+        final List<?> rawIds = idQuery.getResultList();
+        if (rawIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final List<Long> ids = new ArrayList<>(rawIds.size());
+        for (final Object rawId : rawIds) {
+            ids.add(rawId instanceof Number ? ((Number) rawId).longValue() : Long.parseLong(rawId.toString()));
+        }
+
+        return em.createQuery(
+                        "SELECT DISTINCT p FROM Pack p "
+                                + "LEFT JOIN FETCH p.image "
+                                + "JOIN FETCH p.commerce "
+                                + "LEFT JOIN FETCH p.auction "
+                                + "WHERE p.id IN :ids "
+                                + "ORDER BY p.id DESC",
+                        Pack.class)
+                .setParameter("ids", ids)
+                .getResultList();
+    }
+
+    @Override
+    public int countPublicOffersByCommerce(final Long commerceUserId) {
+        final Number count = (Number) em.createQuery(
+                        "SELECT COUNT(p.id) FROM Pack p "
+                                + "WHERE p.commerce.userId = :cid AND p.active = true AND p.deleted = false "
+                                + "AND ( "
+                                + "  (p.stock > 0 AND NOT EXISTS (SELECT a.id FROM Auction a WHERE a.pack = p AND a.status = :activeStatus)) "
+                                + "  OR EXISTS (SELECT a.id FROM Auction a WHERE a.pack = p AND a.status = :activeStatus) "
+                                + ")")
+                .setParameter("cid", commerceUserId)
+                .setParameter("activeStatus", Auction.Status.ACTIVE)
+                .getSingleResult();
+        return count == null ? 0 : count.intValue();
+    }
+
+    @Override
     public int countCommercePacks(final Long commerceId, final Boolean hasAuction) {
         final StringBuilder jpql = new StringBuilder("SELECT COUNT(p.id) FROM Pack p WHERE p.commerce.userId = :cid AND p.deleted = false");
         final Map<String, Object> params = new LinkedHashMap<>();

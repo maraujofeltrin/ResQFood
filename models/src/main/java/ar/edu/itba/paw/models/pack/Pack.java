@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.models.pack;
 
+import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.image.Image;
 import ar.edu.itba.paw.models.user.Commerce;
 
@@ -55,6 +56,9 @@ public class Pack {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_id")
     private Image image;
+
+    @OneToOne(mappedBy = "pack", fetch = FetchType.LAZY)
+    private Auction auction;
 
     protected Pack() {
     }
@@ -167,6 +171,10 @@ public class Pack {
 
     public void setImage(final Image image) {
         this.image = image;
+    }
+
+    public Auction getAuction() {
+        return auction;
     }
 
     @Override

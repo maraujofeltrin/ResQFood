@@ -67,4 +67,17 @@ public interface PackDao {
      * Counts packs belonging to a specific commerce, optionally filtering by whether they have an associated auction.
      */
     int countCommercePacks(Long commerceId, Boolean hasAuction);
+
+    /**
+     * Returns active, visible offers (direct-sale packs with stock OR packs with an ACTIVE auction)
+     * for the given commerce, paginated and ordered by {@code pack.id DESC}.
+     * Hydrates {@code pack.image}, {@code pack.commerce} and {@code pack.auction}.
+     */
+    List<Pack> findPublicOffersByCommerce(Long commerceUserId, int page, int pageSize);
+
+    /**
+     * Counts active, visible offers (direct-sale packs with stock OR packs with an ACTIVE auction)
+     * for the given commerce.
+     */
+    int countPublicOffersByCommerce(Long commerceUserId);
 }

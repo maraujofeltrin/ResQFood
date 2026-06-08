@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.persistence;
 
+import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackSortOption;
@@ -31,6 +32,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Rollback
@@ -561,6 +563,137 @@ public class PackJpaDaoTest {
 
         // 2. Ejercicio
         final List<Pack> pageTwo = packDao.filterCommercePacks(commerceId, null, 2, 1);
+
+        // 3. Asserts
+        assertEquals(1, pageTwo.size());
+        assertEquals(second.getId(), pageTwo.get(0).getId());
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testPackAuctionInverseIsHydratedWhenAuctionExists() {
+        // 1. Setup
+        final Pack pack = packDao.createPack(commerceId, "Auction Pack", "Desc", 100.0, 50.0, 1, null, null);
+        em.flush();
+        auctionDao.createAuction(pack.getId(), 10.0, 1.0, EXPIRED_AUCTION_END);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final Optional<Pack> reloaded = packDao.findById(pack.getId());
+
+        // 3. Asserts
+        assertTrue(reloaded.isPresent());
+        assertNotNull(reloaded.get().getAuction());
+        assertEquals(pack.getId(), reloaded.get().getAuction().getPack().getId());
+        assertEquals(Auction.Status.ACTIVE, reloaded.get().getAuction().getStatus());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
+    }
+
+    @Test
+    public void testPackAuctionInverseIsNullWhenNoAuction() {
+        // 1. Setup
+        final Pack pack = packDao.createPack(commerceId, "Direct Pack", "Desc", 100.0, 50.0, 1, null, null);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final Optional<Pack> reloaded = packDao.findById(pack.getId());
+
+        // 3. Asserts
+        assertTrue(reloaded.isPresent());
+        assertNull(reloaded.get().getAuction());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testFindPublicOffersByCommerceIncludesDirectPacksAndAuctionPacks() {
+        // 1. Setup
+        final Pack direct = packDao.createPack(commerceId, "Direct", "Desc", 100.0, 50.0, 3, null, null);
+        final Pack auctionPack = packDao.createPack(commerceId, "Auction", "Desc", 100.0, 50.0, 1, null, null);
+        em.flush();
+        auctionDao.createAuction(auctionPack.getId(), 10.0, 1.0, EXPIRED_AUCTION_END);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final List<Pack> offers = packDao.findPublicOffersByCommerce(commerceId, 1, 10);
+
+        // 3. Asserts
+        assertEquals(2, offers.size());
+        assertEquals(auctionPack.getId(), offers.get(0).getId());
+        assertEquals(direct.getId(), offers.get(1).getId());
+        assertNotNull(offers.get(0).getAuction());
+        assertNull(offers.get(1).getAuction());
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testFindPublicOffersByCommerceExcludesDirectPackWithZeroStock() {
+        // 1. Setup
+        final Pack withStock = packDao.createPack(commerceId, "Has Stock", "Desc", 100.0, 50.0, 1, null, null);
+        packDao.createPack(commerceId, "No Stock", "Desc", 100.0, 50.0, 0, null, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Pack> offers = packDao.findPublicOffersByCommerce(commerceId, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, offers.size());
+        assertEquals(withStock.getId(), offers.get(0).getId());
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testFindPublicOffersByCommerceExcludesInactiveAndDeletedPacks() {
+        // 1. Setup
+        final Pack visible = packDao.createPack(commerceId, "Visible", "Desc", 100.0, 50.0, 1, null, null);
+        final Pack inactive = packDao.createPack(commerceId, "Inactive", "Desc", 100.0, 50.0, 1, null, null);
+        final Pack deleted = packDao.createPack(commerceId, "Deleted", "Desc", 100.0, 50.0, 1, null, null);
+        em.flush();
+        packDao.setActive(inactive.getId(), false);
+        packDao.softDelete(deleted.getId());
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Pack> offers = packDao.findPublicOffersByCommerce(commerceId, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, offers.size());
+        assertEquals(visible.getId(), offers.get(0).getId());
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testCountPublicOffersByCommerceMatchesFindResults() {
+        // 1. Setup
+        packDao.createPack(commerceId, "A", "Desc", 100.0, 50.0, 1, null, null);
+        packDao.createPack(commerceId, "B", "Desc", 100.0, 50.0, 1, null, null);
+        final Pack auctionPack = packDao.createPack(commerceId, "Auction", "Desc", 100.0, 50.0, 1, null, null);
+        em.flush();
+        auctionDao.createAuction(auctionPack.getId(), 10.0, 1.0, EXPIRED_AUCTION_END);
+        em.flush();
+
+        // 2. Ejercicio
+        final int count = packDao.countPublicOffersByCommerce(commerceId);
+
+        // 3. Asserts
+        assertEquals(3, count);
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testFindPublicOffersByCommercePaginatesByIdDesc() {
+        // 1. Setup
+        packDao.createPack(commerceId, "First", "Desc", 100.0, 50.0, 1, null, null);
+        em.flush();
+        final Pack second = packDao.createPack(commerceId, "Second", "Desc", 100.0, 50.0, 1, null, null);
+        em.flush();
+        packDao.createPack(commerceId, "Third", "Desc", 100.0, 50.0, 1, null, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Pack> pageTwo = packDao.findPublicOffersByCommerce(commerceId, 2, 1);
 
         // 3. Asserts
         assertEquals(1, pageTwo.size());
