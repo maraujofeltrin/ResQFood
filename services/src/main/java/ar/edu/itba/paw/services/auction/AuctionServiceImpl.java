@@ -234,6 +234,12 @@ public class AuctionServiceImpl implements AuctionService {
 
     @Transactional(readOnly = true)
     @Override
+    public int countBidsByAuction(final long auctionId) {
+        return bidDao.countByAuctionId(auctionId);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
     public boolean isClientLeading(final long auctionId, final long userId) {
         final Optional<Auction> auctionOpt = auctionDao.findById(auctionId);
         if (auctionOpt.isEmpty()) {

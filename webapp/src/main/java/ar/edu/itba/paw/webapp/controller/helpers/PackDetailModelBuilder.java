@@ -46,6 +46,8 @@ public class PackDetailModelBuilder {
     private final CommerceDetailAttributesHelper commerceDetailAttributesHelper;
     private final CommerceFavoriteService commerceFavoriteService;
     private static final Locale LOCALE_AR = new Locale("es", "AR");
+    private static final int BID_PAGE_SIZE = 10;
+    private static final int RESERVATION_PAGE_SIZE = 10;
 
     @Autowired
     public PackDetailModelBuilder(final CommerceService commerceService, final AuctionService auctionService,
@@ -77,11 +79,17 @@ public class PackDetailModelBuilder {
     }
 
     public ModelAndView buildPackDetailModel(final Pack pack, final ReservationForm reservationForm, final BidForm bidForm) {
-        return buildPackDetailModel(pack, reservationForm, bidForm, null);
+        return buildPackDetailModel(pack, reservationForm, bidForm, null, 1, 1);
     }
 
     public ModelAndView buildPackDetailModel(final Pack pack, final ReservationForm reservationForm,
             final BidForm bidForm, final CommerceReviewForm commerceReviewForm) {
+        return buildPackDetailModel(pack, reservationForm, bidForm, commerceReviewForm, 1, 1);
+    }
+
+    public ModelAndView buildPackDetailModel(final Pack pack, final ReservationForm reservationForm,
+            final BidForm bidForm, final CommerceReviewForm commerceReviewForm,
+            final int bidPage, final int reservationPage) {
         final Optional<Commerce> commerceOpt = commerceService.findByUserId(pack.getCommerceId());
         final Locale locale = LocaleContextHolder.getLocale();
         final Optional<User> viewer = authResolver.resolveUserOrEmpty();
@@ -100,14 +108,22 @@ public class PackDetailModelBuilder {
         if (auctionPresent) {
             final long auctionId = auctionOpt.get().getId();
             mav.addObject("auctionId", auctionId);
-            final List<Bid> bidHistory = auctionService.getBidHistory(auctionId, 1, 50);
+            final int totalBids = auctionService.countBidsByAuction(auctionId);
+            final int bidTotalPages = Math.max(1, (int) Math.ceil((double) totalBids / BID_PAGE_SIZE));
+            final int safeBidPage = Math.max(1, Math.min(bidPage, bidTotalPages));
+            final int bidOffset = (safeBidPage - 1) * BID_PAGE_SIZE;
+            final List<Bid> bidHistory = auctionService.getBidHistory(auctionId, safeBidPage, BID_PAGE_SIZE);
             final List<BidHistoryViewHelper.BidHistoryRow> bidHistoryItems = BidHistoryViewHelper.buildRows(
-                    bidHistory, messageSource, locale);
+                    bidHistory, messageSource, locale, bidOffset);
             mav.addObject("auctionBidHistoryItems", bidHistoryItems);
-            mav.addObject("auctionHasBids", !bidHistory.isEmpty());
+            mav.addObject("auctionHasBids", totalBids > 0);
+            mav.addObject("bidCurrentPage", safeBidPage);
+            mav.addObject("bidTotalPages", bidTotalPages);
         } else {
             mav.addObject("auctionBidHistoryItems", Collections.emptyList());
             mav.addObject("auctionHasBids", Boolean.FALSE);
+            mav.addObject("bidCurrentPage", Integer.valueOf(1));
+            mav.addObject("bidTotalPages", Integer.valueOf(1));
         }
 
         boolean auctionClientIsLeading = false;
@@ -156,12 +172,20 @@ public class PackDetailModelBuilder {
         mav.addObject("manageable", manageable);
         
         if (isOwner) {
-            final List<Reservation> reservations = reservationService.findByPackId(pack.getId(), 1, 50);
+            final int totalReservations = reservationService.countByPackId(pack.getId());
+            final int reservationTotalPages = Math.max(1, (int) Math.ceil((double) totalReservations / RESERVATION_PAGE_SIZE));
+            final int safeReservationPage = Math.max(1, Math.min(reservationPage, reservationTotalPages));
+            final int reservationOffset = (safeReservationPage - 1) * RESERVATION_PAGE_SIZE;
+            final List<Reservation> reservations = reservationService.findByPackId(pack.getId(), safeReservationPage, RESERVATION_PAGE_SIZE);
             final List<ReservationHistoryViewHelper.ReservationHistoryRow> reservationHistoryItems =
-                ReservationHistoryViewHelper.buildRows(reservations, messageSource, locale);
+                ReservationHistoryViewHelper.buildRows(reservations, messageSource, locale, reservationOffset);
             mav.addObject("packReservationHistoryItems", reservationHistoryItems);
+            mav.addObject("reservationCurrentPage", safeReservationPage);
+            mav.addObject("reservationTotalPages", reservationTotalPages);
         } else {
             mav.addObject("packReservationHistoryItems", Collections.emptyList());
+            mav.addObject("reservationCurrentPage", Integer.valueOf(1));
+            mav.addObject("reservationTotalPages", Integer.valueOf(1));
         }
 
         boolean clientHasActiveReservation = false;

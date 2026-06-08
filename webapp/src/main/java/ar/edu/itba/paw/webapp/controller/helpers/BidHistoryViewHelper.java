@@ -73,6 +73,15 @@ public final class BidHistoryViewHelper {
      */
     public static List<BidHistoryRow> buildRows(final List<Bid> bids,
             final MessageSource messageSource, final Locale locale) {
+        return buildRows(bids, messageSource, locale, 0);
+    }
+
+    /**
+     * @param globalOffset 0-based index of the first item in this page within the full result set.
+     *                     Used to determine which bid is globally leading (offset == 0 means first overall).
+     */
+    public static List<BidHistoryRow> buildRows(final List<Bid> bids,
+            final MessageSource messageSource, final Locale locale, final int globalOffset) {
         final List<BidHistoryRow> rows = new ArrayList<>();
         for (int i = 0; i < bids.size(); i++) {
             final Bid bid = bids.get(i);
@@ -81,7 +90,8 @@ public final class BidHistoryViewHelper {
             final String initials = ViewFormatUtils.initialsFor(client, messageSource, locale);
             final String amountDisplay = ViewFormatUtils.formatMoney(bid.getAmount());
             final String relative = ViewFormatUtils.formatRelativeTime(bid.getTimestamp(), messageSource, locale);
-            rows.add(new BidHistoryRow(initials, displayName, relative, amountDisplay, i == 0, i));
+            final int globalIndex = globalOffset + i;
+            rows.add(new BidHistoryRow(initials, displayName, relative, amountDisplay, globalIndex == 0, globalIndex));
         }
         return rows;
     }

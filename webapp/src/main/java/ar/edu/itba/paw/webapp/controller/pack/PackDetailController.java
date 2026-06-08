@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -40,13 +41,17 @@ public class PackDetailController {
     }
 
     @GetMapping("/packs/{id}")
-    public ModelAndView packDetail(@PathVariable("id") final long id, final Authentication authentication) {
+    public ModelAndView packDetail(
+            @PathVariable("id") final long id,
+            @RequestParam(value = "bidPage", defaultValue = "1") final int bidPage,
+            @RequestParam(value = "reservationPage", defaultValue = "1") final int reservationPage,
+            final Authentication authentication) {
         final Long viewerUserId = AuthUserLocaleSupport.authUserFrom(authentication)
                 .map(authUser -> Long.valueOf(authUser.getId()))
                 .orElse(null);
         final Pack pack = packService.findVisibleForDetail(id, viewerUserId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        return packDetailModelBuilder.buildPackDetailModel(pack, createDefaultReservationForm(), createDefaultBidForm());
+        return packDetailModelBuilder.buildPackDetailModel(pack, createDefaultReservationForm(), createDefaultBidForm(), null, bidPage, reservationPage);
     }
 }
