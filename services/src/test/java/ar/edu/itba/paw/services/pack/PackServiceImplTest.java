@@ -111,6 +111,7 @@ class PackServiceImplTest {
         assertEquals("T", found.get().getTitle());
     }
 
+    @Test
     void testUpdateWhenDaoReturnsPackReflectsMutatedFields() {
         // 1. Setup
         final Pack pack = newPack(2L, 2L, "old", "d", 2.0, 1.0, 2, true, false, Collections.emptyList(), null);

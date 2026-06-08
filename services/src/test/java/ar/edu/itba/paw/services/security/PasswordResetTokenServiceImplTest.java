@@ -50,6 +50,7 @@ class PasswordResetTokenServiceImplTest {
         return new User(id, EMAIL, "pw", "N");
     }
 
+    @Test
     void testIsPasswordResetTokenValidWhenTokenValidReturnsTrue() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
@@ -91,6 +92,7 @@ class PasswordResetTokenServiceImplTest {
         assertFalse(valid);
     }
 
+    @Test
     void testResetPasswordWhenTokenUnknownThrowsPasswordResetException() {
         // 1. Setup
         when(tokenDao.findByTokenAndType("bad", TokenType.PASSWORD_RESET)).thenReturn(Optional.empty());

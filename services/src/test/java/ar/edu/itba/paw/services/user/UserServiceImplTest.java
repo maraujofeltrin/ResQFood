@@ -178,6 +178,7 @@ class UserServiceImplTest {
         assertEquals(ProfileImageException.Reason.INVALID_TYPE, thrown.getReason());
     }
 
+    @Test
     void testUpdatePreferredLocaleWhenUnsupportedThrowsIllegalArgumentException() {
         // 1. Setup
 
