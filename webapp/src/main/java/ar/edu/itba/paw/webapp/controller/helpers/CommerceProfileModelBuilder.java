@@ -1,10 +1,9 @@
 package ar.edu.itba.paw.webapp.controller.helpers;
 
-import ar.edu.itba.paw.services.commerce.CommerceProfileOfferItem;
+import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.commerce.CommerceFavoriteService;
-import ar.edu.itba.paw.services.commerce.CommercePublicOffers;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.webapp.form.CommerceReviewForm;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +12,8 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 
 @Component
@@ -65,10 +63,11 @@ public class CommerceProfileModelBuilder {
         final String pageTitle = messageSource.getMessage("commerce.profile.pageTitle",
                 new Object[] { commercialName, brand }, locale);
 
-        final CommercePublicOffers offers = commerceService.getPublicOffers(commerceUserId, page, PAGE_SIZE);
+        final int totalOffers = commerceService.countPublicOffers(commerceUserId);
         final int totalPages = Math.max(1,
-                (int) Math.ceil((double) offers.getTotalOffers() / (double) PAGE_SIZE));
+                (int) Math.ceil((double) totalOffers / (double) PAGE_SIZE));
         final int safePage = Math.max(1, Math.min(page, totalPages));
+        final List<Pack> offers = commerceService.getPublicOffers(commerceUserId, safePage, PAGE_SIZE);
 
         final ModelAndView mav = new ModelAndView("commerce/commerceProfileView");
         mav.addObject("pageTitle", pageTitle);
@@ -81,14 +80,8 @@ public class CommerceProfileModelBuilder {
         commerceReviewPageAttributes.addReviewPageAttributes(mav, commerceUserId, submittedForm,
                 submittedForm != null);
 
-        mav.addObject("profileOffers", offers.getItems());
-        mav.addObject("totalOffers", offers.getTotalOffers());
-
-        final Map<Long, String> commerceNames = new HashMap<>();
-        for (final CommerceProfileOfferItem offer : offers.getItems()) {
-            commerceNames.put(offer.getPack().getId(), commercialName);
-        }
-        mav.addObject("commerceNames", commerceNames);
+        mav.addObject("profileOffers", offers);
+        mav.addObject("totalOffers", totalOffers);
 
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);

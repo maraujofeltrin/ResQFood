@@ -192,4 +192,18 @@ public class PackServiceImpl implements PackService {
     public int countCommercePacks(Long commerceId, Boolean hasAuction) {
         return packDao.countCommercePacks(commerceId, hasAuction);
     }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<Pack> getPublicOffersByCommerce(final Long commerceUserId, final int page, final int pageSize) {
+        final int safePage = page < 1 ? 1 : page;
+        final int safePageSize = pageSize < 1 ? 12 : pageSize;
+        return packDao.findPublicOffersByCommerce(commerceUserId, safePage, safePageSize);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public int countPublicOffersByCommerce(final Long commerceUserId) {
+        return packDao.countPublicOffersByCommerce(commerceUserId);
+    }
 }

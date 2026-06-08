@@ -1,14 +1,10 @@
 package ar.edu.itba.paw.services.commerce;
 
-import ar.edu.itba.paw.models.auction.Auction;
-import ar.edu.itba.paw.models.auction.AuctionSortOption;
+import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
-import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.CommerceProfileException;
-import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.persistence.CommerceDao;
-import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.pack.PackService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -28,14 +22,11 @@ public class CommerceServiceImpl implements CommerceService {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommerceServiceImpl.class);
     private final CommerceDao commerceDao;
     private final PackService packService;
-    private final AuctionService auctionService;
 
     @Autowired
-    public CommerceServiceImpl(final CommerceDao commerceDao, final PackService packService,
-            final AuctionService auctionService) {
+    public CommerceServiceImpl(final CommerceDao commerceDao, final PackService packService) {
         this.commerceDao = commerceDao;
         this.packService = packService;
-        this.auctionService = auctionService;
     }
 
     @Transactional(readOnly = true)
@@ -101,41 +92,13 @@ public class CommerceServiceImpl implements CommerceService {
 
     @Transactional(readOnly = true)
     @Override
-    public CommercePublicOffers getPublicOffers(final long commerceUserId, final int page, final int pageSize) {
-        final Long commerceFilter = Long.valueOf(commerceUserId);
-        final int normalizedPageSize = pageSize < 1 ? 12 : pageSize;
+    public List<Pack> getPublicOffers(final long commerceUserId, final int page, final int pageSize) {
+        return packService.getPublicOffersByCommerce(Long.valueOf(commerceUserId), page, pageSize);
+    }
 
-        final int directTotal = packService.countFilteredPacks(null, null, null, null, true, commerceFilter);
-        final int auctionTotal = auctionService.countFilteredAuctions(null, null, null, null, true, commerceFilter);
-
-        final List<Pack> directPacks = directTotal == 0
-                ? List.of()
-                : packService.filterPacks(null, null, null, null, PackSortOption.DATE_DESC,
-                        1, directTotal, true, commerceFilter);
-
-        final List<Auction> activeAuctions = auctionTotal == 0
-                ? List.of()
-                : auctionService.filterAuctions(null, null, null, null, AuctionSortOption.TIME_REMAINING_ASC,
-                        1, auctionTotal, true, commerceFilter);
-
-        final List<CommerceProfileOfferItem> merged = new ArrayList<>(directTotal + auctionTotal);
-        for (final Auction auction : activeAuctions) {
-            merged.add(new CommerceProfileOfferItem(auction.getPack(), auction));
-        }
-        for (final Pack pack : directPacks) {
-            merged.add(new CommerceProfileOfferItem(pack, null));
-        }
-        merged.sort(Comparator.comparing((CommerceProfileOfferItem item) -> item.getPack().getId()).reversed());
-
-        final int totalOffers = merged.size();
-        final int totalPages = Math.max(1, (int) Math.ceil((double) totalOffers / normalizedPageSize));
-        final int safePage = Math.max(1, Math.min(page < 1 ? 1 : page, totalPages));
-        final int fromIndex = (safePage - 1) * normalizedPageSize;
-        final int toIndex = Math.min(fromIndex + normalizedPageSize, totalOffers);
-        final List<CommerceProfileOfferItem> pageItems = fromIndex >= totalOffers
-                ? List.of()
-                : merged.subList(fromIndex, toIndex);
-
-        return new CommercePublicOffers(pageItems, totalOffers);
+    @Transactional(readOnly = true)
+    @Override
+    public int countPublicOffers(final long commerceUserId) {
+        return packService.countPublicOffersByCommerce(Long.valueOf(commerceUserId));
     }
 }

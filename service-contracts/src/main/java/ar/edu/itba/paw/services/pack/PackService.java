@@ -49,4 +49,8 @@ public interface PackService {
     List<Pack> filterCommercePacks(Long commerceId, Boolean hasAuction, int page, int pageSize);
 
     int countCommercePacks(Long commerceId, Boolean hasAuction);
+
+    List<Pack> getPublicOffersByCommerce(Long commerceUserId, int page, int pageSize);
+
+    int countPublicOffersByCommerce(Long commerceUserId);
 }

@@ -1,13 +1,10 @@
 package ar.edu.itba.paw.services.commerce;
 
-import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.pack.Pack;
-import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.CommerceProfileException;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.persistence.CommerceDao;
-import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.pack.PackService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,7 +12,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -23,13 +19,9 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
@@ -41,9 +33,6 @@ class CommerceServiceImplTest {
 
     @Mock
     private PackService packService;
-
-    @Mock
-    private AuctionService auctionService;
 
     @InjectMocks
     private CommerceServiceImpl commerceService;
@@ -124,104 +113,30 @@ class CommerceServiceImplTest {
     }
 
     @Test
-    void testGetPublicOffersWhenCommerceHasDirectPacksAndAuctionsReturnsMergedPage() {
+    void testGetPublicOffersDelegatesToPackService() {
         // 1. Setup
         final long commerceUserId = 7L;
-        final Commerce commerce = commerceForUserId(commerceUserId);
-        final Pack directPack = packForCommerce(10L, commerce, "Pack");
-        final Pack auctionPack = packForCommerce(20L, commerce, "AuctionPack");
-        final Auction auction = new Auction(2L, auctionPack, 10.0, 1.0, null, null,
-                LocalDateTime.now().plusDays(1), Auction.Status.ACTIVE, LocalDateTime.now());
-        when(packService.countFilteredPacks(isNull(), isNull(), isNull(), isNull(), eq(true), eq(commerceUserId)))
-                .thenReturn(1);
-        when(auctionService.countFilteredAuctions(isNull(), isNull(), isNull(), isNull(), eq(true),
-                eq(commerceUserId))).thenReturn(1);
-        when(packService.filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1), eq(1),
-                eq(true), eq(commerceUserId))).thenReturn(List.of(directPack));
-        when(auctionService.filterAuctions(isNull(), isNull(), isNull(), isNull(), any(), eq(1), eq(1),
-                eq(true), eq(commerceUserId))).thenReturn(List.of(auction));
+        final Pack pack = packForCommerce(10L, commerceForUserId(commerceUserId), "P");
+        when(packService.getPublicOffersByCommerce(commerceUserId, 1, 12)).thenReturn(List.of(pack));
 
         // 2. Ejercicio
-        final CommercePublicOffers offers = commerceService.getPublicOffers(commerceUserId, 1, 12);
+        final List<Pack> offers = commerceService.getPublicOffers(commerceUserId, 1, 12);
 
         // 3. Asserts
-        assertEquals(2, offers.getTotalOffers());
-        assertEquals(2, offers.getItems().size());
-        assertNotNull(offers.getItems().stream().filter(item -> item.getAuction() != null).findFirst().orElse(null));
-        assertNotNull(offers.getItems().stream().filter(item -> item.getAuction() == null).findFirst().orElse(null));
+        assertEquals(1, offers.size());
+        assertEquals(Long.valueOf(10L), offers.get(0).getId());
     }
 
     @Test
-    void testGetPublicOffersMergesAuctionsAndDirectPacksSortedByPackIdDesc() {
+    void testCountPublicOffersDelegatesToPackService() {
         // 1. Setup
-        final long commerceUserId = 7L;
-        final Commerce commerce = commerceForUserId(commerceUserId);
-        final Pack olderDirect = packForCommerce(10L, commerce, "Direct");
-        final Pack auctionPack = packForCommerce(20L, commerce, "AuctionPack");
-        final Auction auction = new Auction(2L, auctionPack, 10.0, 1.0, null, null,
-                LocalDateTime.now().plusDays(1), Auction.Status.ACTIVE, LocalDateTime.now());
-
-        when(packService.countFilteredPacks(isNull(), isNull(), isNull(), isNull(), eq(true), eq(commerceUserId))).thenReturn(1);
-        when(auctionService.countFilteredAuctions(isNull(), isNull(), isNull(), isNull(), eq(true), eq(commerceUserId))).thenReturn(1);
-        when(packService.filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1), eq(1),
-                eq(true), eq(commerceUserId))).thenReturn(List.of(olderDirect));
-        when(auctionService.filterAuctions(isNull(), isNull(), isNull(), isNull(), any(), eq(1), eq(1),
-                eq(true), eq(commerceUserId))).thenReturn(List.of(auction));
+        when(packService.countPublicOffersByCommerce(7L)).thenReturn(5);
 
         // 2. Ejercicio
-        final CommercePublicOffers offers = commerceService.getPublicOffers(commerceUserId, 1, 12);
+        final int count = commerceService.countPublicOffers(7L);
 
         // 3. Asserts
-        assertEquals(2, offers.getTotalOffers());
-        assertEquals(2, offers.getItems().size());
-        assertNotNull(offers.getItems().get(0).getAuction());
-        assertEquals(Long.valueOf(20L), offers.getItems().get(0).getPack().getId());
-        assertNull(offers.getItems().get(1).getAuction());
-        assertEquals(Long.valueOf(10L), offers.getItems().get(1).getPack().getId());
-    }
-
-    @Test
-    void testGetPublicOffersPaginatesUnifiedList() {
-        // 1. Setup
-        final long commerceUserId = 7L;
-        when(packService.countFilteredPacks(isNull(), isNull(), isNull(), isNull(), eq(true), eq(commerceUserId))).thenReturn(3);
-        when(auctionService.countFilteredAuctions(isNull(), isNull(), isNull(), isNull(), eq(true), eq(commerceUserId))).thenReturn(0);
-        final Commerce commerce = commerceForUserId(commerceUserId);
-        when(packService.filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1), eq(3),
-                eq(true), eq(commerceUserId))).thenReturn(List.of(
-                packForCommerce(30L, commerce, "C"),
-                packForCommerce(20L, commerce, "B"),
-                packForCommerce(10L, commerce, "A")));
-
-        // 2. Ejercicio
-        final CommercePublicOffers pageOne = commerceService.getPublicOffers(commerceUserId, 1, 2);
-
-        // 3. Asserts
-        assertEquals(3, pageOne.getTotalOffers());
-        assertEquals(2, pageOne.getItems().size());
-        assertEquals(Long.valueOf(30L), pageOne.getItems().get(0).getPack().getId());
-        assertEquals(Long.valueOf(20L), pageOne.getItems().get(1).getPack().getId());
-    }
-
-    @Test
-    void testGetPublicOffersWhenPageOutOfRangeClampsBeforeSlice() {
-        // 1. Setup
-        final long commerceUserId = 7L;
-        when(packService.countFilteredPacks(isNull(), isNull(), isNull(), isNull(), eq(true), eq(commerceUserId)))
-                .thenReturn(1);
-        when(packService.filterPacks(isNull(), isNull(), isNull(), isNull(), eq(PackSortOption.DATE_DESC), eq(1), eq(1),
-                eq(true), eq(commerceUserId))).thenReturn(List.of(
-                packForCommerce(10L, commerceForUserId(commerceUserId), "A")));
-        when(auctionService.countFilteredAuctions(isNull(), isNull(), isNull(), isNull(), eq(true),
-                eq(commerceUserId))).thenReturn(0);
-
-        // 2. Ejercicio
-        final CommercePublicOffers offers = commerceService.getPublicOffers(commerceUserId, 99, 12);
-
-        // 3. Asserts
-        assertEquals(1, offers.getTotalOffers());
-        assertEquals(1, offers.getItems().size());
-        assertEquals(Long.valueOf(10L), offers.getItems().get(0).getPack().getId());
+        assertEquals(5, count);
     }
 
     @Test

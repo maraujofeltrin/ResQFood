@@ -345,6 +345,32 @@ class PackServiceImplTest {
     }
 
     @Test
+    void testGetPublicOffersByCommerceUsesDefaultPageAndSizeWhenInvalid() {
+        // 1. Setup
+        final Pack expected = newPack(10L, 7L, "P", "d", 10.0, 8.0, 1, true, false, Collections.emptyList(), null);
+        when(packDao.findPublicOffersByCommerce(7L, 1, 12)).thenReturn(List.of(expected));
+
+        // 2. Ejercicio
+        final List<Pack> result = packService.getPublicOffersByCommerce(7L, -5, 0);
+
+        // 3. Asserts
+        assertEquals(1, result.size());
+        assertEquals(Long.valueOf(10L), result.get(0).getId());
+    }
+
+    @Test
+    void testCountPublicOffersByCommerceWhenDaoReturnsCountReturnsValue() {
+        // 1. Setup
+        when(packDao.countPublicOffersByCommerce(7L)).thenReturn(5);
+
+        // 2. Ejercicio
+        final int count = packService.countPublicOffersByCommerce(7L);
+
+        // 3. Asserts
+        assertEquals(5, count);
+    }
+
+    @Test
     void testUpdatePackWhenPackNotFoundThrowsPackDirectEditException() {
         // 1. Setup
         when(packDao.findById(999L)).thenReturn(Optional.empty());

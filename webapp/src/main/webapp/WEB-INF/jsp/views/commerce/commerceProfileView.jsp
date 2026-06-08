@@ -71,30 +71,30 @@
                         <c:otherwise>
                             <div class="commerce-profile-offers-scroll">
                                 <div class="commerce-profile-offers-grid">
-                                    <c:forEach var="offer" items="${profileOffers}">
+                                    <c:forEach var="pack" items="${profileOffers}">
                                         <c:choose>
-                                            <c:when test="${offer.auction != null}">
+                                            <c:when test="${not empty pack.auction and pack.auction.active}">
                                                 <paw:packCard
-                                                    packId="${offer.pack.id}"
-                                                    imageId="${offer.pack.imageId}"
-                                                    title="${offer.pack.title}"
-                                                    subtitle="${offer.pack.description}"
+                                                    packId="${pack.id}"
+                                                    imageId="${pack.imageId}"
+                                                    title="${pack.title}"
+                                                    subtitle="${pack.description}"
                                                     badgeText="${auctionBadgeText}"
                                                     rescueLabel="${auctionCurrentBidLabel}"
-                                                    price="$${offer.auction.effectivePrice}"
-                                                    oldPrice="$${offer.pack.originalPrice}"
+                                                    price="$${pack.auction.effectivePrice}"
+                                                    oldPrice="$${pack.originalPrice}"
                                                     auction="${true}"
                                                 />
                                             </c:when>
                                             <c:otherwise>
-                                                <c:set var="packUnavailable" value="${offer.pack.stock == null || offer.pack.stock lt 1}"/>
+                                                <c:set var="packUnavailable" value="${pack.stock == null || pack.stock lt 1}"/>
                                                 <paw:packCard
-                                                    packId="${offer.pack.id}"
-                                                    imageId="${offer.pack.imageId}"
-                                                    title="${offer.pack.title}"
-                                                    subtitle="${offer.pack.description}"
-                                                    price="$${offer.pack.finalPrice}"
-                                                    oldPrice="$${offer.pack.originalPrice}"
+                                                    packId="${pack.id}"
+                                                    imageId="${pack.imageId}"
+                                                    title="${pack.title}"
+                                                    subtitle="${pack.description}"
+                                                    price="$${pack.finalPrice}"
+                                                    oldPrice="$${pack.originalPrice}"
                                                     unavailable="${packUnavailable}"
                                                 />
                                             </c:otherwise>
