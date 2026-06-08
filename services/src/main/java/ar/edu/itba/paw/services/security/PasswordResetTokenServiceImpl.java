@@ -9,6 +9,7 @@ import ar.edu.itba.paw.services.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +31,7 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
     private final String baseUrl;
 
     @Autowired
-    public PasswordResetTokenServiceImpl(final TokenDao tokenDao, final UserService userService,
+    public PasswordResetTokenServiceImpl(final TokenDao tokenDao, @Lazy final UserService userService,
             final PasswordResetMailService passwordResetMailService, final PasswordEncoder passwordEncoder,
             @Value("${app.base-url}") final String baseUrl) {
         this.tokenDao = tokenDao;

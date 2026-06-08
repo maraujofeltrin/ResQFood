@@ -8,6 +8,7 @@ import ar.edu.itba.paw.services.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +28,7 @@ public class VerificationTokenServiceImpl implements VerificationTokenService {
     private final String baseUrl;
 
     @Autowired
-    public VerificationTokenServiceImpl(final TokenDao tokenDao, final UserService userService,
+    public VerificationTokenServiceImpl(final TokenDao tokenDao, @Lazy final UserService userService,
             final EmailVerificationMailService emailVerificationMailService,
             @Value("${app.base-url}") final String baseUrl) {
         this.tokenDao = tokenDao;

@@ -7,6 +7,7 @@ import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +26,7 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
 
     @Autowired
     public ReservationTokenServiceImpl(final ReservationTokenDao reservationTokenDao,
-            final ReservationService reservationService) {
+            @Lazy final ReservationService reservationService) {
         this.reservationTokenDao = reservationTokenDao;
         this.reservationService = reservationService;
     }

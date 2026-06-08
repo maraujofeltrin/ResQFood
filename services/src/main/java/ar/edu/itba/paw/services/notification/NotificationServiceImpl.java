@@ -20,6 +20,7 @@ import ar.edu.itba.paw.services.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,10 +66,10 @@ public class NotificationServiceImpl implements NotificationService {
             final ReservationMailService reservationMailService,
             final AuctionMailService auctionMailService,
             final FavoriteMailService favoriteMailService,
-            final AuctionService auctionService,
-            final UserService userService,
-            final PackFavoriteService packFavoriteService,
-            final CommerceFavoriteService commerceFavoriteService,
+            @Lazy final AuctionService auctionService,
+            @Lazy final UserService userService,
+            @Lazy final PackFavoriteService packFavoriteService,
+            @Lazy final CommerceFavoriteService commerceFavoriteService,
             final ZoneId businessZone) {
         this.notificationDao = notificationDao;
         this.clientNotificationPreferenceDao = clientNotificationPreferenceDao;

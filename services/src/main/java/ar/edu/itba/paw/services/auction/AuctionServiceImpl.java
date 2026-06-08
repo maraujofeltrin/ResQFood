@@ -16,6 +16,7 @@ import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,8 +41,10 @@ public class AuctionServiceImpl implements AuctionService {
     private final NotificationService notificationService;
 
     @Autowired
-    public AuctionServiceImpl(final AuctionDao auctionDao, final BidDao bidDao, final PackService packService,
-            final ReservationService reservationService, final NotificationService notificationService) {
+    public AuctionServiceImpl(final AuctionDao auctionDao, final BidDao bidDao,
+            @Lazy final PackService packService,
+            @Lazy final ReservationService reservationService,
+            @Lazy final NotificationService notificationService) {
         this.auctionDao = auctionDao;
         this.bidDao = bidDao;
         this.packService = packService;

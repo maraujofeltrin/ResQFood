@@ -9,6 +9,7 @@ import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.image.ImageService;
 import ar.edu.itba.paw.services.notification.NotificationService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
+import org.springframework.context.annotation.Lazy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,8 +32,10 @@ public class PackServiceImpl implements PackService {
     private final NotificationService notificationService;
 
     @Autowired
-    public PackServiceImpl(final PackDao packDao, final ImageService imageService, final AuctionService auctionService,
-            final ReservationService reservationService, final NotificationService notificationService) {
+    public PackServiceImpl(final PackDao packDao, final ImageService imageService,
+            @Lazy final AuctionService auctionService,
+            @Lazy final ReservationService reservationService,
+            @Lazy final NotificationService notificationService) {
         this.packDao = packDao;
         this.imageService = imageService;
         this.auctionService = auctionService;
