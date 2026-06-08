@@ -7,7 +7,6 @@ import org.springframework.context.MessageSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * Builds pack-detail bid history rows (presentation strings for the JSP tag), colocated with the row data holder.
@@ -65,19 +64,19 @@ public final class BidHistoryViewHelper {
     }
 
     /**
-     * Builds rows from pre-fetched client data to avoid N+1 queries.
+     * Builds rows from bids whose {@link Client} is already hydrated by the persistence layer
+     * ({@code JOIN FETCH b.client} in {@code BidDao.findByAuctionId}).
      *
-     * @param bids           the bids (ordered by amount descending)
-     * @param clientsByUserId pre-fetched map of userId → Client
-     * @param messageSource  for i18n labels
-     * @param locale         the current locale
+     * @param bids          the bids (ordered by amount descending)
+     * @param messageSource for i18n labels
+     * @param locale        the current locale
      */
-    public static List<BidHistoryRow> buildRows(final List<Bid> bids, final Map<Long, Client> clientsByUserId,
+    public static List<BidHistoryRow> buildRows(final List<Bid> bids,
             final MessageSource messageSource, final Locale locale) {
         final List<BidHistoryRow> rows = new ArrayList<>();
         for (int i = 0; i < bids.size(); i++) {
             final Bid bid = bids.get(i);
-            final Client client = clientsByUserId.get(bid.getClient().getUserId());
+            final Client client = bid.getClient();
             final String displayName = ViewFormatUtils.shortDisplayName(client, messageSource, locale);
             final String initials = ViewFormatUtils.initialsFor(client, messageSource, locale);
             final String amountDisplay = ViewFormatUtils.formatMoney(bid.getAmount());
