@@ -6,7 +6,8 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * Keeps {@link AuthUser#getLocale()} aligned with persisted preference after profile or interceptor updates.
+ * Keeps {@link AuthUser#getLocale()} and {@link AuthUser#getProfileImageId()} aligned with persisted
+ * values after profile updates or interceptor changes.
  */
 public final class AuthUserLocaleSupport {
 
@@ -26,5 +27,9 @@ public final class AuthUserLocaleSupport {
 
     public static void updateSessionLocale(final Authentication authentication, final Locale locale) {
         authUserFrom(authentication).ifPresent(authUser -> authUser.setLocale(locale));
+    }
+
+    public static void updateSessionProfileImageId(final Authentication authentication, final Long profileImageId) {
+        authUserFrom(authentication).ifPresent(authUser -> authUser.setProfileImageId(profileImageId));
     }
 }

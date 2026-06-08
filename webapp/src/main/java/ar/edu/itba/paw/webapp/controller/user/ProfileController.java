@@ -120,6 +120,12 @@ public class ProfileController {
                     profileAccountForm.getClosingTime(),
                     photo,
                     contentType);
+            if (photo != null && photo.length > 0) {
+                userService.findById(user.getId())
+                        .map(User::getProfileImageId)
+                        .ifPresent(imageId -> AuthUserLocaleSupport.updateSessionProfileImageId(
+                                SecurityContextHolder.getContext().getAuthentication(), imageId));
+            }
         } catch (final IOException ex) {
             LOGGER.warn("Profile account photo upload rejected while reading multipart bytes userId={}",
                     Long.valueOf(user.getId()), ex);

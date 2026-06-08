@@ -10,16 +10,19 @@ public class AuthUser extends User {
 
     private final long id;
     private Locale locale;
+    private Long profileImageId;
 
     public AuthUser(final long id,
                     final String username,
                     final String password,
                     final boolean enabled,
                     final Locale locale,
+                    final Long profileImageId,
                     final Collection<? extends GrantedAuthority> authorities) {
         super(username, password, enabled, true, true, true, authorities);
         this.id = id;
         this.locale = locale;
+        this.profileImageId = profileImageId;
     }
 
     public long getId() {
@@ -32,5 +35,13 @@ public class AuthUser extends User {
 
     public void setLocale(final Locale locale) {
         this.locale = locale;
+    }
+
+    public Long getProfileImageId() {
+        return profileImageId;
+    }
+
+    public void setProfileImageId(final Long profileImageId) {
+        this.profileImageId = profileImageId;
     }
 }
