@@ -73,8 +73,6 @@ public interface ReservationService {
 
     long countByStatusInPeriod(Long commerceId, Reservation.Status status, LocalDateTime from, LocalDateTime to);
 
-    long countCanceledReservationsInPeriod(Long commerceId, LocalDateTime from, LocalDateTime to);
-
     BigDecimal averageTicketInPeriod(Long commerceId, LocalDateTime from, LocalDateTime to);
 
     long countUniqueClientsInPeriod(Long commerceId, LocalDateTime from, LocalDateTime to);

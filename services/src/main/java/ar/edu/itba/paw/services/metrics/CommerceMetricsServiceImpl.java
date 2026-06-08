@@ -83,7 +83,6 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
         final long denom = paidCount + canceledCount;
         final int acceptanceRate = denom == 0L ? 0 : (int) Math.round((double) paidCount / (double) denom * 100.0);
 
-        final long canceledReservations = reservationService.countCanceledReservationsInPeriod(commerceId, from, to);
         final BigDecimal averageTicket = reservationService.averageTicketInPeriod(commerceId, from, to);
         final long uniqueClients = reservationService.countUniqueClientsInPeriod(commerceId, from, to);
 
@@ -92,7 +91,7 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
         final ClientRetention clientRetention = buildClientRetention(commerceId, from, to, uniqueClients);
 
         return new CommerceMetrics(daily, totalRevenue, totalReservations, bestTitle, acceptanceRate,
-                canceledReservations, averageTicket, uniqueClients, topPacks, topClients, clientRetention);
+                canceledCount, averageTicket, uniqueClients, topPacks, topClients, clientRetention);
     }
 
     @Transactional(readOnly = true)

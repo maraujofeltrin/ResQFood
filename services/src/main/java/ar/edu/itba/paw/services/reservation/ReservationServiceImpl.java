@@ -469,12 +469,6 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Transactional(readOnly = true)
     @Override
-    public long countCanceledReservationsInPeriod(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
-        return reservationDao.countCanceledReservationsInPeriod(commerceId, from, to);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
     public BigDecimal averageTicketInPeriod(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
         return reservationDao.averageTicketInPeriod(commerceId, from, to);
     }
