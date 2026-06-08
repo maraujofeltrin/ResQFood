@@ -45,7 +45,7 @@ public final class NotificationViewHelper {
 
     private static Object[] bodyArgs(final NotificationItemView item) {
         return switch (item.getType()) {
-            case RESERVATION_REQUESTED_COMMERCE -> new Object[]{safe(item.getPackTitle())};
+            case RESERVATION_REQUESTED_COMMERCE -> new Object[]{safe(item.getCustomerName()), safe(item.getPackTitle())};
             case RESERVATION_CODE_CLIENT -> new Object[]{safe(item.getCommerceName()), safe(item.getPickupCode())};
             case AUCTION_WINNER_CLIENT -> new Object[]{safe(item.getPackTitle()), safe(item.getCommerceName()), formatAmount(item.getAmount())};
             case AUCTION_WINNER_COMMERCE -> new Object[]{safe(item.getPackTitle())};

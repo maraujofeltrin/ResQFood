@@ -64,7 +64,8 @@ public class NotificationJpaDao implements NotificationDao {
         }
         return em.createQuery(
                         "FROM Notification n "
-                        + "LEFT JOIN FETCH n.reservation "
+                        + "LEFT JOIN FETCH n.reservation r "
+                        + "LEFT JOIN FETCH r.customer "
                         + "LEFT JOIN FETCH n.auction "
                         + "LEFT JOIN FETCH n.pack p "
                         + "LEFT JOIN FETCH p.auction "

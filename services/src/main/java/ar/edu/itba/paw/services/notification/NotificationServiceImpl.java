@@ -358,6 +358,9 @@ public class NotificationServiceImpl implements NotificationService {
         final Long reservationId = notification.getReservation() != null ? notification.getReservation().getId() : null;
         final Long auctionId = notification.getAuction() != null ? notification.getAuction().getId() : null;
         final Long packId = notification.getPack() != null ? notification.getPack().getId() : null;
+        final String customerName = (notification.getReservation() != null && notification.getReservation().getCustomer() != null)
+                ? notification.getReservation().getCustomer().getFullName()
+                : null;
         return new NotificationItemView(
                 notification.getId(),
                 notification.getType(),
@@ -370,7 +373,8 @@ public class NotificationServiceImpl implements NotificationService {
                 notification.getReadAt() != null,
                 reservationId,
                 auctionId,
-                packId);
+                packId,
+                customerName);
     }
 
     private record ReservationSnapshot(Long packId, String packTitle, String commerceName, Long commerceUserId,

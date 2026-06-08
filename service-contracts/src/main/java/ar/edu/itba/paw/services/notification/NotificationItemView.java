@@ -18,11 +18,12 @@ public final class NotificationItemView {
     private final Long reservationId;
     private final Long auctionId;
     private final Long packId;
+    private final String customerName;
 
     public NotificationItemView(final long id, final NotificationType type, final String packTitle,
             final String commerceName, final Double amount, final String pickupCode,
             final LocalDateTime pickupDate, final LocalDateTime createdAt, final boolean read,
-            final Long reservationId, final Long auctionId, final Long packId) {
+            final Long reservationId, final Long auctionId, final Long packId, final String customerName) {
         this.id = id;
         this.type = type;
         this.packTitle = packTitle;
@@ -35,6 +36,7 @@ public final class NotificationItemView {
         this.reservationId = reservationId;
         this.auctionId = auctionId;
         this.packId = packId;
+        this.customerName = customerName;
     }
 
     public long getId() { return id; }
@@ -49,4 +51,5 @@ public final class NotificationItemView {
     public Long getReservationId() { return reservationId; }
     public Long getAuctionId() { return auctionId; }
     public Long getPackId() { return packId; }
+    public String getCustomerName() { return customerName; }
 }
