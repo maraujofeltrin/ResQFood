@@ -5,7 +5,6 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.user.CommerceReview;
 import ar.edu.itba.paw.services.auction.AuctionService;
-import ar.edu.itba.paw.services.auction.AuctionPackSummary;
 import ar.edu.itba.paw.services.auction.CancelAuctionResult;
 import ar.edu.itba.paw.services.commerce.CommerceReviewService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
@@ -42,12 +41,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import ar.edu.itba.paw.models.auction.Auction;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 
 @Controller
 @RequestMapping("/commerce")
@@ -184,31 +179,11 @@ public class CommerceDashboardController {
         final int auctionsCount = packService.countCommercePacks(id, true);
         final int packsCount = packService.countCommercePacks(id, false);
 
-        final List<Long> displayedPackIds = displayedPacks.stream()
-                .map(Pack::getId)
-                .collect(Collectors.toList());
-        final List<AuctionPackSummary> auctionSummaries = auctionService.findSummariesByPackIds(displayedPackIds);
-
-        final Set<Long> auctionPackIds = new HashSet<>();
-        final Map<Long, Long> packIdToAuctionId = new HashMap<>();
-        final Map<Long, Boolean> packIdToAuctionActive = new HashMap<>();
-        final Map<Long, Boolean> packIdToAuctionHasBids = new HashMap<>();
-        for (final AuctionPackSummary summary : auctionSummaries) {
-            auctionPackIds.add(summary.packId());
-            packIdToAuctionId.put(summary.packId(), summary.auctionId());
-            packIdToAuctionActive.put(summary.packId(), summary.status() == Auction.Status.ACTIVE);
-            packIdToAuctionHasBids.put(summary.packId(), summary.hasBids());
-        }
-
         mav.addObject("commerce", commerce);
         mav.addObject("packs", displayedPacks);
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
         mav.addObject("commerceId", id);
-        mav.addObject("auctionPackIds", auctionPackIds);
-        mav.addObject("packIdToAuctionId", packIdToAuctionId);
-        mav.addObject("packIdToAuctionActive", packIdToAuctionActive);
-        mav.addObject("packIdToAuctionHasBids", packIdToAuctionHasBids);
         mav.addObject("currentTab", tab);
         mav.addObject("paginationBaseUrl", "/commerce/products?tab=" + tab);
         mav.addObject("itemsCount", itemsCount);
