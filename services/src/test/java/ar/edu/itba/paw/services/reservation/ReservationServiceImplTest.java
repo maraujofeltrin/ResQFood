@@ -9,11 +9,10 @@ import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
-import ar.edu.itba.paw.persistence.AuctionDao;
-import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
-import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import ar.edu.itba.paw.services.notification.NotificationService;
+import ar.edu.itba.paw.services.pack.PackService;
+import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.services.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +26,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -54,13 +52,13 @@ class ReservationServiceImplTest {
     @Mock
     private ReservationDao reservationDao;
     @Mock
-    private ReservationTokenDao reservationTokenDao;
+    private ReservationTokenService reservationTokenService;
     @Mock
-    private PackDao packDao;
+    private PackService packService;
     @Mock
     private NotificationService notificationService;
     @Mock
-    private AuctionDao auctionDao;
+    private AuctionService auctionService;
 
     private ReservationServiceImpl reservationService;
 
@@ -103,10 +101,10 @@ class ReservationServiceImplTest {
                 userService,
                 clientService,
                 reservationDao,
-                reservationTokenDao,
-                packDao,
+                reservationTokenService,
+                packService,
                 notificationService,
-                auctionDao,
+                auctionService,
                 TEST_ZONE);
     }
 
@@ -121,18 +119,18 @@ class ReservationServiceImplTest {
                 Collections.emptyList(), null);
         when(userService.findById(1L)).thenReturn(Optional.of(clientUser));
         when(clientService.findByUserId(1L)).thenReturn(Optional.of(new Client(1L, "Test", "User", true)));
-        when(packDao.decrementStock(packId, 1)).thenReturn(true);
+        when(packService.decrementStock(packId, 1)).thenReturn(true);
         when(reservationDao.findByPickupCode(anyString())).thenReturn(Optional.empty());
-        lenient().when(auctionDao.findByPackId(anyLong())).thenReturn(Optional.empty());
+        lenient().when(auctionService.findByPackId(anyLong())).thenReturn(Optional.empty());
         final Reservation createdReservation = new Reservation(1L, clientRef(1L), pack, null, 5.0,
                 Reservation.Status.RESERVED, "CODE1", null, 1, "pw");
         when(reservationDao.createReservation(eq(1L), eq(packId), any(LocalDateTime.class), eq(5.0),
                 eq(Reservation.Status.RESERVED), anyString(), isNull(), eq(1), eq("pw")))
                 .thenReturn(createdReservation);
         when(reservationDao.findByIdWithDetails(1L)).thenReturn(Optional.of(createdReservation));
-        when(packDao.findById(packId)).thenReturn(Optional.of(pack));
+        when(packService.findById(packId)).thenReturn(Optional.of(pack));
         when(userService.findById(commerceUserId)).thenReturn(Optional.of(commerceUser));
-        when(reservationTokenDao.create(anyString(), anyLong(), any(ReservationToken.Action.class),
+        when(reservationTokenService.create(anyString(), anyLong(), any(ReservationToken.Action.class),
                 any(LocalDateTime.class), any(LocalDateTime.class))).thenAnswer(inv -> {
             final ReservationToken token = new ReservationToken(inv.getArgument(0), reservationRef(inv.getArgument(1)),
                     inv.getArgument(2), false, inv.getArgument(3), inv.getArgument(4));
@@ -158,16 +156,16 @@ class ReservationServiceImplTest {
                 Collections.emptyList());
         when(userService.findById(7L)).thenReturn(Optional.of(clientUser));
         when(clientService.findByUserId(7L)).thenReturn(Optional.of(new Client(7L, "Winning", "User", true)));
-        when(packDao.decrementStock(packId, 1)).thenReturn(true);
+        when(packService.decrementStock(packId, 1)).thenReturn(true);
         when(reservationDao.findByPickupCode(anyString())).thenReturn(Optional.empty());
-        lenient().when(auctionDao.findByPackId(anyLong())).thenReturn(Optional.empty());
+        lenient().when(auctionService.findByPackId(anyLong())).thenReturn(Optional.empty());
         final Reservation auctionReservation = new Reservation(1L, clientRef(7L), pack, null, 7.5,
                 Reservation.Status.RESERVED, "CODE2", null, 1, null);
         when(reservationDao.createReservation(eq(7L), eq(packId), any(LocalDateTime.class), eq(7.5),
                 eq(Reservation.Status.RESERVED), anyString(), isNull(), eq(1), isNull()))
                 .thenReturn(auctionReservation);
         when(reservationDao.findByIdWithDetails(1L)).thenReturn(Optional.of(auctionReservation));
-        when(packDao.findById(packId)).thenReturn(Optional.of(pack));
+        when(packService.findById(packId)).thenReturn(Optional.of(pack));
         when(userService.findById(commerceUserId)).thenReturn(Optional.of(commerceUser));
         // 2. Ejercicio
         final Reservation result = reservationService.createReservation(packId, 7L, 1, 7.5, null, true);
@@ -254,7 +252,7 @@ class ReservationServiceImplTest {
         final Reservation canceled = new Reservation(reservationId, clientRef(101L), pack, resDate, 25.0,
                 Reservation.Status.CANCELED, "HHHHH", null, 3, null);
         when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reserved));
-        when(packDao.incrementStock(packId, 3)).thenReturn(true);
+        when(packService.incrementStock(packId, 3)).thenReturn(true);
         when(reservationDao.updateStatus(reservationId, Reservation.Status.CANCELED)).thenReturn(canceled);
         when(reservationDao.findByIdWithDetails(reservationId)).thenReturn(Optional.of(canceled));
         final User clientUser = new User(101L, "client@example.org", "pwd", "Client", null, User.Role.CLIENT, false);

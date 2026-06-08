@@ -6,9 +6,8 @@ import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.models.user.UserRegistrationException;
-import ar.edu.itba.paw.persistence.ClientDao;
-import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.UserDao;
+import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.image.ImageService;
 import ar.edu.itba.paw.services.security.VerificationTokenService;
 import org.junit.jupiter.api.Test;
@@ -37,10 +36,10 @@ class UserServiceImplTest {
     private UserDao userDao;
 
     @Mock
-    private ClientDao clientDao;
+    private ClientService clientService;
 
     @Mock
-    private CommerceDao commerceDao;
+    private CommerceService commerceService;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -82,8 +81,8 @@ class UserServiceImplTest {
         when(passwordEncoder.encode("pw")).thenReturn("ENC:pw");
         when(userDao.createUser(eq("c@d.com"), eq("ENC:pw"), eq("N"), eq("123"), eq(User.Role.COMMERCE),
                 eq(Locale.forLanguageTag("es")))).thenReturn(persisted);
-        when(commerceDao.findByUserId(1L)).thenReturn(Optional.empty());
-        when(commerceDao.createCommerce(eq(1L), eq("Shop"), eq(Commerce.Category.OTHER), eq("st"), eq(1), eq(Municipality.AVELLANEDA),
+        when(commerceService.findByUserId(1L)).thenReturn(Optional.empty());
+        when(commerceService.createCommerce(eq(1L), eq("Shop"), eq(Commerce.Category.OTHER), eq("st"), eq(1), eq(Municipality.AVELLANEDA),
                 eq(Commerce.PROVINCE_BUENOS_AIRES), eq("pc"), eq("09:00"), eq("18:00")))
                 .thenReturn(new Commerce(1L, "Shop", Commerce.Category.OTHER, "st", 1, Municipality.AVELLANEDA, Commerce.PROVINCE_BUENOS_AIRES, "pc", "09:00",
                         "18:00"));

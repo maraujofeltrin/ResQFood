@@ -4,7 +4,7 @@ import ar.edu.itba.paw.models.security.Token;
 import ar.edu.itba.paw.models.security.TokenType;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.TokenDao;
-import ar.edu.itba.paw.persistence.UserDao;
+import ar.edu.itba.paw.services.user.UserService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -30,7 +30,7 @@ class VerificationTokenServiceImplTest {
     private TokenDao tokenDao;
 
     @Mock
-    private UserDao userDao;
+    private UserService userService;
 
     @Mock
     private EmailVerificationMailService emailVerificationMailService;
@@ -39,7 +39,7 @@ class VerificationTokenServiceImplTest {
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        service = new VerificationTokenServiceImpl(tokenDao, userDao, emailVerificationMailService, "https://app.example");
+        service = new VerificationTokenServiceImpl(tokenDao, userService, emailVerificationMailService, "https://app.example");
     }
 
     private static User userRef(final long id) {
@@ -53,7 +53,7 @@ class VerificationTokenServiceImplTest {
         final Token stored = new Token("tok", userRef(USER_ID), false, TokenType.EMAIL_VERIFICATION, now, now.plusHours(24));
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(stored));
         final User verifiedReturned = new User(USER_ID, EMAIL, "pw", "N", null, User.Role.CLIENT, true, LOCALE);
-        when(userDao.findById(USER_ID)).thenReturn(Optional.of(verifiedReturned));
+        when(userService.findById(USER_ID)).thenReturn(Optional.of(verifiedReturned));
 
         // 2. Ejercicio
         final Optional<User> result = service.verifyEmailAndGetUser("tok");
@@ -110,7 +110,7 @@ class VerificationTokenServiceImplTest {
         final LocalDateTime now = LocalDateTime.now();
         final Token stored = new Token("tok", userRef(USER_ID), false, TokenType.EMAIL_VERIFICATION, now, now.plusHours(1));
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(stored));
-        when(userDao.findById(USER_ID)).thenReturn(Optional.of(new User(USER_ID, EMAIL, "p", "N")));
+        when(userService.findById(USER_ID)).thenReturn(Optional.of(new User(USER_ID, EMAIL, "p", "N")));
 
         // 2. Ejercicio
         final boolean ok = service.verifyEmail("tok");

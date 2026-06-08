@@ -6,7 +6,7 @@ import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.CommerceReview;
 import ar.edu.itba.paw.models.user.CommerceReviewException;
 import ar.edu.itba.paw.persistence.CommerceReviewDao;
-import ar.edu.itba.paw.persistence.ReservationDao;
+import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,7 +34,7 @@ class CommerceReviewServiceImplTest {
     private CommerceReviewDao commerceReviewDao;
 
     @Mock
-    private ReservationDao reservationDao;
+    private ReservationService reservationService;
 
     @InjectMocks
     private CommerceReviewServiceImpl commerceReviewService;
@@ -51,7 +51,7 @@ class CommerceReviewServiceImplTest {
     @Test
     void testCanClientReviewCommerceWhenPaidReservationExistsReturnsTrue() {
         // 1. Setup
-        when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
+        when(reservationService.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
 
         // 2. Ejercicio
         final boolean result = commerceReviewService.canClientReviewCommerce(CLIENT_ID, COMMERCE_ID);
@@ -63,7 +63,7 @@ class CommerceReviewServiceImplTest {
     @Test
     void testCanClientReviewCommerceWhenNoPaidReservationReturnsFalse() {
         // 1. Setup
-        when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(false);
+        when(reservationService.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(false);
 
         // 2. Ejercicio
         final boolean result = commerceReviewService.canClientReviewCommerce(CLIENT_ID, COMMERCE_ID);
@@ -77,7 +77,7 @@ class CommerceReviewServiceImplTest {
         // 1. Setup
         final CommerceReview created = new CommerceReview(REVIEW_ID, commerceRef(COMMERCE_ID), clientRef(CLIENT_ID),
                 5, BODY, LocalDateTime.now(), LocalDateTime.now());
-        when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
+        when(reservationService.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
         when(commerceReviewDao.findByClientAndCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(Optional.empty());
         when(commerceReviewDao.createReview(COMMERCE_ID, CLIENT_ID, 5, BODY)).thenReturn(created);
 
@@ -96,7 +96,7 @@ class CommerceReviewServiceImplTest {
                 4, "Antes", LocalDateTime.now(), LocalDateTime.now());
         final CommerceReview updated = new CommerceReview(REVIEW_ID, commerceRef(COMMERCE_ID), clientRef(CLIENT_ID), 3,
                 BODY, existing.getCreatedAt(), LocalDateTime.now());
-        when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
+        when(reservationService.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
         when(commerceReviewDao.findByClientAndCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(Optional.of(existing));
         when(commerceReviewDao.updateReview(REVIEW_ID, 3, BODY)).thenReturn(updated);
 
@@ -110,7 +110,7 @@ class CommerceReviewServiceImplTest {
     @Test
     void testUpsertReviewWhenClientNotEligibleThrowsIllegalStateException() {
         // 1. Setup
-        when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(false);
+        when(reservationService.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(false);
 
         // 2. Ejercicio
         final CommerceReviewException exception = assertThrows(CommerceReviewException.class,
@@ -123,7 +123,7 @@ class CommerceReviewServiceImplTest {
     @Test
     void testUpsertReviewWhenRatingInvalidThrowsIllegalArgumentException() {
         // 1. Setup
-        when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
+        when(reservationService.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
 
         // 2. Ejercicio
         final CommerceReviewException exception = assertThrows(CommerceReviewException.class,
@@ -136,7 +136,7 @@ class CommerceReviewServiceImplTest {
     @Test
     void testUpsertReviewWhenBodyBlankThrowsIllegalArgumentException() {
         // 1. Setup
-        when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
+        when(reservationService.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(true);
 
         // 2. Ejercicio
         final CommerceReviewException exception = assertThrows(CommerceReviewException.class,

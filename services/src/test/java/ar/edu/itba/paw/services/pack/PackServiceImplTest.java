@@ -9,8 +9,8 @@ import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
-import ar.edu.itba.paw.persistence.ImageDao;
 import ar.edu.itba.paw.persistence.PackDao;
+import ar.edu.itba.paw.services.image.ImageService;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.notification.NotificationService;
@@ -44,7 +44,7 @@ class PackServiceImplTest {
     private PackDao packDao;
 
     @Mock
-    private ImageDao imageDao;
+    private ImageService imageService;
 
     @Mock
     private AuctionService auctionService;
@@ -381,7 +381,7 @@ class PackServiceImplTest {
         final Pack existing =
                 newPack(3L, 5L, "old", "oldD", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
         when(packDao.findById(3L)).thenReturn(Optional.of(existing));
-        when(imageDao.getImage(77L)).thenReturn(Optional.of(imageRef(77L)));
+        when(imageService.getImage(77L)).thenReturn(Optional.of(imageRef(77L)));
         when(packDao.update(any(Pack.class))).thenAnswer(invocation -> invocation.getArgument(0));
         final List<PackTag> tags = Collections.singletonList(PackTag.VEGAN);
 

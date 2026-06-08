@@ -4,7 +4,7 @@ import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.FavoriteToggleException;
-import ar.edu.itba.paw.persistence.PackDao;
+import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.persistence.PackFavoriteDao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,10 +30,10 @@ class PackFavoriteServiceImplTest {
     private PackFavoriteDao packFavoriteDao;
 
     @Mock
-    private PackDao packDao;
+    private PackService packService;
 
     @Mock
-    private ar.edu.itba.paw.persistence.AuctionDao auctionDao;
+    private AuctionService auctionService;
 
     @InjectMocks
     private PackFavoriteServiceImpl packFavoriteService;
@@ -83,7 +83,8 @@ class PackFavoriteServiceImplTest {
         // 1. Setup
         when(packFavoriteDao.exists(5L, 10L)).thenReturn(false);
         final Pack pack = newPack(10L, 1L, "t", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
-        when(packDao.findById(10L)).thenReturn(Optional.of(pack));
+        when(packService.findById(10L)).thenReturn(Optional.of(pack));
+        when(auctionService.findByPackId(10L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
         final boolean completed = assertDoesNotThrow(() -> {
@@ -100,7 +101,7 @@ class PackFavoriteServiceImplTest {
         // 1. Setup
         when(packFavoriteDao.exists(5L, 10L)).thenReturn(false);
         final Pack pack = newPack(10L, 1L, "t", "d", 1.0, 1.0, 1, false, false, Collections.emptyList(), null);
-        when(packDao.findById(10L)).thenReturn(Optional.of(pack));
+        when(packService.findById(10L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
         final FavoriteToggleException thrown = assertThrows(FavoriteToggleException.class,
@@ -114,7 +115,7 @@ class PackFavoriteServiceImplTest {
     void testToggleFavoriteWhenPackNotFoundThrowsException() {
         // 1. Setup
         when(packFavoriteDao.exists(5L, 10L)).thenReturn(false);
-        when(packDao.findById(10L)).thenReturn(Optional.empty());
+        when(packService.findById(10L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
         final FavoriteToggleException thrown = assertThrows(FavoriteToggleException.class,
@@ -129,7 +130,7 @@ class PackFavoriteServiceImplTest {
         // 1. Setup
         when(packFavoriteDao.exists(5L, 10L)).thenReturn(false);
         final Pack pack = newPack(10L, 1L, "t", "d", 1.0, 1.0, 1, true, true, Collections.emptyList(), null);
-        when(packDao.findById(10L)).thenReturn(Optional.of(pack));
+        when(packService.findById(10L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
         final FavoriteToggleException thrown = assertThrows(FavoriteToggleException.class,

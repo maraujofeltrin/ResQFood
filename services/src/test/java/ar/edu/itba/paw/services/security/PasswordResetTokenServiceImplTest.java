@@ -4,11 +4,10 @@ import ar.edu.itba.paw.models.security.PasswordResetException;
 import ar.edu.itba.paw.models.security.Token;
 import ar.edu.itba.paw.models.security.TokenType;
 import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.services.user.UserService;
 import ar.edu.itba.paw.persistence.TokenDao;
-import ar.edu.itba.paw.persistence.UserDao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,7 +31,7 @@ class PasswordResetTokenServiceImplTest {
     private TokenDao tokenDao;
 
     @Mock
-    private UserDao userDao;
+    private UserService userService;
 
     @Mock
     private PasswordResetMailService passwordResetMailService;
@@ -44,7 +43,7 @@ class PasswordResetTokenServiceImplTest {
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        service = new PasswordResetTokenServiceImpl(tokenDao, userDao, passwordResetMailService, passwordEncoder, "https://app.example");
+        service = new PasswordResetTokenServiceImpl(tokenDao, userService, passwordResetMailService, passwordEncoder, "https://app.example");
     }
 
     private static User userRef(final long id) {
@@ -126,7 +125,7 @@ class PasswordResetTokenServiceImplTest {
         final LocalDateTime now = LocalDateTime.now();
         final Token t = new Token("g1", userRef(USER_ID), false, TokenType.PASSWORD_RESET, now, now.plusHours(1));
         when(tokenDao.findByTokenAndType("g1", TokenType.PASSWORD_RESET)).thenReturn(Optional.of(t));
-        when(userDao.findById(USER_ID)).thenReturn(Optional.of(new User(USER_ID, EMAIL, "p", "N")));
+        when(userService.findById(USER_ID)).thenReturn(Optional.of(new User(USER_ID, EMAIL, "p", "N")));
 
         // 2. Ejercicio
         final Optional<String> email = service.getEmailByToken("g1");

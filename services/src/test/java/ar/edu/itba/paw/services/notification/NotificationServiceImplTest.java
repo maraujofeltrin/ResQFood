@@ -4,12 +4,11 @@ import ar.edu.itba.paw.models.notification.ClientNotificationPreference;
 import ar.edu.itba.paw.models.notification.Notification;
 import ar.edu.itba.paw.models.notification.NotificationType;
 import ar.edu.itba.paw.models.user.User;
-import ar.edu.itba.paw.persistence.AuctionDao;
-import ar.edu.itba.paw.persistence.BidDao;
 import ar.edu.itba.paw.persistence.ClientNotificationPreferenceDao;
-import ar.edu.itba.paw.persistence.CommerceFavoriteDao;
 import ar.edu.itba.paw.persistence.NotificationDao;
-import ar.edu.itba.paw.persistence.PackFavoriteDao;
+import ar.edu.itba.paw.services.auction.AuctionService;
+import ar.edu.itba.paw.services.pack.PackFavoriteService;
+import ar.edu.itba.paw.services.commerce.CommerceFavoriteService;
 import ar.edu.itba.paw.services.auction.AuctionMailService;
 import ar.edu.itba.paw.services.pack.FavoriteMailService;
 import ar.edu.itba.paw.services.reservation.ReservationMailService;
@@ -51,15 +50,13 @@ class NotificationServiceImplTest {
     @Mock
     private FavoriteMailService favoriteMailService;
     @Mock
-    private AuctionDao auctionDao;
+    private AuctionService auctionService;
     @Mock
     private UserService userService;
     @Mock
-    private PackFavoriteDao packFavoriteDao;
+    private PackFavoriteService packFavoriteService;
     @Mock
-    private CommerceFavoriteDao commerceFavoriteDao;
-    @Mock
-    private BidDao bidDao;
+    private CommerceFavoriteService commerceFavoriteService;
 
     private NotificationServiceImpl notificationService;
 
@@ -71,11 +68,10 @@ class NotificationServiceImplTest {
                 reservationMailService,
                 auctionMailService,
                 favoriteMailService,
-                auctionDao,
+                auctionService,
                 userService,
-                packFavoriteDao,
-                commerceFavoriteDao,
-                bidDao,
+                packFavoriteService,
+                commerceFavoriteService,
                 BUSINESS_ZONE);
     }
 
@@ -219,7 +215,7 @@ class NotificationServiceImplTest {
     @Test
     void testNotifyAuctionOutbidWhenAuctionNotFoundThrowsIllegalStateException() {
         // 1. Setup
-        when(auctionDao.findById(99L)).thenReturn(Optional.empty());
+        when(auctionService.findById(99L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
         final IllegalStateException thrown = assertThrows(IllegalStateException.class,

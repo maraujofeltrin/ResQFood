@@ -4,8 +4,8 @@ import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.reservation.Reservation;
-import ar.edu.itba.paw.persistence.PackDao;
-import ar.edu.itba.paw.persistence.ReservationDao;
+import ar.edu.itba.paw.services.pack.PackService;
+import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.user.ClientService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,10 +33,10 @@ class CommerceMetricsServiceImplTest {
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("UTC");
 
     @Mock
-    private ReservationDao reservationDao;
+    private ReservationService reservationService;
 
     @Mock
-    private PackDao packDao;
+    private PackService packService;
 
     @Mock
     private ClientService clientService;
@@ -45,7 +45,7 @@ class CommerceMetricsServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        commerceMetricsService = new CommerceMetricsServiceImpl(reservationDao, packDao, clientService, BUSINESS_ZONE);
+        commerceMetricsService = new CommerceMetricsServiceImpl(reservationService, packService, clientService, BUSINESS_ZONE);
     }
 
     @Test
@@ -118,7 +118,7 @@ class CommerceMetricsServiceImplTest {
                 0L);
         final Pack pack = new Pack(100L, new Commerce(COMMERCE_ID, "Comm", Commerce.Category.BAKERY, "St", 1,
                 Municipality.AVELLANEDA, "P", "1000", "08:00", "20:00"), "Star Pack", "d", 1.0, 1.0, 1, true, null);
-        when(packDao.findById(100L)).thenReturn(Optional.of(pack));
+        when(packService.findById(100L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
         final CommerceMetrics result = commerceMetricsService.getCommerceMetrics(COMMERCE_ID, from, to);
@@ -199,7 +199,7 @@ class CommerceMetricsServiceImplTest {
     @Test
     void testCountSoldTodayWhenDaoReturnsCount() {
         // 1. Setup
-        when(reservationDao.countPaidReservationsInPeriod(eq(COMMERCE_ID), any(LocalDateTime.class), any(LocalDateTime.class)))
+        when(reservationService.countPaidReservationsInPeriod(eq(COMMERCE_ID), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(11);
 
         // 2. Ejercicio
@@ -219,13 +219,13 @@ class CommerceMetricsServiceImplTest {
             final Optional<Long> bestPackId,
             final long paidStatusCount,
             final long canceledStatusCount) {
-        when(reservationDao.countPaidReservationsPerDay(eq(commerceId), eq(from), eq(to))).thenReturn(perDay);
-        when(reservationDao.countPaidReservationsInPeriod(eq(commerceId), eq(from), eq(to))).thenReturn(paidCountInPeriod);
-        when(reservationDao.sumRevenueInPeriod(eq(commerceId), eq(from), eq(to))).thenReturn(revenue);
-        when(reservationDao.findBestSellingPackId(eq(commerceId), eq(from), eq(to))).thenReturn(bestPackId);
-        when(reservationDao.countByStatusInPeriod(eq(commerceId), eq(Reservation.Status.PAID), eq(from), eq(to)))
+        when(reservationService.countPaidReservationsPerDay(eq(commerceId), eq(from), eq(to))).thenReturn(perDay);
+        when(reservationService.countPaidReservationsInPeriod(eq(commerceId), eq(from), eq(to))).thenReturn(paidCountInPeriod);
+        when(reservationService.sumRevenueInPeriod(eq(commerceId), eq(from), eq(to))).thenReturn(revenue);
+        when(reservationService.findBestSellingPackId(eq(commerceId), eq(from), eq(to))).thenReturn(bestPackId);
+        when(reservationService.countByStatusInPeriod(eq(commerceId), eq(Reservation.Status.PAID), eq(from), eq(to)))
                 .thenReturn(paidStatusCount);
-        when(reservationDao.countByStatusInPeriod(eq(commerceId), eq(Reservation.Status.CANCELED), eq(from), eq(to)))
+        when(reservationService.countByStatusInPeriod(eq(commerceId), eq(Reservation.Status.CANCELED), eq(from), eq(to)))
                 .thenReturn(canceledStatusCount);
     }
 }

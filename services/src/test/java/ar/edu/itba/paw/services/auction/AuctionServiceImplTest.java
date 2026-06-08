@@ -11,8 +11,7 @@ import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.BidDao;
-import ar.edu.itba.paw.persistence.CommerceDao;
-import ar.edu.itba.paw.persistence.PackDao;
+import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.services.notification.NotificationService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.junit.jupiter.api.Test;
@@ -47,13 +46,10 @@ class AuctionServiceImplTest {
     private BidDao bidDao;
 
     @Mock
-    private PackDao packDao;
+    private PackService packService;
 
     @Mock
     private ReservationService reservationService;
-
-    @Mock
-    private CommerceDao commerceDao;
 
     @Mock
     private NotificationService notificationService;
@@ -89,7 +85,7 @@ class AuctionServiceImplTest {
     void testCreateAuctionWhenPackValidReturnsCreatedAuction() {
         // 1. Setup
         final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
-        when(packDao.findById(PACK_ID)).thenReturn(Optional.of(pack));
+        when(packService.findById(PACK_ID)).thenReturn(Optional.of(pack));
         when(auctionDao.findByPackId(PACK_ID)).thenReturn(Optional.empty());
         final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
         final double minInc = 50.0;
@@ -110,7 +106,7 @@ class AuctionServiceImplTest {
     void testCreateAuctionWhenPackInactiveThrowsAuctionCreationException() {
         // 1. Setup
         final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, false, null);
-        when(packDao.findById(PACK_ID)).thenReturn(Optional.of(pack));
+        when(packService.findById(PACK_ID)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
         final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);

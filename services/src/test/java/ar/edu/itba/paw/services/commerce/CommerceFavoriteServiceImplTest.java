@@ -1,7 +1,6 @@
 package ar.edu.itba.paw.services.commerce;
 
 import ar.edu.itba.paw.models.user.Commerce;
-import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.CommerceFavoriteDao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +25,7 @@ class CommerceFavoriteServiceImplTest {
     private CommerceFavoriteDao commerceFavoriteDao;
 
     @Mock
-    private CommerceDao commerceDao;
+    private CommerceService commerceService;
 
     @InjectMocks
     private CommerceFavoriteServiceImpl commerceFavoriteService;
@@ -63,7 +62,7 @@ class CommerceFavoriteServiceImplTest {
         // 1. Setup
         when(commerceFavoriteDao.exists(5L, 10L)).thenReturn(false);
         final Commerce commerce = new Commerce(10L, "c", Commerce.Category.BAKERY, "st", 1, null, "p", "1000", "09", "18");
-        when(commerceDao.findByUserId(10L)).thenReturn(Optional.of(commerce));
+        when(commerceService.findByUserId(10L)).thenReturn(Optional.of(commerce));
 
         // 2. Ejercicio
         final boolean completed = assertDoesNotThrow(() -> {
@@ -79,7 +78,7 @@ class CommerceFavoriteServiceImplTest {
     void testToggleFavoriteWhenCommerceDoesNotExistThrowsIllegalArgumentException() {
         // 1. Setup
         when(commerceFavoriteDao.exists(5L, 10L)).thenReturn(false);
-        when(commerceDao.findByUserId(10L)).thenReturn(Optional.empty());
+        when(commerceService.findByUserId(10L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
         final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
