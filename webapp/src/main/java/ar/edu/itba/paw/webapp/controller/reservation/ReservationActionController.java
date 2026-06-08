@@ -80,7 +80,7 @@ public class ReservationActionController {
         final ModelAndView redirectView = new ModelAndView("redirect:/packs/" + packId);
 
         if (bindingResult.hasErrors()) {
-            return packService.findById(packId)
+            return packService.findByIdWithAuction(packId)
                     .map(pack -> packDetailModelBuilder.buildPackDetailModel(pack, reservationForm, createDefaultBidForm()))
                     .orElse(redirectView);
         }
@@ -92,7 +92,7 @@ public class ReservationActionController {
         case OK:
             break;
         case QUANTITY_EXCEEDS_STOCK: {
-            final Pack p = check.getPack().orElse(null);
+            final Pack p = packService.findByIdWithAuction(packId).orElse(null);
             if (p == null) {
                 return redirectView;
             }
@@ -161,7 +161,7 @@ public class ReservationActionController {
         final Locale locale = LocaleContextHolder.getLocale();
         final ModelAndView redirectView = new ModelAndView("redirect:/packs/" + packId);
 
-        final Optional<Pack> packOpt = packService.findById(packId)
+        final Optional<Pack> packOpt = packService.findByIdWithAuction(packId)
                 .filter(p -> Boolean.TRUE.equals(p.getActive()));
         if (packOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
@@ -171,14 +171,13 @@ public class ReservationActionController {
         }
         final Pack pack = packOpt.get();
 
-        final Optional<Auction> auctionOpt = auctionService.findByPackId(packId);
-        if (auctionOpt.isEmpty() || !auctionOpt.get().isActive()) {
+        final Auction auction = pack.getAuction();
+        if (auction == null || !auction.isActive()) {
             redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
             redirectAttributes.addFlashAttribute("auctionAlertMessage",
                     messageSource.getMessage("pack.detail.bid.alert.auctionNotActive", null, locale));
             return redirectView;
         }
-        final Auction auction = auctionOpt.get();
 
         if (bindingResult.hasErrors()) {
             return packDetailModelBuilder.buildPackDetailModel(pack, createDefaultReservationForm(), bidForm);
