@@ -49,7 +49,6 @@ public class ReservationJpaDao implements ReservationDao {
                 "SELECT r FROM Reservation r "
                         + "JOIN FETCH r.customer "
                         + "JOIN FETCH r.pack p "
-                        + "LEFT JOIN FETCH p.image "
                         + "JOIN FETCH p.commerce "
                         + "LEFT JOIN FETCH p.auction "
                         + "WHERE r.id = :id",
@@ -120,7 +119,6 @@ public class ReservationJpaDao implements ReservationDao {
                 "SELECT r FROM Reservation r "
                         + "JOIN FETCH r.customer "
                         + "JOIN FETCH r.pack p "
-                        + "LEFT JOIN FETCH p.image "
                         + "JOIN FETCH p.commerce "
                         + "LEFT JOIN FETCH p.auction "
                         + "WHERE r.pickupCode = :code",
@@ -276,7 +274,6 @@ public class ReservationJpaDao implements ReservationDao {
                 "SELECT r FROM Reservation r "
                         + "JOIN FETCH r.customer "
                         + "JOIN FETCH r.pack p "
-                        + "LEFT JOIN FETCH p.image "
                         + "JOIN FETCH p.commerce "
                         + "LEFT JOIN FETCH p.auction "
                         + "WHERE r.id IN :ids "
