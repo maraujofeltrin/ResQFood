@@ -13,7 +13,6 @@ import ar.edu.itba.paw.services.metrics.CommerceMetricsService;
 import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
-import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.controller.helpers.CommerceMetricsFilterHelper;
 import ar.edu.itba.paw.webapp.controller.helpers.CommerceReviewViewHelper;
 import ar.edu.itba.paw.webapp.controller.helpers.ReservationHistoryViewHelper;
@@ -57,7 +56,6 @@ public class CommerceDashboardController {
     private final ReservationService reservationService;
     private final CommerceMetricsService commerceMetricsService;
     private final CommerceReviewService commerceReviewService;
-    private final AuthenticatedUserResolver authResolver;
     private final MessageSource messageSource;
     private final CommerceMetricsFilterHelper metricsFilterHelper;
     private final ZoneId businessZone;
@@ -67,7 +65,6 @@ public class CommerceDashboardController {
                                        final PackService packService,
                                        final AuctionService auctionService,
                                        final ReservationService reservationService,
-                                       final AuthenticatedUserResolver authResolver,
                                        final MessageSource messageSource,
                                        final CommerceMetricsService commerceMetricsService,
                                        final CommerceMetricsFilterHelper metricsFilterHelper,
@@ -77,7 +74,6 @@ public class CommerceDashboardController {
         this.packService = packService;
         this.auctionService = auctionService;
         this.reservationService = reservationService;
-        this.authResolver = authResolver;
         this.messageSource = messageSource;
         this.commerceMetricsService = commerceMetricsService;
         this.metricsFilterHelper = metricsFilterHelper;
@@ -87,7 +83,7 @@ public class CommerceDashboardController {
 
     @GetMapping(value = "")
     public ModelAndView dashboard(@AuthenticationPrincipal final AuthUser principal) {
-        final long id = authResolver.resolveUser(principal).getId();
+        final long id = principal.getId();
 
         final Commerce commerce = commerceService.findByUserId(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -124,7 +120,7 @@ public class CommerceDashboardController {
     @GetMapping(value = "/reviews")
     public ModelAndView reviews(@AuthenticationPrincipal final AuthUser principal,
                                 @RequestParam(value = "page", defaultValue = "1") final int page) {
-        final long id = authResolver.resolveUser(principal).getId();
+        final long id = principal.getId();
         final Commerce commerce = commerceService.findByUserId(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         final Locale locale = LocaleContextHolder.getLocale();
@@ -152,7 +148,7 @@ public class CommerceDashboardController {
     public ModelAndView products(@AuthenticationPrincipal final AuthUser principal,
             @RequestParam(value = "page", defaultValue = "1") final int page,
             @RequestParam(value = "tab", defaultValue = "items") final String tab) {
-        final long id = authResolver.resolveUser(principal).getId();
+        final long id = principal.getId();
 
         final Optional<Commerce> commerceOpt = commerceService.findByUserId(id);
         if (!commerceOpt.isPresent()) {
@@ -197,7 +193,7 @@ public class CommerceDashboardController {
         @Valid @ModelAttribute("metricsFilterForm") final MetricsFilterForm filter,
         final BindingResult bindingResult,
         @RequestParam(value = "days", required = false) final Integer days) {
-        final long userId = authResolver.resolveUser(principal).getId();
+        final long userId = principal.getId();
         final Commerce commerce = commerceService.findByUserId(userId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (bindingResult.hasErrors()) {

@@ -5,6 +5,7 @@ import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.user.UserService;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
+import ar.edu.itba.paw.webapp.auth.AuthUserLocaleSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -38,12 +39,16 @@ public class AuthenticatedUserResolver {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         }
-        final String email = authentication.getName();
-        if (email == null || email.isBlank() || "anonymousUser".equalsIgnoreCase(email)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        }
-        return userService.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        return AuthUserLocaleSupport.authUserFrom(authentication)
+                .map(this::resolveUser)
+                .orElseGet(() -> {
+                    final String email = authentication.getName();
+                    if (email == null || email.isBlank() || "anonymousUser".equalsIgnoreCase(email)) {
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+                    }
+                    return userService.findByEmail(email)
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                });
     }
 
     /**
@@ -55,7 +60,7 @@ public class AuthenticatedUserResolver {
         if (principal == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         }
-        return userService.findByEmail(principal.getUsername())
+        return userService.findById(principal.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
     }
 
@@ -78,6 +83,10 @@ public class AuthenticatedUserResolver {
         if (auth == null || !auth.isAuthenticated()) {
             return java.util.Optional.empty();
         }
+        final java.util.Optional<AuthUser> authUser = AuthUserLocaleSupport.authUserFrom(auth);
+        if (authUser.isPresent()) {
+            return userService.findById(authUser.get().getId());
+        }
         final String email = auth.getName();
         if (email == null || email.isBlank() || "anonymousUser".equalsIgnoreCase(email)) {
             return java.util.Optional.empty();
@@ -91,9 +100,13 @@ public class AuthenticatedUserResolver {
      * @throws ResponseStatusException 401 if not authenticated, 404 if no commerce profile
      */
     public Commerce resolveCommerce(final Authentication authentication) {
-        final User user = resolveUser(authentication);
-        return commerceService.findByUserId(user.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        }
+        return AuthUserLocaleSupport.authUserFrom(authentication)
+                .map(this::resolveCommerce)
+                .orElseGet(() -> commerceService.findByUserId(resolveUser(authentication).getId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
     }
 
     /**
@@ -102,8 +115,10 @@ public class AuthenticatedUserResolver {
      * @throws ResponseStatusException 401 if not authenticated, 404 if no commerce profile
      */
     public Commerce resolveCommerce(final AuthUser principal) {
-        final User user = resolveUser(principal);
-        return commerceService.findByUserId(user.getId())
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        }
+        return commerceService.findByUserId(principal.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 

@@ -1,9 +1,8 @@
 package ar.edu.itba.paw.webapp.controller.notification;
 
-import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.notification.NotificationItemView;
 import ar.edu.itba.paw.services.notification.NotificationService;
-import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
+import ar.edu.itba.paw.webapp.auth.AuthUser;
 import ar.edu.itba.paw.webapp.controller.helpers.NotificationViewHelper;
 import ar.edu.itba.paw.webapp.controller.helpers.NotificationViewHelper.NotificationDisplayRow;
 import org.slf4j.Logger;
@@ -12,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,32 +30,29 @@ public class NotificationController {
     private static final int RECENT_LIMIT = 20;
     private static final String REDIRECT_NOTIFICATIONS = "redirect:/notifications";
 
-    private final AuthenticatedUserResolver authenticatedUserResolver;
     private final NotificationService notificationService;
     private final MessageSource messageSource;
 
     @Autowired
     public NotificationController(
-            final AuthenticatedUserResolver authenticatedUserResolver,
             final NotificationService notificationService,
             final MessageSource messageSource) {
-        this.authenticatedUserResolver = authenticatedUserResolver;
         this.notificationService = notificationService;
         this.messageSource = messageSource;
     }
 
     @GetMapping
-    public ModelAndView list(final Authentication authentication) {
-        final User user = authenticatedUserResolver.resolveUser(authentication);
+    public ModelAndView list(@AuthenticationPrincipal final AuthUser principal) {
+        final long userId = principal.getId();
         final List<NotificationItemView> items =
-                notificationService.findRecentForUser(user.getId(), RECENT_LIMIT);
+                notificationService.findRecentForUser(userId, RECENT_LIMIT);
         final Locale locale = LocaleContextHolder.getLocale();
         final List<NotificationDisplayRow> rows =
                 NotificationViewHelper.buildRows(items, messageSource, locale);
-        final int unreadCount = notificationService.countUnread(user.getId());
+        final int unreadCount = notificationService.countUnread(userId);
 
         LOGGER.debug("Loading notifications page for userId={} items={} unread={}",
-                user.getId(), rows.size(), unreadCount);
+                Long.valueOf(userId), rows.size(), unreadCount);
 
         final ModelAndView mav = new ModelAndView("notifications/notificationsView");
         mav.addObject("notificationRows", rows);
@@ -79,9 +75,8 @@ public class NotificationController {
     }
 
     @PostMapping("/read-all")
-    public String markAllRead(final Authentication authentication) {
-        final User user = authenticatedUserResolver.resolveUser(authentication);
-        notificationService.markAllRead(user.getId());
+    public String markAllRead(@AuthenticationPrincipal final AuthUser principal) {
+        notificationService.markAllRead(principal.getId());
         return REDIRECT_NOTIFICATIONS;
     }
 

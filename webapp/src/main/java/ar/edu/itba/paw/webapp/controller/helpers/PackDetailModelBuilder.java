@@ -84,6 +84,7 @@ public class PackDetailModelBuilder {
             final BidForm bidForm, final CommerceReviewForm commerceReviewForm) {
         final Optional<Commerce> commerceOpt = commerceService.findByUserId(pack.getCommerceId());
         final Locale locale = LocaleContextHolder.getLocale();
+        final Optional<User> viewer = authResolver.resolveUserOrEmpty();
         final String title = pack.getTitle() != null && !pack.getTitle().isBlank() ? pack.getTitle() : messageSource.getMessage("pack.detail.defaultTitle", null, locale);
         final String brand = messageSource.getMessage("app.brand", null, locale);
         final String pageTitle = messageSource.getMessage("pack.detail.pageTitle", new Object[] { title, brand }, locale);
@@ -123,7 +124,10 @@ public class PackDetailModelBuilder {
                     new Object[] { formatPrice(effective), formatPrice(minimumBidAmount), formatPrice(increment) }, locale));
             if (auctionActive) {
                 mav.addObject("bidAmountMin", String.format(Locale.US, "%.2f", minimumBidAmount));
-                auctionClientIsLeading = authResolver.resolveUserOrEmpty().map(u -> u.getRole() == User.Role.CLIENT && auctionService.isClientLeading(auction.getId(), u.getId())).orElse(false);
+                auctionClientIsLeading = viewer
+                        .map(u -> u.getRole() == User.Role.CLIENT
+                                && auctionService.isClientLeading(auction.getId(), u.getId()))
+                        .orElse(false);
             }
             mav.addObject("auctionClientIsLeading", Boolean.valueOf(auctionClientIsLeading));
         } else {
@@ -144,7 +148,7 @@ public class PackDetailModelBuilder {
         mav.addObject("packTitle", title);
         mav.addObject("packDescription", pack.getDescription() != null ? pack.getDescription() : "");
         commerceDetailAttributesHelper.addCommerceDetailAttributes(mav, commerceOpt);
-        final boolean isOwner = authResolver.resolveUserOrEmpty()
+        final boolean isOwner = viewer
                 .map(u -> u.getRole() == User.Role.COMMERCE && u.getId().equals(pack.getCommerceId()))
                 .orElse(false);
         mav.addObject("isOwner", isOwner);
@@ -161,23 +165,20 @@ public class PackDetailModelBuilder {
         }
 
         boolean clientHasActiveReservation = false;
-        if (!isOwner) {
-            final Optional<User> userOpt = authResolver.resolveUserOrEmpty();
-            if (userOpt.isPresent() && userOpt.get().getRole() == User.Role.CLIENT) {
-                clientHasActiveReservation = reservationService.hasActiveReservation(pack.getId(), userOpt.get().getId());
-            }
+        if (!isOwner && viewer.isPresent() && viewer.get().getRole() == User.Role.CLIENT) {
+            clientHasActiveReservation = reservationService.hasActiveReservation(pack.getId(), viewer.get().getId());
         }
         mav.addObject("clientHasActiveReservation", clientHasActiveReservation);
         commerceReviewPageAttributes.addReviewPageAttributes(mav, pack.getCommerceId(), commerceReviewForm,
                 commerceReviewForm != null);
 
-        final boolean packFavoriteSelected = authResolver.resolveUserOrEmpty()
+        final boolean packFavoriteSelected = viewer
                 .filter(u -> u.getRole() == User.Role.CLIENT)
                 .map(u -> packFavoriteService.isFavorite(u.getId(), pack.getId()))
                 .orElse(false);
         mav.addObject("packFavoriteSelected", packFavoriteSelected);
 
-        final boolean commerceFavoriteSelected = authResolver.resolveUserOrEmpty()
+        final boolean commerceFavoriteSelected = viewer
                 .filter(u -> u.getRole() == User.Role.CLIENT)
                 .map(u -> commerceFavoriteService.isFavorite(u.getId(), pack.getCommerceId()))
                 .orElse(false);

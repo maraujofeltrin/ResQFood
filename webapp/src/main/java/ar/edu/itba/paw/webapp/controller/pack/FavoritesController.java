@@ -1,16 +1,15 @@
 package ar.edu.itba.paw.webapp.controller.pack;
 
 import ar.edu.itba.paw.models.user.Commerce;
-import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.services.commerce.CommerceFavoriteService;
 import ar.edu.itba.paw.services.commerce.CommerceReviewService;
 import ar.edu.itba.paw.services.pack.PackFavoriteService;
-import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
+import ar.edu.itba.paw.webapp.auth.AuthUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,27 +30,23 @@ public class FavoritesController {
     private final PackFavoriteService packFavoriteService;
     private final CommerceFavoriteService commerceFavoriteService;
     private final CommerceReviewService commerceReviewService;
-    private final AuthenticatedUserResolver authResolver;
 
     @Autowired
     public FavoritesController(final PackFavoriteService packFavoriteService,
                                final CommerceFavoriteService commerceFavoriteService,
-                               final CommerceReviewService commerceReviewService,
-                               final AuthenticatedUserResolver authResolver) {
+                               final CommerceReviewService commerceReviewService) {
         this.packFavoriteService = packFavoriteService;
         this.commerceFavoriteService = commerceFavoriteService;
         this.commerceReviewService = commerceReviewService;
-        this.authResolver = authResolver;
     }
 
     @GetMapping("/favorites")
     public ModelAndView favorites(
             @RequestParam(value = "packPage", defaultValue = "1") final int packPage,
             @RequestParam(value = "commercePage", defaultValue = "1") final int commercePage,
-            final Authentication authentication) {
+            @AuthenticationPrincipal final AuthUser principal) {
 
-        final User user = authResolver.resolveUser(authentication);
-        final long userId = user.getId();
+        final long userId = principal.getId();
 
         LOGGER.debug("Loading favorites packPage={} commercePage={} for userId={}", packPage, commercePage, userId);
 

@@ -7,7 +7,6 @@ import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.image.ImageService;
 import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
-import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.form.CreateOfferForm;
 import ar.edu.itba.paw.webapp.validation.CreateOfferFormValidator;
 import org.slf4j.Logger;
@@ -43,7 +42,6 @@ public class CommercePackEditController {
     private final PackService packService;
     private final CreateOfferFormValidator createOfferFormValidator;
     private final MessageSource messageSource;
-    private final AuthenticatedUserResolver authResolver;
     private final ImageService imageService;
 
     @Autowired
@@ -51,13 +49,11 @@ public class CommercePackEditController {
                                       final PackService packService,
                                       final CreateOfferFormValidator createOfferFormValidator,
                                       final MessageSource messageSource,
-                                      final AuthenticatedUserResolver authResolver,
                                       final ImageService imageService) {
         this.commerceService = commerceService;
         this.packService = packService;
         this.createOfferFormValidator = createOfferFormValidator;
         this.messageSource = messageSource;
-        this.authResolver = authResolver;
         this.imageService = imageService;
     }
 
@@ -67,7 +63,7 @@ public class CommercePackEditController {
             @AuthenticationPrincipal final AuthUser principal,
             @ModelAttribute("createOfferForm") final CreateOfferForm form,
             @RequestParam(value = "error", required = false) final String error) {
-        final long commerceId = authResolver.resolveUser(principal).getId();
+        final long commerceId = principal.getId();
 
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -113,7 +109,7 @@ public class CommercePackEditController {
         form.setIsAuction(false);
         createOfferFormValidator.validatePackModeOnly(form, bindingResult);
 
-        final long commerceId = authResolver.resolveUser(principal).getId();
+        final long commerceId = principal.getId();
 
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -195,7 +191,7 @@ public class CommercePackEditController {
             @AuthenticationPrincipal final AuthUser principal,
             final RedirectAttributes redirectAttributes) {
 
-        final long commerceId = authResolver.resolveUser(principal).getId();
+        final long commerceId = principal.getId();
 
         if (commerceService.findByUserId(commerceId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);

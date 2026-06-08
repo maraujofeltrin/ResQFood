@@ -1,29 +1,26 @@
 package ar.edu.itba.paw.webapp.controller.advice;
 
 import ar.edu.itba.paw.services.notification.NotificationService;
-import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
+import ar.edu.itba.paw.webapp.auth.AuthUserLocaleSupport;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
 @ControllerAdvice
 public class NavNotificationsModelAdvice {
 
-    private final AuthenticatedUserResolver authResolver;
     private final NotificationService notificationService;
 
     @Autowired
-    public NavNotificationsModelAdvice(
-            final AuthenticatedUserResolver authResolver,
-            final NotificationService notificationService) {
-        this.authResolver = authResolver;
+    public NavNotificationsModelAdvice(final NotificationService notificationService) {
         this.notificationService = notificationService;
     }
 
     @ModelAttribute("navUnreadNotificationCount")
-    public int navUnreadNotificationCount() {
-        return authResolver.resolveUserOrEmpty()
-                .map(u -> notificationService.countUnread(u.getId()))
+    public int navUnreadNotificationCount(final Authentication authentication) {
+        return AuthUserLocaleSupport.authUserFrom(authentication)
+                .map(authUser -> notificationService.countUnread(authUser.getId()))
                 .orElse(0);
     }
 }

@@ -5,7 +5,6 @@ import ar.edu.itba.paw.models.image.Image;
 import ar.edu.itba.paw.services.commerce.CommerceOfferService;
 import ar.edu.itba.paw.services.image.ImageService;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
-import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.form.CreateOfferForm;
 import ar.edu.itba.paw.webapp.validation.CreateOfferFormValidator;
 import org.slf4j.Logger;
@@ -37,19 +36,16 @@ public class CommerceOfferController {
     private final CommerceOfferService commerceOfferService;
     private final CreateOfferFormValidator createOfferFormValidator;
     private final MessageSource messageSource;
-    private final AuthenticatedUserResolver authResolver;
     private final ImageService imageService;
 
     @Autowired
     public CommerceOfferController(final CommerceOfferService commerceOfferService,
                                    final CreateOfferFormValidator createOfferFormValidator,
                                    final MessageSource messageSource,
-                                   final AuthenticatedUserResolver authResolver,
                                    final ImageService imageService) {
         this.commerceOfferService = commerceOfferService;
         this.createOfferFormValidator = createOfferFormValidator;
         this.messageSource = messageSource;
-        this.authResolver = authResolver;
         this.imageService = imageService;
     }
 
@@ -96,7 +92,7 @@ public class CommerceOfferController {
         final boolean isAuction = form.getIsAuction();
 
         try {
-            final long commerceId = authResolver.resolveUser(principal).getId();
+            final long commerceId = principal.getId();
 
             Long imageId = form.getExistingImageId();
             final MultipartFile image = form.getImage();
