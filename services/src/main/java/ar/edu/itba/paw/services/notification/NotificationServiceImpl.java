@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -344,7 +345,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private LocalDateTime currentTimestamp() {
-        return LocalDateTime.now(businessZone);
+        return LocalDateTime.now(ZoneOffset.UTC);
     }
 
     private void sendMailSafely(final Runnable mailAction, final String context) {
