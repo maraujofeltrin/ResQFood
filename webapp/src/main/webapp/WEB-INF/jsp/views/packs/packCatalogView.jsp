@@ -92,7 +92,7 @@
                                     rescueLabel="${auctionCurrentBidLabel}"
                                     price="$${auction.effectivePrice}"
                                     oldPrice="$${auction.pack.originalPrice}"
-                                    commerceName="${commerceNames[auction.pack.id]}"
+                                    commerceName="${auction.pack.commerce.commercialName}"
                                     auction="${true}"
                                 />
                             </div>
@@ -130,7 +130,7 @@
                                             commerceName="${commerce.commercialName}"
                                             category="${commerce.category}"
                                             rating="${commerceRatings[commerce.userId]}"
-                                            imageId="${commerceImages[commerce.userId]}"
+                                            imageId="${commerce.user.profileImageId}"
                                         />
                                     </div>
                                 </c:forEach>
@@ -230,7 +230,7 @@
                                             rescueLabel="${auctionCurrentBidLabel}"
                                             price="$${auction.effectivePrice}"
                                             oldPrice="$${auction.pack.originalPrice}"
-                                            commerceName="${commerceNames[auction.pack.id]}"
+                                            commerceName="${auction.pack.commerce.commercialName}"
                                             auction="${true}"
                                         />
                                     </c:forEach>
@@ -243,7 +243,7 @@
                                                 commerceName="${commerce.commercialName}"
                                                 category="${commerce.category}"
                                                 rating="${commerceRatings[commerce.userId]}"
-                                                imageId="${commerceImages[commerce.userId]}"
+                                                imageId="${commerce.user.profileImageId}"
                                             />
                                         </div>
                                     </c:forEach>
@@ -257,7 +257,7 @@
                                             subtitle="${pack.description}"
                                             price="$${pack.finalPrice}"
                                             oldPrice="$${pack.originalPrice}"
-                                            commerceName="${commerceNames[pack.id]}"
+                                            commerceName="${pack.commerce.commercialName}"
                                         />
                                     </c:forEach>
                                 </c:otherwise>

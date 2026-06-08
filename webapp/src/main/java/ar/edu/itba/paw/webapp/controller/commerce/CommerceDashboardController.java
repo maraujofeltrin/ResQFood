@@ -45,7 +45,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import ar.edu.itba.paw.models.auction.Auction;
-import ar.edu.itba.paw.models.user.Client;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -111,26 +110,14 @@ public class CommerceDashboardController {
         final List<Reservation> recentReservations = reservationService.filterReservations(
                 id, null, null, null, false, 1, DASHBOARD_RECENT_LIMIT);
         final Locale locale = LocaleContextHolder.getLocale();
-        final Map<Long, Client> resClients = recentReservations.stream()
-                .filter(r -> r.getCustomer() != null)
-                .collect(Collectors.toMap(
-                        r -> r.getCustomer().getUserId(),
-                        Reservation::getCustomer,
-                        (a, b) -> a));
         final List<ReservationHistoryViewHelper.ReservationHistoryRow> recentHistoryItems =
-                ReservationHistoryViewHelper.buildRows(recentReservations, resClients, messageSource, locale);
+                ReservationHistoryViewHelper.buildRows(recentReservations, messageSource, locale);
         mav.addObject("dashboardReservationHistoryItems", recentHistoryItems);
 
         // -- Recent reviews (last 3) --
         final List<CommerceReview> recentReviews = commerceReviewService.findReviewsForCommerce(id, 1, DASHBOARD_RECENT_LIMIT);
-        final Map<Long, Client> reviewClients = recentReviews.stream()
-                .filter(r -> r.getClient() != null)
-                .collect(Collectors.toMap(
-                        r -> r.getClient().getUserId(),
-                        CommerceReview::getClient,
-                        (a, b) -> a));
         final List<CommerceReviewViewHelper.CommerceReviewRow> recentReviewItems =
-                CommerceReviewViewHelper.buildRows(recentReviews, reviewClients, businessZone, locale);
+                CommerceReviewViewHelper.buildRows(recentReviews, businessZone, locale);
         mav.addObject("dashboardRecentReviews", recentReviewItems);
         mav.addObject("commerceReviewCount", commerceReviewService.countReviewsForCommerce(id));
         mav.addObject("commerceReviewAverageRating",
@@ -152,14 +139,8 @@ public class CommerceDashboardController {
         final int safePage = Math.max(1, Math.min(page, totalPages));
 
         final List<CommerceReview> reviews = commerceReviewService.findReviewsForCommerce(id, safePage, PAGE_SIZE);
-        final Map<Long, Client> reviewClients = reviews.stream()
-                .filter(r -> r.getClient() != null)
-                .collect(Collectors.toMap(
-                        r -> r.getClient().getUserId(),
-                        CommerceReview::getClient,
-                        (a, b) -> a));
         final List<CommerceReviewViewHelper.CommerceReviewRow> reviewItems =
-                CommerceReviewViewHelper.buildRows(reviews, reviewClients, businessZone, locale);
+                CommerceReviewViewHelper.buildRows(reviews, businessZone, locale);
 
         final ModelAndView mav = new ModelAndView("commerce/reviews");
         mav.addObject("commerce", commerce);

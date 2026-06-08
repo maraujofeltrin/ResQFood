@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.ModelAndView;
 import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.auction.Bid;
-import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.User;
@@ -31,9 +30,7 @@ import java.time.format.FormatStyle;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Component
 public class PackDetailModelBuilder {
@@ -103,14 +100,8 @@ public class PackDetailModelBuilder {
             final long auctionId = auctionOpt.get().getId();
             mav.addObject("auctionId", auctionId);
             final List<Bid> bidHistory = auctionService.getBidHistory(auctionId);
-            final Map<Long, Client> bidClients = bidHistory.stream()
-                    .filter(b -> b.getClient() != null)
-                    .collect(Collectors.toMap(
-                            b -> b.getClient().getUserId(),
-                            Bid::getClient,
-                            (a, b) -> a));
             final List<BidHistoryViewHelper.BidHistoryRow> bidHistoryItems = BidHistoryViewHelper.buildRows(
-                    bidHistory, bidClients, messageSource, locale);
+                    bidHistory, messageSource, locale);
             mav.addObject("auctionBidHistoryItems", bidHistoryItems);
             mav.addObject("auctionHasBids", !bidHistory.isEmpty());
         } else {
@@ -162,14 +153,8 @@ public class PackDetailModelBuilder {
         
         if (isOwner) {
             final List<Reservation> reservations = reservationService.findByPackId(pack.getId());
-            final Map<Long, Client> resClients = reservations.stream()
-                    .filter(r -> r.getCustomer() != null)
-                    .collect(Collectors.toMap(
-                            r -> r.getCustomer().getUserId(),
-                            Reservation::getCustomer,
-                            (a, b) -> a));
-            final List<ReservationHistoryViewHelper.ReservationHistoryRow> reservationHistoryItems = 
-                ReservationHistoryViewHelper.buildRows(reservations, resClients, messageSource, locale);
+            final List<ReservationHistoryViewHelper.ReservationHistoryRow> reservationHistoryItems =
+                ReservationHistoryViewHelper.buildRows(reservations, messageSource, locale);
             mav.addObject("packReservationHistoryItems", reservationHistoryItems);
         } else {
             mav.addObject("packReservationHistoryItems", Collections.emptyList());
