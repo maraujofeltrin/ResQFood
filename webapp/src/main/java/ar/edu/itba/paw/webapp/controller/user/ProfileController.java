@@ -156,8 +156,6 @@ public class ProfileController {
         }
         try {
             userService.updatePreferredLocale(user.getId(), resolved);
-            AuthUserLocaleSupport.updateSessionLocale(
-                    SecurityContextHolder.getContext().getAuthentication(), resolved);
         } catch (final IllegalArgumentException | NoSuchElementException ex) {
             LOGGER.debug("Could not persist preferred locale userId={} lang={}", Long.valueOf(user.getId()),
                     resolved, ex);
