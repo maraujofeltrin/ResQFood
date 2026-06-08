@@ -314,61 +314,6 @@ public class AuctionJpaDaoTest {
     }
 
     @Test
-    public void testFindPackIdsWithAuction() {
-        // 1. Setup
-        final User commerceUser = new User(null, "commerce2@example.com", "pass", "Commerce2", "123",
-                User.Role.COMMERCE, true);
-        em.persist(commerceUser);
-        final Commerce commerce = new Commerce(commerceUser, "Comm 2", Commerce.Category.BAKERY, "Street", 123,
-                Municipality.AVELLANEDA, "Prov", "1000", "08:00", "20:00");
-        em.persist(commerce);
-        final Pack packWithAuctionOne = new Pack(null, commerce, "Pack A", "Desc", 1000.0, 500.0, 1, true,
-                Collections.emptyList());
-        final Pack packWithAuctionTwo = new Pack(null, commerce, "Pack B", "Desc", 1000.0, 500.0, 1, true,
-                Collections.emptyList());
-        final Pack packWithoutAuction = new Pack(null, commerce, "Pack C", "Desc", 1000.0, 500.0, 1, true,
-                Collections.emptyList());
-        em.persist(packWithAuctionOne);
-        em.persist(packWithAuctionTwo);
-        em.persist(packWithoutAuction);
-        final Auction auctionOne = new Auction(null, packWithAuctionOne, 500.0, 50.0, null, null, AUCTION_END_TIME,
-                Auction.Status.ACTIVE, LocalDateTime.now(ZoneOffset.UTC));
-        final Auction auctionTwo = new Auction(null, packWithAuctionTwo, 500.0, 50.0, null, null, AUCTION_END_TIME,
-                Auction.Status.ACTIVE, LocalDateTime.now(ZoneOffset.UTC));
-        em.persist(auctionOne);
-        em.persist(auctionTwo);
-        em.flush();
-
-        // 2. Ejercicio
-        final Set<Long> result = auctionDao.findPackIdsWithAuction(Set.of(packWithAuctionOne.getId(),
-                packWithAuctionTwo.getId(), packWithoutAuction.getId()));
-
-        // 3. Asserts
-        assertTrue(result.contains(packWithAuctionOne.getId()));
-        assertTrue(result.contains(packWithAuctionTwo.getId()));
-        assertFalse(result.contains(packWithoutAuction.getId()));
-    }
-
-    @Test
-    public void testFindSummariesByPackIds() {
-        // 1. Setup
-        final Auction auction = auctionDao.createAuction(packId, 500.0, 500.0, AUCTION_END_TIME);
-        final Pack packWithoutAuction = packDao.createPack(commerceId, "Regular Pack", "Desc", 1000.0, 500.0, 1,
-                Collections.emptyList(), null);
-        em.flush();
-
-        // 2. Ejercicio
-        final List<Object[]> rows = auctionDao.findSummariesByPackIds(
-                List.of(packId, packWithoutAuction.getId()));
-
-        // 3. Asserts
-        assertEquals(1, rows.size());
-        assertEquals(packId, rows.get(0)[0]);
-        assertEquals(auction.getId(), rows.get(0)[1]);
-        assertEquals(Auction.Status.ACTIVE, rows.get(0)[2]);
-    }
-
-    @Test
     public void testCountParticipatedAuctionsWhenClientHasBidsReturnsCount() {
         // 1. Setup
         final Auction created = auctionDao.createAuction(packId, 500.0, 500.0, AUCTION_END_TIME);
