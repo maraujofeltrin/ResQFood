@@ -86,7 +86,10 @@ public class WebAuthConfig extends WebSecurityConfigurerAdapter {
                 .requestMatchers(antMatcher("/login"), antMatcher("/register")).anonymous()
                 .requestMatchers(antMatcher("/logout")).authenticated()
                 .requestMatchers(antMatcher("/")).permitAll()
-                .requestMatchers(antMatcher("/password-reset/request"), antMatcher("/password-reset/change")).permitAll()
+                .requestMatchers(antMatcher(HttpMethod.GET, "/password-reset/request"),
+                        antMatcher(HttpMethod.POST, "/password-reset/request")).anonymous()
+                .requestMatchers(antMatcher(HttpMethod.GET, "/password-reset/change"),
+                        antMatcher(HttpMethod.POST, "/password-reset/change")).permitAll()
                 .requestMatchers(antMatcher(HttpMethod.GET, "/verify-email"), antMatcher(HttpMethod.GET, "/verify-email/resend")).permitAll()
                 .requestMatchers(antMatcher(HttpMethod.POST, "/verify-email/resend")).permitAll()
                 .requestMatchers(antMatcher(HttpMethod.GET, "/packs/**")).permitAll()
