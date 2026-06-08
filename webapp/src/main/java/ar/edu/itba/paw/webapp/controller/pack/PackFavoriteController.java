@@ -12,6 +12,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class PackFavoriteController {
@@ -28,7 +29,8 @@ public class PackFavoriteController {
     @PostMapping("/packs/{packId}/favorite")
     public String toggleFavorite(
             @PathVariable("packId") final long packId,
-            @AuthenticationPrincipal final AuthUser principal) {
+            @AuthenticationPrincipal final AuthUser principal,
+            final RedirectAttributes redirectAttributes) {
         final long clientUserId = principal.getId();
         try {
             packFavoriteService.toggleFavorite(clientUserId, packId);

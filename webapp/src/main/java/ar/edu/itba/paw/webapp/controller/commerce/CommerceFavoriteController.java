@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class CommerceFavoriteController {
@@ -29,7 +30,8 @@ public class CommerceFavoriteController {
     public String toggleFavorite(
             @PathVariable("commerceId") final long commerceId,
             @RequestHeader(value = "Referer", required = false) final String referer,
-            @AuthenticationPrincipal final AuthUser principal) {
+            @AuthenticationPrincipal final AuthUser principal,
+            final RedirectAttributes redirectAttributes) {
         final long clientUserId = principal.getId();
         try {
             commerceFavoriteService.toggleFavorite(clientUserId, commerceId);
