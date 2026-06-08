@@ -4,11 +4,9 @@ import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
 import ar.edu.itba.paw.services.reservation.ReservationService;
-import ar.edu.itba.paw.services.reservation.ReservationTokenService;
-import ar.edu.itba.paw.services.reservation.ReservationTokenService.TokenValidationResult;
+import ar.edu.itba.paw.services.reservation.ReservationService.TokenValidationResult;
 import ar.edu.itba.paw.services.reservation.ReservationServiceResult;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,7 +14,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -31,15 +28,12 @@ public class ReservationTokenController {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
 
-    private final ReservationTokenService reservationTokenService;
     private final ReservationService reservationService;
     private final ZoneId displayZone;
 
     @Autowired
-    public ReservationTokenController(final ReservationTokenService reservationTokenService,
-            final ReservationService reservationService,
+    public ReservationTokenController(final ReservationService reservationService,
             final ZoneId businessZone) {
-        this.reservationTokenService = reservationTokenService;
         this.reservationService = reservationService;
         this.displayZone = businessZone;
     }
@@ -84,11 +78,11 @@ public class ReservationTokenController {
             return "reservations/token-status";
         }
 
-        final TokenValidationResult result = reservationTokenService.validateOnly(token, action);
+        final TokenValidationResult result = reservationService.validateToken(token, action);
 
         switch (result) {
             case SUCCESS: {
-                final Long reservationId = reservationTokenService
+                final Long reservationId = reservationService
                         .findReservationIdByToken(token)
                         .orElseThrow(() -> new IllegalStateException("Reservation id missing for token: " + token));
                 final Optional<Reservation> reservation = reservationService.findById(reservationId);
@@ -133,13 +127,13 @@ public class ReservationTokenController {
         }
 
         if (action == ReservationToken.Action.ACCEPT) {
-            final ReservationServiceResult<ReservationTokenActionError> result = reservationTokenService.acceptReservationTokenWithPickupCode(
-                    token, pickupCode);
+            final ReservationServiceResult<ReservationTokenActionError> result =
+                    reservationService.acceptByToken(token, pickupCode);
             return mapAcceptTokenResult(result, token, model, actionCode);
         }
 
-        final ReservationServiceResult<ReservationTokenActionError> result = reservationTokenService.rejectReservationToken(
-                token);
+        final ReservationServiceResult<ReservationTokenActionError> result =
+                reservationService.rejectByToken(token);
         return mapTokenActionResult(result, token, model, actionCode);
     }
 
@@ -191,7 +185,7 @@ public class ReservationTokenController {
     }
 
     private String buildAlreadyUsedView(final String token, final Model model) {
-        final Optional<Long> reservationId = reservationTokenService.findReservationIdByToken(token);
+        final Optional<Long> reservationId = reservationService.findReservationIdByToken(token);
         if (reservationId.isPresent()) {
             final Optional<Reservation> reservation = reservationService.findById(reservationId.get());
             if (reservation.isPresent() && reservation.get().getStatus() != null) {

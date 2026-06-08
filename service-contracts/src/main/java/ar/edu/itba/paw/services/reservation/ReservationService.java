@@ -3,6 +3,8 @@ package ar.edu.itba.paw.services.reservation;
 import ar.edu.itba.paw.models.reservation.PickupByCodeError;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationRejectionError;
+import ar.edu.itba.paw.models.reservation.ReservationToken;
+import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
 import ar.edu.itba.paw.services.pack.DirectReservationCheck;
 
 import java.math.BigDecimal;
@@ -82,4 +84,30 @@ public interface ReservationService {
     List<Object[]> findTopClientsByPaidReservations(Long commerceId, LocalDateTime from, LocalDateTime to, int limit);
 
     long countNewClientsInPeriod(Long commerceId, LocalDateTime from, LocalDateTime to);
+
+    enum TokenValidationResult {
+        SUCCESS,
+        ALREADY_USED,
+        EXPIRED,
+        NOT_FOUND
+    }
+
+    /**
+     * Validates a reservation token for display (GET confirm pages) without consuming it.
+     */
+    TokenValidationResult validateToken(String token, ReservationToken.Action action);
+
+    Optional<Long> findReservationIdByToken(String token);
+
+    /**
+     * Valida un token ACCEPT, verifica el pickup code, marca el token como usado
+     * y confirma la entrega de la reserva en una sola transacción.
+     */
+    ReservationServiceResult<ReservationTokenActionError> acceptByToken(String token, String pickupCode);
+
+    /**
+     * Valida un token REJECT, lo marca como usado y rechaza la reserva
+     * (restaura stock, marca CANCELED, notifica al cliente).
+     */
+    ReservationServiceResult<ReservationTokenActionError> rejectByToken(String token);
 }
