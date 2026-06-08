@@ -15,6 +15,8 @@ import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.pack.PackFavoriteService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.commerce.CommerceFavoriteService;
+import ar.edu.itba.paw.services.security.OwnershipService;
+import ar.edu.itba.paw.services.security.OwnershipResourceNotFoundException;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.webapp.form.BidForm;
 import ar.edu.itba.paw.webapp.form.CommerceReviewForm;
@@ -45,6 +47,7 @@ public class PackDetailModelBuilder {
     private final PackFavoriteService packFavoriteService;
     private final CommerceDetailAttributesHelper commerceDetailAttributesHelper;
     private final CommerceFavoriteService commerceFavoriteService;
+    private final OwnershipService ownershipService;
     private static final Locale LOCALE_AR = new Locale("es", "AR");
     private static final int BID_PAGE_SIZE = 10;
     private static final int RESERVATION_PAGE_SIZE = 10;
@@ -55,7 +58,8 @@ public class PackDetailModelBuilder {
             final ReservationService reservationService, final MessageSource messageSource, final ZoneId businessZone,
             final AuthenticatedUserResolver authResolver, final PackFavoriteService packFavoriteService,
             final CommerceDetailAttributesHelper commerceDetailAttributesHelper,
-            final CommerceFavoriteService commerceFavoriteService) {
+            final CommerceFavoriteService commerceFavoriteService,
+            final OwnershipService ownershipService) {
         this.commerceService = commerceService;
         this.auctionService = auctionService;
         this.commerceReviewPageAttributes = commerceReviewPageAttributes;
@@ -66,6 +70,7 @@ public class PackDetailModelBuilder {
         this.packFavoriteService = packFavoriteService;
         this.commerceDetailAttributesHelper = commerceDetailAttributesHelper;
         this.commerceFavoriteService = commerceFavoriteService;
+        this.ownershipService = ownershipService;
     }
 
     private static String formatPrice(final Double amount) {
@@ -164,9 +169,13 @@ public class PackDetailModelBuilder {
         mav.addObject("packTitle", title);
         mav.addObject("packDescription", pack.getDescription() != null ? pack.getDescription() : "");
         commerceDetailAttributesHelper.addCommerceDetailAttributes(mav, commerceOpt);
-        final boolean isOwner = viewer
-                .map(u -> u.getRole() == User.Role.COMMERCE && u.getId().equals(pack.getCommerceId()))
-                .orElse(false);
+        final boolean isOwner = viewer.map(u -> {
+            try {
+                return ownershipService.canWritePack(pack.getId(), u.getId());
+            } catch (final OwnershipResourceNotFoundException e) {
+                return false;
+            }
+        }).orElse(false);
         mav.addObject("isOwner", isOwner);
         final boolean manageable = isOwner && !auctionPresent;
         mav.addObject("manageable", manageable);

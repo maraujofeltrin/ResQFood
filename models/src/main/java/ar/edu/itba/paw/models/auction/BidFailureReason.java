@@ -9,5 +9,6 @@ public enum BidFailureReason {
     EXPIRED,
     OWN_COMMERCE,
     ALREADY_LEADING,
-    AMOUNT_BELOW_MINIMUM
+    AMOUNT_BELOW_MINIMUM,
+    CONCURRENT_BID
 }

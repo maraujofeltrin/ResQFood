@@ -1,14 +1,13 @@
 package ar.edu.itba.paw.webapp.controller.reservation;
 
 import javax.validation.Valid;
-import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.auction.BidFailureReason;
@@ -29,6 +27,7 @@ import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.controller.helpers.PackDetailModelBuilder;
+import ar.edu.itba.paw.webapp.controller.helpers.ViewFormatUtils;
 import ar.edu.itba.paw.webapp.form.BidForm;
 import ar.edu.itba.paw.webapp.form.ReservationForm;
 
@@ -39,8 +38,6 @@ import org.slf4j.LoggerFactory;
 public class ReservationActionController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReservationActionController.class);
-
-    private static final Locale LOCALE_AR = Locale.of("es", "AR");
 
     private final ReservationService reservationService;
     private final PackService packService;
@@ -153,6 +150,7 @@ public class ReservationActionController {
     }
 
     @PostMapping("/packs/{packId}/bid")
+    @PreAuthorize("hasRole('ROLE_CLIENT')")
     public ModelAndView submitBid(
             @PathVariable("packId") final long packId,
             @Valid @ModelAttribute("bidForm") final BidForm bidForm,
@@ -161,8 +159,7 @@ public class ReservationActionController {
         final Locale locale = LocaleContextHolder.getLocale();
         final ModelAndView redirectView = new ModelAndView("redirect:/packs/" + packId);
 
-        final Optional<Pack> packOpt = packService.findById(packId)
-                .filter(p -> Boolean.TRUE.equals(p.getActive()));
+        final Optional<Pack> packOpt = packService.findById(packId);
         if (packOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
             redirectAttributes.addFlashAttribute("auctionAlertMessage",
@@ -172,7 +169,7 @@ public class ReservationActionController {
         final Pack pack = packOpt.get();
 
         final Auction auction = pack.getAuction();
-        if (auction == null || !auction.isActive()) {
+        if (auction == null) {
             redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
             redirectAttributes.addFlashAttribute("auctionAlertMessage",
                     messageSource.getMessage("pack.detail.bid.alert.auctionNotActive", null, locale));
@@ -184,13 +181,6 @@ public class ReservationActionController {
         }
 
         final User user = authResolver.resolveUser();
-        if (user.getRole() != User.Role.CLIENT) {
-            redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
-            redirectAttributes.addFlashAttribute("auctionAlertMessage",
-                    messageSource.getMessage("pack.detail.bid.alert.roleNotClient", null, locale));
-            return redirectView;
-        }
-
         final double amount = bidForm.getAmount().doubleValue();
         try {
             auctionService.placeBid(auction.getId(), user.getId(), amount);
@@ -201,11 +191,9 @@ public class ReservationActionController {
             redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
             final String alertMessage;
             if (ex.getReason() == BidFailureReason.AMOUNT_BELOW_MINIMUM) {
-                final NumberFormat priceFormat = NumberFormat.getCurrencyInstance(LOCALE_AR);
                 final double inc = auction.getMinBidIncrement() != null ? auction.getMinBidIncrement() : 0d;
-                final String incFormatted = priceFormat.format(inc);
                 alertMessage = messageSource.getMessage("pack.detail.bid.alert.belowIncrement",
-                        new Object[] { incFormatted }, locale);
+                        new Object[] { ViewFormatUtils.formatMoney(inc) }, locale);
             } else {
                 final String code;
                 switch (ex.getReason()) {
@@ -228,12 +216,6 @@ public class ReservationActionController {
                 alertMessage = messageSource.getMessage(code, null, locale);
             }
             redirectAttributes.addFlashAttribute("auctionAlertMessage", alertMessage);
-        } catch (final DataIntegrityViolationException ex) {
-            LOGGER.warn("Bid placement data integrity violation packId={} auctionId={} clientId={}",
-                    Long.valueOf(packId), Long.valueOf(auction.getId()), Long.valueOf(user.getId()), ex);
-            redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
-            redirectAttributes.addFlashAttribute("auctionAlertMessage",
-                    messageSource.getMessage("pack.detail.bid.alert.genericError", null, locale));
         }
         return redirectView;
     }

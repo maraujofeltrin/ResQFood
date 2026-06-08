@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -147,9 +148,14 @@ public class AuctionServiceImpl implements AuctionService {
         // Capture previous bidder for notification hook
         final Long previousBidderId = auction.getCurrentBidderId();
 
-        // Persist the bid and update the auction's denormalized fields
-        final Bid bid = bidDao.createBid(auctionId, clientId, amount);
-        auctionDao.updateCurrentBid(auctionId, amount, clientId);
+        final Bid bid;
+        try {
+            bid = bidDao.createBid(auctionId, clientId, amount);
+            auctionDao.updateCurrentBid(auctionId, amount, clientId);
+        } catch (final DataIntegrityViolationException ex) {
+            LOGGER.warn("Concurrent bid conflict auctionId={} clientId={}", auctionId, clientId, ex);
+            throw new BidPlacementException(BidFailureReason.CONCURRENT_BID);
+        }
 
         if (previousBidderId != null && !previousBidderId.equals(clientId)) {
             notificationService.notifyAuctionOutbid(previousBidderId, auctionId, amount);

@@ -61,6 +61,7 @@ public class VerificationTokenServiceImpl implements VerificationTokenService {
         return userService.findById(userId);
     }
 
+    @Transactional
     @Override
     public boolean verifyEmail(final String token) {
         return verifyEmailAndGetUser(token).isPresent();
