@@ -531,7 +531,7 @@ public class PackJpaDaoTest {
     }
 
     @Test
-    public void testFilterCommercePacksEagerlyLoadsImage() {
+    public void testFilterCommercePacksDoesNotEagerlyLoadImage() {
         // 1. Setup
         final Image image = imageDao.saveImage(new byte[] {1, 2, 3}, "image/png");
         em.flush();
@@ -544,7 +544,8 @@ public class PackJpaDaoTest {
 
         // 3. Asserts
         assertEquals(1, filtered.size());
-        assertTrue(Hibernate.isInitialized(filtered.get(0).getImage()));
+        // Image is lazy: the proxy is NOT initialized, but imageId is still accessible via FK
+        assertFalse(Hibernate.isInitialized(filtered.get(0).getImage()));
         assertNotNull(filtered.get(0).getImageId());
         assertEquals(image.getId(), filtered.get(0).getImageId());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
