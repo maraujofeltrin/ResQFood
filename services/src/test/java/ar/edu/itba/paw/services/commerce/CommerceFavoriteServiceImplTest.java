@@ -48,8 +48,14 @@ class CommerceFavoriteServiceImplTest {
         // 1. Setup
         when(commerceFavoriteDao.exists(5L, 10L)).thenReturn(true);
 
-        // 2. Ejercicio & 3. Asserts
-        assertDoesNotThrow(() -> commerceFavoriteService.toggleFavorite(5L, 10L));
+        // 2. Ejercicio
+        final boolean completed = assertDoesNotThrow(() -> {
+            commerceFavoriteService.toggleFavorite(5L, 10L);
+            return true;
+        });
+
+        // 3. Asserts
+        assertEquals(true, completed);
     }
 
     @Test
@@ -59,8 +65,14 @@ class CommerceFavoriteServiceImplTest {
         final Commerce commerce = new Commerce(10L, "c", Commerce.Category.BAKERY, "st", 1, null, "p", "1000", "09", "18");
         when(commerceDao.findByUserId(10L)).thenReturn(Optional.of(commerce));
 
-        // 2. Ejercicio & 3. Asserts
-        assertDoesNotThrow(() -> commerceFavoriteService.toggleFavorite(5L, 10L));
+        // 2. Ejercicio
+        final boolean completed = assertDoesNotThrow(() -> {
+            commerceFavoriteService.toggleFavorite(5L, 10L);
+            return true;
+        });
+
+        // 3. Asserts
+        assertEquals(true, completed);
     }
 
     @Test

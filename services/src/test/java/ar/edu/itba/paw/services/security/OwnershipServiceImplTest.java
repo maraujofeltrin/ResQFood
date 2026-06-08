@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
@@ -91,9 +92,12 @@ class OwnershipServiceImplTest {
         // 1. Setup
         when(packDao.findById(1L)).thenReturn(Optional.empty());
 
-        // 2. Ejercicio & 3. Asserts
-        assertThrows(OwnershipResourceNotFoundException.class,
+        // 2. Ejercicio
+        final OwnershipResourceNotFoundException thrown = assertThrows(OwnershipResourceNotFoundException.class,
                 () -> ownershipService.canWritePack(1L, COMMERCE_USER_ID));
+
+        // 3. Asserts
+        assertNotNull(thrown);
     }
 
     @Test
@@ -109,6 +113,34 @@ class OwnershipServiceImplTest {
 
         // 3. Asserts
         assertTrue(result);
+    }
+
+    @Test
+    void canWriteAuction_whenMissing_throwsNotFound() {
+        // 1. Setup
+        when(auctionDao.findById(3L)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final OwnershipResourceNotFoundException thrown = assertThrows(OwnershipResourceNotFoundException.class,
+                () -> ownershipService.canWriteAuction(3L, COMMERCE_USER_ID));
+
+        // 3. Asserts
+        assertTrue(thrown.getMessage().contains("Auction"));
+    }
+
+    @Test
+    void canWriteAuction_whenNotOwner_returnsFalse() {
+        // 1. Setup
+        final Pack ownedPack = pack(5L, COMMERCE_USER_ID, false);
+        final Auction auction = new Auction(3L, ownedPack, 40.0, 5.0, null, null,
+                LocalDateTime.now().plusHours(2), Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.findById(3L)).thenReturn(Optional.of(auction));
+
+        // 2. Ejercicio
+        final boolean result = ownershipService.canWriteAuction(3L, OTHER_USER_ID);
+
+        // 3. Asserts
+        assertFalse(result);
     }
 
     @Test
@@ -128,6 +160,35 @@ class OwnershipServiceImplTest {
     }
 
     @Test
+    void canWriteReservation_whenMissing_throwsNotFound() {
+        // 1. Setup
+        when(reservationDao.findById(20L)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final OwnershipResourceNotFoundException thrown = assertThrows(OwnershipResourceNotFoundException.class,
+                () -> ownershipService.canWriteReservation(20L, COMMERCE_USER_ID));
+
+        // 3. Asserts
+        assertTrue(thrown.getMessage().contains("Reservation"));
+    }
+
+    @Test
+    void canWriteReservation_whenNotOwner_returnsFalse() {
+        // 1. Setup
+        final Pack ownedPack = pack(7L, COMMERCE_USER_ID, false);
+        final Client client = new Client(OTHER_USER_ID, "Client", "Last", true);
+        final Reservation reservation = new Reservation(20L, client, ownedPack, LocalDateTime.now(), 50.0,
+                Reservation.Status.RESERVED, "ABC123", null, 1, null);
+        when(reservationDao.findById(20L)).thenReturn(Optional.of(reservation));
+
+        // 2. Ejercicio
+        final boolean result = ownershipService.canWriteReservation(20L, OTHER_USER_ID);
+
+        // 3. Asserts
+        assertFalse(result);
+    }
+
+    @Test
     void canWriteToken_whenCommerceOwner_returnsTrue() {
         // 1. Setup
         final Pack ownedPack = pack(8L, COMMERCE_USER_ID, false);
@@ -144,6 +205,38 @@ class OwnershipServiceImplTest {
 
         // 3. Asserts
         assertTrue(result);
+    }
+
+    @Test
+    void canWriteToken_whenMissing_throwsNotFound() {
+        // 1. Setup
+        when(reservationTokenDao.findByToken("tok")).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final OwnershipResourceNotFoundException thrown = assertThrows(OwnershipResourceNotFoundException.class,
+                () -> ownershipService.canWriteToken("tok", COMMERCE_USER_ID));
+
+        // 3. Asserts
+        assertTrue(thrown.getMessage().contains("Token"));
+    }
+
+    @Test
+    void canWriteToken_whenNotOwner_returnsFalse() {
+        // 1. Setup
+        final Pack ownedPack = pack(8L, COMMERCE_USER_ID, false);
+        final Client client = new Client(OTHER_USER_ID, "Client", "Last", true);
+        final Reservation reservation = new Reservation(30L, client, ownedPack, LocalDateTime.now(), 50.0,
+                Reservation.Status.RESERVED, "ABC123", null, 1, null);
+        final ReservationToken token = new ReservationToken("tok", reservation, ReservationToken.Action.ACCEPT, false,
+                LocalDateTime.now(), LocalDateTime.now().plusDays(1));
+        when(reservationTokenDao.findByToken("tok")).thenReturn(Optional.of(token));
+        when(reservationDao.findById(30L)).thenReturn(Optional.of(reservation));
+
+        // 2. Ejercicio
+        final boolean result = ownershipService.canWriteToken("tok", OTHER_USER_ID);
+
+        // 3. Asserts
+        assertFalse(result);
     }
 
     @Test
@@ -191,8 +284,11 @@ class OwnershipServiceImplTest {
         // 1. Setup
         when(notificationDao.findById(5L)).thenReturn(Optional.empty());
 
-        // 2. Ejercicio & 3. Asserts
-        assertThrows(OwnershipResourceNotFoundException.class,
+        // 2. Ejercicio
+        final OwnershipResourceNotFoundException thrown = assertThrows(OwnershipResourceNotFoundException.class,
                 () -> ownershipService.canWriteNotification(5L, 10L));
+
+        // 3. Asserts
+        assertNotNull(thrown);
     }
 }

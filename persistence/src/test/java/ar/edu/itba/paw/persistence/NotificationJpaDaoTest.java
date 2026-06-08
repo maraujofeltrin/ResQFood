@@ -109,6 +109,7 @@ public class NotificationJpaDaoTest {
         assertEquals(created.getId(), found.get().getId());
         assertEquals(NotificationType.RESERVATION_CODE_CLIENT, found.get().getType());
         assertEquals(clientUserId, found.get().getRecipientId());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "notifications"));
     }
 
     @Test
@@ -120,6 +121,7 @@ public class NotificationJpaDaoTest {
 
         // 3. Asserts
         assertTrue(found.isEmpty());
+        assertEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "notifications"));
     }
 
     @Test
@@ -138,6 +140,7 @@ public class NotificationJpaDaoTest {
         // 3. Asserts
         assertEquals(1, recent.size());
         assertEquals(active.getId(), recent.get(0).getId());
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "notifications"));
     }
 
     @Test
@@ -158,6 +161,7 @@ public class NotificationJpaDaoTest {
 
         // 3. Asserts
         assertEquals(1, unread);
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "notifications"));
     }
 
     @Test
@@ -173,6 +177,7 @@ public class NotificationJpaDaoTest {
         // 3. Asserts
         assertTrue(result.isPresent());
         assertNotNull(result.get().getReadAt());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "notifications"));
     }
 
     @Test
@@ -185,6 +190,7 @@ public class NotificationJpaDaoTest {
 
         // 3. Asserts
         assertTrue(result.isEmpty());
+        assertEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "notifications"));
     }
 
     @Test
@@ -200,6 +206,7 @@ public class NotificationJpaDaoTest {
 
         // 3. Asserts
         assertTrue(result.isEmpty());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "notifications"));
     }
 
     @Test
@@ -216,6 +223,7 @@ public class NotificationJpaDaoTest {
         // 3. Asserts
         assertTrue(result.isPresent());
         assertNull(result.get().getReadAt());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "notifications"));
     }
 
     @Test
@@ -227,6 +235,7 @@ public class NotificationJpaDaoTest {
 
         // 3. Asserts
         assertTrue(result.isEmpty());
+        assertEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "notifications"));
     }
 
     @Test
@@ -247,6 +256,7 @@ public class NotificationJpaDaoTest {
         assertEquals(2, updated);
         assertEquals(0, notificationDao.countUnread(clientUserId));
         assertEquals(1, notificationDao.countUnread(otherUserId));
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "notifications"));
     }
 
     @Test
@@ -262,6 +272,7 @@ public class NotificationJpaDaoTest {
         // 3. Asserts
         assertTrue(result.isPresent());
         assertNotNull(result.get().getDeletedAt());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "notifications"));
     }
 
     @Test
@@ -274,6 +285,7 @@ public class NotificationJpaDaoTest {
 
         // 3. Asserts
         assertTrue(result.isEmpty());
+        assertEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "notifications"));
     }
 
     @Test
@@ -289,6 +301,7 @@ public class NotificationJpaDaoTest {
 
         // 3. Asserts
         assertTrue(result.isEmpty());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "notifications"));
     }
 
     @Test
@@ -303,6 +316,7 @@ public class NotificationJpaDaoTest {
 
         // 3. Asserts
         assertTrue(belongs);
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "notifications"));
     }
 
     @Test
@@ -317,6 +331,7 @@ public class NotificationJpaDaoTest {
 
         // 3. Asserts
         assertFalse(belongs);
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "notifications"));
     }
 
     @Test
@@ -328,5 +343,6 @@ public class NotificationJpaDaoTest {
 
         // 3. Asserts
         assertFalse(belongs);
+        assertEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "notifications"));
     }
 }

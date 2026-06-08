@@ -57,6 +57,19 @@ class ImageServiceImplTest {
     }
 
     @Test
+    void testSaveImageWhenContentTypeNullThrowsProfileImageException() {
+        // 1. Setup
+        final byte[] data = new byte[] { 1 };
+
+        // 2. Ejercicio
+        final ProfileImageException ex = assertThrows(ProfileImageException.class,
+                () -> imageService.saveImage(data, null));
+
+        // 3. Asserts
+        assertEquals(ProfileImageException.Reason.INVALID_TYPE, ex.getReason());
+    }
+
+    @Test
     void testGetImageWhenExistsReturnsOptionalWithImage() {
         // 1. Setup
         final Image image = new Image(7L, new byte[] { 9 }, "image/jpeg");
@@ -68,5 +81,17 @@ class ImageServiceImplTest {
         // 3. Asserts
         assertTrue(result.isPresent());
         assertEquals(7L, result.get().getId());
+    }
+
+    @Test
+    void testGetImageWhenNotExistsReturnsEmpty() {
+        // 1. Setup
+        when(imageDao.getImage(99L)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final Optional<Image> result = imageService.getImage(99L);
+
+        // 3. Asserts
+        assertTrue(result.isEmpty());
     }
 }

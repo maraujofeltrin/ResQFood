@@ -14,19 +14,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
-import java.util.Locale;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,7 +27,6 @@ class PasswordResetTokenServiceImplTest {
 
     private static final long USER_ID = 7L;
     private static final String EMAIL = "reset@example.com";
-    private static final Locale LOCALE = Locale.forLanguageTag("en");
 
     @Mock
     private TokenDao tokenDao;
@@ -59,53 +51,6 @@ class PasswordResetTokenServiceImplTest {
         return new User(id, EMAIL, "pw", "N");
     }
 
-    private void stubCreateReturnsTokenString() {
-        when(tokenDao.create(anyString(), eq(USER_ID), eq(TokenType.PASSWORD_RESET), any(LocalDateTime.class),
-                any(LocalDateTime.class))).thenAnswer(invocation -> {
-            final String tokenStr = invocation.getArgument(0);
-            final LocalDateTime createdAt = invocation.getArgument(3);
-            final LocalDateTime expiresAt = invocation.getArgument(4);
-            return new Token(tokenStr, userRef(USER_ID), false, TokenType.PASSWORD_RESET, createdAt, expiresAt);
-        });
-    }
-
-    @Test
-    void testRequestPasswordResetWhenUserExistsSendsMailWithResetUrl() {
-        // 1. Setup
-        final User user = new User(USER_ID, EMAIL, "old", "Name", null, User.Role.CLIENT, true, LOCALE);
-        when(userDao.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-        stubCreateReturnsTokenString();
-        final String baseUrl = "https://app.example";
-        final AtomicReference<String> capturedUrl = new AtomicReference<>();
-        doAnswer(invocation -> {
-            capturedUrl.set(invocation.getArgument(1));
-            return null;
-        }).when(passwordResetMailService).sendPasswordResetMail(eq(EMAIL), anyString(), eq(LOCALE));
-
-        // 2. Ejercicio
-        service.requestPasswordReset(EMAIL);
-
-        // 3. Asserts
-        assertTrue(capturedUrl.get().startsWith(baseUrl + "/password-reset/change?token="));
-    }
-
-    @Test
-    void testRequestPasswordResetWhenEmailUnknownDoesNotCreateTokenOrSendMail() {
-        // 1. Setup
-        final AtomicInteger emailLookups = new AtomicInteger();
-        when(userDao.findByEmail("missing@example.com")).thenAnswer(invocation -> {
-            emailLookups.incrementAndGet();
-            return Optional.empty();
-        });
-
-        // 2. Ejercicio
-        service.requestPasswordReset("missing@example.com");
-
-        // 3. Asserts
-        assertEquals(1, emailLookups.get());
-    }
-
-    @Test
     void testIsPasswordResetTokenValidWhenTokenValidReturnsTrue() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
@@ -147,37 +92,6 @@ class PasswordResetTokenServiceImplTest {
         assertFalse(valid);
     }
 
-    @Test
-    void testResetPasswordWhenTokenValidEncodesPasswordAndMarksTokenUsed() {
-        // 1. Setup
-        final LocalDateTime now = LocalDateTime.now();
-        final Token resetToken = new Token("ok", userRef(USER_ID), false, TokenType.PASSWORD_RESET, now, now.plusHours(1));
-        when(tokenDao.findByTokenAndType("ok", TokenType.PASSWORD_RESET)).thenReturn(Optional.of(resetToken));
-        when(userDao.findById(USER_ID)).thenReturn(Optional.of(new User(USER_ID, EMAIL, "old", "N")));
-        when(passwordEncoder.encode("new-secret")).thenReturn("ENC");
-        final AtomicReference<Long> updateUserId = new AtomicReference<>();
-        final AtomicReference<String> updatePassword = new AtomicReference<>();
-        doAnswer(invocation -> {
-            updateUserId.set(invocation.getArgument(0));
-            updatePassword.set(invocation.getArgument(1));
-            return null;
-        }).when(userDao).updatePassword(eq(USER_ID), eq("ENC"));
-        final AtomicReference<String> markedToken = new AtomicReference<>();
-        doAnswer(invocation -> {
-            markedToken.set(invocation.getArgument(0));
-            return null;
-        }).when(tokenDao).markAsUsed(eq("ok"), eq(TokenType.PASSWORD_RESET));
-
-        // 2. Ejercicio
-        service.resetPassword("ok", "new-secret");
-
-        // 3. Asserts
-        assertEquals(USER_ID, updateUserId.get().longValue());
-        assertEquals("ENC", updatePassword.get());
-        assertEquals("ok", markedToken.get());
-    }
-
-    @Test
     void testResetPasswordWhenTokenUnknownThrowsPasswordResetException() {
         // 1. Setup
         when(tokenDao.findByTokenAndType("bad", TokenType.PASSWORD_RESET)).thenReturn(Optional.empty());

@@ -61,6 +61,18 @@ class CommerceReviewServiceImplTest {
     }
 
     @Test
+    void testCanClientReviewCommerceWhenNoPaidReservationReturnsFalse() {
+        // 1. Setup
+        when(reservationDao.hasPaidReservationWithCommerce(CLIENT_ID, COMMERCE_ID)).thenReturn(false);
+
+        // 2. Ejercicio
+        final boolean result = commerceReviewService.canClientReviewCommerce(CLIENT_ID, COMMERCE_ID);
+
+        // 3. Asserts
+        assertFalse(result);
+    }
+
+    @Test
     void testUpsertReviewWhenEligibleAndNoPreviousReviewReturnsCreatedReview() {
         // 1. Setup
         final CommerceReview created = new CommerceReview(REVIEW_ID, commerceRef(COMMERCE_ID), clientRef(CLIENT_ID),

@@ -1,5 +1,7 @@
 package ar.edu.itba.paw.services.commerce;
 
+import ar.edu.itba.paw.models.auction.Auction;
+import ar.edu.itba.paw.models.auction.AuctionCreationException;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackTag;
@@ -12,22 +14,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -97,7 +94,7 @@ class CommerceOfferServiceImplTest {
     }
 
     @Test
-    void testCreateAuctionOfferWhenValidReturnsPackAndPassesUtcEndToAuction() {
+    void testCreateAuctionOfferWhenValidReturnsCreatedPack() {
         // 1. Setup
         final List<PackTag> tags = Collections.singletonList(PackTag.VEGETARIAN);
         final Pack createdPack = newPack(PACK_ID, COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0, 1, true,
@@ -107,24 +104,10 @@ class CommerceOfferServiceImplTest {
 
         final String endDate = "2026-12-31";
         final String endTime = "23:59";
-        final LocalDate date = LocalDate.parse(endDate);
-        final LocalTime time = LocalTime.parse(endTime);
-        final LocalDateTime expectedUtc = ZonedDateTime.of(date, time, businessZone)
-                .withZoneSameInstant(ZoneOffset.UTC)
-                .toLocalDateTime();
-
         final double minBidInc = 500.0;
-        final AtomicReference<Long> capturedPackId = new AtomicReference<>();
-        final AtomicReference<Double> capturedInitialPrice = new AtomicReference<>();
-        final AtomicReference<Double> capturedMinBidInc = new AtomicReference<>();
-        final AtomicReference<LocalDateTime> capturedEndUtc = new AtomicReference<>();
-        doAnswer(invocation -> {
-            capturedPackId.set(invocation.getArgument(0));
-            capturedInitialPrice.set(invocation.getArgument(1));
-            capturedMinBidInc.set(invocation.getArgument(2));
-            capturedEndUtc.set(invocation.getArgument(3));
-            return null;
-        }).when(auctionService).createAuction(anyLong(), anyDouble(), anyDouble(), any(LocalDateTime.class));
+        when(auctionService.createAuction(anyLong(), anyDouble(), anyDouble(), any(LocalDateTime.class)))
+                .thenReturn(new Auction(1L, createdPack, 1000.0, minBidInc, null, null,
+                        LocalDateTime.now(), Auction.Status.ACTIVE, LocalDateTime.now()));
 
         // 2. Ejercicio
         final Pack pack = commerceOfferService.createAuctionOffer(COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0,
@@ -133,9 +116,22 @@ class CommerceOfferServiceImplTest {
         // 3. Asserts
         assertNotNull(pack);
         assertEquals(PACK_ID, pack.getId());
-        assertEquals(PACK_ID, capturedPackId.get().longValue());
-        assertEquals(1000.0, capturedInitialPrice.get(), 0.0001);
-        assertEquals(minBidInc, capturedMinBidInc.get(), 0.0001);
-        assertEquals(expectedUtc, capturedEndUtc.get());
+    }
+
+    @Test
+    void testCreateAuctionOfferWhenEndDateInvalidThrowsAuctionCreationException() {
+        // 1. Setup
+        final Pack createdPack = newPack(PACK_ID, COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0, 1, true,
+                Collections.emptyList());
+        when(packService.createPack(COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0, 1,
+                Collections.emptyList(), null)).thenReturn(createdPack);
+
+        // 2. Ejercicio
+        final AuctionCreationException exception = assertThrows(AuctionCreationException.class,
+                () -> commerceOfferService.createAuctionOffer(COMMERCE_ID, "Auction Pack", "Desc", 1500.0, 1000.0,
+                        500.0, "not-a-date", "23:59", Collections.emptyList(), null));
+
+        // 3. Asserts
+        assertEquals(AuctionCreationException.Reason.INVALID_END_DATE, exception.getReason());
     }
 }

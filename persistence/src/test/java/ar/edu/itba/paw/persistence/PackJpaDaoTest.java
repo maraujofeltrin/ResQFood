@@ -762,7 +762,7 @@ public class PackJpaDaoTest {
     }
 
     @Test
-    public void testCountCommercePacksMatchesFilterResults() {
+    public void testCountCommercePacksWhenNoAuctionFilterReturnsAllPacks() {
         // 1. Setup
         packDao.createPack(commerceId, "Direct One", "Desc", 1000.0, 500.0, 10, null, null);
         packDao.createPack(commerceId, "Direct Two", "Desc", 1000.0, 500.0, 10, null, null);
@@ -773,12 +773,44 @@ public class PackJpaDaoTest {
 
         // 2. Ejercicio
         final int allCount = packDao.countCommercePacks(commerceId, null);
-        final int directCount = packDao.countCommercePacks(commerceId, false);
-        final int auctionCount = packDao.countCommercePacks(commerceId, true);
 
         // 3. Asserts
         assertEquals(3, allCount);
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testCountCommercePacksWhenDirectFilterReturnsDirectPacksOnly() {
+        // 1. Setup
+        packDao.createPack(commerceId, "Direct One", "Desc", 1000.0, 500.0, 10, null, null);
+        packDao.createPack(commerceId, "Direct Two", "Desc", 1000.0, 500.0, 10, null, null);
+        final Pack auctionPack = packDao.createPack(commerceId, "Auction", "Desc", 1000.0, 500.0, 10, null, null);
+        em.flush();
+        auctionDao.createAuction(auctionPack.getId(), 10.0, 1.0, EXPIRED_AUCTION_END);
+        em.flush();
+
+        // 2. Ejercicio
+        final int directCount = packDao.countCommercePacks(commerceId, false);
+
+        // 3. Asserts
         assertEquals(2, directCount);
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testCountCommercePacksWhenAuctionFilterReturnsAuctionPacksOnly() {
+        // 1. Setup
+        packDao.createPack(commerceId, "Direct One", "Desc", 1000.0, 500.0, 10, null, null);
+        packDao.createPack(commerceId, "Direct Two", "Desc", 1000.0, 500.0, 10, null, null);
+        final Pack auctionPack = packDao.createPack(commerceId, "Auction", "Desc", 1000.0, 500.0, 10, null, null);
+        em.flush();
+        auctionDao.createAuction(auctionPack.getId(), 10.0, 1.0, EXPIRED_AUCTION_END);
+        em.flush();
+
+        // 2. Ejercicio
+        final int auctionCount = packDao.countCommercePacks(commerceId, true);
+
+        // 3. Asserts
         assertEquals(1, auctionCount);
         assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }

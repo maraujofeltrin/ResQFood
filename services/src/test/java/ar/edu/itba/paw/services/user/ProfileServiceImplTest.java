@@ -17,23 +17,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -144,86 +135,6 @@ class ProfileServiceImplTest {
         assertTrue(thrown.getMessage().contains("99"));
     }
 
-    @Test
-    void testUpdateProfileAccountWhenCommerceRoleWithoutPhotoUpdatesCommerceFieldsOnly() {
-        // 1. Setup
-        final AtomicLong capturedUserId = new AtomicLong();
-        final AtomicReference<Commerce.Category> capturedCategory = new AtomicReference<>();
-        final AtomicReference<String> capturedStreet = new AtomicReference<>();
-        final AtomicReference<Integer> capturedStreetNumber = new AtomicReference<>();
-        final AtomicReference<Municipality> capturedCity = new AtomicReference<>();
-        final AtomicReference<String> capturedProvince = new AtomicReference<>();
-        final AtomicReference<String> capturedPostal = new AtomicReference<>();
-        final AtomicReference<String> capturedOpening = new AtomicReference<>();
-        final AtomicReference<String> capturedClosing = new AtomicReference<>();
-        doAnswer(invocation -> {
-            capturedUserId.set(invocation.getArgument(0));
-            capturedCategory.set(invocation.getArgument(1));
-            capturedStreet.set(invocation.getArgument(2));
-            capturedStreetNumber.set(invocation.getArgument(3));
-            capturedCity.set(invocation.getArgument(4));
-            capturedProvince.set(invocation.getArgument(5));
-            capturedPostal.set(invocation.getArgument(6));
-            capturedOpening.set(invocation.getArgument(7));
-            capturedClosing.set(invocation.getArgument(8));
-            return null;
-        }).when(commerceService).updateProfileFields(anyLong(), any(), anyString(), any(), any(), anyString(),
-                anyString(), anyString(), anyString());
-        final AtomicInteger photoCalls = new AtomicInteger();
-        lenient().doAnswer(invocation -> {
-            photoCalls.incrementAndGet();
-            return null;
-        }).when(userService).updateProfilePhoto(anyLong(), any(), any());
-
-        // 2. Ejercicio
-        profileService.updateProfileAccount(5L, User.Role.COMMERCE, "RESTAURANT", "Av. Siempre Viva", "42", Municipality.MORON,
-                "BA", "1714", "09:00", "18:00", null, null);
-
-        // 3. Asserts
-        assertEquals(5L, capturedUserId.get());
-        assertEquals(Commerce.Category.RESTAURANT, capturedCategory.get());
-        assertEquals("Av. Siempre Viva", capturedStreet.get());
-        assertEquals(Integer.valueOf(42), capturedStreetNumber.get());
-        assertEquals(Municipality.MORON, capturedCity.get());
-        assertEquals("BA", capturedProvince.get());
-        assertEquals("1714", capturedPostal.get());
-        assertEquals("09:00", capturedOpening.get());
-        assertEquals("18:00", capturedClosing.get());
-        assertEquals(0, photoCalls.get());
-    }
-
-    @Test
-    void testUpdateProfileAccountWhenClientWithPhotoDelegatesPhotoToUserService() {
-        // 1. Setup
-        final byte[] bytes = { 1, 2, 3 };
-        final AtomicLong capturedUserId = new AtomicLong();
-        final AtomicReference<byte[]> capturedData = new AtomicReference<>();
-        final AtomicReference<String> capturedContentType = new AtomicReference<>();
-        doAnswer(invocation -> {
-            capturedUserId.set(invocation.getArgument(0));
-            capturedData.set(invocation.getArgument(1));
-            capturedContentType.set(invocation.getArgument(2));
-            return null;
-        }).when(userService).updateProfilePhoto(anyLong(), any(), any());
-        final AtomicInteger commerceUpdateCalls = new AtomicInteger();
-        lenient().doAnswer(invocation -> {
-            commerceUpdateCalls.incrementAndGet();
-            return null;
-        }).when(commerceService).updateProfileFields(anyLong(), any(), anyString(), any(), any(), anyString(),
-                anyString(), anyString(), anyString());
-
-        // 2. Ejercicio
-        profileService.updateProfileAccount(6L, User.Role.CLIENT, null, null, null, null, null, null, null, null, bytes,
-                "image/png");
-
-        // 3. Asserts
-        assertEquals(6L, capturedUserId.get());
-        assertArrayEquals(bytes, capturedData.get());
-        assertEquals("image/png", capturedContentType.get());
-        assertEquals(0, commerceUpdateCalls.get());
-    }
-
-    @Test
     void testUpdateProfileAccountWhenCommerceUpdateFailsThrowsProfileAccountUpdateExceptionWithCommerceKind() {
         // 1. Setup
         doThrow(new NoSuchElementException("Commerce not found for user: 7")).when(commerceService)

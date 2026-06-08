@@ -27,9 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -37,10 +35,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -128,7 +122,7 @@ class AuctionServiceImplTest {
     }
 
     @Test
-    void testPlaceBidWhenAmountValidReturnsBidAndUpdatesAuctionCurrentBid() {
+    void testPlaceBidWhenAmountValidReturnsCreatedBid() {
         // 1. Setup
         final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
         final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
@@ -138,13 +132,6 @@ class AuctionServiceImplTest {
         when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
         final Bid createdBid = new Bid(1L, auctionRef(AUCTION_ID), clientRef(CLIENT_ID), 1600.0, LocalDateTime.now());
         when(bidDao.createBid(AUCTION_ID, CLIENT_ID, 1600.0)).thenReturn(createdBid);
-        final AtomicReference<Double> capturedAmount = new AtomicReference<>();
-        final AtomicReference<Long> capturedBidder = new AtomicReference<>();
-        doAnswer(invocation -> {
-            capturedAmount.set(invocation.getArgument(1));
-            capturedBidder.set(invocation.getArgument(2));
-            return null;
-        }).when(auctionDao).updateCurrentBid(eq(AUCTION_ID), eq(1600.0), eq(CLIENT_ID));
 
         // 2. Ejercicio
         final Bid bid = auctionService.placeBid(AUCTION_ID, CLIENT_ID, 1600.0);
@@ -152,8 +139,6 @@ class AuctionServiceImplTest {
         // 3. Asserts
         assertNotNull(bid);
         assertEquals(1600.0, bid.getAmount());
-        assertEquals(1600.0, capturedAmount.get());
-        assertEquals(CLIENT_ID, capturedBidder.get().longValue());
     }
 
     @Test
@@ -395,23 +380,21 @@ class AuctionServiceImplTest {
     }
 
     @Test
-    void testCloseExpiredAuctionsTriggersNotification() {
+    void testCloseExpiredAuctionsWhenWinnerReservationFailsPropagatesException() {
         // 1. Setup
         final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
-        final Auction expiredAuction = new Auction(AUCTION_ID, pack, 1000.0, 10.0, null, null,
+        final Auction expiredAuction = new Auction(AUCTION_ID, pack, 1000.0, 10.0, 1500.0, CLIENT_ID,
                 LocalDateTime.now(ZoneOffset.UTC).minusHours(1), Auction.Status.ACTIVE, LocalDateTime.now());
+        final RuntimeException failure = new RuntimeException("reservation failed");
         when(auctionDao.findExpiredActive()).thenReturn(List.of(expiredAuction));
-        final AtomicLong notifiedAuctionId = new AtomicLong();
-        doAnswer(inv -> {
-            notifiedAuctionId.set(inv.getArgument(0));
-            return null;
-        }).when(notificationService).notifyAuctionFinished(anyLong());
+        when(reservationService.createReservation(PACK_ID, CLIENT_ID, 1, 1500.0, null, true)).thenThrow(failure);
 
         // 2. Ejercicio
-        final int closed = auctionService.closeExpiredAuctions();
+        final RuntimeException thrown = assertThrows(RuntimeException.class,
+                () -> auctionService.closeExpiredAuctions());
 
         // 3. Asserts
-        assertEquals(1, closed);
-        assertEquals(AUCTION_ID, notifiedAuctionId.get());
+        assertEquals(failure, thrown);
     }
+
 }

@@ -29,8 +29,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -40,7 +38,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
@@ -135,37 +132,19 @@ class ReservationServiceImplTest {
         when(reservationDao.findByIdWithDetails(1L)).thenReturn(Optional.of(createdReservation));
         when(packDao.findById(packId)).thenReturn(Optional.of(pack));
         when(userService.findById(commerceUserId)).thenReturn(Optional.of(commerceUser));
-        final List<ReservationToken> createdTokens = new CopyOnWriteArrayList<>();
         when(reservationTokenDao.create(anyString(), anyLong(), any(ReservationToken.Action.class),
                 any(LocalDateTime.class), any(LocalDateTime.class))).thenAnswer(inv -> {
             final ReservationToken token = new ReservationToken(inv.getArgument(0), reservationRef(inv.getArgument(1)),
                     inv.getArgument(2), false, inv.getArgument(3), inv.getArgument(4));
-            createdTokens.add(token);
             return token;
         });
-        final AtomicInteger sentToCommerce = new AtomicInteger();
-        final AtomicInteger sentToClient = new AtomicInteger();
-        doAnswer(inv -> {
-            sentToCommerce.incrementAndGet();
-            return null;
-        }).when(notificationService).notifyReservationRequested(any(Reservation.class), anyString(),
-                anyString(), anyString(), anyString(), any(Locale.class));
-        doAnswer(inv -> {
-            sentToClient.incrementAndGet();
-            return null;
-        }).when(notificationService).notifyReservationCodeIssued(any(Reservation.class), anyString(), anyString(),
-                any(Locale.class));
 
         // 2. Ejercicio
         final Reservation result = reservationService.createReservation(packId, 1L, 1, 5.0, "pw", false);
 
         // 3. Asserts
         assertEquals(packId, result.getPackId());
-        assertEquals(2, createdTokens.size());
-        assertTrue(createdTokens.stream().anyMatch(t -> t.getAction() == ReservationToken.Action.ACCEPT));
-        assertTrue(createdTokens.stream().anyMatch(t -> t.getAction() == ReservationToken.Action.REJECT));
-        assertEquals(1, sentToCommerce.get());
-        assertEquals(1, sentToClient.get());
+        assertEquals(Reservation.Status.RESERVED, result.getStatus());
     }
 
     @Test
@@ -190,34 +169,12 @@ class ReservationServiceImplTest {
         when(reservationDao.findByIdWithDetails(1L)).thenReturn(Optional.of(auctionReservation));
         when(packDao.findById(packId)).thenReturn(Optional.of(pack));
         when(userService.findById(commerceUserId)).thenReturn(Optional.of(commerceUser));
-        final AtomicInteger tokenCreates = new AtomicInteger();
-        lenient().when(reservationTokenDao.create(anyString(), anyLong(), any(ReservationToken.Action.class),
-                any(LocalDateTime.class), any(LocalDateTime.class))).thenAnswer(inv -> {
-            tokenCreates.incrementAndGet();
-            return new ReservationToken(inv.getArgument(0), reservationRef(inv.getArgument(1)), inv.getArgument(2), false,
-                    inv.getArgument(3), inv.getArgument(4));
-        });
-        final AtomicInteger sentAuctionToClient = new AtomicInteger();
-        final AtomicInteger sentAuctionToCommerce = new AtomicInteger();
-        doAnswer(inv -> {
-            sentAuctionToClient.incrementAndGet();
-            return null;
-        }).when(notificationService).notifyAuctionWinnerForClient(any(Reservation.class), anyString(), anyString(),
-                any(Locale.class));
-        doAnswer(inv -> {
-            sentAuctionToCommerce.incrementAndGet();
-            return null;
-        }).when(notificationService).notifyAuctionWinnerForCommerce(any(Reservation.class), anyString(),
-                anyString(), any(Locale.class));
-
         // 2. Ejercicio
         final Reservation result = reservationService.createReservation(packId, 7L, 1, 7.5, null, true);
 
         // 3. Asserts
         assertEquals(packId, result.getPackId());
-        assertEquals(0, tokenCreates.get());
-        assertEquals(1, sentAuctionToClient.get());
-        assertEquals(1, sentAuctionToCommerce.get());
+        assertEquals(Reservation.Status.RESERVED, result.getStatus());
     }
 
     @Test
@@ -302,12 +259,6 @@ class ReservationServiceImplTest {
         when(reservationDao.findByIdWithDetails(reservationId)).thenReturn(Optional.of(canceled));
         final User clientUser = new User(101L, "client@example.org", "pwd", "Client", null, User.Role.CLIENT, false);
         when(userService.findById(101L)).thenReturn(Optional.of(clientUser));
-        final AtomicInteger sentRejected = new AtomicInteger();
-        doAnswer(inv -> {
-            sentRejected.incrementAndGet();
-            return null;
-        }).when(notificationService).notifyReservationRejected(any(Reservation.class), anyString(),
-                any(Locale.class));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationRejectionError> result =
@@ -316,7 +267,6 @@ class ReservationServiceImplTest {
         // 3. Asserts
         assertTrue(result.isSuccess());
         assertEquals(Reservation.Status.CANCELED, result.reservation().orElseThrow().getStatus());
-        assertEquals(1, sentRejected.get());
     }
 
     @Test

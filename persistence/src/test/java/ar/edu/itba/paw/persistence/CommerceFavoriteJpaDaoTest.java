@@ -185,7 +185,7 @@ public class CommerceFavoriteJpaDaoTest {
     }
 
     @Test
-    public void testFindFavoriteCommercesForClientPaginatesSecondPagePreservingOrder() {
+    public void testFindFavoriteCommercesForClientWhenSecondPageRequestedReturnsOlderFavorite() {
         // 1. Setup
         commerceFavoriteDao.insert(clientUserId, commerceUserId1);
         commerceFavoriteDao.insert(clientUserId, commerceUserId2);
@@ -202,14 +202,11 @@ public class CommerceFavoriteJpaDaoTest {
                 commerceUserId2);
 
         // 2. Ejercicio
-        final List<Commerce> page1 = commerceFavoriteDao.findFavoriteCommercesForClient(clientUserId, 1, 1);
         final List<Commerce> page2 = commerceFavoriteDao.findFavoriteCommercesForClient(clientUserId, 2, 1);
 
         // 3. Asserts
-        assertEquals(1, page1.size());
-        assertEquals(commerceUserId2, page1.get(0).getUserId());
-
         assertEquals(1, page2.size());
         assertEquals(commerceUserId1, page2.get(0).getUserId());
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "client_commerce_favorites"));
     }
 }

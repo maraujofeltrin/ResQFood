@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -36,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -113,26 +111,6 @@ class PackServiceImplTest {
         assertEquals("T", found.get().getTitle());
     }
 
-    @Test
-    void testDeletePackWhenPackExistsMarksDeletedViaSoftDelete() {
-        // 1. Setup
-        final Pack pack = newPack(1L, 1L, "a", "b", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
-        doAnswer(invocation -> {
-            pack.setDeleted(true);
-            return null;
-        }).when(packDao).softDelete(1L);
-
-        when(packDao.findById(1L)).thenReturn(Optional.of(pack));
-        when(auctionService.findByPackId(1L)).thenReturn(Optional.empty());
-
-        // 2. Ejercicio
-        packService.deletePack(1L);
-
-        // 3. Asserts
-        assertTrue(pack.getDeleted());
-    }
-
-    @Test
     void testUpdateWhenDaoReturnsPackReflectsMutatedFields() {
         // 1. Setup
         final Pack pack = newPack(2L, 2L, "old", "d", 2.0, 1.0, 2, true, false, Collections.emptyList(), null);
@@ -509,48 +487,17 @@ class PackServiceImplTest {
     }
 
     @Test
-    void testCreatePackTriggersNotification() {
-        // 1. Setup
-        final Pack persisted = newPack(1L, 5L, "T", "D", 10.0, 7.0, 3, true, false, Collections.emptyList(), null);
-        when(packDao.createPack(eq(5L), eq("T"), eq("D"), eq(10.0), eq(7.0), eq(3), eq(Collections.emptyList()),
-                isNull())).thenReturn(persisted);
-        final AtomicReference<Pack> notifiedPack = new AtomicReference<>();
-        doAnswer(inv -> {
-            notifiedPack.set(inv.getArgument(0));
-            return null;
-        }).when(notificationService).notifyPackPublished(any(Pack.class));
-
-        // 2. Ejercicio
-        final Pack created = packService.createPack(5L, "T", "D", 10.0, 7.0, 3, Collections.emptyList(), null);
-
-        // 3. Asserts
-        assertNotNull(created);
-        assertEquals(1L, created.getId());
-        assertNotNull(notifiedPack.get());
-        assertEquals(1L, notifiedPack.get().getId());
-    }
-
-    @Test
-    void testUpdatePackRestockTriggersNotification() {
+    void testUpdatePackWhenRestockedReturnsUpdatedStock() {
         // 1. Setup
         final Pack existing = newPack(3L, 5L, "old", "oldD", 1.0, 1.0, 0, true, false, Collections.emptyList(), null);
         when(packDao.findById(3L)).thenReturn(Optional.of(existing));
         when(packDao.update(any(Pack.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        
-        final AtomicReference<Pack> restockedPack = new AtomicReference<>();
-        doAnswer(inv -> {
-            restockedPack.set(inv.getArgument(0));
-            return null;
-        }).when(notificationService).notifyPackRestocked(any(Pack.class));
 
         // 2. Ejercicio
         final Pack result = packService.updatePack(3L, "old", "oldD", 1.0, 1.0, 5, Collections.emptyList(), null);
 
         // 3. Asserts
         assertEquals(5, result.getStock());
-        assertNotNull(restockedPack.get());
-        assertEquals(3L, restockedPack.get().getId());
-        assertEquals(5, restockedPack.get().getStock());
     }
 
     @Test

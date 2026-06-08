@@ -124,11 +124,9 @@ public class UserJpaDaoTest {
         // 1. Setup
         final User user = userDao.createUser(EMAIL, PASSWORD, NAME, PHONE, ROLE);
         em.flush();
+        final Image image = imageDao.saveImage(new byte[] {9, 8, 7}, "image/png");
 
         // 2. Ejercicio — reproduce saveImage → updateProfileImage sin flush del test
-        final Image image = imageDao.saveImage(new byte[] {9, 8, 7}, "image/png");
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "images"),
-                "saveImage debe persistir la fila antes de referenciarla por FK");
         userDao.updateProfileImage(user.getId(), image.getId());
         em.flush();
         em.clear();
@@ -137,8 +135,9 @@ public class UserJpaDaoTest {
         final Optional<User> loaded = userDao.findById(user.getId());
         assertTrue(loaded.isPresent());
         assertEquals(image.getId(), loaded.get().getProfileImageId().longValue());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "images"),
+                "saveImage debe persistir la fila antes de referenciarla por FK");
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "users"));
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "images"));
     }
 
     @Test
@@ -177,6 +176,42 @@ public class UserJpaDaoTest {
         final Optional<User> loaded = userDao.findById(user.getId());
         assertTrue(loaded.isPresent());
         assertEquals("en", loaded.get().getLocale().getLanguage());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "users"));
+    }
+
+    @Test
+    public void testUpdatePasswordWhenUserExistsPersistsPassword() {
+        // 1. Setup
+        final User user = userDao.createUser(EMAIL, PASSWORD, NAME, PHONE, ROLE);
+        em.flush();
+
+        // 2. Ejercicio
+        userDao.updatePassword(user.getId(), "new-hash");
+        em.flush();
+        em.clear();
+
+        // 3. Asserts
+        final Optional<User> loaded = userDao.findById(user.getId());
+        assertTrue(loaded.isPresent());
+        assertEquals("new-hash", loaded.get().getPassword());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "users"));
+    }
+
+    @Test
+    public void testMarkVerifiedWhenUserExistsPersistsVerifiedTrue() {
+        // 1. Setup
+        final User user = userDao.createUser(EMAIL, PASSWORD, NAME, PHONE, ROLE);
+        em.flush();
+
+        // 2. Ejercicio
+        userDao.markVerified(user.getId());
+        em.flush();
+        em.clear();
+
+        // 3. Asserts
+        final Optional<User> loaded = userDao.findById(user.getId());
+        assertTrue(loaded.isPresent());
+        assertTrue(loaded.get().isVerified());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "users"));
     }
 }

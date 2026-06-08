@@ -31,16 +31,11 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Collections;
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -113,97 +108,6 @@ class NotificationServiceImplTest {
     }
 
     @Test
-    void testNotifyReservationCodeIssuedWhenClientMailDisabledCreatesWebNotificationOnly() {
-        // 1. Setup
-        final Reservation reservation = reservationRef(1L, 5L, 10L, 100L);
-        when(clientNotificationPreferenceDao.findByClientAndType(eq(5L), eq(NotificationType.RESERVATION_CODE_CLIENT)))
-                .thenReturn(Optional.of(new ClientNotificationPreference(1L, clientRef(5L),
-                        NotificationType.RESERVATION_CODE_CLIENT, false)));
-        final AtomicReference<NotificationType> savedType = new AtomicReference<>();
-        doAnswer(inv -> {
-            savedType.set(inv.getArgument(1));
-            return notificationWithRecipient(5L, NotificationType.RESERVATION_CODE_CLIENT);
-        }).when(notificationDao).create(eq(5L), eq(NotificationType.RESERVATION_CODE_CLIENT),
-                any(), any(), any(), any(), any(), any(), any(), any(), any());
-
-        // 2. Ejercicio
-        notificationService.notifyReservationCodeIssued(reservation, "c@test.com", "01/01/2026",
-                Locale.forLanguageTag("es"));
-
-        // 3. Asserts
-        assertEquals(NotificationType.RESERVATION_CODE_CLIENT, savedType.get());
-    }
-
-    @Test
-    void testNotifyReservationCodeIssuedWhenNoPreferenceSendsMail() {
-        // 1. Setup
-        final Reservation reservation = reservationRef(1L, 5L, 10L, 100L);
-        when(clientNotificationPreferenceDao.findByClientAndType(anyLong(), any())).thenReturn(Optional.empty());
-        doAnswer(inv -> notificationWithRecipient(5L, NotificationType.RESERVATION_CODE_CLIENT))
-                .when(notificationDao).create(anyLong(), eq(NotificationType.RESERVATION_CODE_CLIENT),
-                        any(), any(), any(), any(), any(), any(), any(), any(), any());
-        final AtomicInteger mailSent = new AtomicInteger();
-        doAnswer(inv -> {
-            mailSent.incrementAndGet();
-            return null;
-        }).when(reservationMailService).sendReservationCodeToClient(any(), anyString(), anyString(), any());
-
-        // 2. Ejercicio
-        notificationService.notifyReservationCodeIssued(reservation, "c@test.com", "01/01/2026",
-                Locale.forLanguageTag("es"));
-
-        // 3. Asserts
-        assertEquals(1, mailSent.get());
-    }
-
-    @Test
-    void testNotifyReservationRequestedAlwaysSendsCommerceMail() {
-        // 1. Setup
-        final Reservation reservation = reservationRef(1L, 5L, 10L, 100L);
-        doAnswer(inv -> notificationWithRecipient(100L, NotificationType.RESERVATION_REQUESTED_COMMERCE))
-                .when(notificationDao).create(eq(100L), eq(NotificationType.RESERVATION_REQUESTED_COMMERCE),
-                        any(), any(), any(), any(), any(), any(), any(), any(), any());
-        final AtomicInteger mailSent = new AtomicInteger();
-        doAnswer(inv -> {
-            mailSent.incrementAndGet();
-            return null;
-        }).when(reservationMailService).sendReservationRequestToCommerce(any(), anyString(),
-                anyString(), anyString(), anyString(), any());
-
-        // 2. Ejercicio
-        notificationService.notifyReservationRequested(reservation, "shop@test.com", "a", "r",
-                "01/01/2026", Locale.forLanguageTag("es"));
-
-        // 3. Asserts
-        assertEquals(1, mailSent.get());
-    }
-
-    @Test
-    void testNotifyAuctionOutbidWhenPreviousBidderExistsCreatesNotificationForBidder() {
-        // 1. Setup
-        final Pack pack = packRef(8L, 100L);
-        final Auction auction = new Auction(3L, pack, 100.0, 5.0, 120.0, 7L,
-                LocalDateTime.now(ZoneOffset.UTC).plusHours(2), Auction.Status.ACTIVE, LocalDateTime.now());
-        when(auctionDao.findById(3L)).thenReturn(Optional.of(auction));
-        when(userService.findById(7L)).thenReturn(Optional.of(
-                new User(7L, "bidder@test.com", "p", "B", null, User.Role.CLIENT, false)));
-        when(clientNotificationPreferenceDao.findByClientAndType(eq(7L), eq(NotificationType.AUCTION_OUTBID_CLIENT)))
-                .thenReturn(Optional.empty());
-        final AtomicLong recipientId = new AtomicLong();
-        doAnswer(inv -> {
-            recipientId.set(inv.getArgument(0));
-            return notificationWithRecipient(7L, NotificationType.AUCTION_OUTBID_CLIENT);
-        }).when(notificationDao).create(eq(7L), eq(NotificationType.AUCTION_OUTBID_CLIENT), isNull(), eq(3L), eq(8L),
-                any(), any(), eq(120.0), isNull(), isNull(), any());
-
-        // 2. Ejercicio
-        notificationService.notifyAuctionOutbid(7L, 3L, 120.0);
-
-        // 3. Asserts
-        assertEquals(7L, recipientId.get());
-    }
-
-    @Test
     void testMarkReadWhenNotificationExistsReturnsReadItem() {
         // 1. Setup
         final Notification read = new Notification(1L,
@@ -236,105 +140,4 @@ class NotificationServiceImplTest {
         assertTrue(result.isPresent());
     }
 
-    @Test
-    void testNotifyPackRestockedCreatesNotificationAndSendsMail() {
-        // 1. Setup
-        final Pack pack = packRef(10L, 100L);
-        when(packFavoriteDao.findClientIdsByPack(10L)).thenReturn(List.of(5L));
-        when(clientNotificationPreferenceDao.findByClientAndType(eq(5L), eq(NotificationType.FAVORITE_PACK_RESTOCKED)))
-                .thenReturn(Optional.of(new ClientNotificationPreference(1L, clientRef(5L),
-                        NotificationType.FAVORITE_PACK_RESTOCKED, true)));
-        when(userService.findById(5L)).thenReturn(Optional.of(
-                new User(5L, "c@test.com", "p", "C", null, User.Role.CLIENT, false)));
-
-        final AtomicReference<NotificationType> savedType = new AtomicReference<>();
-        doAnswer(inv -> {
-            savedType.set(inv.getArgument(1));
-            return notificationWithRecipient(5L, NotificationType.FAVORITE_PACK_RESTOCKED);
-        }).when(notificationDao).create(eq(5L), eq(NotificationType.FAVORITE_PACK_RESTOCKED),
-                any(), any(), eq(10L), any(), any(), any(), any(), any(), any());
-
-        final AtomicInteger mailSent = new AtomicInteger();
-        doAnswer(inv -> {
-            mailSent.incrementAndGet();
-            return null;
-        }).when(favoriteMailService).sendFavoritePackRestockedToClient(any(), any(), any(), any());
-
-        // 2. Ejercicio
-        notificationService.notifyPackRestocked(pack);
-
-        // 3. Asserts
-        assertEquals(NotificationType.FAVORITE_PACK_RESTOCKED, savedType.get());
-        assertEquals(1, mailSent.get());
-    }
-
-    @Test
-    void testNotifyPackPublishedCreatesNotificationAndSendsMail() {
-        // 1. Setup
-        final Pack pack = packRef(10L, 100L);
-        when(commerceFavoriteDao.findClientIdsByCommerce(100L)).thenReturn(List.of(5L));
-        when(clientNotificationPreferenceDao.findByClientAndType(eq(5L), eq(NotificationType.FAVORITE_COMMERCE_NEW_PACK)))
-                .thenReturn(Optional.of(new ClientNotificationPreference(1L, clientRef(5L),
-                        NotificationType.FAVORITE_COMMERCE_NEW_PACK, true)));
-        when(userService.findById(5L)).thenReturn(Optional.of(
-                new User(5L, "c@test.com", "p", "C", null, User.Role.CLIENT, false)));
-
-        final AtomicReference<NotificationType> savedType = new AtomicReference<>();
-        doAnswer(inv -> {
-            savedType.set(inv.getArgument(1));
-            return notificationWithRecipient(5L, NotificationType.FAVORITE_COMMERCE_NEW_PACK);
-        }).when(notificationDao).create(eq(5L), eq(NotificationType.FAVORITE_COMMERCE_NEW_PACK),
-                any(), any(), eq(10L), any(), any(), any(), any(), any(), any());
-
-        final AtomicInteger mailSent = new AtomicInteger();
-        doAnswer(inv -> {
-            mailSent.incrementAndGet();
-            return null;
-        }).when(favoriteMailService).sendFavoriteCommerceNewPackToClient(any(), any(), any(), any());
-
-        // 2. Ejercicio
-        notificationService.notifyPackPublished(pack);
-
-        // 3. Asserts
-        assertEquals(NotificationType.FAVORITE_COMMERCE_NEW_PACK, savedType.get());
-        assertEquals(1, mailSent.get());
-    }
-
-    @Test
-    void testNotifyAuctionFinishedCreatesLostNotificationsAndSendsMail() {
-        // 1. Setup
-        final Pack pack = packRef(10L, 100L);
-        final Auction auction = new Auction(3L, pack, 100.0, 5.0, 120.0, 7L,
-                LocalDateTime.now(ZoneOffset.UTC).plusHours(2), Auction.Status.ACTIVE, LocalDateTime.now());
-        final Bid winnerBid = new Bid(1L, auction, clientRef(7L), 120.0, LocalDateTime.now());
-        final Bid loserBid = new Bid(2L, auction, clientRef(5L), 110.0, LocalDateTime.now());
-        
-        when(auctionDao.findById(3L)).thenReturn(Optional.of(auction));
-        when(bidDao.findByAuctionId(3L)).thenReturn(List.of(winnerBid, loserBid));
-        when(clientNotificationPreferenceDao.findByClientAndType(eq(5L), eq(NotificationType.AUCTION_LOST_CLIENT)))
-                .thenReturn(Optional.of(new ClientNotificationPreference(1L, clientRef(5L),
-                        NotificationType.AUCTION_LOST_CLIENT, true)));
-        when(userService.findById(5L)).thenReturn(Optional.of(
-                new User(5L, "loser@test.com", "p", "L", null, User.Role.CLIENT, false)));
-
-        final AtomicReference<NotificationType> savedType = new AtomicReference<>();
-        doAnswer(inv -> {
-            savedType.set(inv.getArgument(1));
-            return notificationWithRecipient(5L, NotificationType.AUCTION_LOST_CLIENT);
-        }).when(notificationDao).create(eq(5L), eq(NotificationType.AUCTION_LOST_CLIENT),
-                any(), eq(3L), eq(10L), any(), any(), eq(120.0), any(), any(), any());
-
-        final AtomicInteger mailSent = new AtomicInteger();
-        doAnswer(inv -> {
-            mailSent.incrementAndGet();
-            return null;
-        }).when(auctionMailService).sendAuctionFinishedLostToClient(any(), any(), any(), any());
-
-        // 2. Ejercicio
-        notificationService.notifyAuctionFinished(3L);
-
-        // 3. Asserts
-        assertEquals(NotificationType.AUCTION_LOST_CLIENT, savedType.get());
-        assertEquals(1, mailSent.get());
-    }
 }

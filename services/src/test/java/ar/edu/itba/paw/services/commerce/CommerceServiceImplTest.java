@@ -16,13 +16,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,28 +37,22 @@ class CommerceServiceImplTest {
     @Test
     void testUpdateProfileFieldsWhenCommerceExistsKeepsCommercialNameAndUpdatesRest() {
         // 1. Setup
-        when(commerceDao.findByUserId(5L)).thenReturn(Optional.of(
-                new Commerce(5L, "Panadería Sur", Commerce.Category.BAKERY, "Old", 1, Municipality.AVELLANEDA, "Buenos Aires", "1824",
-                        "08:00", "18:00")));
-        final AtomicReference<Commerce> captured = new AtomicReference<>();
-        doAnswer(invocation -> {
-            captured.set(invocation.getArgument(0));
-            return invocation.getArgument(0);
-        }).when(commerceDao).update(any(Commerce.class));
+        final Commerce commerce = new Commerce(5L, "Panadería Sur", Commerce.Category.BAKERY, "Old", 1,
+                Municipality.AVELLANEDA, "Buenos Aires", "1824", "08:00", "18:00");
+        when(commerceDao.findByUserId(5L)).thenReturn(Optional.of(commerce));
 
         // 2. Ejercicio
         commerceService.updateProfileFields(5L, Commerce.Category.RESTAURANT, "Nueva", 99, Municipality.QUILMES, "Buenos Aires", "1878",
                 "10:00", "22:00");
 
         // 3. Asserts
-        final Commerce saved = captured.get();
-        assertEquals("Panadería Sur", saved.getCommercialName());
-        assertEquals(Commerce.Category.RESTAURANT, saved.getCategory());
-        assertEquals("Nueva", saved.getStreet());
-        assertEquals(Integer.valueOf(99), saved.getStreetNumber());
-        assertEquals(Municipality.QUILMES, saved.getCity());
-        assertEquals("10:00", saved.getOpeningTime());
-        assertEquals("22:00", saved.getClosingTime());
+        assertEquals("Panadería Sur", commerce.getCommercialName());
+        assertEquals(Commerce.Category.RESTAURANT, commerce.getCategory());
+        assertEquals("Nueva", commerce.getStreet());
+        assertEquals(Integer.valueOf(99), commerce.getStreetNumber());
+        assertEquals(Municipality.QUILMES, commerce.getCity());
+        assertEquals("10:00", commerce.getOpeningTime());
+        assertEquals("22:00", commerce.getClosingTime());
     }
 
     @Test

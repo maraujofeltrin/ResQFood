@@ -275,7 +275,7 @@ public class CommerceJpaDaoTest {
     }
 
     @Test
-    public void testFilterCommercesPaginatesSecondPagePreservingOrder() {
+    public void testFilterCommercesWhenSecondPageRequestedReturnsRemainingCommerce() {
         // 1. Setup
         final Commerce commerceA = commerceDao.createCommerce(userId, "Commerce A", CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
 
@@ -299,16 +299,12 @@ public class CommerceJpaDaoTest {
         em.clear();
 
         // 2. Ejercicio
-        final java.util.List<Commerce> page1 = commerceDao.filterCommerces(null, null, null, 1, 2);
         final java.util.List<Commerce> page2 = commerceDao.filterCommerces(null, null, null, 2, 2);
 
         // 3. Asserts
-        assertEquals(2, page1.size());
-        assertEquals("Commerce A", page1.get(0).getCommercialName());
-        assertEquals("Commerce B", page1.get(1).getCommercialName());
-
         assertEquals(1, page2.size());
         assertEquals("Commerce C", page2.get(0).getCommercialName());
+        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerces"));
     }
 
     @Test

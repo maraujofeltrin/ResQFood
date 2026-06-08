@@ -108,6 +108,27 @@ public class AuctionJpaDaoTest {
     }
 
     @Test
+    public void testFindExpiredActiveWhenActiveAuctionEndedReturnsAuction() {
+        // 1. Setup
+        final Auction expired = auctionDao.createAuction(packId, 500.0, 50.0,
+                LocalDateTime.now(ZoneOffset.UTC).minusMinutes(1));
+        final Pack futurePack = packDao.createPack(commerceId, "Future Pack", "Desc", 1000.0, 500.0, 1,
+                Collections.emptyList(), null);
+        auctionDao.createAuction(futurePack.getId(), 500.0, 50.0,
+                LocalDateTime.now(ZoneOffset.UTC).plusDays(1));
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final List<Auction> expiredActive = auctionDao.findExpiredActive();
+
+        // 3. Asserts
+        assertEquals(1, expiredActive.size());
+        assertEquals(expired.getId(), expiredActive.get(0).getId());
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
+    }
+
+    @Test
     public void testFindByIdWhenAuctionExists() {
         // 1. Setup
         final Auction created = auctionDao.createAuction(packId, 500.0, 500.0, AUCTION_END_TIME);

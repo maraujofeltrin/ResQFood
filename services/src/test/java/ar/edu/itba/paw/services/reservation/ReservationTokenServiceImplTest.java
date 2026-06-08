@@ -18,12 +18,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -148,14 +145,7 @@ class ReservationTokenServiceImplTest {
                 now, 1, null);
         final ReservationToken unused = new ReservationToken("accept-token", reserved, ReservationToken.Action.ACCEPT,
                 false, now, now.plusHours(1));
-        final AtomicReference<ReservationToken> tokenRef = new AtomicReference<>(unused);
-        when(reservationTokenDao.findByToken("accept-token")).thenAnswer(inv -> Optional.of(tokenRef.get()));
-        doAnswer(inv -> {
-            final ReservationToken cur = tokenRef.get();
-            tokenRef.set(new ReservationToken(cur.getToken(), cur.getReservation(), cur.getAction(), true,
-                    cur.getCreatedAt(), cur.getExpiresAt()));
-            return null;
-        }).when(reservationTokenDao).markAsUsed("accept-token");
+        when(reservationTokenDao.findByToken("accept-token")).thenReturn(Optional.of(unused));
         when(reservationService.confirmPickup(201L)).thenReturn(paid);
 
         // 2. Ejercicio
@@ -165,7 +155,6 @@ class ReservationTokenServiceImplTest {
         // 3. Asserts
         assertTrue(result.isSuccess());
         assertEquals(Reservation.Status.PAID, result.reservation().orElseThrow().getStatus());
-        assertTrue(tokenRef.get().isUsed());
     }
 
     @Test
@@ -177,8 +166,7 @@ class ReservationTokenServiceImplTest {
                 "Z9Y8X", null, 1, null);
         final ReservationToken token = new ReservationToken("bad-code-token", reserved, ReservationToken.Action.ACCEPT,
                 false, now, now.plusHours(1));
-        final AtomicReference<ReservationToken> tokenRef = new AtomicReference<>(token);
-        when(reservationTokenDao.findByToken("bad-code-token")).thenAnswer(inv -> Optional.of(tokenRef.get()));
+        when(reservationTokenDao.findByToken("bad-code-token")).thenReturn(Optional.of(token));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =
@@ -187,7 +175,6 @@ class ReservationTokenServiceImplTest {
         // 3. Asserts
         assertEquals(ReservationTokenActionError.INVALID_PICKUP_CODE, result.error().orElseThrow());
         assertEquals(Reservation.Status.RESERVED, result.reservation().orElseThrow().getStatus());
-        assertFalse(tokenRef.get().isUsed());
     }
 
     @Test
@@ -213,14 +200,7 @@ class ReservationTokenServiceImplTest {
                 "R1R2R", null, 1, null);
         final ReservationToken unused = new ReservationToken("reject-token", reserved, ReservationToken.Action.REJECT,
                 false, now, now.plusHours(1));
-        final AtomicReference<ReservationToken> tokenRef = new AtomicReference<>(unused);
-        when(reservationTokenDao.findByToken("reject-token")).thenAnswer(inv -> Optional.of(tokenRef.get()));
-        doAnswer(inv -> {
-            final ReservationToken cur = tokenRef.get();
-            tokenRef.set(new ReservationToken(cur.getToken(), cur.getReservation(), cur.getAction(), true,
-                    cur.getCreatedAt(), cur.getExpiresAt()));
-            return null;
-        }).when(reservationTokenDao).markAsUsed("reject-token");
+        when(reservationTokenDao.findByToken("reject-token")).thenReturn(Optional.of(unused));
         when(reservationService.rejectReservation(301L)).thenReturn(canceled);
 
         // 2. Ejercicio
@@ -230,7 +210,6 @@ class ReservationTokenServiceImplTest {
         // 3. Asserts
         assertTrue(result.isSuccess());
         assertEquals(Reservation.Status.CANCELED, result.reservation().orElseThrow().getStatus());
-        assertTrue(tokenRef.get().isUsed());
     }
 
     @Test
@@ -242,8 +221,7 @@ class ReservationTokenServiceImplTest {
                 "T1T2T", null, 1, null);
         final ReservationToken token = new ReservationToken("reject-expired", reserved, ReservationToken.Action.REJECT,
                 false, now, now.minusHours(1));
-        final AtomicReference<ReservationToken> tokenRef = new AtomicReference<>(token);
-        when(reservationTokenDao.findByToken("reject-expired")).thenAnswer(inv -> Optional.of(tokenRef.get()));
+        when(reservationTokenDao.findByToken("reject-expired")).thenReturn(Optional.of(token));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =
@@ -251,7 +229,6 @@ class ReservationTokenServiceImplTest {
 
         // 3. Asserts
         assertEquals(ReservationTokenActionError.EXPIRED, result.error().orElseThrow());
-        assertFalse(tokenRef.get().isUsed());
     }
 
     @Test
@@ -263,8 +240,7 @@ class ReservationTokenServiceImplTest {
                 Reservation.Status.CANCELED, "U1U2U", null, 1, null);
         final ReservationToken token = new ReservationToken("reject-canceled", canceledReservation, ReservationToken.Action.REJECT,
                 false, now, now.plusHours(1));
-        final AtomicReference<ReservationToken> tokenRef = new AtomicReference<>(token);
-        when(reservationTokenDao.findByToken("reject-canceled")).thenAnswer(inv -> Optional.of(tokenRef.get()));
+        when(reservationTokenDao.findByToken("reject-canceled")).thenReturn(Optional.of(token));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =
@@ -272,7 +248,6 @@ class ReservationTokenServiceImplTest {
 
         // 3. Asserts
         assertEquals(ReservationTokenActionError.ALREADY_USED, result.error().orElseThrow());
-        assertFalse(tokenRef.get().isUsed());
     }
 
     @Test

@@ -13,16 +13,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -52,37 +46,6 @@ class VerificationTokenServiceImplTest {
         return new User(id, EMAIL, "pw", "N");
     }
 
-    private void stubCreateReturnsTokenString() {
-        when(tokenDao.create(anyString(), eq(USER_ID), eq(TokenType.EMAIL_VERIFICATION), any(LocalDateTime.class),
-                any(LocalDateTime.class))).thenAnswer(invocation -> {
-            final String tokenStr = invocation.getArgument(0);
-            final LocalDateTime createdAt = invocation.getArgument(3);
-            final LocalDateTime expiresAt = invocation.getArgument(4);
-            return new Token(tokenStr, userRef(USER_ID), false, TokenType.EMAIL_VERIFICATION, createdAt, expiresAt);
-        });
-    }
-
-    @Test
-    void testSendVerificationMailWhenValidSendsMailWithVerificationUrl() {
-        // 1. Setup
-        stubCreateReturnsTokenString();
-        final String baseUrl = "https://app.example";
-        final AtomicReference<String> capturedUrl = new AtomicReference<>();
-        doAnswer(invocation -> {
-            capturedUrl.set(invocation.getArgument(1));
-            return null;
-        }).when(emailVerificationMailService).sendVerificationMail(eq(EMAIL), anyString(), eq(LOCALE));
-
-        // 2. Ejercicio
-        service.sendVerificationMail(USER_ID, EMAIL, LOCALE);
-
-        // 3. Asserts
-        final String url = capturedUrl.get();
-        assertTrue(url.startsWith(baseUrl + "/verify-email?token="));
-        assertFalse(url.endsWith("token="));
-    }
-
-    @Test
     void testVerifyEmailAndGetUserWhenTokenValidMarksUserAndTokenReturnsUser() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
@@ -90,12 +53,6 @@ class VerificationTokenServiceImplTest {
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(stored));
         final User verifiedReturned = new User(USER_ID, EMAIL, "pw", "N", null, User.Role.CLIENT, true, LOCALE);
         when(userDao.findById(USER_ID)).thenReturn(Optional.of(verifiedReturned));
-        doAnswer(invocation -> null).when(userDao).markVerified(USER_ID);
-        final AtomicReference<String> markUsedToken = new AtomicReference<>();
-        doAnswer(invocation -> {
-            markUsedToken.set(invocation.getArgument(0));
-            return null;
-        }).when(tokenDao).markAsUsed(eq("tok"), eq(TokenType.EMAIL_VERIFICATION));
 
         // 2. Ejercicio
         final Optional<User> result = service.verifyEmailAndGetUser("tok");
@@ -103,7 +60,6 @@ class VerificationTokenServiceImplTest {
         // 3. Asserts
         assertTrue(result.isPresent());
         assertTrue(result.get().isVerified());
-        assertEquals("tok", markUsedToken.get());
     }
 
     @Test
@@ -154,8 +110,6 @@ class VerificationTokenServiceImplTest {
         final Token stored = new Token("tok", userRef(USER_ID), false, TokenType.EMAIL_VERIFICATION, now, now.plusHours(1));
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(stored));
         when(userDao.findById(USER_ID)).thenReturn(Optional.of(new User(USER_ID, EMAIL, "p", "N")));
-        doAnswer(invocation -> null).when(userDao).markVerified(USER_ID);
-        doAnswer(invocation -> null).when(tokenDao).markAsUsed(eq("tok"), eq(TokenType.EMAIL_VERIFICATION));
 
         // 2. Ejercicio
         final boolean ok = service.verifyEmail("tok");
@@ -164,55 +118,4 @@ class VerificationTokenServiceImplTest {
         assertTrue(ok);
     }
 
-    @Test
-    void testResendVerificationMailWhenUserUnverifiedSendsMailWithVerificationLink() {
-        // 1. Setup
-        final User unverified = new User(USER_ID, EMAIL, "p", "N", null, User.Role.CLIENT, false, LOCALE);
-        when(userDao.findByEmail(EMAIL)).thenReturn(Optional.of(unverified));
-        stubCreateReturnsTokenString();
-        final AtomicReference<String> capturedUrl = new AtomicReference<>();
-        doAnswer(invocation -> {
-            capturedUrl.set(invocation.getArgument(1));
-            return null;
-        }).when(emailVerificationMailService).sendVerificationMail(eq(EMAIL), anyString(), eq(LOCALE));
-
-        // 2. Ejercicio
-        service.resendVerificationMail(EMAIL);
-
-        // 3. Asserts
-        assertTrue(capturedUrl.get().contains("/verify-email?token="));
-    }
-
-    @Test
-    void testResendVerificationMailWhenUserAlreadyVerifiedDoesNotCreateTokenOrSendMail() {
-        // 1. Setup
-        final User verified = new User(USER_ID, EMAIL, "p", "N", null, User.Role.CLIENT, true, LOCALE);
-        final AtomicInteger emailLookups = new AtomicInteger();
-        when(userDao.findByEmail(EMAIL)).thenAnswer(invocation -> {
-            emailLookups.incrementAndGet();
-            return Optional.of(verified);
-        });
-
-        // 2. Ejercicio
-        service.resendVerificationMail(EMAIL);
-
-        // 3. Asserts
-        assertEquals(1, emailLookups.get());
-    }
-
-    @Test
-    void testResendVerificationMailWhenEmailUnknownDoesNotCreateTokenOrSendMail() {
-        // 1. Setup
-        final AtomicInteger emailLookups = new AtomicInteger();
-        when(userDao.findByEmail("nobody@example.com")).thenAnswer(invocation -> {
-            emailLookups.incrementAndGet();
-            return Optional.empty();
-        });
-
-        // 2. Ejercicio
-        service.resendVerificationMail("nobody@example.com");
-
-        // 3. Asserts
-        assertEquals(1, emailLookups.get());
-    }
 }

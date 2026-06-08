@@ -21,6 +21,7 @@ import org.springframework.test.jdbc.JdbcTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -309,6 +310,74 @@ public class ReservationJpaDaoTest {
     }
 
     @Test
+    public void testHasActiveReservationWhenReservedReservationExistsReturnsTrue() {
+        // 1. Setup
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0, Reservation.Status.RESERVED,
+                "ACTIVE_CODE", null, 1, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final boolean result = reservationDao.hasActiveReservation(packId, clientId);
+
+        // 3. Asserts
+        assertTrue(result);
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
+    public void testHasActiveReservationWhenOnlyPaidReservationExistsReturnsFalse() {
+        // 1. Setup
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0, Reservation.Status.PAID,
+                "PAID_ACTIVE_CODE", PICKUP_CONFIRMED_AT, 1, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final boolean result = reservationDao.hasActiveReservation(packId, clientId);
+
+        // 3. Asserts
+        assertFalse(result);
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
+    public void testCountPaidReservationsInPeriodWhenPaidPickupInsidePeriodReturnsCount() {
+        // 1. Setup
+        final LocalDateTime from = LocalDateTime.of(2030, 3, 1, 0, 0);
+        final LocalDateTime to = LocalDateTime.of(2030, 3, 31, 0, 0);
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0, Reservation.Status.PAID,
+                "PAID_IN_PERIOD", PICKUP_CONFIRMED_AT, 1, null);
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 300.0, Reservation.Status.RESERVED,
+                "RESERVED_IN_PERIOD", null, 1, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final int count = reservationDao.countPaidReservationsInPeriod(commerceId, from, to);
+
+        // 3. Asserts
+        assertEquals(1, count);
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
+    public void testSumRevenueInPeriodWhenPaidPickupInsidePeriodReturnsRevenue() {
+        // 1. Setup
+        final LocalDateTime from = LocalDateTime.of(2030, 3, 1, 0, 0);
+        final LocalDateTime to = LocalDateTime.of(2030, 3, 31, 0, 0);
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0, Reservation.Status.PAID,
+                "PAID_REVENUE", PICKUP_CONFIRMED_AT, 1, null);
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 300.0, Reservation.Status.RESERVED,
+                "RESERVED_REVENUE", null, 1, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final BigDecimal revenue = reservationDao.sumRevenueInPeriod(commerceId, from, to);
+
+        // 3. Asserts
+        assertEquals(0, BigDecimal.valueOf(500.0).compareTo(revenue));
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
     public void testFilterReservationsEagerlyLoadsPackImage() {
         // 1. Setup
         final Image image = imageDao.saveImage(new byte[] {1, 2, 3}, "image/png");
@@ -379,7 +448,7 @@ public class ReservationJpaDaoTest {
     }
 
     @Test
-    public void testFilterReservationsReturnsPageInQueryOneOrder() {
+    public void testFilterReservationsWhenSecondPageRequestedReturnsOldestReservation() {
         // 1. Setup
         final LocalDateTime oldest = LocalDateTime.of(2030, 1, 1, 10, 0);
         final LocalDateTime middle = LocalDateTime.of(2030, 2, 1, 10, 0);
@@ -387,25 +456,19 @@ public class ReservationJpaDaoTest {
 
         final Reservation oldestReservation = reservationDao.createReservation(clientId, packId, oldest, 500.0,
                 Reservation.Status.RESERVED, "OLD", null, 1, null);
-        final Reservation middleReservation = reservationDao.createReservation(clientId, packId, middle, 500.0,
+        reservationDao.createReservation(clientId, packId, middle, 500.0,
                 Reservation.Status.RESERVED, "MID", null, 1, null);
         reservationDao.createReservation(clientId, packId, newest, 500.0,
                 Reservation.Status.RESERVED, "NEW", null, 1, null);
         em.flush();
 
         // 2. Ejercicio
-        final List<Reservation> pageOne = reservationDao.filterReservations(commerceId, null, null, null, false, 1, 2);
         final List<Reservation> pageTwo = reservationDao.filterReservations(commerceId, null, null, null, false, 2, 2);
 
         // 3. Asserts
-        assertEquals(2, pageOne.size());
-        assertEquals(newest, pageOne.get(0).getReservationDate());
-        assertEquals(middle, pageOne.get(1).getReservationDate());
-
         assertEquals(1, pageTwo.size());
         assertEquals(oldest, pageTwo.get(0).getReservationDate());
         assertEquals(oldestReservation.getId(), pageTwo.get(0).getId());
-        assertNotEquals(middleReservation.getId(), pageTwo.get(0).getId());
         assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
     }
 

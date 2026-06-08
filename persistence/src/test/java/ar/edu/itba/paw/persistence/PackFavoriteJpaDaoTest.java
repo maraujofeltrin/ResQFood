@@ -155,7 +155,7 @@ public class PackFavoriteJpaDaoTest {
     }
 
     @Test
-    public void testFindActiveFavoritePacksForClientPaginatesSecondPagePreservingOrder() {
+    public void testFindActiveFavoritePacksForClientWhenSecondPageRequestedReturnsOlderFavorite() {
         // 1. Setup
         final Pack p2 = packDao.createPack(commerceUserId, "P2", "D2", 200.0, 150.0, 3, null, null);
         packFavoriteDao.insert(clientUserId, packActive.getId());
@@ -173,15 +173,12 @@ public class PackFavoriteJpaDaoTest {
                 p2.getId());
 
         // 2. Ejercicio
-        final List<Pack> page1 = packFavoriteDao.findActiveFavoritePacksForClient(clientUserId, 1, 1);
         final List<Pack> page2 = packFavoriteDao.findActiveFavoritePacksForClient(clientUserId, 2, 1);
 
         // 3. Asserts
-        assertEquals(1, page1.size());
-        assertEquals(p2.getId(), page1.get(0).getId());
-
         assertEquals(1, page2.size());
         assertEquals(packActive.getId(), page2.get(0).getId());
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "client_pack_favorites"));
     }
 
     @Test

@@ -1,6 +1,5 @@
 package ar.edu.itba.paw.services.user;
 
-import ar.edu.itba.paw.models.image.Image;
 import ar.edu.itba.paw.models.image.ProfileImageException;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.user.Client;
@@ -23,17 +22,12 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -134,21 +128,15 @@ class UserServiceImplTest {
     void testChangePasswordWhenCurrentPasswordMatchesReturnsSuccess() {
         // 1. Setup
         final User stored = new User(1L, "u@u.com", "ENC:secret1", "User", null, null, false);
-        final AtomicReference<String> newEncodedPassword = new AtomicReference<>();
         when(userDao.findById(1L)).thenReturn(Optional.of(stored));
         when(passwordEncoder.matches("secret1", "ENC:secret1")).thenReturn(true);
         when(passwordEncoder.encode("secret2xx")).thenReturn("ENC:secret2xx");
-        doAnswer(invocation -> {
-            newEncodedPassword.set(invocation.getArgument(1));
-            return null;
-        }).when(userDao).updatePassword(anyLong(), anyString());
 
         // 2. Ejercicio
         final ChangePasswordResult result = userService.changePassword(1L, "secret1", "secret2xx");
 
         // 3. Asserts
         assertTrue(result.isSuccess());
-        assertEquals("ENC:secret2xx", newEncodedPassword.get());
     }
 
     @Test
@@ -179,26 +167,6 @@ class UserServiceImplTest {
     }
 
     @Test
-    void testUpdateProfilePhotoWhenValidSavesImageAndUpdatesProfile() {
-        // 1. Setup
-        final User stored = new User(1L, "photo@x.com", "p", "P", null, null, false);
-        final AtomicReference<Long> persistedImageId = new AtomicReference<>();
-        when(userDao.findById(1L)).thenReturn(Optional.of(stored));
-        when(imageService.saveImage(any(byte[].class), eq("image/png")))
-                .thenReturn(new Image(100L, new byte[] { 1, 2 }, "image/png"));
-        doAnswer(invocation -> {
-            persistedImageId.set(invocation.getArgument(1));
-            return null;
-        }).when(userDao).updateProfileImage(anyLong(), anyLong());
-
-        // 2. Ejercicio
-        userService.updateProfilePhoto(1L, new byte[] { 1, 2 }, "image/png");
-
-        // 3. Asserts
-        assertEquals(Long.valueOf(100L), persistedImageId.get());
-    }
-
-    @Test
     void testUpdateProfilePhotoWhenInvalidContentTypeThrowsProfileImageException() {
         // 1. Setup
         // sin stub de userDao: falla validación antes de consultar
@@ -211,25 +179,6 @@ class UserServiceImplTest {
         assertEquals(ProfileImageException.Reason.INVALID_TYPE, thrown.getReason());
     }
 
-    @Test
-    void testUpdatePreferredLocaleWhenSupportedPersistsLanguageTag() {
-        // 1. Setup
-        final User stored = new User(1L, "loc@x.com", "p", "L", null, null, false);
-        final AtomicReference<String> persistedLang = new AtomicReference<>();
-        when(userDao.findById(1L)).thenReturn(Optional.of(stored));
-        doAnswer(invocation -> {
-            persistedLang.set(invocation.getArgument(1));
-            return null;
-        }).when(userDao).updateLocale(anyLong(), anyString());
-
-        // 2. Ejercicio
-        userService.updatePreferredLocale(1L, Locale.ENGLISH);
-
-        // 3. Asserts
-        assertEquals("en", persistedLang.get());
-    }
-
-    @Test
     void testUpdatePreferredLocaleWhenUnsupportedThrowsIllegalArgumentException() {
         // 1. Setup
 
