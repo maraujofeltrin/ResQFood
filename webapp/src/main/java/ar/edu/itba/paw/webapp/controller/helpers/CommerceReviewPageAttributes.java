@@ -1,6 +1,5 @@
 package ar.edu.itba.paw.webapp.controller.helpers;
 
-import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.CommerceReview;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.commerce.CommerceReviewService;
@@ -12,9 +11,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Component
 public class CommerceReviewPageAttributes {
@@ -39,19 +36,12 @@ public class CommerceReviewPageAttributes {
         final Locale locale = org.springframework.context.i18n.LocaleContextHolder.getLocale();
         final List<CommerceReview> reviews = commerceReviewService.findReviewsForCommerce(commerceId, 1,
                 REVIEW_LIST_LIMIT);
-        final Map<Long, Client> reviewClients = reviews.stream()
-                .filter(r -> r.getClient() != null)
-                .collect(Collectors.toMap(
-                        r -> r.getClient().getUserId(),
-                        CommerceReview::getClient,
-                        (a, b) -> a));
-
         final Optional<User> userOpt = authResolver.resolveUserOrEmpty();
         final Long currentClientId = userOpt.filter(u -> u.getRole() == User.Role.CLIENT)
                 .map(User::getId).orElse(null);
 
         mav.addObject("commerceReviewItems",
-                CommerceReviewViewHelper.buildRows(reviews, reviewClients, businessZone, locale, currentClientId));
+                CommerceReviewViewHelper.buildRows(reviews, businessZone, locale, currentClientId));
         mav.addObject("commerceReviewCount", commerceReviewService.countReviewsForCommerce(commerceId));
         mav.addObject("commerceReviewAverageRating",
                 commerceReviewService.averageRatingForCommerce(commerceId).orElse(null));

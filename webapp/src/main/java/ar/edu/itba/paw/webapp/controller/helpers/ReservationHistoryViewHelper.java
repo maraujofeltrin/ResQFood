@@ -7,7 +7,6 @@ import org.springframework.context.MessageSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * Builds pack-detail reservation history rows (presentation strings for the JSP tag), colocated with the row data holder.
@@ -62,20 +61,19 @@ public final class ReservationHistoryViewHelper {
     }
 
     /**
-     * Builds rows from pre-fetched client data to avoid N+1 queries.
+     * Builds rows from reservations whose {@link Client} is already hydrated by the persistence layer
+     * ({@code JOIN FETCH r.customer} in {@code ReservationDao.findByPackId} / {@code filterReservations}).
      *
-     * @param reservations     the reservations to display
-     * @param clientsByUserId  pre-fetched map of userId → Client
-     * @param messageSource    for i18n labels
-     * @param locale           the current locale
+     * @param reservations  the reservations to display
+     * @param messageSource for i18n labels
+     * @param locale        the current locale
      */
     public static List<ReservationHistoryRow> buildRows(final List<Reservation> reservations,
-            final Map<Long, Client> clientsByUserId,
             final MessageSource messageSource, final Locale locale) {
         final List<ReservationHistoryRow> rows = new ArrayList<>();
         for (int i = 0; i < reservations.size(); i++) {
             final Reservation reservation = reservations.get(i);
-            final Client client = clientsByUserId.get(reservation.getCustomer().getUserId());
+            final Client client = reservation.getCustomer();
             final String displayName = ViewFormatUtils.shortDisplayName(client, messageSource, locale);
             final String initials = ViewFormatUtils.initialsFor(client, messageSource, locale);
             final String amountDisplay = ViewFormatUtils.formatMoney(reservation.getFinalPrice());
