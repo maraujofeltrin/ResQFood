@@ -702,6 +702,66 @@ public class PackJpaDaoTest {
     }
 
     @Test
+    public void testFindByIdWithAuctionHydratesAuctionWhenPresent() {
+        // 1. Setup
+        final Pack pack = packDao.createPack(commerceId, "Auction Pack", "Desc", 100.0, 50.0, 1, null, null);
+        em.flush();
+        auctionDao.createAuction(pack.getId(), 10.0, 1.0, EXPIRED_AUCTION_END);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final Optional<Pack> reloaded = packDao.findByIdWithAuction(pack.getId());
+
+        // 3. Asserts
+        assertTrue(reloaded.isPresent());
+        assertTrue(Hibernate.isInitialized(reloaded.get().getCommerce()));
+        assertNotNull(reloaded.get().getAuction());
+        assertTrue(Hibernate.isInitialized(reloaded.get().getAuction()));
+        assertEquals(pack.getId(), reloaded.get().getAuction().getPack().getId());
+    }
+
+    @Test
+    public void testFindByIdWithAuctionReturnsNullAuctionWhenNone() {
+        // 1. Setup
+        final Pack pack = packDao.createPack(commerceId, "Direct Pack", "Desc", 100.0, 50.0, 1, null, null);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final Optional<Pack> reloaded = packDao.findByIdWithAuction(pack.getId());
+
+        // 3. Asserts
+        assertTrue(reloaded.isPresent());
+        assertNull(reloaded.get().getAuction());
+    }
+
+    @Test
+    public void testFilterCommercePacksHydratesAuctionWhenPresent() {
+        // 1. Setup
+        final Pack direct = packDao.createPack(commerceId, "Direct", "Desc", 100.0, 50.0, 3, null, null);
+        final Pack auctionPack = packDao.createPack(commerceId, "Auction", "Desc", 100.0, 50.0, 1, null, null);
+        em.flush();
+        auctionDao.createAuction(auctionPack.getId(), 10.0, 1.0, EXPIRED_AUCTION_END);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final List<Pack> packs = packDao.filterCommercePacks(commerceId, null, 1, 10);
+
+        // 3. Asserts
+        assertEquals(2, packs.size());
+        for (final Pack p : packs) {
+            if (p.getId().equals(auctionPack.getId())) {
+                assertNotNull(p.getAuction());
+                assertTrue(Hibernate.isInitialized(p.getAuction()));
+            } else if (p.getId().equals(direct.getId())) {
+                assertNull(p.getAuction());
+            }
+        }
+    }
+
+    @Test
     public void testCountCommercePacksMatchesFilterResults() {
         // 1. Setup
         packDao.createPack(commerceId, "Direct One", "Desc", 1000.0, 500.0, 10, null, null);

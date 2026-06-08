@@ -152,7 +152,7 @@ class PackServiceImplTest {
     void testFindVisibleForDetailWhenPackActiveReturnsPackForAnonymousViewer() {
         // 1. Setup
         final Pack pack = newPack(7L, 10L, "active", "d", 2.0, 1.0, 2, true, false, Collections.emptyList(), null);
-        when(packDao.findById(7L)).thenReturn(Optional.of(pack));
+        when(packDao.findByIdWithAuction(7L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
         final Optional<Pack> result = packService.findVisibleForDetail(7L, null);
@@ -166,7 +166,7 @@ class PackServiceImplTest {
     void testFindVisibleForDetailWhenPackInactiveReturnsPackForOwnerCommerce() {
         // 1. Setup
         final Pack pack = newPack(8L, 11L, "inactive", "d", 2.0, 1.0, 2, false, false, Collections.emptyList(), null);
-        when(packDao.findById(8L)).thenReturn(Optional.of(pack));
+        when(packDao.findByIdWithAuction(8L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
         final Optional<Pack> result = packService.findVisibleForDetail(8L, 11L);
@@ -180,7 +180,7 @@ class PackServiceImplTest {
     void testFindVisibleForDetailWhenPackInactiveReturnsEmptyForNonOwner() {
         // 1. Setup
         final Pack pack = newPack(9L, 12L, "inactive", "d", 2.0, 1.0, 2, false, false, Collections.emptyList(), null);
-        when(packDao.findById(9L)).thenReturn(Optional.of(pack));
+        when(packDao.findByIdWithAuction(9L)).thenReturn(Optional.of(pack));
         when(reservationService.hasActiveReservation(9L, 99L)).thenReturn(false);
         when(auctionService.findByPackId(9L)).thenReturn(Optional.empty());
 
@@ -197,7 +197,7 @@ class PackServiceImplTest {
         final Pack pack = newPack(11L, 12L, "auction", "d", 2.0, 1.0, 0, false, false, Collections.emptyList(), null);
         final Auction auction = new Auction(20L, pack, 1.0, 1.0, 5.0, 99L,
                 LocalDateTime.now(ZoneOffset.UTC).minusHours(1), Auction.Status.FINISHED, LocalDateTime.now(ZoneOffset.UTC).minusDays(1));
-        when(packDao.findById(11L)).thenReturn(Optional.of(pack));
+        when(packDao.findByIdWithAuction(11L)).thenReturn(Optional.of(pack));
         when(reservationService.hasActiveReservation(11L, 99L)).thenReturn(false);
         when(auctionService.findByPackId(11L)).thenReturn(Optional.of(auction));
         when(auctionService.hasClientBidOnAuction(20L, 99L)).thenReturn(true);
@@ -213,7 +213,7 @@ class PackServiceImplTest {
     @Test
     void testFindVisibleForDetailWhenPackMissingReturnsEmpty() {
         // 1. Setup
-        when(packDao.findById(999L)).thenReturn(Optional.empty());
+        when(packDao.findByIdWithAuction(999L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
         final Optional<Pack> result = packService.findVisibleForDetail(999L, 99L);
@@ -226,13 +226,27 @@ class PackServiceImplTest {
     void testFindVisibleForDetailWhenPackDeletedReturnsEmpty() {
         // 1. Setup
         final Pack pack = newPack(10L, 1L, "gone", "d", 1.0, 1.0, 1, true, true, Collections.emptyList(), null);
-        when(packDao.findById(10L)).thenReturn(Optional.of(pack));
+        when(packDao.findByIdWithAuction(10L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
         final Optional<Pack> result = packService.findVisibleForDetail(10L, 1L);
 
         // 3. Asserts
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testFindByIdWithAuctionWhenPackExistsReturnsPack() {
+        // 1. Setup
+        final Pack pack = newPack(42L, 10L, "auction-pack", "d", 2.0, 1.0, 2, true, false, Collections.emptyList(), null);
+        when(packDao.findByIdWithAuction(42L)).thenReturn(Optional.of(pack));
+
+        // 2. Ejercicio
+        final Optional<Pack> result = packService.findByIdWithAuction(42L);
+
+        // 3. Asserts
+        assertTrue(result.isPresent());
+        assertEquals(42L, result.get().getId());
     }
 
     @Test

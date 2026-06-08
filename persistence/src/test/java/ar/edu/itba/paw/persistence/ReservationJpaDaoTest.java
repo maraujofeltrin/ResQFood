@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import javax.persistence.PersistenceContext;
+import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.image.Image;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
@@ -33,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ContextConfiguration(classes = TestConfig.class)
 public class ReservationJpaDaoTest {
 
+    private static final LocalDateTime EXPIRED_AUCTION_END = LocalDateTime.of(2020, 1, 1, 0, 0);
     private static final LocalDateTime RESERVATION_DATE = LocalDateTime.of(2030, 3, 1, 12, 0);
     private static final LocalDateTime PICKUP_CONFIRMED_AT = LocalDateTime.of(2030, 3, 5, 18, 0);
     private static final LocalDateTime CONFIRM_PICKUP_AT = LocalDateTime.of(2030, 4, 1, 10, 30);
@@ -58,6 +60,9 @@ public class ReservationJpaDaoTest {
 
     @Autowired
     private PackDao packDao;
+
+    @Autowired
+    private AuctionDao auctionDao;
 
     @Autowired
     private ImageDao imageDao;
@@ -402,6 +407,37 @@ public class ReservationJpaDaoTest {
         assertEquals(oldestReservation.getId(), pageTwo.get(0).getId());
         assertNotEquals(middleReservation.getId(), pageTwo.get(0).getId());
         assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
+    public void testFilterReservationsHydratesPackAuction() {
+        // 1. Setup
+        final Pack directPack = packDao.createPack(commerceId, "Direct", "Desc", 100.0, 50.0, 5, null, null);
+        final Pack auctionPack = packDao.createPack(commerceId, "Auction", "Desc", 100.0, 50.0, 5, null, null);
+        em.flush();
+        auctionDao.createAuction(auctionPack.getId(), 10.0, 1.0, EXPIRED_AUCTION_END);
+        em.flush();
+        reservationDao.createReservation(clientId, directPack.getId(), LocalDateTime.now(),
+                50.0, Reservation.Status.RESERVED, "code-direct", null, 1, null);
+        reservationDao.createReservation(clientId, auctionPack.getId(), LocalDateTime.now(),
+                50.0, Reservation.Status.RESERVED, "code-auction", null, 1, null);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final List<Reservation> reservations = reservationDao.filterReservations(
+                commerceId, null, null, null, false, 1, 10);
+
+        // 3. Asserts
+        assertEquals(2, reservations.size());
+        for (final Reservation r : reservations) {
+            if (r.getPack().getId().equals(auctionPack.getId())) {
+                assertNotNull(r.getPack().getAuction());
+                assertTrue(Hibernate.isInitialized(r.getPack().getAuction()));
+            } else {
+                assertNull(r.getPack().getAuction());
+            }
+        }
     }
 
     @Test

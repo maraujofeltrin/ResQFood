@@ -80,4 +80,11 @@ public interface PackDao {
      * for the given commerce.
      */
     int countPublicOffersByCommerce(Long commerceUserId);
+
+    /**
+     * Loads a pack with its commerce, tags and {@code auction} relation eagerly hydrated.
+     * Used by flows that navigate {@code pack.getAuction()} outside of an open transaction
+     * (controllers, view-model builders).
+     */
+    Optional<Pack> findByIdWithAuction(Long id);
 }
