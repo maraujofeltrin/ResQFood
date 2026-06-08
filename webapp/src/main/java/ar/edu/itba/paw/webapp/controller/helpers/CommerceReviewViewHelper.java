@@ -11,7 +11,6 @@ import java.time.format.FormatStyle;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -24,25 +23,25 @@ public final class CommerceReviewViewHelper {
     }
 
     /**
-     * Builds rows from pre-fetched client data to avoid N+1 queries.
+     * Builds rows from reviews whose {@link Client} is already hydrated by the persistence layer
+     * ({@code JOIN FETCH r.client} in {@code CommerceReviewDao.findByCommerceId}).
      *
-     * @param reviews          the reviews to display
-     * @param clientsByUserId  pre-fetched map of userId → Client
-     * @param businessZone     for date display conversion
-     * @param locale           the current locale
+     * @param reviews      the reviews to display
+     * @param businessZone for date display conversion
+     * @param locale       the current locale
      */
     public static List<CommerceReviewRow> buildRows(final List<CommerceReview> reviews,
-            final Map<Long, Client> clientsByUserId, final ZoneId businessZone, final Locale locale) {
-        return buildRows(reviews, clientsByUserId, businessZone, locale, null);
+            final ZoneId businessZone, final Locale locale) {
+        return buildRows(reviews, businessZone, locale, null);
     }
 
     public static List<CommerceReviewRow> buildRows(final List<CommerceReview> reviews,
-            final Map<Long, Client> clientsByUserId, final ZoneId businessZone, final Locale locale,
+            final ZoneId businessZone, final Locale locale,
             final Long currentClientUserId) {
         final DateTimeFormatter fmt = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale);
         return sortForDisplay(reviews, currentClientUserId).stream()
                 .map(review -> {
-                    final Client client = clientsByUserId.get(review.getClient().getUserId());
+                    final Client client = review.getClient();
                     final String name = client != null ? client.getFullName() : "-";
                     final LocalDateTime ts = review.getUpdatedAt() != null ? review.getUpdatedAt()
                             : review.getCreatedAt();

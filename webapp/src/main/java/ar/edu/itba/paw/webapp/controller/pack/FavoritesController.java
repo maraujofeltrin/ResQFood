@@ -18,7 +18,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -68,13 +67,6 @@ public class FavoritesController {
             packs = Collections.emptyList();
         }
 
-        final Map<Long, String> commerceNames = new HashMap<>();
-        for (final Pack pack : packs) {
-            final Commerce c = pack.getCommerce();
-            commerceNames.putIfAbsent(pack.getId(),
-                    c != null && c.getCommercialName() != null ? c.getCommercialName() : "—");
-        }
-
         // Commerce favorites
         final int totalFavoriteCommerces = commerceFavoriteService.countFavoriteCommerces(userId);
         final int totalCommercePages = Math.max(1, (int) Math.ceil((double) totalFavoriteCommerces / COMMERCE_PAGE_SIZE));
@@ -97,16 +89,9 @@ public class FavoritesController {
             commerceIds.add(c.getUserId());
         }
         final Map<Long, Double> commerceRatings = commerceReviewService.findAverageRatingsForCommerceIds(commerceIds);
-        final Map<Long, Long> commerceImages = new HashMap<>();
-        for (final Commerce c : favoriteCommerces) {
-            if (c.getUser() != null && c.getUser().getProfileImageId() != null) {
-                commerceImages.putIfAbsent(c.getUserId(), c.getUser().getProfileImageId());
-            }
-        }
 
         final ModelAndView mav = new ModelAndView("favorites/favoritesView");
         mav.addObject("packs", packs);
-        mav.addObject("commerceNames", commerceNames);
         mav.addObject("currentPackPage", safePackPage);
         mav.addObject("totalPackPages", totalPackPages);
         mav.addObject("totalFavorites", totalItems);
@@ -115,7 +100,6 @@ public class FavoritesController {
         mav.addObject("totalCommercePages", totalCommercePages);
         mav.addObject("totalFavoriteCommerces", totalFavoriteCommerces);
         mav.addObject("commerceRatings", commerceRatings);
-        mav.addObject("commerceImages", commerceImages);
 
         return mav;
     }

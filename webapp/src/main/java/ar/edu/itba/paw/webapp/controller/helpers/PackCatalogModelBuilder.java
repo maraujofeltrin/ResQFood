@@ -206,32 +206,6 @@ public class PackCatalogModelBuilder {
             carouselCommerces = commerceService.filterCommerces(trimmedQuery, cityFilter, commerceCategory, 1, COMMERCES_CAROUSEL_SIZE);
         }
 
-        final Map<Long, String> commerceNames = new HashMap<>();
-        for (final Pack pack : packs) {
-            final Commerce c = pack.getCommerce();
-            commerceNames.putIfAbsent(pack.getId(),
-                    c != null && c.getCommercialName() != null ? c.getCommercialName() : "—");
-        }
-        for (final Auction auctionEntity : auctions) {
-            if (auctionEntity.getPack() == null) {
-                continue;
-            }
-            final Pack auctionPack = auctionEntity.getPack();
-            final Commerce c = auctionPack.getCommerce();
-            commerceNames.putIfAbsent(auctionPack.getId(),
-                    c != null && c.getCommercialName() != null ? c.getCommercialName() : "—");
-        }
-        for (final Auction auctionEntity : carouselAuctions) {
-            if (auctionEntity.getPack() == null) {
-                continue;
-            }
-            final Pack auctionPack = auctionEntity.getPack();
-            final Commerce c = auctionPack.getCommerce();
-            commerceNames.putIfAbsent(auctionPack.getId(),
-                    c != null && c.getCommercialName() != null ? c.getCommercialName() : "—");
-        }
-
-
         /*
          * TECH DEBT — commerce ratings enrichment:
          * filterCommerces already computes AVG(r.rating) for sorting but discards the value;
@@ -239,7 +213,6 @@ public class PackCatalogModelBuilder {
          * (e.g. CommerceWithRating) populated in the same DAO query, and drop this map.
          */
         final Map<Long, Double> commerceRatings = new HashMap<>();
-        final Map<Long, Long> commerceImages = new HashMap<>();
         final List<Commerce> commercesForEnrichment = new ArrayList<>(commerces);
         commercesForEnrichment.addAll(carouselCommerces);
 
@@ -250,21 +223,13 @@ public class PackCatalogModelBuilder {
 
         commerceRatings.putAll(commerceReviewService.findAverageRatingsForCommerceIds(commerceIds));
 
-        for (final Commerce c : commercesForEnrichment) {
-            if (c.getUser() != null && c.getUser().getProfileImageId() != null) {
-                commerceImages.putIfAbsent(c.getUserId(), c.getUser().getProfileImageId());
-            }
-        }
-
         mav.addObject("packs", packs);
         mav.addObject("auctions", auctions);
         mav.addObject("auctionsCarousel", carouselAuctions);
         mav.addObject("commerces", commerces);
         mav.addObject("commercesCarousel", carouselCommerces);
         mav.addObject("commerceRatings", commerceRatings);
-        mav.addObject("commerceImages", commerceImages);
         mav.addObject("catalogMode", catalogMode.name());
-        mav.addObject("commerceNames", commerceNames);
         mav.addObject("availableTags", PackTag.values());
         mav.addObject("selectedTags", selectedTags);
         mav.addObject("selectedTypes", selectedTypes);
