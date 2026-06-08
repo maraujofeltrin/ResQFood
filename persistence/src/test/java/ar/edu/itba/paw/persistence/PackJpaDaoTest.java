@@ -711,7 +711,7 @@ public class PackJpaDaoTest {
         em.clear();
 
         // 2. Ejercicio
-        final Optional<Pack> reloaded = packDao.findByIdWithAuction(pack.getId());
+        final Optional<Pack> reloaded = packDao.findById(pack.getId());
 
         // 3. Asserts
         assertTrue(reloaded.isPresent());
@@ -729,7 +729,7 @@ public class PackJpaDaoTest {
         em.clear();
 
         // 2. Ejercicio
-        final Optional<Pack> reloaded = packDao.findByIdWithAuction(pack.getId());
+        final Optional<Pack> reloaded = packDao.findById(pack.getId());
 
         // 3. Asserts
         assertTrue(reloaded.isPresent());

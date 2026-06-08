@@ -51,6 +51,7 @@ public class ReservationJpaDao implements ReservationDao {
                         + "JOIN FETCH r.pack p "
                         + "LEFT JOIN FETCH p.image "
                         + "JOIN FETCH p.commerce "
+                        + "LEFT JOIN FETCH p.auction "
                         + "WHERE r.id = :id",
                 Reservation.class)
                 .setParameter("id", id)
@@ -121,6 +122,7 @@ public class ReservationJpaDao implements ReservationDao {
                         + "JOIN FETCH r.pack p "
                         + "LEFT JOIN FETCH p.image "
                         + "JOIN FETCH p.commerce "
+                        + "LEFT JOIN FETCH p.auction "
                         + "WHERE r.pickupCode = :code",
                 Reservation.class)
             .setParameter("code", pickupCode)

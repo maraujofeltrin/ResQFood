@@ -52,22 +52,8 @@ public class PackJpaDao implements PackDao {
     @Override
     public Optional<Pack> findById(final Long id) {
         return em.createQuery(
-                        "SELECT DISTINCT p FROM Pack p LEFT JOIN FETCH p.tags JOIN FETCH p.commerce WHERE p.id = :id",
-                        Pack.class)
-                .setParameter("id", id)
-                .getResultList()
-                .stream()
-                .findFirst();
-    }
-
-    @Override
-    public Optional<Pack> findByIdWithAuction(final Long id) {
-        return em.createQuery(
-                        "SELECT DISTINCT p FROM Pack p "
-                                + "LEFT JOIN FETCH p.tags "
-                                + "JOIN FETCH p.commerce "
-                                + "LEFT JOIN FETCH p.auction "
-                                + "WHERE p.id = :id",
+                        "SELECT DISTINCT p FROM Pack p LEFT JOIN FETCH p.tags JOIN FETCH p.commerce "
+                                + "LEFT JOIN FETCH p.auction WHERE p.id = :id",
                         Pack.class)
                 .setParameter("id", id)
                 .getResultList()
@@ -157,6 +143,7 @@ public class PackJpaDao implements PackDao {
         }
         final List<Pack> packs = em.createQuery(
                         "SELECT DISTINCT p FROM Pack p LEFT JOIN FETCH p.tags JOIN FETCH p.commerce "
+                                + "LEFT JOIN FETCH p.auction "
                                 + "WHERE p.id IN :ids ORDER BY " + toOrderByClause(sort),
                         Pack.class)
                 .setParameter("ids", ids)
