@@ -3,7 +3,7 @@ package ar.edu.itba.paw.services.commerce;
 import ar.edu.itba.paw.models.user.CommerceReview;
 import ar.edu.itba.paw.models.user.CommerceReviewException;
 import ar.edu.itba.paw.persistence.CommerceReviewDao;
-import ar.edu.itba.paw.persistence.ReservationDao;
+import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,18 +20,18 @@ public class CommerceReviewServiceImpl implements CommerceReviewService {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommerceReviewServiceImpl.class);
 
     private final CommerceReviewDao commerceReviewDao;
-    private final ReservationDao reservationDao;
+    private final ReservationService reservationService;
 
     @Autowired
-    public CommerceReviewServiceImpl(final CommerceReviewDao commerceReviewDao, final ReservationDao reservationDao) {
+    public CommerceReviewServiceImpl(final CommerceReviewDao commerceReviewDao, final ReservationService reservationService) {
         this.commerceReviewDao = commerceReviewDao;
-        this.reservationDao = reservationDao;
+        this.reservationService = reservationService;
     }
 
     @Transactional(readOnly = true)
     @Override
     public boolean canClientReviewCommerce(final long clientUserId, final long commerceUserId) {
-        return reservationDao.hasPaidReservationWithCommerce(clientUserId, commerceUserId);
+        return reservationService.hasPaidReservationWithCommerce(clientUserId, commerceUserId);
     }
 
     @Transactional(readOnly = true)

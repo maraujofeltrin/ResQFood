@@ -2,7 +2,6 @@ package ar.edu.itba.paw.services.commerce;
 
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.persistence.CommerceFavoriteDao;
-import ar.edu.itba.paw.persistence.CommerceDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,13 +16,13 @@ public class CommerceFavoriteServiceImpl implements CommerceFavoriteService {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommerceFavoriteServiceImpl.class);
 
     private final CommerceFavoriteDao commerceFavoriteDao;
-    private final CommerceDao commerceDao;
+    private final CommerceService commerceService;
 
     @Autowired
     public CommerceFavoriteServiceImpl(final CommerceFavoriteDao commerceFavoriteDao,
-                                       final CommerceDao commerceDao) {
+                                       final CommerceService commerceService) {
         this.commerceFavoriteDao = commerceFavoriteDao;
-        this.commerceDao = commerceDao;
+        this.commerceService = commerceService;
     }
 
     @Transactional(readOnly = true)
@@ -53,11 +52,17 @@ public class CommerceFavoriteServiceImpl implements CommerceFavoriteService {
             LOGGER.info("User {} removed commerce {} from favorites", clientUserId, commerceId);
             return;
         }
-        commerceDao.findByUserId(commerceId).orElseThrow(() -> {
+        commerceService.findByUserId(commerceId).orElseThrow(() -> {
             LOGGER.warn("Commerce favorite toggle rejected: commerce not found commerceId={} clientUserId={}", commerceId, clientUserId);
             return new IllegalArgumentException("Commerce not found: " + commerceId);
         });
         commerceFavoriteDao.insert(clientUserId, commerceId);
         LOGGER.info("User {} added commerce {} to favorites", clientUserId, commerceId);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<Long> findClientIdsByCommerce(final long commerceId) {
+        return commerceFavoriteDao.findClientIdsByCommerce(commerceId);
     }
 }

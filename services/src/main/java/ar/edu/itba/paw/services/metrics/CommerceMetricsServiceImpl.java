@@ -4,8 +4,8 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.MetricsQueryException;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.user.Client;
-import ar.edu.itba.paw.persistence.PackDao;
-import ar.edu.itba.paw.persistence.ReservationDao;
+import ar.edu.itba.paw.services.pack.PackService;
+import ar.edu.itba.paw.services.reservation.ReservationService;
 import ar.edu.itba.paw.services.user.ClientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,16 +31,16 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommerceMetricsServiceImpl.class);
 
-    private final ReservationDao reservationDao;
-    private final PackDao packDao;
+    private final ReservationService reservationService;
+    private final PackService packService;
     private final ClientService clientService;
     private final ZoneId displayZone;
 
     @Autowired
-    public CommerceMetricsServiceImpl(final ReservationDao reservationDao, final PackDao packDao,
+    public CommerceMetricsServiceImpl(final ReservationService reservationService, final PackService packService,
                                       final ClientService clientService, final ZoneId businessZone) {
-        this.reservationDao = reservationDao;
-        this.packDao = packDao;
+        this.reservationService = reservationService;
+        this.packService = packService;
         this.clientService = clientService;
         this.displayZone = businessZone;
     }
@@ -53,7 +53,7 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
             throw new MetricsQueryException(MetricsQueryException.Reason.INVALID_DATE_RANGE);
         }
         LOGGER.debug("getCommerceMetrics commerceId={}", commerceId);
-        final List<Object[]> rows = reservationDao.countPaidReservationsPerDay(commerceId, from, to);
+        final List<Object[]> rows = reservationService.countPaidReservationsPerDay(commerceId, from, to);
         final Map<LocalDate, Long> countsByDate = new HashMap<>();
         for (final Object[] row : rows) {
             final LocalDate d = ((java.sql.Timestamp) row[0]).toLocalDateTime().toLocalDate();
@@ -72,20 +72,20 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
             daily.add(new CommerceMetrics.DailySalesPoint(d.toString(), cnt));
         }
 
-        final int totalReservations = reservationDao.countPaidReservationsInPeriod(commerceId, from, to);
-        final BigDecimal totalRevenue = reservationDao.sumRevenueInPeriod(commerceId, from, to);
+        final int totalReservations = reservationService.countPaidReservationsInPeriod(commerceId, from, to);
+        final BigDecimal totalRevenue = reservationService.sumRevenueInPeriod(commerceId, from, to);
 
-        final Optional<Long> bestPackId = reservationDao.findBestSellingPackId(commerceId, from, to);
-        final String bestTitle = bestPackId.flatMap(id -> packDao.findById(id).map(Pack::getTitle)).orElse(null);
+        final Optional<Long> bestPackId = reservationService.findBestSellingPackId(commerceId, from, to);
+        final String bestTitle = bestPackId.flatMap(id -> packService.findById(id).map(Pack::getTitle)).orElse(null);
 
-        final long paidCount = reservationDao.countByStatusInPeriod(commerceId, Reservation.Status.PAID, from, to);
-        final long canceledCount = reservationDao.countByStatusInPeriod(commerceId, Reservation.Status.CANCELED, from, to);
+        final long paidCount = reservationService.countByStatusInPeriod(commerceId, Reservation.Status.PAID, from, to);
+        final long canceledCount = reservationService.countByStatusInPeriod(commerceId, Reservation.Status.CANCELED, from, to);
         final long denom = paidCount + canceledCount;
         final int acceptanceRate = denom == 0L ? 0 : (int) Math.round((double) paidCount / (double) denom * 100.0);
 
-        final long canceledReservations = reservationDao.countCanceledReservationsInPeriod(commerceId, from, to);
-        final BigDecimal averageTicket = reservationDao.averageTicketInPeriod(commerceId, from, to);
-        final long uniqueClients = reservationDao.countUniqueClientsInPeriod(commerceId, from, to);
+        final long canceledReservations = reservationService.countCanceledReservationsInPeriod(commerceId, from, to);
+        final BigDecimal averageTicket = reservationService.averageTicketInPeriod(commerceId, from, to);
+        final long uniqueClients = reservationService.countUniqueClientsInPeriod(commerceId, from, to);
 
         final List<TopPackEntry> topPacks = buildTopPacks(commerceId, from, to);
         final List<TopClientEntry> topClients = buildTopClients(commerceId, from, to);
@@ -108,17 +108,17 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
                 .atStartOfDay(displayZone)
                 .withZoneSameInstant(ZoneOffset.UTC)
                 .toLocalDateTime();
-        return reservationDao.countPaidReservationsInPeriod(commerceId, dayStartUtc, dayEndUtc);
+        return reservationService.countPaidReservationsInPeriod(commerceId, dayStartUtc, dayEndUtc);
     }
 
     private List<TopPackEntry> buildTopPacks(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to) {
-        final List<Object[]> rows = reservationDao.findTopSellingPacks(commerceId, from, to, 3);
+        final List<Object[]> rows = reservationService.findTopSellingPacks(commerceId, from, to, 3);
         final List<TopPackEntry> result = new ArrayList<>();
         for (final Object[] row : rows) {
             final Long packId = ((Number) row[0]).longValue();
             final long unitsSold = ((Number) row[1]).longValue();
-            final Optional<Pack> pack = packDao.findById(packId);
+            final Optional<Pack> pack = packService.findById(packId);
             final String packTitle = pack.map(Pack::getTitle).orElse("Pack #" + packId);
             final Long imageId = pack.map(Pack::getImageId).orElse(null);
             result.add(new TopPackEntry(packId, packTitle, imageId, unitsSold));
@@ -128,7 +128,7 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
 
     private List<TopClientEntry> buildTopClients(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to) {
-        final List<Object[]> rows = reservationDao.findTopClientsByPaidReservations(commerceId, from, to, 3);
+        final List<Object[]> rows = reservationService.findTopClientsByPaidReservations(commerceId, from, to, 3);
         final List<TopClientEntry> result = new ArrayList<>();
         for (final Object[] row : rows) {
             final Long clientId = ((Number) row[0]).longValue();
@@ -142,12 +142,11 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
 
     private ClientRetention buildClientRetention(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to, final long uniqueClients) {
-        final long newClients = reservationDao.countNewClientsInPeriod(commerceId, from, to);
+        final long newClients = reservationService.countNewClientsInPeriod(commerceId, from, to);
         final long returningClients = Math.max(0, uniqueClients - newClients);
         final long total = newClients + returningClients;
         final int newPercent = total == 0 ? 0 : (int) Math.round((double) newClients / (double) total * 100.0);
         final int returningPercent = total == 0 ? 0 : 100 - newPercent;
         return new ClientRetention(newClients, returningClients, newPercent, returningPercent);
     }
-
 }

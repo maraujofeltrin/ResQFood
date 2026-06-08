@@ -4,7 +4,7 @@ import ar.edu.itba.paw.models.security.Token;
 import ar.edu.itba.paw.models.security.TokenType;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.TokenDao;
-import ar.edu.itba.paw.persistence.UserDao;
+import ar.edu.itba.paw.services.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,16 +22,16 @@ public class VerificationTokenServiceImpl implements VerificationTokenService {
     private static final Logger LOGGER = LoggerFactory.getLogger(VerificationTokenServiceImpl.class);
 
     private final TokenDao tokenDao;
-    private final UserDao userDao;
+    private final UserService userService;
     private final EmailVerificationMailService emailVerificationMailService;
     private final String baseUrl;
 
     @Autowired
-    public VerificationTokenServiceImpl(final TokenDao tokenDao, final UserDao userDao,
+    public VerificationTokenServiceImpl(final TokenDao tokenDao, final UserService userService,
             final EmailVerificationMailService emailVerificationMailService,
             @Value("${app.base-url}") final String baseUrl) {
         this.tokenDao = tokenDao;
-        this.userDao = userDao;
+        this.userService = userService;
         this.emailVerificationMailService = emailVerificationMailService;
         this.baseUrl = baseUrl;
     }
@@ -54,10 +54,10 @@ public class VerificationTokenServiceImpl implements VerificationTokenService {
         }
 
         final Long userId = maybeToken.get().getUser().getId();
-        userDao.markVerified(userId);
+        userService.markVerified(userId);
         tokenDao.markAsUsed(token, TokenType.EMAIL_VERIFICATION);
 
-        return userDao.findById(userId);
+        return userService.findById(userId);
     }
 
     @Override
@@ -68,7 +68,7 @@ public class VerificationTokenServiceImpl implements VerificationTokenService {
     @Transactional
     @Override
     public void resendVerificationMail(final String email) {
-        final Optional<User> maybeUser = userDao.findByEmail(email);
+        final Optional<User> maybeUser = userService.findByEmail(email);
         if (maybeUser.isPresent() && !maybeUser.get().isVerified()) {
             final User user = maybeUser.get();
             sendVerificationMail(user.getId(), user.getEmail(), user.getLocale());

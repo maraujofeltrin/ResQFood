@@ -16,4 +16,6 @@ public interface CommerceFavoriteService {
      * @throws IllegalArgumentException if the commerce is not found
      */
     void toggleFavorite(long clientUserId, long commerceId);
+
+    List<Long> findClientIdsByCommerce(long commerceId);
 }

@@ -8,12 +8,11 @@ import ar.edu.itba.paw.models.reservation.ReservationCreationException;
 import ar.edu.itba.paw.models.reservation.ReservationRejectionError;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.user.User;
-import ar.edu.itba.paw.persistence.AuctionDao;
-import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.persistence.ReservationDao;
-import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import ar.edu.itba.paw.services.notification.NotificationService;
 import ar.edu.itba.paw.services.pack.DirectReservationCheck;
+import ar.edu.itba.paw.services.pack.PackService;
+import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.services.user.UserService;
 import org.slf4j.Logger;
@@ -22,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -55,28 +55,28 @@ public class ReservationServiceImpl implements ReservationService {
     private final UserService userService;
     private final ClientService clientService;
     private final ReservationDao reservationDao;
-    private final ReservationTokenDao reservationTokenDao;
-    private final PackDao packDao;
+    private final ReservationTokenService reservationTokenService;
+    private final PackService packService;
     private final NotificationService notificationService;
-    private final AuctionDao auctionDao;
+    private final AuctionService auctionService;
     private final ZoneId displayZone;
 
     @Autowired
     public ReservationServiceImpl(final UserService userService,
             final ClientService clientService,
             final ReservationDao reservationDao,
-            final ReservationTokenDao reservationTokenDao,
-            final PackDao packDao,
+            final ReservationTokenService reservationTokenService,
+            final PackService packService,
             final NotificationService notificationService,
-            final AuctionDao auctionDao,
+            final AuctionService auctionService,
             final ZoneId displayZone) {
         this.userService = userService;
         this.clientService = clientService;
         this.reservationDao = reservationDao;
-        this.reservationTokenDao = reservationTokenDao;
-        this.packDao = packDao;
+        this.reservationTokenService = reservationTokenService;
+        this.packService = packService;
         this.notificationService = notificationService;
-        this.auctionDao = auctionDao;
+        this.auctionService = auctionService;
         this.displayZone = displayZone;
     }
 
@@ -100,14 +100,14 @@ public class ReservationServiceImpl implements ReservationService {
         clientService.findByUserId(userId)
                 .orElseThrow(() -> new IllegalStateException("Client profile not found for user id: " + userId));
 
-        if (!packDao.decrementStock(packId, quantity)) {
+        if (!packService.decrementStock(packId, quantity)) {
             throw new ReservationCreationException(ReservationCreationException.Reason.INSUFFICIENT_STOCK, String.valueOf(packId));
         }
 
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final double lineTotal = unitPrice * quantity;
 
-        final Pack pack = packDao.findById(packId)
+        final Pack pack = packService.findById(packId)
                 .orElseThrow(() -> new IllegalStateException("Pack not found after stock update: " + packId));
         final Long commerceId = pack.getCommerceId();
         final User commerceUser = userService.findById(commerceId)
@@ -141,9 +141,9 @@ public class ReservationServiceImpl implements ReservationService {
             final LocalDateTime tokenCreatedAt = LocalDateTime.now(ZoneOffset.UTC);
             final LocalDateTime tokenExpiresAt = tokenCreatedAt.plusHours(48);
 
-            reservationTokenDao.create(acceptToken, reservation.getId(), ReservationToken.Action.ACCEPT,
+            reservationTokenService.create(acceptToken, reservation.getId(), ReservationToken.Action.ACCEPT,
                     tokenCreatedAt, tokenExpiresAt);
-            reservationTokenDao.create(rejectToken, reservation.getId(), ReservationToken.Action.REJECT,
+            reservationTokenService.create(rejectToken, reservation.getId(), ReservationToken.Action.REJECT,
                     tokenCreatedAt, tokenExpiresAt);
 
             notificationService.notifyReservationRequested(reservation, commerceEmail,
@@ -309,7 +309,7 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         final int quantity = reservation.getQuantity() == null ? 1 : reservation.getQuantity();
-        if (!packDao.incrementStock(reservation.getPack().getId(), quantity)) {
+        if (!packService.incrementStock(reservation.getPack().getId(), quantity)) {
             LOGGER.warn("Failed to reject reservation: reservationId={}, error={}", reservationId, ReservationRejectionError.STOCK_RESTORE_FAILED);
             return ReservationServiceResult.failure(ReservationRejectionError.STOCK_RESTORE_FAILED);
         }
@@ -352,13 +352,13 @@ public class ReservationServiceImpl implements ReservationService {
     @Transactional(readOnly = true)
     @Override
     public DirectReservationCheck checkDirectPackReservation(final long packId, final int quantity) {
-        final Optional<Pack> packOpt = packDao.findById(packId)
+        final Optional<Pack> packOpt = packService.findById(packId)
                 .filter(p -> Boolean.TRUE.equals(p.getActive()));
         if (packOpt.isEmpty()) {
             return DirectReservationCheck.blocked(DirectReservationCheck.Outcome.PACK_UNAVAILABLE, null);
         }
         final Pack pack = packOpt.get();
-        final Optional<Auction> auctionForReserve = auctionDao.findByPackId(packId);
+        final Optional<Auction> auctionForReserve = auctionService.findByPackId(packId);
         if (auctionForReserve.isPresent()) {
             final Auction a = auctionForReserve.get();
             if (a.getStatus() == Auction.Status.ACTIVE) {
@@ -441,4 +441,75 @@ public class ReservationServiceImpl implements ReservationService {
         return reservationDao.hasActiveReservation(packId, customerId);
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public boolean hasPaidReservationWithCommerce(final Long customerId, final Long commerceId) {
+        return reservationDao.hasPaidReservationWithCommerce(customerId, commerceId);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<Object[]> countPaidReservationsPerDay(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
+        return reservationDao.countPaidReservationsPerDay(commerceId, from, to);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public int countPaidReservationsInPeriod(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
+        return reservationDao.countPaidReservationsInPeriod(commerceId, from, to);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public BigDecimal sumRevenueInPeriod(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
+        return reservationDao.sumRevenueInPeriod(commerceId, from, to);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Optional<Long> findBestSellingPackId(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
+        return reservationDao.findBestSellingPackId(commerceId, from, to);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public long countByStatusInPeriod(final Long commerceId, final Reservation.Status status, final LocalDateTime from, final LocalDateTime to) {
+        return reservationDao.countByStatusInPeriod(commerceId, status, from, to);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public long countCanceledReservationsInPeriod(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
+        return reservationDao.countCanceledReservationsInPeriod(commerceId, from, to);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public BigDecimal averageTicketInPeriod(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
+        return reservationDao.averageTicketInPeriod(commerceId, from, to);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public long countUniqueClientsInPeriod(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
+        return reservationDao.countUniqueClientsInPeriod(commerceId, from, to);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<Object[]> findTopSellingPacks(final Long commerceId, final LocalDateTime from, final LocalDateTime to, final int limit) {
+        return reservationDao.findTopSellingPacks(commerceId, from, to, limit);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<Object[]> findTopClientsByPaidReservations(final Long commerceId, final LocalDateTime from, final LocalDateTime to, final int limit) {
+        return reservationDao.findTopClientsByPaidReservations(commerceId, from, to, limit);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public long countNewClientsInPeriod(final Long commerceId, final LocalDateTime from, final LocalDateTime to) {
+        return reservationDao.countNewClientsInPeriod(commerceId, from, to);
+    }
 }

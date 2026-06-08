@@ -10,9 +10,8 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.BidDao;
-import ar.edu.itba.paw.persistence.CommerceDao;
-import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.services.notification.NotificationService;
+import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,27 +35,24 @@ public class AuctionServiceImpl implements AuctionService {
 
     private final AuctionDao auctionDao;
     private final BidDao bidDao;
-    private final PackDao packDao;
+    private final PackService packService;
     private final ReservationService reservationService;
-    private final CommerceDao commerceDao;
     private final NotificationService notificationService;
 
     @Autowired
-    public AuctionServiceImpl(final AuctionDao auctionDao, final BidDao bidDao, final PackDao packDao,
-            final ReservationService reservationService, final CommerceDao commerceDao,
-            final NotificationService notificationService) {
+    public AuctionServiceImpl(final AuctionDao auctionDao, final BidDao bidDao, final PackService packService,
+            final ReservationService reservationService, final NotificationService notificationService) {
         this.auctionDao = auctionDao;
         this.bidDao = bidDao;
-        this.packDao = packDao;
+        this.packService = packService;
         this.reservationService = reservationService;
-        this.commerceDao = commerceDao;
         this.notificationService = notificationService;
     }
 
     @Transactional
     @Override
     public Auction createAuction(final long packId, final double initialPrice, final double minBidIncrement, final LocalDateTime endTime) {
-        final Pack pack = packDao.findById(packId)
+        final Pack pack = packService.findById(packId)
                 .orElseThrow(() -> new AuctionCreationException(AuctionCreationException.Reason.PACK_NOT_FOUND, String.valueOf(packId)));
 
         if (!pack.getActive()) {
@@ -226,7 +222,8 @@ public class AuctionServiceImpl implements AuctionService {
         }
 
         auctionDao.updateStatus(auctionId, Auction.Status.CANCELLED);
-        packDao.setActive(pack.getId(), false);
+        pack.setActive(false);
+        packService.update(pack);
 
         LOGGER.info("Auction cancelled: auctionId={}", auctionId);
         return CancelAuctionResult.success();

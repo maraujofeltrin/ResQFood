@@ -36,6 +36,12 @@ public class ReservationTokenServiceImpl implements ReservationTokenService {
         return resolveValidation(token, action);
     }
 
+    @Transactional
+    @Override
+    public ReservationToken create(final String token, final Long reservationId, final ReservationToken.Action action, final LocalDateTime createdAt, final LocalDateTime expiresAt) {
+        return reservationTokenDao.create(token, reservationId, action, createdAt, expiresAt);
+    }
+
     @Transactional(readOnly = true)
     @Override
     public Optional<Long> findReservationIdByToken(final String token) {

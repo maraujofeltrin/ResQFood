@@ -53,4 +53,8 @@ public interface PackService {
     List<Pack> getPublicOffersByCommerce(Long commerceUserId, int page, int pageSize);
 
     int countPublicOffersByCommerce(Long commerceUserId);
+
+    boolean decrementStock(long packId, int quantity);
+
+    boolean incrementStock(long packId, int quantity);
 }

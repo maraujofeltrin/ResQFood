@@ -5,9 +5,8 @@ import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.models.user.UserRegistrationException;
-import ar.edu.itba.paw.persistence.ClientDao;
-import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.UserDao;
+import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.image.ImageService;
 import ar.edu.itba.paw.services.security.VerificationTokenService;
 import org.slf4j.Logger;
@@ -32,20 +31,20 @@ public class UserServiceImpl implements UserService {
             "image/jpeg", "image/png", "image/webp", "image/gif");
 
     private final UserDao userDao;
-    private final ClientDao clientDao;
-    private final CommerceDao commerceDao;
+    private final ClientService clientService;
+    private final CommerceService commerceService;
     private final PasswordEncoder passwordEncoder;
     private final VerificationTokenService verificationTokenService;
     private final ImageService imageService;
 
     @Autowired
-    public UserServiceImpl(final UserDao userDao, final ClientDao clientDao, final CommerceDao commerceDao,
+    public UserServiceImpl(final UserDao userDao, final ClientService clientService, final CommerceService commerceService,
             final PasswordEncoder passwordEncoder,
             final VerificationTokenService verificationTokenService,
             final ImageService imageService) {
         this.userDao = userDao;
-        this.clientDao = clientDao;
-        this.commerceDao = commerceDao;
+        this.clientService = clientService;
+        this.commerceService = commerceService;
         this.passwordEncoder = passwordEncoder;
         this.verificationTokenService = verificationTokenService;
         this.imageService = imageService;
@@ -74,15 +73,15 @@ public class UserServiceImpl implements UserService {
             if (clientProfile == null) {
                 throw new UserRegistrationException(UserRegistrationException.Reason.MISSING_CLIENT_PROFILE);
             }
-            final Optional<Client> existingClient = clientDao.findByUserId(user.getId());
+            final Optional<Client> existingClient = clientService.findByUserId(user.getId());
             if (existingClient.isPresent()) {
                 final Client client = existingClient.get();
                 client.setName(clientProfile.getName());
                 client.setLastName(clientProfile.getLastName());
                 client.setNotificationsVisibilityPreferences(clientProfile.getNotificationsVisibilityPreferences());
-                clientDao.update(client);
+                clientService.update(client);
             } else {
-                clientDao.createClient(
+                clientService.createClient(
                         user.getId(),
                         clientProfile.getName(),
                         clientProfile.getLastName(),
@@ -98,7 +97,7 @@ public class UserServiceImpl implements UserService {
             if (!Commerce.PROVINCE_BUENOS_AIRES.equalsIgnoreCase(commerceProfile.getProvince())) {
                 throw new UserRegistrationException(UserRegistrationException.Reason.INVALID_PROVINCE);
             }
-            final Optional<Commerce> existingCommerce = commerceDao.findByUserId(user.getId());
+            final Optional<Commerce> existingCommerce = commerceService.findByUserId(user.getId());
             if (existingCommerce.isPresent()) {
                 final Commerce commerce = existingCommerce.get();
                 commerce.setCommercialName(commerceProfile.getCommercialName());
@@ -110,9 +109,9 @@ public class UserServiceImpl implements UserService {
                 commerce.setPostalCode(commerceProfile.getPostalCode());
                 commerce.setOpeningTime(commerceProfile.getOpeningTime());
                 commerce.setClosingTime(commerceProfile.getClosingTime());
-                commerceDao.update(commerce);
+                commerceService.update(commerce);
             } else {
-                commerceDao.createCommerce(
+                commerceService.createCommerce(
                         user.getId(),
                         commerceProfile.getCommercialName(),
                         commerceProfile.getCategory(),

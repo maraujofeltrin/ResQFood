@@ -5,7 +5,7 @@ import ar.edu.itba.paw.models.security.Token;
 import ar.edu.itba.paw.models.security.TokenType;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.TokenDao;
-import ar.edu.itba.paw.persistence.UserDao;
+import ar.edu.itba.paw.services.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,17 +24,17 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
     private static final Logger LOGGER = LoggerFactory.getLogger(PasswordResetTokenServiceImpl.class);
 
     private final TokenDao tokenDao;
-    private final UserDao userDao;
+    private final UserService userService;
     private final PasswordResetMailService passwordResetMailService;
     private final PasswordEncoder passwordEncoder;
     private final String baseUrl;
 
     @Autowired
-    public PasswordResetTokenServiceImpl(final TokenDao tokenDao, final UserDao userDao,
+    public PasswordResetTokenServiceImpl(final TokenDao tokenDao, final UserService userService,
             final PasswordResetMailService passwordResetMailService, final PasswordEncoder passwordEncoder,
             @Value("${app.base-url}") final String baseUrl) {
         this.tokenDao = tokenDao;
-        this.userDao = userDao;
+        this.userService = userService;
         this.passwordResetMailService = passwordResetMailService;
         this.passwordEncoder = passwordEncoder;
         this.baseUrl = baseUrl;
@@ -43,7 +43,7 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
     @Transactional
     @Override
     public void requestPasswordReset(final String email) {
-        final Optional<User> user = userDao.findByEmail(email);
+        final Optional<User> user = userService.findByEmail(email);
         if (user.isPresent()) {
             final User requestUser = user.get();
             final Locale locale = requestUser.getLocale() == null
@@ -74,13 +74,13 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
             LOGGER.warn("Password reset failed: invalid or expired token userId={}", resetToken.getUser().getId());
             throw new PasswordResetException(PasswordResetException.Reason.TOKEN_EXPIRED);
         }
-        final User user = userDao.findById(resetToken.getUser().getId())
+        final User user = userService.findById(resetToken.getUser().getId())
                 .orElseThrow(() -> {
                     LOGGER.warn("Password reset failed: user not found userId={}", resetToken.getUser().getId());
                     return new PasswordResetException(PasswordResetException.Reason.USER_NOT_FOUND);
                 });
         final String encodedPassword = passwordEncoder.encode(rawPassword);
-        userDao.updatePassword(user.getId(), encodedPassword);
+        userService.updatePassword(user.getId(), encodedPassword);
         tokenDao.markAsUsed(token, TokenType.PASSWORD_RESET);
     }
 
@@ -88,7 +88,7 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
     @Override
     public Optional<String> getEmailByToken(final String token) {
         return tokenDao.findByTokenAndType(token, TokenType.PASSWORD_RESET)
-                .flatMap(t -> userDao.findById(t.getUser().getId()))
+                .flatMap(t -> userService.findById(t.getUser().getId()))
                 .map(User::getEmail);
     }
 

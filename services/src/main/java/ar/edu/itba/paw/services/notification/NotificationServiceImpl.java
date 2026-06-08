@@ -8,14 +8,13 @@ import ar.edu.itba.paw.models.notification.NotificationType;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.user.User;
-import ar.edu.itba.paw.persistence.AuctionDao;
-import ar.edu.itba.paw.persistence.BidDao;
 import ar.edu.itba.paw.persistence.ClientNotificationPreferenceDao;
-import ar.edu.itba.paw.persistence.CommerceFavoriteDao;
 import ar.edu.itba.paw.persistence.NotificationDao;
-import ar.edu.itba.paw.persistence.PackFavoriteDao;
 import ar.edu.itba.paw.services.auction.AuctionMailService;
+import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.pack.FavoriteMailService;
+import ar.edu.itba.paw.services.pack.PackFavoriteService;
+import ar.edu.itba.paw.services.commerce.CommerceFavoriteService;
 import ar.edu.itba.paw.services.reservation.ReservationMailService;
 import ar.edu.itba.paw.services.user.UserService;
 import org.slf4j.Logger;
@@ -54,11 +53,10 @@ public class NotificationServiceImpl implements NotificationService {
     private final ReservationMailService reservationMailService;
     private final AuctionMailService auctionMailService;
     private final FavoriteMailService favoriteMailService;
-    private final AuctionDao auctionDao;
+    private final AuctionService auctionService;
     private final UserService userService;
-    private final PackFavoriteDao packFavoriteDao;
-    private final CommerceFavoriteDao commerceFavoriteDao;
-    private final BidDao bidDao;
+    private final PackFavoriteService packFavoriteService;
+    private final CommerceFavoriteService commerceFavoriteService;
     private final ZoneId businessZone;
 
     @Autowired
@@ -67,22 +65,20 @@ public class NotificationServiceImpl implements NotificationService {
             final ReservationMailService reservationMailService,
             final AuctionMailService auctionMailService,
             final FavoriteMailService favoriteMailService,
-            final AuctionDao auctionDao,
+            final AuctionService auctionService,
             final UserService userService,
-            final PackFavoriteDao packFavoriteDao,
-            final CommerceFavoriteDao commerceFavoriteDao,
-            final BidDao bidDao,
+            final PackFavoriteService packFavoriteService,
+            final CommerceFavoriteService commerceFavoriteService,
             final ZoneId businessZone) {
         this.notificationDao = notificationDao;
         this.clientNotificationPreferenceDao = clientNotificationPreferenceDao;
         this.reservationMailService = reservationMailService;
         this.auctionMailService = auctionMailService;
         this.favoriteMailService = favoriteMailService;
-        this.auctionDao = auctionDao;
+        this.auctionService = auctionService;
         this.userService = userService;
-        this.packFavoriteDao = packFavoriteDao;
-        this.commerceFavoriteDao = commerceFavoriteDao;
-        this.bidDao = bidDao;
+        this.packFavoriteService = packFavoriteService;
+        this.commerceFavoriteService = commerceFavoriteService;
         this.businessZone = businessZone;
     }
 
@@ -153,7 +149,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     @Override
     public void notifyAuctionOutbid(final long previousBidderId, final long auctionId, final double newAmount) {
-        final Auction auction = auctionDao.findById(auctionId)
+        final Auction auction = auctionService.findById(auctionId)
                 .orElseThrow(() -> new IllegalStateException("Auction not found: " + auctionId));
         final Pack pack = auction.getPack();
         final Long packId = pack != null ? pack.getId() : null;
@@ -179,7 +175,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void notifyPackRestocked(final Pack pack) {
         if (pack == null) return;
-        final List<Long> clientIds = packFavoriteDao.findClientIdsByPack(pack.getId());
+        final List<Long> clientIds = packFavoriteService.findClientIdsByPack(pack.getId());
         final String packTitle = pack.getTitle();
         final String commerceName = commerceCommercialName(pack);
         final LocalDateTime now = currentTimestamp();
@@ -201,7 +197,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void notifyPackPublished(final Pack pack) {
         if (pack == null) return;
-        final List<Long> clientIds = commerceFavoriteDao.findClientIdsByCommerce(pack.getCommerceId());
+        final List<Long> clientIds = commerceFavoriteService.findClientIdsByCommerce(pack.getCommerceId());
         final String packTitle = pack.getTitle();
         final String commerceName = commerceCommercialName(pack);
         final LocalDateTime now = currentTimestamp();
@@ -222,7 +218,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     @Override
     public void notifyAuctionFinished(final long auctionId) {
-        final Auction auction = auctionDao.findById(auctionId).orElse(null);
+        final Auction auction = auctionService.findById(auctionId).orElse(null);
         if (auction == null) return;
         final Pack pack = auction.getPack();
         final Long packId = pack != null ? pack.getId() : null;
@@ -230,7 +226,7 @@ public class NotificationServiceImpl implements NotificationService {
         final String commerceName = commerceCommercialName(pack);
         final Long winnerId = auction.getCurrentBidderId();
         final Double winningAmount = auction.getCurrentBid();
-        final List<Bid> bids = bidDao.findByAuctionId(auctionId);
+        final List<Bid> bids = auctionService.getBidHistory(auctionId);
         final Set<Long> bidderIds = bids.stream()
                 .map(Bid::getClientId)
                 .collect(Collectors.toSet());

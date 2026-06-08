@@ -3,9 +3,13 @@ package ar.edu.itba.paw.services.reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface ReservationTokenService {
+
+    ReservationToken create(String token, Long reservationId, ReservationToken.Action action, LocalDateTime createdAt,
+            LocalDateTime expiresAt);
 
     enum TokenValidationResult {
         SUCCESS,

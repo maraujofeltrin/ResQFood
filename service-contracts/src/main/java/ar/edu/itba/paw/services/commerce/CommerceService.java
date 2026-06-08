@@ -28,4 +28,10 @@ public interface CommerceService {
     List<Pack> getPublicOffers(long commerceUserId, int page, int pageSize);
 
     int countPublicOffers(long commerceUserId);
+
+    Commerce createCommerce(final Long userId, final String commercialName, final Commerce.Category category,
+            final String street, final Integer streetNumber, final Municipality city, final String province,
+            final String postalCode, final String openingTime, final String closingTime);
+
+    Commerce update(final Commerce commerce);
 }

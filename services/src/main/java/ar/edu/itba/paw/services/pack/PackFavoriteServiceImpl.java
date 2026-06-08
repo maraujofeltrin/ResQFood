@@ -2,9 +2,8 @@ package ar.edu.itba.paw.services.pack;
 
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.FavoriteToggleException;
-import ar.edu.itba.paw.persistence.PackDao;
-import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.PackFavoriteDao;
+import ar.edu.itba.paw.services.auction.AuctionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,14 +18,14 @@ public class PackFavoriteServiceImpl implements PackFavoriteService {
     private static final Logger LOGGER = LoggerFactory.getLogger(PackFavoriteServiceImpl.class);
 
     private final PackFavoriteDao packFavoriteDao;
-    private final PackDao packDao;
-    private final AuctionDao auctionDao;
+    private final PackService packService;
+    private final AuctionService auctionService;
 
     @Autowired
-    public PackFavoriteServiceImpl(final PackFavoriteDao packFavoriteDao, final PackDao packDao, final AuctionDao auctionDao) {
+    public PackFavoriteServiceImpl(final PackFavoriteDao packFavoriteDao, final PackService packService, final AuctionService auctionService) {
         this.packFavoriteDao = packFavoriteDao;
-        this.packDao = packDao;
-        this.auctionDao = auctionDao;
+        this.packService = packService;
+        this.auctionService = auctionService;
     }
 
     @Transactional(readOnly = true)
@@ -63,7 +62,7 @@ public class PackFavoriteServiceImpl implements PackFavoriteService {
             LOGGER.info("User {} removed pack {} from favorites", clientUserId, packId);
             return;
         }
-        final Pack pack = packDao.findById(packId).orElseThrow(() -> {
+        final Pack pack = packService.findById(packId).orElseThrow(() -> {
             LOGGER.warn("Favorite toggle rejected: pack not found packId={} clientUserId={}", packId, clientUserId);
             return new FavoriteToggleException(FavoriteToggleException.Reason.PACK_NOT_FOUND, "Pack not found: " + packId);
         });
@@ -72,11 +71,17 @@ public class PackFavoriteServiceImpl implements PackFavoriteService {
             throw new FavoriteToggleException(FavoriteToggleException.Reason.PACK_UNAVAILABLE, "Pack is not available for favorites: " + packId);
         }
         // Do not allow favoriting packs that are part of an auction
-        if (auctionDao.findByPackId(packId).isPresent()) {
+        if (auctionService.findByPackId(packId).isPresent()) {
             LOGGER.warn("Favorite toggle rejected: pack is an auction packId={} clientUserId={}", packId, clientUserId);
             throw new FavoriteToggleException(FavoriteToggleException.Reason.PACK_UNAVAILABLE, "Pack is an auction: " + packId);
         }
         packFavoriteDao.insert(clientUserId, packId);
         LOGGER.info("User {} added pack {} to favorites", clientUserId, packId);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<Long> findClientIdsByPack(final long packId) {
+        return packFavoriteDao.findClientIdsByPack(packId);
     }
 }

@@ -101,4 +101,19 @@ public class CommerceServiceImpl implements CommerceService {
     public int countPublicOffers(final long commerceUserId) {
         return packService.countPublicOffersByCommerce(Long.valueOf(commerceUserId));
     }
+
+    @Transactional
+    @Override
+    public Commerce createCommerce(final Long userId, final String commercialName, final Commerce.Category category,
+            final String street, final Integer streetNumber, final Municipality city, final String province,
+            final String postalCode, final String openingTime, final String closingTime) {
+        return commerceDao.createCommerce(userId, commercialName, category, street, streetNumber, city, province,
+                postalCode, openingTime, closingTime);
+    }
+
+    @Transactional
+    @Override
+    public Commerce update(final Commerce commerce) {
+        return commerceDao.update(commerce);
+    }
 }

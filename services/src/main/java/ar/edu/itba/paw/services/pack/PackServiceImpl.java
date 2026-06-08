@@ -4,9 +4,9 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackDirectEditException;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
-import ar.edu.itba.paw.persistence.ImageDao;
 import ar.edu.itba.paw.persistence.PackDao;
 import ar.edu.itba.paw.services.auction.AuctionService;
+import ar.edu.itba.paw.services.image.ImageService;
 import ar.edu.itba.paw.services.notification.NotificationService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.slf4j.Logger;
@@ -25,16 +25,16 @@ public class PackServiceImpl implements PackService {
     private static final Logger LOGGER = LoggerFactory.getLogger(PackServiceImpl.class);
 
     private final PackDao packDao;
-    private final ImageDao imageDao;
+    private final ImageService imageService;
     private final AuctionService auctionService;
     private final ReservationService reservationService;
     private final NotificationService notificationService;
 
     @Autowired
-    public PackServiceImpl(final PackDao packDao, final ImageDao imageDao, final AuctionService auctionService,
+    public PackServiceImpl(final PackDao packDao, final ImageService imageService, final AuctionService auctionService,
             final ReservationService reservationService, final NotificationService notificationService) {
         this.packDao = packDao;
-        this.imageDao = imageDao;
+        this.imageService = imageService;
         this.auctionService = auctionService;
         this.reservationService = reservationService;
         this.notificationService = notificationService;
@@ -128,7 +128,7 @@ public class PackServiceImpl implements PackService {
         packToUpdate.setTags(tags != null ? tags : java.util.Collections.emptyList());
 
         if (imageId != null) {
-            packToUpdate.setImage(imageDao.getImage(imageId)
+            packToUpdate.setImage(imageService.getImage(imageId)
                     .orElseThrow(() -> new NoSuchElementException("Image not found: " + imageId)));
         }
 
@@ -205,5 +205,17 @@ public class PackServiceImpl implements PackService {
     @Override
     public int countPublicOffersByCommerce(final Long commerceUserId) {
         return packDao.countPublicOffersByCommerce(commerceUserId);
+    }
+
+    @Transactional
+    @Override
+    public boolean decrementStock(final long packId, final int quantity) {
+        return packDao.decrementStock(packId, quantity);
+    }
+
+    @Transactional
+    @Override
+    public boolean incrementStock(final long packId, final int quantity) {
+        return packDao.incrementStock(packId, quantity);
     }
 }
