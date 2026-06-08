@@ -220,7 +220,7 @@
                                             currentPage="${currentPage}"
                                             searchQuery="${searchQuery}"
                                             selectedStatus="${selectedStatus}"
-                                            auctionVisual="${auctionVisualReservationIds.contains(reservation.id)}" />
+                                            auctionVisual="${not empty reservation.pack.auction}" />
                                     </c:forEach>
                                 </div>
                             </c:otherwise>
