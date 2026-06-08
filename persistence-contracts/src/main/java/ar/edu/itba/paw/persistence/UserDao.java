@@ -27,8 +27,6 @@ public interface UserDao {
      */
     User createUser(String email, String password, String name, String phone, User.Role role, Locale locale);
 
-    User updateUser(Long id, String password, String name, String phone, User.Role role);
-
     void updatePassword(final Long id, final String password);
 
     Optional<User> findByEmail(String email);

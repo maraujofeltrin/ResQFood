@@ -110,4 +110,12 @@ public class Notification {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getReadAt() { return readAt; }
     public LocalDateTime getDeletedAt() { return deletedAt; }
+
+    public void setReadAt(final LocalDateTime readAt) {
+        this.readAt = readAt;
+    }
+
+    public void setDeletedAt(final LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
 }

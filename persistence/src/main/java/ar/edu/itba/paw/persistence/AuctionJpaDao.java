@@ -269,19 +269,19 @@ public class AuctionJpaDao implements AuctionDao {
 
     @Override
     public void updateStatus(final long auctionId, final Auction.Status status) {
-        em.createQuery("UPDATE Auction a SET a.status = :status WHERE a.id = :auctionId")
-            .setParameter("status", status)
-            .setParameter("auctionId", auctionId)
-            .executeUpdate();
+        final Auction auction = em.find(Auction.class, auctionId);
+        if (auction != null) {
+            auction.setStatus(status);
+        }
     }
 
     @Override
     public void updateCurrentBid(final long auctionId, final double amount, final long bidderId) {
-        em.createQuery("UPDATE Auction a SET a.currentBid = :amount, a.currentBidderId = :bidderId WHERE a.id = :auctionId")
-            .setParameter("amount", amount)
-            .setParameter("bidderId", bidderId)
-            .setParameter("auctionId", auctionId)
-            .executeUpdate();
+        final Auction auction = em.find(Auction.class, auctionId);
+        if (auction != null) {
+            auction.setCurrentBid(amount);
+            auction.setCurrentBidderId(bidderId);
+        }
     }
 
     @Override

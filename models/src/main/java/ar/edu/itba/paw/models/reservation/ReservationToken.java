@@ -75,6 +75,10 @@ public class ReservationToken {
         return used;
     }
 
+    public void setUsed(final boolean used) {
+        this.used = used;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }

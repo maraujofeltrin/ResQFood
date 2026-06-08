@@ -91,12 +91,7 @@ public class NotificationJpaDao implements NotificationDao {
         if (notification == null || notification.getDeletedAt() != null) {
             return Optional.empty();
         }
-        em.createQuery("UPDATE Notification n SET n.readAt = :readAt WHERE n.id = :id AND n.deletedAt IS NULL")
-                .setParameter("readAt", readAt)
-                .setParameter("id", id)
-                .executeUpdate();
-        em.flush();
-        em.refresh(notification);
+        notification.setReadAt(readAt);
         return Optional.of(notification);
     }
 
@@ -106,11 +101,7 @@ public class NotificationJpaDao implements NotificationDao {
         if (notification == null || notification.getDeletedAt() != null) {
             return Optional.empty();
         }
-        em.createQuery("UPDATE Notification n SET n.readAt = NULL WHERE n.id = :id AND n.deletedAt IS NULL")
-                .setParameter("id", id)
-                .executeUpdate();
-        em.flush();
-        em.refresh(notification);
+        notification.setReadAt(null);
         return Optional.of(notification);
     }
 
@@ -129,12 +120,7 @@ public class NotificationJpaDao implements NotificationDao {
         if (notification == null || notification.getDeletedAt() != null) {
             return Optional.empty();
         }
-        em.createQuery("UPDATE Notification n SET n.deletedAt = :deletedAt WHERE n.id = :id AND n.deletedAt IS NULL")
-                .setParameter("deletedAt", deletedAt)
-                .setParameter("id", id)
-                .executeUpdate();
-        em.flush();
-        em.refresh(notification);
+        notification.setDeletedAt(deletedAt);
         return Optional.of(notification);
     }
 

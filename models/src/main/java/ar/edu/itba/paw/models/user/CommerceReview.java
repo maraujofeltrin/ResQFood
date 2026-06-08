@@ -91,6 +91,18 @@ public class CommerceReview {
         return updatedAt;
     }
 
+    public void setRating(final Integer rating) {
+        this.rating = rating;
+    }
+
+    public void setBody(final String body) {
+        this.body = body;
+    }
+
+    public void setUpdatedAt(final LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
     @Override
     public String toString() {
         return "CommerceReview [id=" + id + ", commerceUserId=" + getCommerceUserId() + ", clientUserId="

@@ -112,12 +112,20 @@ public class Reservation {
         return status;
     }
 
+    public void setStatus(final Status status) {
+        this.status = status;
+    }
+
     public String getPickupCode() {
         return pickupCode;
     }
 
     public LocalDateTime getPickupConfirmationDate() {
         return pickupConfirmationDate;
+    }
+
+    public void setPickupConfirmationDate(final LocalDateTime pickupConfirmationDate) {
+        this.pickupConfirmationDate = pickupConfirmationDate;
     }
 
     public Integer getQuantity() {

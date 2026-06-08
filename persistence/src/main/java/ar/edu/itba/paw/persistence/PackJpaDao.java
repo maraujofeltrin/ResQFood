@@ -64,28 +64,27 @@ public class PackJpaDao implements PackDao {
 
     @Override
     public Pack update(final Pack pack) {
-        return em.merge(pack);
+        return pack;
     }
 
     @Override
     public void setActive(final Long id, final boolean active) {
-        final int updated = em.createQuery("UPDATE Pack p SET p.active = :active WHERE p.id = :id")
-                .setParameter("active", active)
-                .setParameter("id", id)
-                .executeUpdate();
-        if (updated == 0) {
-            LOGGER.warn("setActive: no packs row matched for id {} (active={})", id, Boolean.valueOf(active));
+        final Pack pack = em.find(Pack.class, id);
+        if (pack == null) {
+            LOGGER.warn("setActive: no pack found for id {} (active={})", id, Boolean.valueOf(active));
+            return;
         }
+        pack.setActive(Boolean.valueOf(active));
     }
 
     @Override
     public void softDelete(final Long id) {
-        final int updated = em.createQuery("UPDATE Pack p SET p.deleted = true WHERE p.id = :id")
-                .setParameter("id", id)
-                .executeUpdate();
-        if (updated == 0) {
-            LOGGER.warn("softDelete: no packs row matched for id {}", id);
+        final Pack pack = em.find(Pack.class, id);
+        if (pack == null) {
+            LOGGER.warn("softDelete: no pack found for id {}", id);
+            return;
         }
+        pack.setDeleted(Boolean.TRUE);
     }
 
     @Override

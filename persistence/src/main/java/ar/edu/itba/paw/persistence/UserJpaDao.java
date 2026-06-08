@@ -25,28 +25,11 @@ public class UserJpaDao implements UserDao {
     }
 
     @Override
-    public User updateUser(final Long id, final String password, final String name, final String phone, final User.Role role) {
-        em.createQuery("UPDATE User u SET u.password = :pwd, u.name = :n, u.phone = :p, u.role = :r WHERE u.id = :id")
-                .setParameter("pwd", password)
-                .setParameter("n", name)
-                .setParameter("p", phone)
-                .setParameter("r", role)
-                .setParameter("id", id)
-                .executeUpdate();
+    public void updatePassword(final Long id, final String password) {
         final User user = em.find(User.class, id);
         if (user != null) {
-            em.flush();
-            em.refresh(user);
+            user.setPassword(password);
         }
-        return user;
-    }
-
-    @Override
-    public void updatePassword(final Long id, final String password) {
-        em.createQuery("UPDATE User u SET u.password = :pwd WHERE u.id = :id")
-                .setParameter("pwd", password)
-                .setParameter("id", id)
-                .executeUpdate();
     }
 
     @Override
@@ -66,25 +49,26 @@ public class UserJpaDao implements UserDao {
 
     @Override
     public void markVerified(final Long userId) {
-        em.createQuery("UPDATE User u SET u.verified = true WHERE u.id = :id")
-                .setParameter("id", userId)
-                .executeUpdate();
+        final User user = em.find(User.class, userId);
+        if (user != null) {
+            user.setVerified(true);
+        }
     }
 
     @Override
     public void updateProfileImage(final long userId, final Long imageId) {
-        em.flush(); // Ensure pending Image inserts are flushed to the DB to avoid FK violations
-        em.createQuery("UPDATE User u SET u.profileImage = :img WHERE u.id = :id")
-                .setParameter("img", imageId != null ? em.getReference(Image.class, imageId) : null)
-                .setParameter("id", userId)
-                .executeUpdate();
+        em.flush(); // Ensures the Image is persisted before being referenced by the User
+        final User user = em.find(User.class, userId);
+        if (user != null) {
+            user.setProfileImage(imageId != null ? em.getReference(Image.class, imageId) : null);
+        }
     }
 
     @Override
     public void updateLocale(final long userId, final String languageTag) {
-        em.createQuery("UPDATE User u SET u.locale = :loc WHERE u.id = :id")
-                .setParameter("loc", Locale.forLanguageTag(languageTag))
-                .setParameter("id", userId)
-                .executeUpdate();
+        final User user = em.find(User.class, userId);
+        if (user != null) {
+            user.setLocale(Locale.forLanguageTag(languageTag));
+        }
     }
 }

@@ -31,6 +31,6 @@ public class ClientJpaDao implements ClientDao {
 
     @Override
     public Client update(final Client client) {
-        return em.merge(client);
+        return client;
     }
 }

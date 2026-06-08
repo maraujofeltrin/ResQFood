@@ -82,31 +82,21 @@ public class ReservationJpaDao implements ReservationDao {
     @Override
     public Reservation updateStatus(final Long id, final Reservation.Status status) {
         final Reservation r = em.find(Reservation.class, id);
-        if (r != null) {
-            em.createQuery("UPDATE Reservation r SET r.status = :status WHERE r.id = :id")
-                .setParameter("status", status)
-                .setParameter("id", id)
-                .executeUpdate();
-            em.refresh(r);
-        } else {
+        if (r == null) {
             throw new IllegalStateException("Reservation not found: " + id);
         }
+        r.setStatus(status);
         return r;
     }
 
     @Override
     public Reservation confirmPickup(final Long id, final LocalDateTime pickupConfirmationDate) {
         final Reservation r = em.find(Reservation.class, id);
-        if (r != null) {
-            em.createQuery("UPDATE Reservation r SET r.status = :status, r.pickupConfirmationDate = :date WHERE r.id = :id")
-                .setParameter("status", Reservation.Status.PAID)
-                .setParameter("date", pickupConfirmationDate)
-                .setParameter("id", id)
-                .executeUpdate();
-            em.refresh(r);
-        } else {
+        if (r == null) {
             throw new IllegalStateException("Reservation not found: " + id);
         }
+        r.setStatus(Reservation.Status.PAID);
+        r.setPickupConfirmationDate(pickupConfirmationDate);
         return r;
     }
 

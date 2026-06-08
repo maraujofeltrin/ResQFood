@@ -38,17 +38,13 @@ public class CommerceReviewJpaDao implements CommerceReviewDao {
 
     @Override
     public CommerceReview updateReview(Long id, Integer rating, String body) {
-        em.createQuery("UPDATE CommerceReview r SET r.rating = :rating, r.body = :body, r.updatedAt = :updatedAt WHERE r.id = :id")
-                .setParameter("rating", rating)
-                .setParameter("body", body)
-                .setParameter("updatedAt", LocalDateTime.now())
-                .setParameter("id", id)
-                .executeUpdate();
         final CommerceReview review = em.find(CommerceReview.class, id);
-        if (review != null) {
-            em.flush();
-            em.refresh(review);
+        if (review == null) {
+            return null;
         }
+        review.setRating(rating);
+        review.setBody(body);
+        review.setUpdatedAt(LocalDateTime.now());
         return review;
     }
 

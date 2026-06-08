@@ -46,7 +46,7 @@ public class CommerceJpaDao implements CommerceDao {
 
     @Override
     public Commerce update(final Commerce commerce) {
-        return em.merge(commerce);
+        return commerce;
     }
 
     @Override

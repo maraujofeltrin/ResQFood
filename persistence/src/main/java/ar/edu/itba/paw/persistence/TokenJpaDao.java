@@ -39,12 +39,10 @@ public class TokenJpaDao implements TokenDao {
 
     @Override
     public void markAsUsed(final String token, final TokenType type) {
-        int updated = em.createQuery("UPDATE Token t SET t.used = true WHERE t.token = :token AND t.type = :type")
-                .setParameter("token", token)
-                .setParameter("type", type)
-                .executeUpdate();
-        if (updated == 0) {
+        final Token entity = em.find(Token.class, token);
+        if (entity == null || entity.getType() != type) {
             throw new IllegalArgumentException("Token not found or type mismatch");
         }
+        entity.setUsed(true);
     }
 }

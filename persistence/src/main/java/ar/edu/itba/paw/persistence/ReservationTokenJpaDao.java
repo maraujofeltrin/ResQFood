@@ -42,11 +42,10 @@ public class ReservationTokenJpaDao implements ReservationTokenDao {
 
     @Override
     public void markAsUsed(final String token) {
-        final int updated = em.createQuery("UPDATE ReservationToken rt SET rt.used = true WHERE rt.token = :token")
-            .setParameter("token", token)
-            .executeUpdate();
-        if (updated <= 0) {
+        final ReservationToken rt = em.find(ReservationToken.class, token);
+        if (rt == null) {
             throw new IllegalArgumentException("Reservation token not found");
         }
+        rt.setUsed(true);
     }
 }

@@ -131,6 +131,22 @@ public class User {
         return profileImage != null ? profileImage.getId() : null;
     }
 
+    public void setPassword(final String password) {
+        this.password = password;
+    }
+
+    public void setVerified(final boolean verified) {
+        this.verified = verified;
+    }
+
+    public void setProfileImage(final Image profileImage) {
+        this.profileImage = profileImage;
+    }
+
+    public void setLocale(final Locale locale) {
+        this.locale = locale;
+    }
+
     @Override
     public String toString() {
         return "User [id=" + id + ", email=" + email + ", name=" + name + ", phone=" + phone + ", role="
