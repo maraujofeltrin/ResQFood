@@ -300,10 +300,12 @@
                     </c:choose>
                 </div>
                 <c:if test="${auctionPresent}">
-                    <paw:bidHistoryCard packId="${packId}" items="${auctionBidHistoryItems}"/>
+                    <paw:bidHistoryCard packId="${packId}" items="${auctionBidHistoryItems}"
+                                       currentPage="${bidCurrentPage}" totalPages="${bidTotalPages}"/>
                 </c:if>
                 <c:if test="${isOwner and not auctionPresent}">
-                    <paw:reservationHistoryCard packId="${packId}" items="${packReservationHistoryItems}"/>
+                    <paw:reservationHistoryCard packId="${packId}" items="${packReservationHistoryItems}"
+                                               currentPage="${reservationCurrentPage}" totalPages="${reservationTotalPages}"/>
                 </c:if>
             </aside>
         </div>

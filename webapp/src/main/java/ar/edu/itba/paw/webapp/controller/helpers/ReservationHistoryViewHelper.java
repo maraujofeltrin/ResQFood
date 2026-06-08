@@ -70,6 +70,15 @@ public final class ReservationHistoryViewHelper {
      */
     public static List<ReservationHistoryRow> buildRows(final List<Reservation> reservations,
             final MessageSource messageSource, final Locale locale) {
+        return buildRows(reservations, messageSource, locale, 0);
+    }
+
+    /**
+     * @param globalOffset 0-based index of the first item in this page within the full result set.
+     *                     Used so avatar alternating colors remain consistent across pages.
+     */
+    public static List<ReservationHistoryRow> buildRows(final List<Reservation> reservations,
+            final MessageSource messageSource, final Locale locale, final int globalOffset) {
         final List<ReservationHistoryRow> rows = new ArrayList<>();
         for (int i = 0; i < reservations.size(); i++) {
             final Reservation reservation = reservations.get(i);
@@ -79,7 +88,7 @@ public final class ReservationHistoryViewHelper {
             final String amountDisplay = ViewFormatUtils.formatMoney(reservation.getFinalPrice());
             final String relative = ViewFormatUtils.formatRelativeTime(reservation.getReservationDate(), messageSource, locale);
             final String statusStr = reservation.getStatus() != null ? reservation.getStatus().name() : "";
-            rows.add(new ReservationHistoryRow(initials, displayName, relative, amountDisplay, statusStr, i));
+            rows.add(new ReservationHistoryRow(initials, displayName, relative, amountDisplay, statusStr, globalOffset + i));
         }
         return rows;
     }

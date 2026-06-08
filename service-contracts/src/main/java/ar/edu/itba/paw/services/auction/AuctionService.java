@@ -72,6 +72,11 @@ public interface AuctionService {
     List<Bid> getBidHistory(long auctionId, int page, int pageSize);
 
     /**
+     * Returns the total number of bids for an auction.
+     */
+    int countBidsByAuction(long auctionId);
+
+    /**
      * Checks if the given user is currently leading the given auction.
      */
     boolean isClientLeading(long auctionId, long userId);
