@@ -180,7 +180,7 @@ public class PackJpaDao implements PackDao {
         }
 
         return em.createQuery(
-                        "SELECT p FROM Pack p LEFT JOIN FETCH p.image LEFT JOIN FETCH p.auction "
+                        "SELECT p FROM Pack p LEFT JOIN FETCH p.auction "
                                 + "WHERE p.id IN :ids ORDER BY p.id DESC",
                         Pack.class)
                 .setParameter("ids", ids)
