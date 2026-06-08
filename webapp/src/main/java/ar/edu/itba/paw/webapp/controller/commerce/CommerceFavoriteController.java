@@ -11,7 +11,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class CommerceFavoriteController {
@@ -31,7 +33,9 @@ public class CommerceFavoriteController {
     @PostMapping("/commerces/{commerceId}/favorite")
     public String toggleFavorite(
             @PathVariable("commerceId") final long commerceId,
-            final Authentication authentication) {
+            @RequestHeader(value = "Referer", required = false) final String referer,
+            final Authentication authentication,
+            final RedirectAttributes redirectAttributes) {
         final User user = authResolver.resolveUser(authentication);
         try {
             commerceFavoriteService.toggleFavorite(user.getId(), commerceId);
@@ -39,6 +43,14 @@ public class CommerceFavoriteController {
             LOGGER.debug("Commerce favorite toggle rejected clientId={} commerceId={}", Long.valueOf(user.getId()),
                     Long.valueOf(commerceId), ex);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
+        if (referer != null && !referer.isEmpty()) {
+            try {
+                final java.net.URL refUrl = new java.net.URL(referer);
+                return "redirect:" + refUrl.getFile();
+            } catch (final java.net.MalformedURLException e) {
+                // Fallback to default
+            }
         }
         return "redirect:/commerces/" + commerceId;
     }

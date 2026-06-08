@@ -370,7 +370,21 @@
                 btn.classList.add('pack-submit-btn--submitting');
                 var label = btn.querySelector('.pack-submit-btn__label');
                 if (label && btn.getAttribute('data-submitting-text')) {
+                    if (!btn.getAttribute('data-original-text')) {
+                        btn.setAttribute('data-original-text', label.textContent);
+                    }
                     label.textContent = btn.getAttribute('data-submitting-text');
+                }
+            });
+            window.addEventListener('pageshow', function () {
+                submitted = false;
+                btn.disabled = false;
+                btn.removeAttribute('aria-disabled');
+                btn.classList.remove('pack-submit-btn--submitting');
+                var label = btn.querySelector('.pack-submit-btn__label');
+                var originalText = btn.getAttribute('data-original-text');
+                if (label && originalText) {
+                    label.textContent = originalText;
                 }
             });
         })();
@@ -393,7 +407,21 @@
                 btn.classList.add('auction-submit-btn--submitting');
                 var label = btn.querySelector('.auction-submit-btn__label');
                 if (label && btn.getAttribute('data-submitting-text')) {
+                    if (!btn.getAttribute('data-original-text')) {
+                        btn.setAttribute('data-original-text', label.textContent);
+                    }
                     label.textContent = btn.getAttribute('data-submitting-text');
+                }
+            });
+            window.addEventListener('pageshow', function () {
+                submitted = false;
+                btn.disabled = false;
+                btn.removeAttribute('aria-disabled');
+                btn.classList.remove('auction-submit-btn--submitting');
+                var label = btn.querySelector('.auction-submit-btn__label');
+                var originalText = btn.getAttribute('data-original-text');
+                if (label && originalText) {
+                    label.textContent = originalText;
                 }
             });
         })();
