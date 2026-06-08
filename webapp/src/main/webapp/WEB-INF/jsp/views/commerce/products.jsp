@@ -170,8 +170,8 @@ uri="http://itba.edu.ar/paw/tags" %>
                   currencyCode="ARS"
                   var="formattedOldPrice"
                 />
-                <c:set var="isAuction" value="${auctionPackIds.contains(pack.id)}" />
-                <c:set var="auctionActive" value="${isAuction ? packIdToAuctionActive[pack.id] : false}" />
+                <c:set var="isAuction" value="${not empty pack.auction}" />
+                <c:set var="auctionActive" value="${isAuction and pack.auction.active}" />
                 <c:set var="isEndedAuction" value="${isAuction and not auctionActive}" />
                 <c:set var="isOutOfStockPack" value="${not isAuction and pack.stock == 0}" />
 
@@ -204,12 +204,12 @@ uri="http://itba.edu.ar/paw/tags" %>
                   badgeText="${badgeText}"
                   badgeError="${badgeError}"
                   rescueLabel="${finalPriceLabel}"
-                  manageable="${not auctionPackIds.contains(pack.id)}"
+                  manageable="${not isAuction}"
                   commerceId="${commerceId}"
-                  auction="${auctionPackIds.contains(pack.id)}"
-                  auctionId="${auctionPackIds.contains(pack.id) ? packIdToAuctionId[pack.id] : ''}"
-                  auctionActive="${auctionPackIds.contains(pack.id) ? packIdToAuctionActive[pack.id] : false}"
-                  auctionHasBids="${auctionPackIds.contains(pack.id) ? packIdToAuctionHasBids[pack.id] : false}"
+                  auction="${isAuction}"
+                  auctionId="${isAuction ? pack.auction.id : ''}"
+                  auctionActive="${auctionActive}"
+                  auctionHasBids="${isAuction and pack.auction.currentBid != null}"
                 />
               </c:forEach>
             </div>

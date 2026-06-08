@@ -91,7 +91,7 @@ public class PackDetailModelBuilder {
         mav.addObject("packId", pack.getId());
         mav.addObject("packImageId", pack.getImageId());
 
-        final Optional<Auction> auctionOpt = auctionService.findByPackId(pack.getId());
+        final Optional<Auction> auctionOpt = Optional.ofNullable(pack.getAuction());
         final boolean auctionPresent = auctionOpt.isPresent();
         final boolean auctionActive = auctionOpt.map(Auction::isActive).orElse(false);
         mav.addObject("auctionPresent", Boolean.valueOf(auctionPresent));

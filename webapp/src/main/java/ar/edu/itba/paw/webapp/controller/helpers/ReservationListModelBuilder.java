@@ -25,12 +25,9 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.Collections;
 
 /**
  * Builds the {@link ModelAndView} for the reservation list view ({@code reservationsView.jsp}).
@@ -107,8 +104,6 @@ public class ReservationListModelBuilder {
         mav.addObject("auctionStatusOptions", Auction.Status.values());
         mav.addObject("clientParticipationAuctions", List.of());
         mav.addObject("auctionParticipationBadges", Map.of());
-        mav.addObject("auctionVisualReservationIds",
-                resolveAuctionReservationIds(reservations));
         return mav;
     }
 
@@ -204,7 +199,6 @@ public class ReservationListModelBuilder {
         mav.addObject("formattedReservationDatesById", Map.of());
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
-        mav.addObject("auctionVisualReservationIds", Set.of());
     }
 
     private void buildClientReservationsTab(final ModelAndView mav, final User currentUser,
@@ -235,7 +229,6 @@ public class ReservationListModelBuilder {
         mav.addObject("auctionParticipationBadges", Map.of());
         mav.addObject("currentPage", safePage);
         mav.addObject("totalPages", totalPages);
-        mav.addObject("auctionVisualReservationIds", resolveAuctionReservationIds(reservations));
     }
 
     // -- Helpers --------------------------------------------------------------
@@ -252,29 +245,6 @@ public class ReservationListModelBuilder {
             map.put(reservation.getId(), formatUtcDateTimeForDisplay(reservation.getReservationDate()));
         }
     }
-
-    private Set<Long> resolveAuctionReservationIds(final List<Reservation> reservations) {
-        final Set<Long> distinctPackIds = new HashSet<>();
-        for (final Reservation r : reservations) {
-            if (r.getPack() != null) {
-                distinctPackIds.add(r.getPack().getId());
-            }
-        }
-        if (distinctPackIds.isEmpty()) {
-            return Collections.emptySet();
-        }
-        final Set<Long> auctionPackIds = auctionService.findPackIdsWithAuction(distinctPackIds);
-        final Set<Long> ids = new HashSet<>();
-        for (final Reservation r : reservations) {
-            if (r.getPack() != null && auctionPackIds.contains(r.getPack().getId())) {
-                ids.add(r.getId());
-            }
-        }
-        return ids;
-    }
-
-
-
 
     private static String clientParticipationAuctionBadge(final Auction auction, final boolean leading) {
         if (auction.getStatus() == Auction.Status.CANCELLED) {

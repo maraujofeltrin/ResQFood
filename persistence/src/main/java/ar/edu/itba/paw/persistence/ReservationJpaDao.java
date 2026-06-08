@@ -276,6 +276,7 @@ public class ReservationJpaDao implements ReservationDao {
                         + "JOIN FETCH r.pack p "
                         + "LEFT JOIN FETCH p.image "
                         + "JOIN FETCH p.commerce "
+                        + "LEFT JOIN FETCH p.auction "
                         + "WHERE r.id IN :ids "
                         + "ORDER BY r.reservationDate DESC, r.id DESC",
                 Reservation.class)

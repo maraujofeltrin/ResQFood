@@ -17,6 +17,11 @@ public interface PackService {
     void deletePack(long packId) throws PackDirectEditException;
 
     /**
+     * Same as {@link #findById(Long)} but eagerly loads {@code pack.auction}.
+     */
+    Optional<Pack> findByIdWithAuction(Long id);
+
+    /**
      * Returns a pack visible on its public detail page.
      * Inactive packs are visible only to their owning commerce.
      */

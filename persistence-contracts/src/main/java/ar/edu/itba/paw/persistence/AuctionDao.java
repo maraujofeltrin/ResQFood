@@ -5,10 +5,8 @@ import ar.edu.itba.paw.models.auction.AuctionSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public interface AuctionDao {
 
@@ -51,7 +49,4 @@ public interface AuctionDao {
 
     int countParticipatedAuctions(long clientId, Auction.Status status, String query);
 
-    Set<Long> findPackIdsWithAuction(Collection<Long> packIds);
-
-    List<Object[]> findSummariesByPackIds(Collection<Long> packIds);
 }

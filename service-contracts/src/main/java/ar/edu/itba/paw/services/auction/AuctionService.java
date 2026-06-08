@@ -10,7 +10,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 public interface AuctionService {
 
@@ -87,11 +86,7 @@ public interface AuctionService {
 
     int countParticipatedAuctions(long clientId, Auction.Status status, String query);
 
-    Set<Long> findPackIdsWithAuction(Collection<Long> packIds);
-
     Map<Long, Double> getMaxBidsByClientForAuctions(long clientUserId, Collection<Long> auctionIds);
-
-    List<AuctionPackSummary> findSummariesByPackIds(Collection<Long> packIds);
 
     boolean hasClientBidOnAuction(long auctionId, long clientUserId);
 }
