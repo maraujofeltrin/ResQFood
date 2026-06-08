@@ -125,6 +125,7 @@ public class CommerceJpaDaoTest {
         assertTrue(commerce.isPresent());
         assertTrue(Hibernate.isInitialized(commerce.get().getUser()));
         assertEquals(EMAIL, commerce.get().getUser().getEmail());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerces"));
     }
 
     @Test
@@ -272,6 +273,7 @@ public class CommerceJpaDaoTest {
         assertFalse(commerces.isEmpty());
         assertTrue(Hibernate.isInitialized(commerces.get(0).getUser()));
         assertNotNull(commerces.get(0).getUser().getEmail());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerces"));
     }
 
     @Test

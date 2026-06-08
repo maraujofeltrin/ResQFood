@@ -93,6 +93,7 @@ public class ClientNotificationPreferenceJpaDaoTest {
         // 3. Asserts
         assertTrue(found.isPresent());
         assertTrue(found.get().isMailEnabled());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "client_notification_preferences"));
     }
 
     @Test
@@ -118,5 +119,6 @@ public class ClientNotificationPreferenceJpaDaoTest {
 
         // 3. Asserts
         assertEquals(2, prefs.size());
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "client_notification_preferences"));
     }
 }

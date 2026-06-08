@@ -376,6 +376,7 @@ public class PackJpaDaoTest {
         // 3. Asserts
         assertEquals(1, filtered.size());
         assertEquals(ownPack.getId(), filtered.get(0).getId());
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 
     @Test
@@ -699,6 +700,8 @@ public class PackJpaDaoTest {
         assertNotNull(reloaded.get().getAuction());
         assertTrue(Hibernate.isInitialized(reloaded.get().getAuction()));
         assertEquals(pack.getId(), reloaded.get().getAuction().getPack().getId());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
     }
 
     @Test
@@ -714,6 +717,7 @@ public class PackJpaDaoTest {
         // 3. Asserts
         assertTrue(reloaded.isPresent());
         assertNull(reloaded.get().getAuction());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 
     @Test
@@ -739,6 +743,8 @@ public class PackJpaDaoTest {
                 assertNull(p.getAuction());
             }
         }
+        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
     }
 
     @Test
