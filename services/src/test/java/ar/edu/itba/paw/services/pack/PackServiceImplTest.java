@@ -501,7 +501,7 @@ class PackServiceImplTest {
     }
 
     @Test
-    void testUpdatePackNoRestockDoesNotTriggerNotification() {
+    void testUpdatePackWhenPreviousStockPositiveDoesNotRestockAndUpdatesFields() {
         // 1. Setup
         final Pack existing = newPack(3L, 5L, "old", "oldD", 1.0, 1.0, 2, true, false, Collections.emptyList(), null);
         when(packDao.findById(3L)).thenReturn(Optional.of(existing));

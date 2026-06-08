@@ -64,7 +64,7 @@ class OwnershipServiceImplTest {
     }
 
     @Test
-    void canWritePack_whenOwner_returnsTrue() {
+    void testCanWritePackWhenOwnerReturnsTrue() {
         // 1. Setup
         when(packDao.findById(1L)).thenReturn(Optional.of(pack(1L, COMMERCE_USER_ID, false)));
 
@@ -76,7 +76,7 @@ class OwnershipServiceImplTest {
     }
 
     @Test
-    void canWritePack_whenNotOwner_returnsFalse() {
+    void testCanWritePackWhenNotOwnerReturnsFalse() {
         // 1. Setup
         when(packDao.findById(1L)).thenReturn(Optional.of(pack(1L, COMMERCE_USER_ID, false)));
 
@@ -88,7 +88,7 @@ class OwnershipServiceImplTest {
     }
 
     @Test
-    void canWritePack_whenMissing_throwsNotFound() {
+    void testCanWritePackWhenMissingThrowsNotFound() {
         // 1. Setup
         when(packDao.findById(1L)).thenReturn(Optional.empty());
 
@@ -101,7 +101,7 @@ class OwnershipServiceImplTest {
     }
 
     @Test
-    void canWriteAuction_whenOwner_returnsTrue() {
+    void testCanWriteAuctionWhenOwnerReturnsTrue() {
         // 1. Setup
         final Pack ownedPack = pack(5L, COMMERCE_USER_ID, false);
         final Auction auction = new Auction(3L, ownedPack, 40.0, 5.0, null, null,
@@ -116,7 +116,7 @@ class OwnershipServiceImplTest {
     }
 
     @Test
-    void canWriteAuction_whenMissing_throwsNotFound() {
+    void testCanWriteAuctionWhenMissingThrowsNotFound() {
         // 1. Setup
         when(auctionDao.findById(3L)).thenReturn(Optional.empty());
 
@@ -129,7 +129,7 @@ class OwnershipServiceImplTest {
     }
 
     @Test
-    void canWriteAuction_whenNotOwner_returnsFalse() {
+    void testCanWriteAuctionWhenNotOwnerReturnsFalse() {
         // 1. Setup
         final Pack ownedPack = pack(5L, COMMERCE_USER_ID, false);
         final Auction auction = new Auction(3L, ownedPack, 40.0, 5.0, null, null,
@@ -144,7 +144,7 @@ class OwnershipServiceImplTest {
     }
 
     @Test
-    void canWriteReservation_whenCommerceOwner_returnsTrue() {
+    void testCanWriteReservationWhenCommerceOwnerReturnsTrue() {
         // 1. Setup
         final Pack ownedPack = pack(7L, COMMERCE_USER_ID, false);
         final Client client = new Client(OTHER_USER_ID, "Client", "Last", true);
@@ -160,7 +160,7 @@ class OwnershipServiceImplTest {
     }
 
     @Test
-    void canWriteReservation_whenMissing_throwsNotFound() {
+    void testCanWriteReservationWhenMissingThrowsNotFound() {
         // 1. Setup
         when(reservationDao.findById(20L)).thenReturn(Optional.empty());
 
@@ -173,7 +173,7 @@ class OwnershipServiceImplTest {
     }
 
     @Test
-    void canWriteReservation_whenNotOwner_returnsFalse() {
+    void testCanWriteReservationWhenNotOwnerReturnsFalse() {
         // 1. Setup
         final Pack ownedPack = pack(7L, COMMERCE_USER_ID, false);
         final Client client = new Client(OTHER_USER_ID, "Client", "Last", true);
@@ -189,7 +189,7 @@ class OwnershipServiceImplTest {
     }
 
     @Test
-    void canWriteToken_whenCommerceOwner_returnsTrue() {
+    void testCanWriteTokenWhenCommerceOwnerReturnsTrue() {
         // 1. Setup
         final Pack ownedPack = pack(8L, COMMERCE_USER_ID, false);
         final Client client = new Client(OTHER_USER_ID, "Client", "Last", true);
@@ -208,7 +208,7 @@ class OwnershipServiceImplTest {
     }
 
     @Test
-    void canWriteToken_whenMissing_throwsNotFound() {
+    void testCanWriteTokenWhenMissingThrowsNotFound() {
         // 1. Setup
         when(reservationTokenDao.findByToken("tok")).thenReturn(Optional.empty());
 
@@ -221,7 +221,7 @@ class OwnershipServiceImplTest {
     }
 
     @Test
-    void canWriteToken_whenNotOwner_returnsFalse() {
+    void testCanWriteTokenWhenNotOwnerReturnsFalse() {
         // 1. Setup
         final Pack ownedPack = pack(8L, COMMERCE_USER_ID, false);
         final Client client = new Client(OTHER_USER_ID, "Client", "Last", true);
@@ -240,7 +240,7 @@ class OwnershipServiceImplTest {
     }
 
     @Test
-    void canWriteNotification_whenRecipient_returnsTrue() {
+    void testCanWriteNotificationWhenRecipientReturnsTrue() {
         // 1. Setup
         when(notificationDao.findById(5L)).thenReturn(Optional.of(
                 new ar.edu.itba.paw.models.notification.Notification(
@@ -260,7 +260,7 @@ class OwnershipServiceImplTest {
     }
 
     @Test
-    void canWriteNotification_whenNotRecipient_returnsFalse() {
+    void testCanWriteNotificationWhenNotRecipientReturnsFalse() {
         // 1. Setup
         when(notificationDao.findById(5L)).thenReturn(Optional.of(
                 new ar.edu.itba.paw.models.notification.Notification(
@@ -280,7 +280,7 @@ class OwnershipServiceImplTest {
     }
 
     @Test
-    void canWriteNotification_whenMissing_throwsNotFound() {
+    void testCanWriteNotificationWhenMissingThrowsNotFound() {
         // 1. Setup
         when(notificationDao.findById(5L)).thenReturn(Optional.empty());
 

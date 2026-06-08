@@ -70,6 +70,18 @@ class ImageServiceImplTest {
     }
 
     @Test
+    void testSaveImageWhenDataNullThrowsProfileImageException() {
+        // 1. Setup
+
+        // 2. Ejercicio
+        final ProfileImageException ex = assertThrows(ProfileImageException.class,
+                () -> imageService.saveImage(null, "image/png"));
+
+        // 3. Asserts
+        assertEquals(ProfileImageException.Reason.DATA_EMPTY, ex.getReason());
+    }
+
+    @Test
     void testGetImageWhenExistsReturnsOptionalWithImage() {
         // 1. Setup
         final Image image = new Image(7L, new byte[] { 9 }, "image/jpeg");

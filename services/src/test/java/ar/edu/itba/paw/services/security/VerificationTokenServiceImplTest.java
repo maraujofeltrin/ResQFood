@@ -46,6 +46,7 @@ class VerificationTokenServiceImplTest {
         return new User(id, EMAIL, "pw", "N");
     }
 
+    @Test
     void testVerifyEmailAndGetUserWhenTokenValidMarksUserAndTokenReturnsUser() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
@@ -118,4 +119,30 @@ class VerificationTokenServiceImplTest {
         assertTrue(ok);
     }
 
+    @Test
+    void testVerifyEmailWhenTokenUnknownReturnsFalse() {
+        // 1. Setup
+        when(tokenDao.findByTokenAndType("missing", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final boolean ok = service.verifyEmail("missing");
+
+        // 3. Asserts
+        assertFalse(ok);
+    }
+
+    @Test
+    void testVerifyEmailWhenTokenExpiredReturnsFalse() {
+        // 1. Setup
+        final LocalDateTime now = LocalDateTime.now();
+        final Token expired = new Token("tok", userRef(USER_ID), false, TokenType.EMAIL_VERIFICATION, now.minusDays(2),
+                now.minusHours(1));
+        when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(expired));
+
+        // 2. Ejercicio
+        final boolean ok = service.verifyEmail("tok");
+
+        // 3. Asserts
+        assertFalse(ok);
+    }
 }

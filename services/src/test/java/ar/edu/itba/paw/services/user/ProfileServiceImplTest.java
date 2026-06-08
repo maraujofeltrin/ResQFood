@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.services.user;
 
+import ar.edu.itba.paw.models.image.ProfileImageException;
 import ar.edu.itba.paw.models.notification.NotificationType;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.Municipality;
@@ -23,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
@@ -135,19 +137,77 @@ class ProfileServiceImplTest {
         assertTrue(thrown.getMessage().contains("99"));
     }
 
+    @Test
     void testUpdateProfileAccountWhenCommerceUpdateFailsThrowsProfileAccountUpdateExceptionWithCommerceKind() {
         // 1. Setup
         doThrow(new NoSuchElementException("Commerce not found for user: 7")).when(commerceService)
-                .updateProfileFields(eq(7L), eq(Commerce.Category.OTHER), eq("Calle"), eq(1), eq(Municipality.AVELLANEDA), eq("P"),
+                .updateProfileFields(eq(7L), eq(Commerce.Category.BAKERY), eq("Calle"), eq(1), eq(Municipality.AVELLANEDA), eq("P"),
                         eq("pc"), eq("09:00"), eq("18:00"));
 
         // 2. Ejercicio
         final ProfileAccountUpdateException ex = assertThrows(ProfileAccountUpdateException.class,
-                () -> profileService.updateProfileAccount(7L, User.Role.COMMERCE, "OTHER", "Calle", "1", Municipality.AVELLANEDA, "P",
+                () -> profileService.updateProfileAccount(7L, User.Role.COMMERCE, "BAKERY", "Calle", "1", Municipality.AVELLANEDA, "P",
                         "pc", "09:00", "18:00", null, null));
 
         // 3. Asserts
         assertEquals(ProfileAccountUpdateException.Kind.COMMERCE, ex.getKind());
     }
 
+    @Test
+    void testGetSettingsOverviewWhenCommerceMissingUsesUserNameAsDisplayName() {
+        // 1. Setup
+        when(userService.findById(8L)).thenReturn(Optional.of(
+                new User(8L, "shop@test.com", "h", "Nombre Usuario", null, User.Role.COMMERCE, false,
+                        Locale.forLanguageTag("es"))));
+        when(commerceService.findByUserId(8L)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final ProfileSettingsOverview overview = profileService.getSettingsOverview(8L);
+
+        // 3. Asserts
+        assertEquals("Nombre Usuario", overview.getFullName());
+        assertNull(overview.getCommerce());
+    }
+
+    @Test
+    void testUpdateProfileAccountWhenInvalidCategoryThrowsProfileAccountUpdateExceptionWithCommerceKind() {
+        // 1. Setup
+
+        // 2. Ejercicio
+        final ProfileAccountUpdateException ex = assertThrows(ProfileAccountUpdateException.class,
+                () -> profileService.updateProfileAccount(7L, User.Role.COMMERCE, "NOT_A_CATEGORY", "Calle", "1",
+                        Municipality.AVELLANEDA, "P", "pc", "09:00", "18:00", null, null));
+
+        // 3. Asserts
+        assertEquals(ProfileAccountUpdateException.Kind.COMMERCE, ex.getKind());
+    }
+
+    @Test
+    void testUpdateProfileAccountWhenInvalidStreetNumberThrowsProfileAccountUpdateExceptionWithCommerceKind() {
+        // 1. Setup
+
+        // 2. Ejercicio
+        final ProfileAccountUpdateException ex = assertThrows(ProfileAccountUpdateException.class,
+                () -> profileService.updateProfileAccount(7L, User.Role.COMMERCE, "BAKERY", "Calle", "abc",
+                        Municipality.AVELLANEDA, "P", "pc", "09:00", "18:00", null, null));
+
+        // 3. Asserts
+        assertEquals(ProfileAccountUpdateException.Kind.COMMERCE, ex.getKind());
+    }
+
+    @Test
+    void testUpdateProfileAccountWhenPhotoUpdateFailsThrowsProfileAccountUpdateExceptionWithPhotoKind() {
+        // 1. Setup
+        final byte[] photo = new byte[] { 1, 2, 3 };
+        doThrow(new ProfileImageException(ProfileImageException.Reason.INVALID_TYPE)).when(userService)
+                .updateProfilePhoto(eq(7L), any(), eq("image/png"));
+
+        // 2. Ejercicio
+        final ProfileAccountUpdateException ex = assertThrows(ProfileAccountUpdateException.class,
+                () -> profileService.updateProfileAccount(7L, User.Role.CLIENT, null, null, null, null, null,
+                        null, null, null, photo, "image/png"));
+
+        // 3. Asserts
+        assertEquals(ProfileAccountUpdateException.Kind.PHOTO, ex.getKind());
+    }
 }

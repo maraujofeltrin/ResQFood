@@ -109,4 +109,45 @@ class PackFavoriteServiceImplTest {
         // 3. Asserts
         assertEquals(FavoriteToggleException.Reason.PACK_UNAVAILABLE, thrown.getReason());
     }
+
+    @Test
+    void testToggleFavoriteWhenPackNotFoundThrowsException() {
+        // 1. Setup
+        when(packFavoriteDao.exists(5L, 10L)).thenReturn(false);
+        when(packDao.findById(10L)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final FavoriteToggleException thrown = assertThrows(FavoriteToggleException.class,
+                () -> packFavoriteService.toggleFavorite(5L, 10L));
+
+        // 3. Asserts
+        assertEquals(FavoriteToggleException.Reason.PACK_NOT_FOUND, thrown.getReason());
+    }
+
+    @Test
+    void testToggleFavoriteWhenPackDeletedThrowsException() {
+        // 1. Setup
+        when(packFavoriteDao.exists(5L, 10L)).thenReturn(false);
+        final Pack pack = newPack(10L, 1L, "t", "d", 1.0, 1.0, 1, true, true, Collections.emptyList(), null);
+        when(packDao.findById(10L)).thenReturn(Optional.of(pack));
+
+        // 2. Ejercicio
+        final FavoriteToggleException thrown = assertThrows(FavoriteToggleException.class,
+                () -> packFavoriteService.toggleFavorite(5L, 10L));
+
+        // 3. Asserts
+        assertEquals(FavoriteToggleException.Reason.PACK_UNAVAILABLE, thrown.getReason());
+    }
+
+    @Test
+    void testCountActiveFavoritePacksWhenDaoReturnsCountReturnsValue() {
+        // 1. Setup
+        when(packFavoriteDao.countActiveFavoritePacksForClient(5L)).thenReturn(7);
+
+        // 2. Ejercicio
+        final int count = packFavoriteService.countActiveFavoritePacks(5L);
+
+        // 3. Asserts
+        assertEquals(7, count);
+    }
 }

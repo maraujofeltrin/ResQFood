@@ -1,14 +1,8 @@
 package ar.edu.itba.paw.services.notification;
 
-import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.notification.ClientNotificationPreference;
 import ar.edu.itba.paw.models.notification.Notification;
 import ar.edu.itba.paw.models.notification.NotificationType;
-import ar.edu.itba.paw.models.pack.Municipality;
-import ar.edu.itba.paw.models.pack.Pack;
-import ar.edu.itba.paw.models.reservation.Reservation;
-import ar.edu.itba.paw.models.user.Client;
-import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.BidDao;
@@ -20,7 +14,6 @@ import ar.edu.itba.paw.services.auction.AuctionMailService;
 import ar.edu.itba.paw.services.pack.FavoriteMailService;
 import ar.edu.itba.paw.services.reservation.ReservationMailService;
 import ar.edu.itba.paw.services.user.UserService;
-import ar.edu.itba.paw.models.auction.Bid;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,11 +24,15 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Collections;
-import java.util.Locale;
+import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -65,31 +62,6 @@ class NotificationServiceImplTest {
     private BidDao bidDao;
 
     private NotificationServiceImpl notificationService;
-
-    private static Client clientRef(final long id) {
-        return new Client(id, "N", "L", true);
-    }
-
-    private static Commerce commerceRef(final long userId) {
-        return new Commerce(userId, "Shop", Commerce.Category.BAKERY, "St", 1, Municipality.AVELLANEDA, "P", "1000",
-                "08:00", "20:00");
-    }
-
-    private static Pack packRef(final long id, final long commerceId) {
-        return new Pack(id, commerceRef(commerceId), "Pack title", "d", 1.0, 1.0, 1, true, Collections.emptyList());
-    }
-
-    private static Reservation reservationRef(final long id, final long clientId, final long packId,
-            final long commerceId) {
-        return new Reservation(id, clientRef(clientId), packRef(packId, commerceId), LocalDateTime.now(ZoneOffset.UTC),
-                50.0, Reservation.Status.RESERVED, "ABC12", null, 1, null);
-    }
-
-    private static Notification notificationWithRecipient(final long recipientId, final NotificationType type) {
-        final User recipient = new User(recipientId, "u@test.com", "p", "U", null, User.Role.CLIENT, false);
-        return new Notification(1L, recipient, type, null, null, null, "Pack", "Shop", 50.0, "ABC12", null,
-                LocalDateTime.now(ZoneOffset.UTC), null, null);
-    }
 
     @BeforeEach
     void setUp() {
@@ -140,4 +112,120 @@ class NotificationServiceImplTest {
         assertTrue(result.isPresent());
     }
 
+    @Test
+    void testMarkReadWhenNotificationMissingReturnsEmpty() {
+        // 1. Setup
+        when(notificationDao.markRead(eq(99L), any())).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final Optional<NotificationItemView> result = notificationService.markRead(99L);
+
+        // 3. Asserts
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testMarkUnreadWhenNotificationExistsReturnsUnreadItem() {
+        // 1. Setup
+        final Notification unread = new Notification(2L,
+                new User(1L, "u@test.com", "p", "U", null, User.Role.CLIENT, false),
+                NotificationType.AUCTION_OUTBID_CLIENT, null, null, null, "Pack", "Shop", 80.0, null, null,
+                LocalDateTime.now(ZoneOffset.UTC), null, null);
+        when(notificationDao.markUnread(eq(2L))).thenReturn(Optional.of(unread));
+
+        // 2. Ejercicio
+        final Optional<NotificationItemView> result = notificationService.markUnread(2L);
+
+        // 3. Asserts
+        assertTrue(result.isPresent());
+        assertFalse(result.get().isRead());
+    }
+
+    @Test
+    void testCountUnreadWhenDaoReturnsCountReturnsValue() {
+        // 1. Setup
+        when(notificationDao.countUnread(5L)).thenReturn(3);
+
+        // 2. Ejercicio
+        final int count = notificationService.countUnread(5L);
+
+        // 3. Asserts
+        assertEquals(3, count);
+    }
+
+    @Test
+    void testMarkAllReadWhenNotificationsExistReturnsUpdatedCount() {
+        // 1. Setup
+        when(notificationDao.markAllRead(eq(5L), any())).thenReturn(4);
+
+        // 2. Ejercicio
+        final int updated = notificationService.markAllRead(5L);
+
+        // 3. Asserts
+        assertEquals(4, updated);
+    }
+
+    @Test
+    void testFindRecentForUserWhenNotificationsExistReturnsMappedViews() {
+        // 1. Setup
+        final Notification notification = new Notification(10L,
+                new User(5L, "u@test.com", "p", "U", null, User.Role.CLIENT, false),
+                NotificationType.FAVORITE_PACK_RESTOCKED, null, null, null, "Surplus Box", "Panadería", 120.0,
+                "CODE1", LocalDateTime.now(ZoneOffset.UTC), LocalDateTime.now(ZoneOffset.UTC), null, null);
+        when(notificationDao.findRecentByRecipient(5L, 10)).thenReturn(List.of(notification));
+
+        // 2. Ejercicio
+        final List<NotificationItemView> result = notificationService.findRecentForUser(5L, 10);
+
+        // 3. Asserts
+        assertEquals(1, result.size());
+        assertEquals(10L, result.get(0).getId());
+        assertEquals(NotificationType.FAVORITE_PACK_RESTOCKED, result.get(0).getType());
+        assertEquals("Surplus Box", result.get(0).getPackTitle());
+        assertFalse(result.get(0).isRead());
+    }
+
+    @Test
+    void testGetClientMailPreferencesWhenNoStoredDefaultsMailEnabled() {
+        // 1. Setup
+        when(clientNotificationPreferenceDao.findByClient(3L)).thenReturn(Collections.emptyList());
+
+        // 2. Ejercicio
+        final List<ClientMailPreferenceView> preferences = notificationService.getClientMailPreferences(3L);
+
+        // 3. Asserts
+        assertEquals(7, preferences.size());
+        assertTrue(preferences.stream().allMatch(ClientMailPreferenceView::isMailEnabled));
+    }
+
+    @Test
+    void testGetClientMailPreferencesWhenStoredDisabledReturnsDisabled() {
+        // 1. Setup
+        final ClientNotificationPreference disabled = new ClientNotificationPreference(1L, null,
+                NotificationType.RESERVATION_CODE_CLIENT, false);
+        when(clientNotificationPreferenceDao.findByClient(3L)).thenReturn(List.of(disabled));
+
+        // 2. Ejercicio
+        final List<ClientMailPreferenceView> preferences = notificationService.getClientMailPreferences(3L);
+
+        // 3. Asserts
+        final Optional<ClientMailPreferenceView> reservationCode = preferences.stream()
+                .filter(p -> p.getType() == NotificationType.RESERVATION_CODE_CLIENT)
+                .findFirst();
+        assertTrue(reservationCode.isPresent());
+        assertFalse(reservationCode.get().isMailEnabled());
+    }
+
+    @Test
+    void testNotifyAuctionOutbidWhenAuctionNotFoundThrowsIllegalStateException() {
+        // 1. Setup
+        when(auctionDao.findById(99L)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                () -> notificationService.notifyAuctionOutbid(7L, 99L, 150.0));
+
+        // 3. Asserts
+        assertTrue(thrown.getMessage().contains("99"));
+    }
 }

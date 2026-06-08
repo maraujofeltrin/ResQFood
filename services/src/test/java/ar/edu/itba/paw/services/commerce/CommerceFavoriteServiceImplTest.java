@@ -88,4 +88,16 @@ class CommerceFavoriteServiceImplTest {
         // 3. Asserts
         assertEquals("Commerce not found: 10", thrown.getMessage());
     }
+
+    @Test
+    void testCountFavoriteCommercesForClientWhenDaoReturnsCountReturnsValue() {
+        // 1. Setup
+        when(commerceFavoriteDao.countFavoriteCommercesForClient(1L)).thenReturn(5);
+
+        // 2. Ejercicio
+        final int count = commerceFavoriteService.countFavoriteCommerces(1L);
+
+        // 3. Asserts
+        assertEquals(5, count);
+    }
 }
