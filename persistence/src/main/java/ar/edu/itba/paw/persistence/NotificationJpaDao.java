@@ -50,7 +50,8 @@ public class NotificationJpaDao implements NotificationDao {
                 "FROM Notification n " +
                 "LEFT JOIN FETCH n.reservation " +
                 "LEFT JOIN FETCH n.auction " +
-                "LEFT JOIN FETCH n.pack " +
+                "LEFT JOIN FETCH n.pack p " +
+                "LEFT JOIN FETCH p.auction " +
                 "WHERE n.recipient.id = :uid AND n.deletedAt IS NULL " +
                 "ORDER BY n.createdAt DESC",
                 Notification.class)

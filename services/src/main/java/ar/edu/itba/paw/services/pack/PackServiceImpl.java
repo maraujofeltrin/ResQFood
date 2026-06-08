@@ -59,12 +59,6 @@ public class PackServiceImpl implements PackService {
 
     @Transactional(readOnly = true)
     @Override
-    public Optional<Pack> findByIdWithAuction(final Long id) {
-        return packDao.findByIdWithAuction(id);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
     public List<Pack> findAll() {
         return packDao.findAll();
     }
@@ -92,7 +86,7 @@ public class PackServiceImpl implements PackService {
     @Transactional(readOnly = true)
     @Override
     public Optional<Pack> findVisibleForDetail(final Long packId, final Long viewerUserId) {
-        final Optional<Pack> packOpt = packDao.findByIdWithAuction(packId);
+        final Optional<Pack> packOpt = packDao.findById(packId);
         if (packOpt.isEmpty()) {
             return Optional.empty();
         }

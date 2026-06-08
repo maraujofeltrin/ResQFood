@@ -80,7 +80,7 @@ public class ReservationActionController {
         final ModelAndView redirectView = new ModelAndView("redirect:/packs/" + packId);
 
         if (bindingResult.hasErrors()) {
-            return packService.findByIdWithAuction(packId)
+            return packService.findById(packId)
                     .map(pack -> packDetailModelBuilder.buildPackDetailModel(pack, reservationForm, createDefaultBidForm()))
                     .orElse(redirectView);
         }
@@ -92,7 +92,7 @@ public class ReservationActionController {
         case OK:
             break;
         case QUANTITY_EXCEEDS_STOCK: {
-            final Pack p = packService.findByIdWithAuction(packId).orElse(null);
+            final Pack p = packService.findById(packId).orElse(null);
             if (p == null) {
                 return redirectView;
             }
@@ -161,7 +161,7 @@ public class ReservationActionController {
         final Locale locale = LocaleContextHolder.getLocale();
         final ModelAndView redirectView = new ModelAndView("redirect:/packs/" + packId);
 
-        final Optional<Pack> packOpt = packService.findByIdWithAuction(packId)
+        final Optional<Pack> packOpt = packService.findById(packId)
                 .filter(p -> Boolean.TRUE.equals(p.getActive()));
         if (packOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
