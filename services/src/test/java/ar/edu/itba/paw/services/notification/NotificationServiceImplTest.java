@@ -26,6 +26,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -117,11 +118,11 @@ class NotificationServiceImplTest {
         when(clientNotificationPreferenceDao.findByClient(3L)).thenReturn(Collections.emptyList());
 
         // 2. Ejercicio
-        final List<ClientMailPreferenceView> preferences = notificationService.getClientMailPreferences(3L);
+        final Map<NotificationType, Boolean> preferences = notificationService.getClientMailPreferences(3L);
 
         // 3. Asserts
         assertEquals(7, preferences.size());
-        assertTrue(preferences.stream().allMatch(ClientMailPreferenceView::isMailEnabled));
+        assertTrue(preferences.values().stream().allMatch(Boolean::booleanValue));
     }
 
     @Test
@@ -132,14 +133,10 @@ class NotificationServiceImplTest {
         when(clientNotificationPreferenceDao.findByClient(3L)).thenReturn(List.of(disabled));
 
         // 2. Ejercicio
-        final List<ClientMailPreferenceView> preferences = notificationService.getClientMailPreferences(3L);
+        final Map<NotificationType, Boolean> preferences = notificationService.getClientMailPreferences(3L);
 
         // 3. Asserts
-        final Optional<ClientMailPreferenceView> reservationCode = preferences.stream()
-                .filter(p -> p.getType() == NotificationType.RESERVATION_CODE_CLIENT)
-                .findFirst();
-        assertTrue(reservationCode.isPresent());
-        assertFalse(reservationCode.get().isMailEnabled());
+        assertFalse(preferences.get(NotificationType.RESERVATION_CODE_CLIENT));
     }
 
     @Test

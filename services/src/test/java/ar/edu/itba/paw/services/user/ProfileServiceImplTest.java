@@ -6,7 +6,6 @@ import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.commerce.CommerceService;
-import ar.edu.itba.paw.services.notification.ClientMailPreferenceView;
 import ar.edu.itba.paw.services.notification.NotificationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -50,8 +50,8 @@ class ProfileServiceImplTest {
         when(userService.findById(1L)).thenReturn(Optional.of(
                 new User(1L, "a@b.com", "hash", "Nombre", "+99", User.Role.CLIENT, true,
                         Locale.forLanguageTag("en"))));
-        final List<ClientMailPreferenceView> prefs = List.of(
-                new ClientMailPreferenceView(NotificationType.RESERVATION_CODE_CLIENT, true));
+        final Map<NotificationType, Boolean> prefs = Map.of(
+                NotificationType.RESERVATION_CODE_CLIENT, true);
         when(notificationService.getClientMailPreferences(1L)).thenReturn(prefs);
 
         // 2. Ejercicio
@@ -69,7 +69,7 @@ class ProfileServiceImplTest {
         assertTrue(overview.getLanguageCodes().contains("en"));
         assertTrue(overview.getLanguageCodes().contains("es"));
         assertEquals(1, overview.getMailPreferences().size());
-        assertTrue(overview.getMailPreferences().get(0).isMailEnabled());
+        assertTrue(overview.getMailPreferences().get(NotificationType.RESERVATION_CODE_CLIENT));
     }
 
     @Test
@@ -100,7 +100,7 @@ class ProfileServiceImplTest {
         // 1. Setup
         when(userService.findById(3L)).thenReturn(Optional.of(
                 new User(3L, "e@f.com", "h", "Fr", null, User.Role.CLIENT, true, Locale.FRANCE)));
-        when(notificationService.getClientMailPreferences(3L)).thenReturn(List.of());
+        when(notificationService.getClientMailPreferences(3L)).thenReturn(Map.of());
 
         // 2. Ejercicio
         final ProfileSettingsOverview overview = profileService.getSettingsOverview(3L);
@@ -115,7 +115,7 @@ class ProfileServiceImplTest {
         when(userService.findById(4L)).thenReturn(Optional.of(
                 new User(4L, "img@test.com", "h", "Con foto", null, User.Role.CLIENT, true,
                         Locale.forLanguageTag("es"), 99L)));
-        when(notificationService.getClientMailPreferences(4L)).thenReturn(List.of());
+        when(notificationService.getClientMailPreferences(4L)).thenReturn(Map.of());
 
         // 2. Ejercicio
         final ProfileSettingsOverview overview = profileService.getSettingsOverview(4L);

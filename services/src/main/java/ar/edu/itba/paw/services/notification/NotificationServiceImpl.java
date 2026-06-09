@@ -23,6 +23,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -273,13 +274,16 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<ClientMailPreferenceView> getClientMailPreferences(final long clientId) {
+    public Map<NotificationType, Boolean> getClientMailPreferences(final long clientId) {
         final Map<NotificationType, Boolean> stored = clientNotificationPreferenceDao.findByClient(clientId).stream()
                 .collect(Collectors.toMap(ClientNotificationPreference::getType,
                         ClientNotificationPreference::isMailEnabled, (a, b) -> b));
         return CLIENT_MAIL_TYPES.stream()
-                .map(type -> new ClientMailPreferenceView(type, stored.getOrDefault(type, true)))
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(
+                        type -> type,
+                        type -> stored.getOrDefault(type, true),
+                        (a, b) -> b,
+                        LinkedHashMap::new));
     }
 
     @Transactional

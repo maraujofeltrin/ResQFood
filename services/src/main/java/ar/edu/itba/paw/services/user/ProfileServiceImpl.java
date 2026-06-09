@@ -1,12 +1,12 @@
 package ar.edu.itba.paw.services.user;
 
+import ar.edu.itba.paw.models.notification.NotificationType;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.CommerceProfileException;
 import ar.edu.itba.paw.models.image.ProfileImageException;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.commerce.CommerceService;
-import ar.edu.itba.paw.services.notification.ClientMailPreferenceView;
 import ar.edu.itba.paw.services.notification.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Service
@@ -46,7 +46,7 @@ public class ProfileServiceImpl implements ProfileService {
                 ? SupportedUserLocales.CODE_EN
                 : SupportedUserLocales.CODE_ES;
         ProfileCommerceSection commerceSection = null;
-        List<ClientMailPreferenceView> mailPreferences = List.of();
+        Map<NotificationType, Boolean> mailPreferences = Map.of();
         String displayName = user.getName();
         if (user.getRole() == User.Role.COMMERCE) {
             commerceSection = commerceService.findByUserId(userId)

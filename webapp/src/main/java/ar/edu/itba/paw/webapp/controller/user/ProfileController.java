@@ -200,6 +200,7 @@ public class ProfileController {
         final User user = authenticatedUserResolver.resolveUser();
         final ProfileSettingsOverview overview = profileService.getSettingsOverview(user.getId());
         model.addAttribute("profile", overview);
+        model.addAttribute("configurableMailTypes", notificationService.getClientConfigurableMailTypes());
         model.addAttribute("commerceCategories", Commerce.Category.values());
         model.addAttribute("availableMunicipalities", Municipality.values());
         model.addAttribute("profileNavSection", profileNavSection);

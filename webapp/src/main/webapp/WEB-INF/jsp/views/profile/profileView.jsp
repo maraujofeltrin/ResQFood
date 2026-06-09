@@ -159,23 +159,24 @@
                                 </p>
                                 <form action="${pageContext.request.contextPath}/profile/settings/mail-preferences"
                                       method="post" class="space-y-4 max-w-xl mx-auto m-0">
-                                    <c:forEach var="pref" items="${profile.mailPreferences}">
+                                    <c:forEach var="mailType" items="${configurableMailTypes}">
+                                        <c:set var="enabled" value="${profile.mailPreferences[mailType]}" />
                                         <div class="flex items-start gap-3 justify-center sm:justify-start text-left">
                                             <div class="flex items-center h-5 mt-1 shrink-0">
-                                                <input id="mailPref_${pref.type}"
-                                                       name="mailPref_${pref.type}"
+                                                <input id="mailPref_${mailType}"
+                                                       name="mailPref_${mailType}"
                                                        type="checkbox"
                                                        value="true"
-                                                       ${pref.mailEnabled ? 'checked' : ''}
+                                                       ${enabled ? 'checked' : ''}
                                                        class="w-5 h-5 rounded border-outline text-primary focus:ring-primary focus:ring-2 bg-surface-container-low cursor-pointer" />
                                             </div>
                                             <div class="flex flex-col">
-                                                <label for="mailPref_${pref.type}"
+                                                <label for="mailPref_${mailType}"
                                                        class="text-sm font-bold text-on-surface cursor-pointer">
-                                                    <spring:message code="profile.mailPreferences.type.${pref.type}"/>
+                                                    <spring:message code="profile.mailPreferences.type.${mailType}"/>
                                                 </label>
                                                 <p class="text-xs text-on-surface-variant leading-relaxed font-body mt-1">
-                                                    <spring:message code="profile.mailPreferences.type.${pref.type}.help"/>
+                                                    <spring:message code="profile.mailPreferences.type.${mailType}.help"/>
                                                 </p>
                                             </div>
                                         </div>

@@ -1,8 +1,9 @@
 package ar.edu.itba.paw.services.user;
 
-import ar.edu.itba.paw.services.notification.ClientMailPreferenceView;
+import ar.edu.itba.paw.models.notification.NotificationType;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -22,7 +23,7 @@ public final class ProfileSettingsOverview {
     private final String selectedLanguageCode;
     private final List<String> languageCodes;
     private final ProfileCommerceSection commerce;
-    private final List<ClientMailPreferenceView> mailPreferences;
+    private final Map<NotificationType, Boolean> mailPreferences;
 
     public ProfileSettingsOverview(
             final String fullName,
@@ -33,7 +34,7 @@ public final class ProfileSettingsOverview {
             final String selectedLanguageCode,
             final List<String> languageCodes,
             final ProfileCommerceSection commerce,
-            final List<ClientMailPreferenceView> mailPreferences) {
+            final Map<NotificationType, Boolean> mailPreferences) {
         this.fullName = Objects.requireNonNull(fullName);
         this.phone = Objects.requireNonNull(phone);
         this.email = Objects.requireNonNull(email);
@@ -42,7 +43,7 @@ public final class ProfileSettingsOverview {
         this.selectedLanguageCode = Objects.requireNonNull(selectedLanguageCode);
         this.languageCodes = List.copyOf(languageCodes);
         this.commerce = commerce;
-        this.mailPreferences = mailPreferences == null ? List.of() : List.copyOf(mailPreferences);
+        this.mailPreferences = mailPreferences == null ? Map.of() : Map.copyOf(mailPreferences);
     }
 
     public String getFullName() {
@@ -77,7 +78,7 @@ public final class ProfileSettingsOverview {
         return commerce;
     }
 
-    public List<ClientMailPreferenceView> getMailPreferences() {
+    public Map<NotificationType, Boolean> getMailPreferences() {
         return mailPreferences;
     }
 }

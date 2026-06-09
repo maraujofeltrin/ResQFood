@@ -52,7 +52,7 @@ public interface NotificationService {
 
     void softDelete(long notificationId);
 
-    List<ClientMailPreferenceView> getClientMailPreferences(long clientId);
+    Map<NotificationType, Boolean> getClientMailPreferences(long clientId);
 
     void updateClientMailPreferences(long clientId, Map<NotificationType, Boolean> preferencesByType);
 
