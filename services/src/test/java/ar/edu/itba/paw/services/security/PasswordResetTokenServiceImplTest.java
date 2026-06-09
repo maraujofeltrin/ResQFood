@@ -127,13 +127,29 @@ class PasswordResetTokenServiceImplTest {
         final LocalDateTime now = LocalDateTime.now();
         final Token t = new Token("g1", userRef(USER_ID), false, TokenType.PASSWORD_RESET, now, now.plusHours(1));
         when(tokenDao.findByTokenAndType("g1", TokenType.PASSWORD_RESET)).thenReturn(Optional.of(t));
-        when(userService.findById(USER_ID)).thenReturn(Optional.of(new User(USER_ID, EMAIL, "p", "N")));
 
         // 2. Ejercicio
         final Optional<String> email = service.getEmailByToken("g1");
 
         // 3. Asserts
         assertEquals(Optional.of(EMAIL), email);
+    }
+
+    @Test
+    void testResetPasswordWhenTokenValidEncodesPasswordAndMarksTokenUsed() {
+        // 1. Setup
+        final LocalDateTime now = LocalDateTime.now();
+        final User user = userRef(USER_ID);
+        final Token t = new Token("ok", user, false, TokenType.PASSWORD_RESET, now, now.plusHours(1));
+        when(tokenDao.findByTokenAndType("ok", TokenType.PASSWORD_RESET)).thenReturn(Optional.of(t));
+        when(passwordEncoder.encode("newpass")).thenReturn("encoded");
+
+        // 2. Ejercicio
+        service.resetPassword("ok", "newpass");
+
+        // 3. Asserts
+        assertEquals("encoded", user.getPassword());
+        assertTrue(t.isUsed());
     }
 
     @Test

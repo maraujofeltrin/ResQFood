@@ -3,6 +3,7 @@ package ar.edu.itba.paw.persistence;
 import ar.edu.itba.paw.models.security.Token;
 import ar.edu.itba.paw.models.security.TokenType;
 import ar.edu.itba.paw.models.user.User;
+import org.hibernate.Hibernate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -89,6 +90,24 @@ public class TokenJpaDaoTest {
         // 3. Asserts
         assertTrue(found.isPresent());
         assertEquals(userId, found.get().getUserId());
+        assertEquals(userId, found.get().getUser().getId());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "tokens"));
+    }
+
+    @Test
+    public void testFindByTokenAndTypeEagerlyLoadsUser() {
+        // 1. Setup
+        tokenDao.create("token123", userId, TokenType.EMAIL_VERIFICATION, TOKEN_CREATED, TOKEN_EXPIRES);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final Optional<Token> found = tokenDao.findByTokenAndType("token123", TokenType.EMAIL_VERIFICATION);
+
+        // 3. Asserts
+        assertTrue(found.isPresent());
+        assertTrue(Hibernate.isInitialized(found.get().getUser()));
+        assertNotNull(found.get().getUser().getEmail());
         assertEquals(userId, found.get().getUser().getId());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "tokens"));
     }

@@ -11,10 +11,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
-import java.util.Locale;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
@@ -24,7 +22,6 @@ class VerificationTokenServiceImplTest {
 
     private static final long USER_ID = 42L;
     private static final String EMAIL = "u@example.com";
-    private static final Locale LOCALE = Locale.forLanguageTag("en");
 
     @Mock
     private TokenDao tokenDao;
@@ -50,10 +47,9 @@ class VerificationTokenServiceImplTest {
     void testVerifyEmailAndGetUserWhenTokenValidMarksUserAndTokenReturnsUser() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
-        final Token stored = new Token("tok", userRef(USER_ID), false, TokenType.EMAIL_VERIFICATION, now, now.plusHours(24));
+        final User user = userRef(USER_ID);
+        final Token stored = new Token("tok", user, false, TokenType.EMAIL_VERIFICATION, now, now.plusHours(24));
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(stored));
-        final User verifiedReturned = new User(USER_ID, EMAIL, "pw", "N", null, User.Role.CLIENT, true, LOCALE);
-        when(userService.findById(USER_ID)).thenReturn(Optional.of(verifiedReturned));
 
         // 2. Ejercicio
         final Optional<User> result = service.verifyEmailAndGetUser("tok");
@@ -61,6 +57,7 @@ class VerificationTokenServiceImplTest {
         // 3. Asserts
         assertTrue(result.isPresent());
         assertTrue(result.get().isVerified());
+        assertTrue(stored.isUsed());
     }
 
     @Test
@@ -108,15 +105,17 @@ class VerificationTokenServiceImplTest {
     void testVerifyEmailWhenTokenValidReturnsTrue() {
         // 1. Setup
         final LocalDateTime now = LocalDateTime.now();
-        final Token stored = new Token("tok", userRef(USER_ID), false, TokenType.EMAIL_VERIFICATION, now, now.plusHours(1));
+        final User user = userRef(USER_ID);
+        final Token stored = new Token("tok", user, false, TokenType.EMAIL_VERIFICATION, now, now.plusHours(1));
         when(tokenDao.findByTokenAndType("tok", TokenType.EMAIL_VERIFICATION)).thenReturn(Optional.of(stored));
-        when(userService.findById(USER_ID)).thenReturn(Optional.of(new User(USER_ID, EMAIL, "p", "N")));
 
         // 2. Ejercicio
         final boolean ok = service.verifyEmail("tok");
 
         // 3. Asserts
         assertTrue(ok);
+        assertTrue(user.isVerified());
+        assertTrue(stored.isUsed());
     }
 
     @Test

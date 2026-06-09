@@ -54,11 +54,12 @@ public class VerificationTokenServiceImpl implements VerificationTokenService {
             return Optional.empty();
         }
 
-        final Long userId = maybeToken.get().getUser().getId();
-        userService.markVerified(userId);
-        tokenDao.markAsUsed(token, TokenType.EMAIL_VERIFICATION);
+        final Token verificationToken = maybeToken.get();
+        final User user = verificationToken.getUser();
+        user.setVerified(true);
+        verificationToken.setUsed(true);
 
-        return userService.findById(userId);
+        return Optional.of(user);
     }
 
     @Transactional

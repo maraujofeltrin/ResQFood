@@ -28,7 +28,8 @@ public class TokenJpaDao implements TokenDao {
 
     @Override
     public Optional<Token> findByTokenAndType(final String token, final TokenType type) {
-        return em.createQuery("FROM Token t WHERE t.token = :token AND t.type = :type", Token.class)
+        return em.createQuery("SELECT t FROM Token t JOIN FETCH t.user "
+                        + "WHERE t.token = :token AND t.type = :type", Token.class)
                 .setParameter("token", token)
                 .setParameter("type", type)
                 .setMaxResults(1)

@@ -75,22 +75,17 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
             LOGGER.warn("Password reset failed: invalid or expired token userId={}", resetToken.getUser().getId());
             throw new PasswordResetException(PasswordResetException.Reason.TOKEN_EXPIRED);
         }
-        final User user = userService.findById(resetToken.getUser().getId())
-                .orElseThrow(() -> {
-                    LOGGER.warn("Password reset failed: user not found userId={}", resetToken.getUser().getId());
-                    return new PasswordResetException(PasswordResetException.Reason.USER_NOT_FOUND);
-                });
+        final User user = resetToken.getUser();
         final String encodedPassword = passwordEncoder.encode(rawPassword);
-        userService.updatePassword(user.getId(), encodedPassword);
-        tokenDao.markAsUsed(token, TokenType.PASSWORD_RESET);
+        user.setPassword(encodedPassword);
+        resetToken.setUsed(true);
     }
 
     @Transactional(readOnly = true)
     @Override
     public Optional<String> getEmailByToken(final String token) {
         return tokenDao.findByTokenAndType(token, TokenType.PASSWORD_RESET)
-                .flatMap(t -> userService.findById(t.getUser().getId()))
-                .map(User::getEmail);
+                .map(t -> t.getUser().getEmail());
     }
 
     private static boolean isValid(final Token token) {
