@@ -41,6 +41,7 @@
             <paw:searchBar value="${searchQuery}" placeholder="${packCatalogSearchPlaceholder}" classes="relative w-full" />
         </div>
 
+        <c:if test="${catalogMode ne 'COMMERCES'}">
         <div class="w-full md:w-56 max-w-full">
             <c:choose>
                 <c:when test="${catalogMode eq 'AUCTIONS'}">
@@ -59,6 +60,7 @@
                 </c:otherwise>
             </c:choose>
         </div>
+        </c:if>
 
         <div class="w-full md:w-auto flex justify-end shrink-0">
             <paw:catalogFilter

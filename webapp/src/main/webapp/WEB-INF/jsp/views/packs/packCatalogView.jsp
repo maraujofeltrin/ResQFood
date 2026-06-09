@@ -161,9 +161,16 @@
                     <div class="h-[1px] flex-grow bg-outline-variant"></div>
                 </div>
 
-                <c:set var="hasAnyFilter" value="${not empty param.q or not empty selectedTags
-                    or selectedMunicipality != null or not empty selectedTimeRanges
-                    or selectedCommerceCategory != null}"/>
+                <c:choose>
+                    <c:when test="${catalogMode eq 'COMMERCES'}">
+                        <c:set var="hasAnyFilter" value="${not empty param.q or selectedMunicipality != null or selectedCommerceCategory != null}"/>
+                    </c:when>
+                    <c:otherwise>
+                        <c:set var="hasAnyFilter" value="${not empty param.q or not empty selectedTags
+                            or selectedMunicipality != null or not empty selectedTimeRanges
+                            or selectedCommerceCategory != null}"/>
+                    </c:otherwise>
+                </c:choose>
 
                 <c:choose>
                     <c:when test="${catalogMode eq 'AUCTIONS' and empty auctions}">

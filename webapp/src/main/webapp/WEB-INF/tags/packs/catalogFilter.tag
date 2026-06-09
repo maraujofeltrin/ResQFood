@@ -28,7 +28,14 @@
 <c:set var="timeRangeCount" value="${empty selectedTimeRanges ? 0 : fn:length(selectedTimeRanges)}"/>
 <c:set var="locationCount" value="${selectedMunicipality != null ? 1 : 0}"/>
 <c:set var="commerceCategoryCount" value="${selectedCommerceCategory != null ? 1 : 0}"/>
-<c:set var="selectionCount" value="${tagSelectionCount + (typeFilterApplied ? 1 : 0) + locationCount + commerceCategoryCount + timeRangeCount}"/>
+<c:choose>
+    <c:when test="${catalogMode eq 'COMMERCES'}">
+        <c:set var="selectionCount" value="${locationCount + commerceCategoryCount}"/>
+    </c:when>
+    <c:otherwise>
+        <c:set var="selectionCount" value="${tagSelectionCount + (typeFilterApplied ? 1 : 0) + locationCount + commerceCategoryCount + timeRangeCount}"/>
+    </c:otherwise>
+</c:choose>
 <c:set var="hasSelection" value="${selectionCount gt 0}"/>
 
     <%-- Filter configuration without form tags --%>
@@ -78,6 +85,7 @@
             </div>
         </div>
 
+        <c:if test="${catalogMode ne 'COMMERCES'}">
         <div class="px-6 pb-8 mb-8 border-b border-outline-variant/20">
             <h4 class="text-xs font-bold uppercase tracking-wider text-secondary mb-4 flex items-center justify-between">
                 <spring:message code="pack.catalog.filter.type"/>
@@ -99,6 +107,7 @@
                 </label>
             </div>
         </div>
+        </c:if>
 
         <div class="px-6 pb-8 mb-8 border-b border-outline-variant/20">
             <h4 class="text-xs font-bold uppercase tracking-wider text-secondary mb-4 flex items-center justify-between">
@@ -140,6 +149,7 @@
             </div>
         </div>
 
+        <c:if test="${catalogMode ne 'COMMERCES'}">
         <div class="px-6 pb-8 mb-8 border-b border-outline-variant/20">
             <h4 class="text-xs font-bold uppercase tracking-wider text-secondary mb-4 flex items-center justify-between">
                 <spring:message code="pack.catalog.filter.time"/>
@@ -183,8 +193,10 @@
                 </label>
             </div>
         </div>
+        </c:if>
 
-        <div class="px-6 pb-24">
+        <c:if test="${catalogMode ne 'COMMERCES'}">
+        <div class="px-6 pb-8 mb-8 border-b border-outline-variant/20">
             <h4 class="text-xs font-bold uppercase tracking-wider text-secondary mb-4 flex items-center justify-between">
                 <spring:message code="pack.catalog.filter.tags"/>
                 <c:if test="${tagSelectionCount gt 0}">
@@ -214,22 +226,25 @@
                     </label>
                 </c:forEach>
             </div>
+        </div>
+        </c:if>
 
-            <%-- Clear all filters button --%>
-            <c:if test="${hasSelection}">
-                <c:url var="clearUrl" value="${baseUrl}">
-                    <c:if test="${catalogMode eq 'COMMERCES'}"><c:param name="types" value="commerces"/></c:if>
-                    <c:if test="${not empty searchQuery}"><c:param name="q" value="${searchQuery}"/></c:if>
-                    <c:if test="${catalogMode ne 'AUCTIONS' and not empty currentSort}"><c:param name="sort" value="${currentSort.name()}"/></c:if>
-                    <c:if test="${catalogMode eq 'AUCTIONS' and not empty currentAuctionSort}"><c:param name="auctionSort" value="${currentAuctionSort.name()}"/></c:if>
-                </c:url>
-                <div class="mt-8 border-t border-outline-variant/20 pt-6">
-                    <a href="${clearUrl}" 
+        <%-- Clear all filters button --%>
+        <c:if test="${hasSelection}">
+            <c:url var="clearUrl" value="${baseUrl}">
+                <c:if test="${catalogMode eq 'COMMERCES'}"><c:param name="types" value="commerces"/></c:if>
+                <c:if test="${not empty searchQuery}"><c:param name="q" value="${searchQuery}"/></c:if>
+                <c:if test="${catalogMode ne 'AUCTIONS' and catalogMode ne 'COMMERCES' and not empty currentSort}"><c:param name="sort" value="${currentSort.name()}"/></c:if>
+                <c:if test="${catalogMode eq 'AUCTIONS' and not empty currentAuctionSort}"><c:param name="auctionSort" value="${currentAuctionSort.name()}"/></c:if>
+            </c:url>
+            <div class="px-6 pb-24">
+                <div class="border-t border-outline-variant/20 pt-6">
+                    <a href="${clearUrl}"
                        class="w-full inline-flex justify-center items-center py-2.5 text-xs font-bold text-secondary hover:bg-surface-container-high hover:text-on-surface rounded-md transition-colors uppercase tracking-widest text-center focus:outline-none">
                         <spring:message code="pack.catalog.filter.clearAll"/>
                     </a>
                 </div>
-            </c:if>
-        </div>
+            </div>
+        </c:if>
     </aside>
 
