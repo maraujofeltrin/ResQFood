@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public interface AuctionService {
 
@@ -93,4 +94,6 @@ public interface AuctionService {
     Map<Long, Double> getMaxBidsByClientForAuctions(long clientUserId, Collection<Long> auctionIds);
 
     boolean hasClientBidOnAuction(long auctionId, long clientUserId);
+
+    Set<Long> findDistinctBidderIdsByAuctionId(long auctionId);
 }

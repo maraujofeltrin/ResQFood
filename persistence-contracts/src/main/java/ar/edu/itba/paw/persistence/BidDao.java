@@ -23,4 +23,6 @@ public interface BidDao {
     Set<Long> findAuctionIdsWithBids(Collection<Long> auctionIds);
 
     boolean existsByAuctionIdAndClientUserId(long auctionId, long clientUserId);
+
+    Set<Long> findDistinctBidderIdsByAuctionId(long auctionId);
 }

@@ -110,4 +110,14 @@ public class BidJpaDao implements BidDao {
                 .getSingleResult();
         return count != null && count.intValue() > 0;
     }
+
+    @Override
+    public Set<Long> findDistinctBidderIdsByAuctionId(final long auctionId) {
+        final List<Long> ids = em.createQuery(
+                        "SELECT DISTINCT b.client.userId FROM Bid b WHERE b.auction.id = :auctionId",
+                        Long.class)
+                .setParameter("auctionId", auctionId)
+                .getResultList();
+        return new HashSet<>(ids);
+    }
 }

@@ -25,10 +25,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class AuctionServiceImpl implements AuctionService {
@@ -290,5 +290,11 @@ public class AuctionServiceImpl implements AuctionService {
     @Override
     public boolean hasClientBidOnAuction(final long auctionId, final long clientUserId) {
         return bidDao.existsByAuctionIdAndClientUserId(auctionId, clientUserId);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Set<Long> findDistinctBidderIdsByAuctionId(final long auctionId) {
+        return bidDao.findDistinctBidderIdsByAuctionId(auctionId);
     }
 }

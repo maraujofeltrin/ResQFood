@@ -1,7 +1,6 @@
 package ar.edu.itba.paw.services.notification;
 
 import ar.edu.itba.paw.models.auction.Auction;
-import ar.edu.itba.paw.models.auction.Bid;
 import ar.edu.itba.paw.models.notification.ClientNotificationPreference;
 import ar.edu.itba.paw.models.notification.Notification;
 import ar.edu.itba.paw.models.notification.NotificationType;
@@ -228,10 +227,7 @@ public class NotificationServiceImpl implements NotificationService {
         final String commerceName = commerceCommercialName(pack);
         final Long winnerId = auction.getCurrentBidderId();
         final Double winningAmount = auction.getCurrentBid();
-        final List<Bid> bids = auctionService.getBidHistory(auctionId, 1, Integer.MAX_VALUE);
-        final Set<Long> bidderIds = bids.stream()
-                .map(Bid::getClientId)
-                .collect(Collectors.toSet());
+        final Set<Long> bidderIds = auctionService.findDistinctBidderIdsByAuctionId(auctionId);
         
         final LocalDateTime now = currentTimestamp();
         for (final Long bidderId : bidderIds) {
