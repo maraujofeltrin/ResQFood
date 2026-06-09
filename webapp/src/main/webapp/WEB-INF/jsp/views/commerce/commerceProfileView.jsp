@@ -128,7 +128,10 @@
                                     sectionMessageCode="commerce.profile.reviews.aria"
                                     titleMessageCode="commerce.profile.reviews.title"
                                     eyebrowMessageCode="pack.detail.reviews.eyebrow"
-                                    fullWidth="${true}"/>
+                                    fullWidth="${true}"
+                                    reviewCurrentPage="${reviewCurrentPage}"
+                                    reviewTotalPages="${reviewTotalPages}"
+                                    reviewPaginationBaseUrl="${pageContext.request.contextPath}/commerces/${commerceUserId}"/>
                 </section>
             </div>
 

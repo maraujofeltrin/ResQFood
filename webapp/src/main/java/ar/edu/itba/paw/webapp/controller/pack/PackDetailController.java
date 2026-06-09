@@ -45,6 +45,7 @@ public class PackDetailController {
             @PathVariable("id") final long id,
             @RequestParam(value = "bidPage", defaultValue = "1") final int bidPage,
             @RequestParam(value = "reservationPage", defaultValue = "1") final int reservationPage,
+            @RequestParam(value = "reviewPage", defaultValue = "1") final int reviewPage,
             final Authentication authentication) {
         final Long viewerUserId = AuthUserLocaleSupport.authUserFrom(authentication)
                 .map(authUser -> Long.valueOf(authUser.getId()))
@@ -52,6 +53,7 @@ public class PackDetailController {
         final Pack pack = packService.findVisibleForDetail(id, viewerUserId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        return packDetailModelBuilder.buildPackDetailModel(pack, createDefaultReservationForm(), createDefaultBidForm(), null, bidPage, reservationPage);
+        return packDetailModelBuilder.buildPackDetailModel(pack, createDefaultReservationForm(),
+                createDefaultBidForm(), bidPage, reservationPage, reviewPage);
     }
 }

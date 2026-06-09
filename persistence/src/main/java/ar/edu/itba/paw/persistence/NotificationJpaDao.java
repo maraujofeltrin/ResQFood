@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.auction.Auction;
+import ar.edu.itba.paw.persistence.util.Pagination;
 import ar.edu.itba.paw.models.notification.Notification;
 import ar.edu.itba.paw.models.notification.NotificationType;
 import ar.edu.itba.paw.models.pack.Pack;
@@ -74,6 +75,46 @@ public class NotificationJpaDao implements NotificationDao {
                         Notification.class)
                 .setParameter("ids", ids)
                 .getResultList();
+    }
+
+    @Override
+    public List<Notification> findByRecipientPaginated(final Long userId, final int page, final int pageSize) {
+        final List<?> rawIds = em.createNativeQuery(
+                        "SELECT n.id FROM notifications n "
+                        + "WHERE n.recipient_id = :uid AND n.deleted_at IS NULL "
+                        + "ORDER BY n.created_at DESC")
+                .setParameter("uid", userId)
+                .setFirstResult(Pagination.offset(page, pageSize))
+                .setMaxResults(Math.max(1, pageSize))
+                .getResultList();
+        if (rawIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final List<Long> ids = new ArrayList<>(rawIds.size());
+        for (final Object rawId : rawIds) {
+            ids.add(rawId instanceof Number ? ((Number) rawId).longValue() : Long.parseLong(rawId.toString()));
+        }
+        return em.createQuery(
+                        "FROM Notification n "
+                        + "LEFT JOIN FETCH n.reservation "
+                        + "LEFT JOIN FETCH n.auction "
+                        + "LEFT JOIN FETCH n.pack p "
+                        + "LEFT JOIN FETCH p.auction "
+                        + "WHERE n.id IN :ids "
+                        + "ORDER BY n.createdAt DESC",
+                        Notification.class)
+                .setParameter("ids", ids)
+                .getResultList();
+    }
+
+    @Override
+    public int countByRecipient(final Long userId) {
+        final Number count = em.createQuery(
+                "SELECT COUNT(n) FROM Notification n WHERE n.recipient.id = :uid AND n.deletedAt IS NULL",
+                Number.class)
+                .setParameter("uid", userId)
+                .getSingleResult();
+        return count != null ? count.intValue() : 0;
     }
 
     @Override

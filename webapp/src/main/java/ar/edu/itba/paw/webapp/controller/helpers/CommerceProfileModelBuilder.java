@@ -43,12 +43,18 @@ public class CommerceProfileModelBuilder {
         this.authResolver = authResolver;
     }
 
-    public Optional<ModelAndView> buildProfileModel(final long commerceUserId, final int page) {
-        return buildProfileModel(commerceUserId, page, null);
+    public Optional<ModelAndView> buildProfileModel(final long commerceUserId, final int page,
+            final int reviewPage) {
+        return doBuildProfileModel(commerceUserId, page, reviewPage, null);
     }
 
     public Optional<ModelAndView> buildProfileModel(final long commerceUserId, final int page,
             final CommerceReviewForm submittedForm) {
+        return doBuildProfileModel(commerceUserId, page, 1, submittedForm);
+    }
+
+    private Optional<ModelAndView> doBuildProfileModel(final long commerceUserId, final int page,
+            final int reviewPage, final CommerceReviewForm submittedForm) {
         final Optional<Commerce> commerceOpt = commerceService.findByUserId(commerceUserId);
         if (commerceOpt.isEmpty()) {
             return Optional.empty();
@@ -77,7 +83,7 @@ public class CommerceProfileModelBuilder {
                 commerce.getUser() != null ? commerce.getUser().getProfileImageId() : null);
         commerceDetailAttributesHelper.addCommerceDetailAttributes(mav, commerceOpt);
 
-        commerceReviewPageAttributes.addReviewPageAttributes(mav, commerceUserId, submittedForm,
+        commerceReviewPageAttributes.addReviewPageAttributes(mav, commerceUserId, reviewPage, submittedForm,
                 submittedForm != null);
 
         mav.addObject("profileOffers", offers);

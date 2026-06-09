@@ -18,6 +18,9 @@
 <%@ attribute name="sectionMessageCode" required="false" type="java.lang.String" %>
 <%@ attribute name="titleMessageCode" required="false" type="java.lang.String" %>
 <%@ attribute name="eyebrowMessageCode" required="false" type="java.lang.String" %>
+<%@ attribute name="reviewCurrentPage" required="false" type="java.lang.Integer" %>
+<%@ attribute name="reviewTotalPages" required="false" type="java.lang.Integer" %>
+<%@ attribute name="reviewPaginationBaseUrl" required="false" type="java.lang.String" %>
 
 <c:if test="${empty sectionMessageCode}">
     <c:set var="sectionMessageCode" value="pack.detail.reviews.section"/>
@@ -96,6 +99,11 @@
             </c:otherwise>
         </c:choose>
     </div>
+
+    <c:if test="${not empty reviewCurrentPage and not empty reviewTotalPages and reviewTotalPages > 1}">
+        <paw:pagination currentPage="${reviewCurrentPage}" totalPages="${reviewTotalPages}"
+                        baseUrl="${reviewPaginationBaseUrl}" pageParam="reviewPage"/>
+    </c:if>
 
     <c:if test="${showReviewForm}">
         <sec:authorize access="hasRole('CLIENT')">

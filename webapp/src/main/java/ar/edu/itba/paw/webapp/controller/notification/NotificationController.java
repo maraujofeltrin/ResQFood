@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
@@ -27,7 +28,7 @@ import java.util.Locale;
 public class NotificationController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NotificationController.class);
-    private static final int RECENT_LIMIT = 20;
+    private static final int PAGE_SIZE = 10;
     private static final String REDIRECT_NOTIFICATIONS = "redirect:/notifications";
 
     private final NotificationService notificationService;
@@ -42,21 +43,27 @@ public class NotificationController {
     }
 
     @GetMapping
-    public ModelAndView list(@AuthenticationPrincipal final AuthUser principal) {
+    public ModelAndView list(@AuthenticationPrincipal final AuthUser principal,
+            @RequestParam(defaultValue = "1") final int page) {
         final long userId = principal.getId();
+        final int total = notificationService.countForUser(userId);
+        final int totalPages = Math.max(1, (int) Math.ceil((double) total / PAGE_SIZE));
+        final int safePage = Math.max(1, Math.min(page, totalPages));
         final List<NotificationItemView> items =
-                notificationService.findRecentForUser(userId, RECENT_LIMIT);
+                notificationService.findPageForUser(userId, safePage, PAGE_SIZE);
         final Locale locale = LocaleContextHolder.getLocale();
         final List<NotificationDisplayRow> rows =
                 NotificationViewHelper.buildRows(items, messageSource, locale);
         final int unreadCount = notificationService.countUnread(userId);
 
-        LOGGER.debug("Loading notifications page for userId={} items={} unread={}",
-                Long.valueOf(userId), rows.size(), unreadCount);
+        LOGGER.debug("Loading notifications page for userId={} page={} items={} unread={}",
+                Long.valueOf(userId), safePage, rows.size(), unreadCount);
 
         final ModelAndView mav = new ModelAndView("notifications/notificationsView");
         mav.addObject("notificationRows", rows);
         mav.addObject("unreadCount", unreadCount);
+        mav.addObject("currentPage", Integer.valueOf(safePage));
+        mav.addObject("totalPages", Integer.valueOf(totalPages));
         return mav;
     }
 

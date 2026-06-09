@@ -16,7 +16,7 @@ import java.util.Optional;
 @Component
 public class CommerceReviewPageAttributes {
 
-    private static final int REVIEW_LIST_LIMIT = 5;
+    private static final int PAGE_SIZE = 5;
 
     private final CommerceReviewService commerceReviewService;
     private final AuthenticatedUserResolver authResolver;
@@ -31,18 +31,23 @@ public class CommerceReviewPageAttributes {
         this.businessZone = businessZone;
     }
 
-    public void addReviewPageAttributes(final ModelAndView mav, final long commerceId,
+    public void addReviewPageAttributes(final ModelAndView mav, final long commerceId, final int page,
             final CommerceReviewForm submittedForm, final boolean formExpanded) {
         final Locale locale = org.springframework.context.i18n.LocaleContextHolder.getLocale();
-        final List<CommerceReview> reviews = commerceReviewService.findReviewsForCommerce(commerceId, 1,
-                REVIEW_LIST_LIMIT);
+        final int totalReviews = commerceReviewService.countReviewsForCommerce(commerceId);
+        final int totalPages = Math.max(1, (int) Math.ceil((double) totalReviews / PAGE_SIZE));
+        final int safePage = Math.max(1, Math.min(page, totalPages));
+        final List<CommerceReview> reviews = commerceReviewService.findReviewsForCommerce(commerceId, safePage,
+                PAGE_SIZE);
         final Optional<User> userOpt = authResolver.resolveUserOrEmpty();
         final Long currentClientId = userOpt.filter(u -> u.getRole() == User.Role.CLIENT)
                 .map(User::getId).orElse(null);
 
         mav.addObject("commerceReviewItems",
                 CommerceReviewViewHelper.buildRows(reviews, businessZone, locale, currentClientId));
-        mav.addObject("commerceReviewCount", commerceReviewService.countReviewsForCommerce(commerceId));
+        mav.addObject("commerceReviewCount", Integer.valueOf(totalReviews));
+        mav.addObject("reviewCurrentPage", Integer.valueOf(safePage));
+        mav.addObject("reviewTotalPages", Integer.valueOf(totalPages));
         mav.addObject("commerceReviewAverageRating",
                 commerceReviewService.averageRatingForCommerce(commerceId).orElse(null));
 

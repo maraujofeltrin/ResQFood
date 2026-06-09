@@ -262,6 +262,20 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Transactional(readOnly = true)
     @Override
+    public List<NotificationItemView> findPageForUser(final long userId, final int page, final int pageSize) {
+        return notificationDao.findByRecipientPaginated(userId, page, pageSize).stream()
+                .map(this::toView)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public int countForUser(final long userId) {
+        return notificationDao.countByRecipient(userId);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
     public int countUnread(final long userId) {
         return notificationDao.countUnread(userId);
     }
