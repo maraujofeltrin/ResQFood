@@ -83,18 +83,24 @@ public class PackDetailModelBuilder {
         return DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withLocale(locale).format(z);
     }
 
-    public ModelAndView buildPackDetailModel(final Pack pack, final ReservationForm reservationForm, final BidForm bidForm) {
-        return buildPackDetailModel(pack, reservationForm, bidForm, null, 1, 1);
+    public ModelAndView buildPackDetailModel(final Pack pack, final ReservationForm reservationForm,
+            final BidForm bidForm) {
+        return doPackDetailModel(pack, reservationForm, bidForm, null, 1, 1, 1);
     }
 
     public ModelAndView buildPackDetailModel(final Pack pack, final ReservationForm reservationForm,
             final BidForm bidForm, final CommerceReviewForm commerceReviewForm) {
-        return buildPackDetailModel(pack, reservationForm, bidForm, commerceReviewForm, 1, 1);
+        return doPackDetailModel(pack, reservationForm, bidForm, commerceReviewForm, 1, 1, 1);
     }
 
     public ModelAndView buildPackDetailModel(final Pack pack, final ReservationForm reservationForm,
+            final BidForm bidForm, final int bidPage, final int reservationPage, final int reviewPage) {
+        return doPackDetailModel(pack, reservationForm, bidForm, null, bidPage, reservationPage, reviewPage);
+    }
+
+    private ModelAndView doPackDetailModel(final Pack pack, final ReservationForm reservationForm,
             final BidForm bidForm, final CommerceReviewForm commerceReviewForm,
-            final int bidPage, final int reservationPage) {
+            final int bidPage, final int reservationPage, final int reviewPage) {
         final Optional<Commerce> commerceOpt = commerceService.findByUserId(pack.getCommerceId());
         final Locale locale = LocaleContextHolder.getLocale();
         final Optional<User> viewer = authResolver.resolveUserOrEmpty();
@@ -202,8 +208,8 @@ public class PackDetailModelBuilder {
             clientHasActiveReservation = reservationService.hasActiveReservation(pack.getId(), viewer.get().getId());
         }
         mav.addObject("clientHasActiveReservation", clientHasActiveReservation);
-        commerceReviewPageAttributes.addReviewPageAttributes(mav, pack.getCommerceId(), commerceReviewForm,
-                commerceReviewForm != null);
+        commerceReviewPageAttributes.addReviewPageAttributes(mav, pack.getCommerceId(), reviewPage,
+                commerceReviewForm, commerceReviewForm != null);
 
         final boolean packFavoriteSelected = viewer
                 .filter(u -> u.getRole() == User.Role.CLIENT)

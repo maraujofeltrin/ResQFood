@@ -95,6 +95,9 @@
                 </c:otherwise>
             </c:choose>
         </div>
+
+        <paw:pagination currentPage="${currentPage}" totalPages="${totalPages}"
+                        baseUrl="${pageContext.request.contextPath}/notifications"/>
     </div>
 </main>
 

@@ -22,8 +22,9 @@ public class CommerceProfileController {
 
     @GetMapping("/commerces/{commerceUserId}")
     public ModelAndView commerceProfile(@PathVariable final long commerceUserId,
-            @RequestParam(defaultValue = "1") final int page) {
-        return commerceProfileModelBuilder.buildProfileModel(commerceUserId, page)
+            @RequestParam(defaultValue = "1") final int page,
+            @RequestParam(defaultValue = "1") final int reviewPage) {
+        return commerceProfileModelBuilder.buildProfileModel(commerceUserId, page, reviewPage)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 }

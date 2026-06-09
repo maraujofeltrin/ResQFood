@@ -17,6 +17,10 @@ public interface NotificationDao {
 
     List<Notification> findRecentByRecipient(Long userId, int limit);
 
+    List<Notification> findByRecipientPaginated(Long userId, int page, int pageSize);
+
+    int countByRecipient(Long userId);
+
     int countUnread(Long userId);
 
     Optional<Notification> markRead(Long id, LocalDateTime readAt);

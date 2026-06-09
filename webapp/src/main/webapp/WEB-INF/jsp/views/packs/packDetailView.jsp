@@ -83,7 +83,10 @@
                                     alreadySubmitted="${commerceReviewAlreadySubmitted}"
                                     formExpanded="${commerceReviewFormExpanded}"
                                     alertKind="${commerceReviewAlertKind}"
-                                    alertMessage="${commerceReviewAlertMessage}"/>
+                                    alertMessage="${commerceReviewAlertMessage}"
+                                    reviewCurrentPage="${reviewCurrentPage}"
+                                    reviewTotalPages="${reviewTotalPages}"
+                                    reviewPaginationBaseUrl="${pageContext.request.contextPath}/packs/${packId}"/>
                 </div>
             </div>
 

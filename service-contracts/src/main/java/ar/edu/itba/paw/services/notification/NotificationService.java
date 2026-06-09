@@ -36,6 +36,10 @@ public interface NotificationService {
 
     List<NotificationItemView> findRecentForUser(long userId, int limit);
 
+    List<NotificationItemView> findPageForUser(long userId, int page, int pageSize);
+
+    int countForUser(long userId);
+
     int countUnread(long userId);
 
     Optional<NotificationItemView> markRead(long notificationId);
