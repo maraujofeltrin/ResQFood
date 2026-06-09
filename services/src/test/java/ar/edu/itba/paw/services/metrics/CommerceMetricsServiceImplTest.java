@@ -2,11 +2,11 @@ package ar.edu.itba.paw.services.metrics;
 
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
-import ar.edu.itba.paw.services.user.ClientService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +23,11 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,14 +42,11 @@ class CommerceMetricsServiceImplTest {
     @Mock
     private PackService packService;
 
-    @Mock
-    private ClientService clientService;
-
     private CommerceMetricsServiceImpl commerceMetricsService;
 
     @BeforeEach
     void setUp() {
-        commerceMetricsService = new CommerceMetricsServiceImpl(reservationService, packService, clientService, BUSINESS_ZONE);
+        commerceMetricsService = new CommerceMetricsServiceImpl(reservationService, packService, BUSINESS_ZONE);
     }
 
     @Test
@@ -197,6 +198,65 @@ class CommerceMetricsServiceImplTest {
     }
 
     @Test
+    void testGetCommerceMetricsWhenTopPacksReturnsEntitiesWithoutPackServiceLookup() {
+        // 1. Setup
+        final LocalDateTime from = LocalDateTime.of(2030, 10, 1, 0, 0);
+        final LocalDateTime to = LocalDateTime.of(2030, 10, 2, 0, 0);
+        stubGetCommerceMetrics(
+                COMMERCE_ID,
+                from,
+                to,
+                Collections.emptyList(),
+                0,
+                BigDecimal.ZERO,
+                Optional.empty(),
+                0L,
+                0L);
+        final Pack topPack = new Pack(50L, new Commerce(COMMERCE_ID, "Comm", Commerce.Category.BAKERY, "St", 1,
+                Municipality.AVELLANEDA, "P", "1000", "08:00", "20:00"), "Top Pack", "d", 1.0, 1.0, 1, true, null);
+        when(reservationService.findTopSellingPacks(eq(COMMERCE_ID), eq(from), eq(to), eq(3)))
+                .thenReturn(Collections.singletonList(new Object[] {topPack, 7L}));
+
+        // 2. Ejercicio
+        final CommerceMetrics result = commerceMetricsService.getCommerceMetrics(COMMERCE_ID, from, to);
+
+        // 3. Asserts
+        assertEquals(1, result.getTopPacks().size());
+        assertEquals("Top Pack", result.getTopPacks().get(0).getPackTitle());
+        assertEquals(7L, result.getTopPacks().get(0).getUnitsSold());
+        verify(packService, never()).findById(any());
+    }
+
+    @Test
+    void testGetCommerceMetricsWhenTopClientsReturnsEntitiesWithoutClientServiceLookup() {
+        // 1. Setup
+        final LocalDateTime from = LocalDateTime.of(2030, 11, 1, 0, 0);
+        final LocalDateTime to = LocalDateTime.of(2030, 11, 2, 0, 0);
+        stubGetCommerceMetrics(
+                COMMERCE_ID,
+                from,
+                to,
+                Collections.emptyList(),
+                0,
+                BigDecimal.ZERO,
+                Optional.empty(),
+                0L,
+                0L);
+        final Client topClient = new Client(20L, "Ana", "Garcia", true);
+        when(reservationService.findTopClientsByPaidReservations(eq(COMMERCE_ID), eq(from), eq(to), eq(3)))
+                .thenReturn(Collections.singletonList(new Object[] {topClient, 4L}));
+
+        // 2. Ejercicio
+        final CommerceMetrics result = commerceMetricsService.getCommerceMetrics(COMMERCE_ID, from, to);
+
+        // 3. Asserts
+        assertEquals(1, result.getTopClients().size());
+        assertEquals("Ana Garcia", result.getTopClients().get(0).getClientName());
+        assertEquals(4L, result.getTopClients().get(0).getReservationCount());
+        assertEquals(20L, result.getTopClients().get(0).getClientId());
+    }
+
+    @Test
     void testCountSoldTodayWhenDaoReturnsCount() {
         // 1. Setup
         when(reservationService.countPaidReservationsInPeriod(eq(COMMERCE_ID), any(LocalDateTime.class), any(LocalDateTime.class)))
@@ -227,5 +287,12 @@ class CommerceMetricsServiceImplTest {
                 .thenReturn(paidStatusCount);
         when(reservationService.countByStatusInPeriod(eq(commerceId), eq(Reservation.Status.CANCELED), eq(from), eq(to)))
                 .thenReturn(canceledStatusCount);
+        when(reservationService.averageTicketInPeriod(eq(commerceId), eq(from), eq(to))).thenReturn(BigDecimal.ZERO);
+        when(reservationService.countUniqueClientsInPeriod(eq(commerceId), eq(from), eq(to))).thenReturn(0L);
+        when(reservationService.countNewClientsInPeriod(eq(commerceId), eq(from), eq(to))).thenReturn(0L);
+        lenient().when(reservationService.findTopSellingPacks(eq(commerceId), eq(from), eq(to), anyInt()))
+                .thenReturn(Collections.emptyList());
+        lenient().when(reservationService.findTopClientsByPaidReservations(eq(commerceId), eq(from), eq(to), anyInt()))
+                .thenReturn(Collections.emptyList());
     }
 }

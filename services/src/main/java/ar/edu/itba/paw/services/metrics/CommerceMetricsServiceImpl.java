@@ -6,7 +6,6 @@ import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
-import ar.edu.itba.paw.services.user.ClientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,15 +32,13 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
 
     private final ReservationService reservationService;
     private final PackService packService;
-    private final ClientService clientService;
     private final ZoneId displayZone;
 
     @Autowired
     public CommerceMetricsServiceImpl(final ReservationService reservationService, final PackService packService,
-                                      final ClientService clientService, final ZoneId businessZone) {
+                                      final ZoneId businessZone) {
         this.reservationService = reservationService;
         this.packService = packService;
-        this.clientService = clientService;
         this.displayZone = businessZone;
     }
 
@@ -115,12 +112,11 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
         final List<Object[]> rows = reservationService.findTopSellingPacks(commerceId, from, to, 3);
         final List<TopPackEntry> result = new ArrayList<>();
         for (final Object[] row : rows) {
-            final Long packId = ((Number) row[0]).longValue();
+            final Pack pack = (Pack) row[0];
             final long unitsSold = ((Number) row[1]).longValue();
-            final Optional<Pack> pack = packService.findById(packId);
-            final String packTitle = pack.map(Pack::getTitle).orElse("Pack #" + packId);
-            final Long imageId = pack.map(Pack::getImageId).orElse(null);
-            result.add(new TopPackEntry(packId, packTitle, imageId, unitsSold));
+            final String packTitle = pack.getTitle() != null ? pack.getTitle() : "Pack #" + pack.getId();
+            final Long imageId = pack.getImageId();
+            result.add(new TopPackEntry(pack.getId(), packTitle, imageId, unitsSold));
         }
         return result;
     }
@@ -130,11 +126,12 @@ public class CommerceMetricsServiceImpl implements CommerceMetricsService {
         final List<Object[]> rows = reservationService.findTopClientsByPaidReservations(commerceId, from, to, 3);
         final List<TopClientEntry> result = new ArrayList<>();
         for (final Object[] row : rows) {
-            final Long clientId = ((Number) row[0]).longValue();
+            final Client client = (Client) row[0];
             final long reservationCount = ((Number) row[1]).longValue();
-            final Optional<Client> client = clientService == null ? Optional.empty() : clientService.findByUserId(clientId);
-            final String clientName = client.map(c -> c.getName() + " " + c.getLastName()).orElse("Cliente");
-            result.add(new TopClientEntry(clientId, clientName, reservationCount));
+            final String rawName = (client.getName() == null ? "" : client.getName())
+                    + (client.getLastName() == null ? "" : (" " + client.getLastName()));
+            final String clientName = rawName.trim().isEmpty() ? "Cliente" : rawName.trim();
+            result.add(new TopClientEntry(client.getUserId(), clientName, reservationCount));
         }
         return result;
     }

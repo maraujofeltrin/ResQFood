@@ -5,6 +5,7 @@ import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.image.Image;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
+import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -533,5 +534,63 @@ public class ReservationJpaDaoTest {
         assertTrue(Hibernate.isInitialized(r.getCustomer()));
         assertNotNull(r.getCustomer().getFullName());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
+    public void testFindTopSellingPacksReturnsPackEntityAndUnitsSoldOrdered() {
+        // 1. Setup
+        final LocalDateTime periodStart = LocalDateTime.of(2030, 3, 1, 0, 0);
+        final LocalDateTime periodEnd = LocalDateTime.of(2030, 3, 10, 0, 0);
+        final Pack lowSeller = packDao.createPack(commerceId, "Low Seller", "Desc", 100.0, 50.0, 10,
+                Collections.emptyList(), null);
+        final Pack topSeller = packDao.createPack(commerceId, "Top Seller", "Desc", 100.0, 50.0, 10,
+                Collections.emptyList(), null);
+        reservationDao.createReservation(clientId, lowSeller.getId(), RESERVATION_DATE, 100.0,
+                Reservation.Status.PAID, "LOW1", PICKUP_CONFIRMED_AT, 2, null);
+        reservationDao.createReservation(clientId, topSeller.getId(), RESERVATION_DATE, 250.0,
+                Reservation.Status.PAID, "TOP1", PICKUP_CONFIRMED_AT, 5, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Object[]> rows = reservationDao.findTopSellingPacks(commerceId, periodStart, periodEnd, 3);
+
+        // 3. Asserts
+        assertEquals(2, rows.size());
+        assertInstanceOf(Pack.class, rows.get(0)[0]);
+        assertEquals(topSeller.getId(), ((Pack) rows.get(0)[0]).getId());
+        assertEquals("Top Seller", ((Pack) rows.get(0)[0]).getTitle());
+        assertEquals(5L, ((Number) rows.get(0)[1]).longValue());
+        assertInstanceOf(Pack.class, rows.get(1)[0]);
+        assertEquals(lowSeller.getId(), ((Pack) rows.get(1)[0]).getId());
+        assertEquals(2L, ((Number) rows.get(1)[1]).longValue());
+    }
+
+    @Test
+    public void testFindTopClientsByPaidReservationsReturnsClientEntityAndCountOrdered() {
+        // 1. Setup
+        final LocalDateTime periodStart = LocalDateTime.of(2030, 3, 1, 0, 0);
+        final LocalDateTime periodEnd = LocalDateTime.of(2030, 3, 10, 0, 0);
+        final Long secondClientId = userDao.createUser("client2@example.com", "pass", "Second", "123", User.Role.CLIENT)
+                .getId();
+        clientDao.createClient(secondClientId, "Second", "Client", true);
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.PAID, "C1", PICKUP_CONFIRMED_AT, 1, null);
+        reservationDao.createReservation(secondClientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.PAID, "C2A", PICKUP_CONFIRMED_AT, 1, null);
+        reservationDao.createReservation(secondClientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.PAID, "C2B", PICKUP_CONFIRMED_AT, 1, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Object[]> rows = reservationDao.findTopClientsByPaidReservations(commerceId, periodStart, periodEnd, 3);
+
+        // 3. Asserts
+        assertEquals(2, rows.size());
+        assertInstanceOf(Client.class, rows.get(0)[0]);
+        assertEquals(secondClientId, ((Client) rows.get(0)[0]).getUserId());
+        assertEquals(2L, ((Number) rows.get(0)[1]).longValue());
+        assertInstanceOf(Client.class, rows.get(1)[0]);
+        assertEquals(clientId, ((Client) rows.get(1)[0]).getUserId());
+        assertEquals(1L, ((Number) rows.get(1)[1]).longValue());
     }
 }

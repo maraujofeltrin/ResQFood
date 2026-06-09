@@ -410,7 +410,7 @@ public class ReservationJpaDao implements ReservationDao {
     @Override
     public List<Object[]> findTopSellingPacks(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to, final int limit) {
-        return em.createQuery("SELECT r.pack.id, SUM(r.quantity) as unitsSold FROM Reservation r JOIN r.pack p WHERE p.commerce.userId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY r.pack.id ORDER BY unitsSold DESC", Object[].class)
+        return em.createQuery("SELECT p, SUM(r.quantity) AS unitsSold FROM Reservation r JOIN r.pack p WHERE p.commerce.userId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY p ORDER BY unitsSold DESC", Object[].class)
                 .setParameter("commerceId", commerceId)
                 .setParameter("status", Reservation.Status.PAID)
                 .setParameter("start", from)
@@ -422,7 +422,7 @@ public class ReservationJpaDao implements ReservationDao {
     @Override
     public List<Object[]> findTopClientsByPaidReservations(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to, final int limit) {
-        return em.createQuery("SELECT r.customer.userId, COUNT(r.id) as reservationCount FROM Reservation r JOIN r.pack p WHERE p.commerce.userId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY r.customer.userId ORDER BY reservationCount DESC", Object[].class)
+        return em.createQuery("SELECT c, COUNT(r.id) AS reservationCount FROM Reservation r JOIN r.pack p JOIN r.customer c WHERE p.commerce.userId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end GROUP BY c ORDER BY reservationCount DESC", Object[].class)
                 .setParameter("commerceId", commerceId)
                 .setParameter("status", Reservation.Status.PAID)
                 .setParameter("start", from)
