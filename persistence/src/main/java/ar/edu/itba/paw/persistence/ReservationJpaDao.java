@@ -47,9 +47,9 @@ public class ReservationJpaDao implements ReservationDao {
     public Optional<Reservation> findByIdWithDetails(final Long id) {
         return em.createQuery(
                 "SELECT r FROM Reservation r "
-                        + "JOIN FETCH r.customer "
+                        + "JOIN FETCH r.customer c JOIN FETCH c.user "
                         + "JOIN FETCH r.pack p "
-                        + "JOIN FETCH p.commerce "
+                        + "JOIN FETCH p.commerce co JOIN FETCH co.user "
                         + "LEFT JOIN FETCH p.auction "
                         + "WHERE r.id = :id",
                 Reservation.class)

@@ -474,6 +474,30 @@ public class ReservationJpaDaoTest {
     }
 
     @Test
+    public void testFindByIdWithDetailsEagerlyLoadsCustomerUserAndCommerceUser() {
+        // 1. Setup
+        final Reservation created = reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.RESERVED, "DETAIL_CODE", null, 1, null);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final Optional<Reservation> found = reservationDao.findByIdWithDetails(created.getId());
+
+        // 3. Asserts
+        assertTrue(found.isPresent());
+        final Reservation r = found.get();
+        assertTrue(Hibernate.isInitialized(r.getCustomer()));
+        assertTrue(Hibernate.isInitialized(r.getCustomer().getUser()));
+        assertNotNull(r.getCustomer().getUser().getEmail());
+        assertTrue(Hibernate.isInitialized(r.getPack()));
+        assertTrue(Hibernate.isInitialized(r.getPack().getCommerce()));
+        assertTrue(Hibernate.isInitialized(r.getPack().getCommerce().getUser()));
+        assertNotNull(r.getPack().getCommerce().getUser().getEmail());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
     public void testFindByPackIdEagerlyLoadsCustomer() {
         // 1. Setup
         reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,

@@ -2,9 +2,7 @@ package ar.edu.itba.paw.services.reservation;
 
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
-import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.services.mail.MailSenderSupport;
-import ar.edu.itba.paw.services.user.ClientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +17,6 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
-import java.util.Optional;
 
 @Service
 public class ReservationMailServiceImpl extends MailSenderSupport implements ReservationMailService {
@@ -28,20 +25,17 @@ public class ReservationMailServiceImpl extends MailSenderSupport implements Res
 
     private static final DateTimeFormatter MAIL_DATE_FORMATTER = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
 
-    private final ClientService clientService;
     private final ZoneId displayZone;
 
     private final String baseUrl;
 
     @Autowired
     public ReservationMailServiceImpl(final JavaMailSender mailSender,
-            final ClientService clientService,
             @Value("${mail.username}") final String mailFrom,
             @Value("${mail.from-name:ResQFood}") final String mailFromName,
             final ZoneId displayZone,
             @Value("${app.base-url}") final String baseUrl) {
         super(mailSender, mailFrom, mailFromName);
-        this.clientService = clientService;
         this.displayZone = displayZone;
         this.baseUrl = baseUrl;
     }
@@ -57,7 +51,7 @@ public class ReservationMailServiceImpl extends MailSenderSupport implements Res
         final String rejectUrl = normalizedBase + "/reservations/reject?token=" + rejectToken;
 
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
-        final String clientName = resolveClientName(reservation.getCustomer().getUserId(), locale);
+        final String clientName = resolveClientName(reservation, locale);
         final String subject = resolveSubject("mail.subject.reservationRequest",
                 new Object[]{reservation.getId(), clientName}, locale);
         final String html = buildCommerceHtml(reservation, packMailInfo.packLabel(), acceptUrl, rejectUrl,
@@ -96,7 +90,7 @@ public class ReservationMailServiceImpl extends MailSenderSupport implements Res
         final PackMailInfo packMailInfo = getPackMailInfo(reservation, locale);
         final String subject = resolveSubject("mail.subject.auctionWinnerCommerce",
                 new Object[]{packMailInfo.localName()}, locale);
-        final String winnerName = resolveClientName(reservation.getCustomer().getUserId(), locale);
+        final String winnerName = resolveClientName(reservation, locale);
         final String html = buildAuctionWinnerHtml(reservation, packMailInfo.packLabel(), pickupDateStr, true,
                 winnerName, locale);
         sendHtmlMail(commerceEmail, subject, html, "Could not send auction winner pickup code mail to commerce");
@@ -197,21 +191,13 @@ public class ReservationMailServiceImpl extends MailSenderSupport implements Res
         return new PackMailInfo(localName, packLabel);
     }
 
-    private String resolveClientName(final Long customerId, final Locale locale) {
+    private String resolveClientName(final Reservation reservation, final Locale locale) {
         final String fallbackClientName = resolveSubject("mail.label.clientFallback", null, locale);
-        if (customerId == null) {
+        if (reservation == null || reservation.getCustomer() == null) {
             return fallbackClientName;
         }
-
-        final Optional<Client> maybeClient = clientService.findByUserId(customerId);
-        if (maybeClient.isEmpty()) {
-            return fallbackClientName;
-        }
-
-        final Client client = maybeClient.get();
-        final String fullName = (client.getName() == null ? "" : client.getName())
-                + (client.getLastName() == null ? "" : (" " + client.getLastName()));
-        return fullName.trim().isEmpty() ? fallbackClientName : fullName.trim();
+        final String fullName = reservation.getCustomer().getFullName();
+        return "-".equals(fullName) ? fallbackClientName : fullName;
     }
 
     private record PackMailInfo(String localName, String packLabel) {

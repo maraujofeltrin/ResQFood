@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -65,6 +66,25 @@ class ReservationServiceImplTest {
 
     private static Client clientRef(final long id) {
         return new Client(id, "N", "L", true);
+    }
+
+    private static User clientUserRef(final long id, final String email) {
+        return new User(id, email, "pwd", "Client", null, User.Role.CLIENT, false);
+    }
+
+    private static User commerceUserRef(final long id, final String email) {
+        return new User(id, email, "pwd", "Commerce", null, User.Role.COMMERCE, false);
+    }
+
+    private static Client clientWithUser(final long id, final String email, final String name, final String lastName) {
+        return new Client(clientUserRef(id, email), name, lastName, true);
+    }
+
+    private static Pack packWithCommerceUser(final long packId, final long commerceUserId, final String commerceEmail,
+            final String title) {
+        final Commerce commerce = new Commerce(commerceUserRef(commerceUserId, commerceEmail), "Comm",
+                Commerce.Category.BAKERY, "St", 1, Municipality.AVELLANEDA, "P", "1000", "08:00", "20:00");
+        return new Pack(packId, commerce, title, "desc", 10.0, 5.0, 5, true, Collections.emptyList());
     }
 
     private static Commerce commerceRef(final long userId) {
@@ -114,21 +134,17 @@ class ReservationServiceImplTest {
         final long packId = 10L;
         final long commerceUserId = 100L;
         final User clientUser = new User(1L, "user@example.org", "pwd", "Test User", null, User.Role.CLIENT, false);
-        final User commerceUser = new User(commerceUserId, "commerce@example.org", "pwd", "Commerce", null, User.Role.COMMERCE, false);
-        final Pack pack = newPack(packId, commerceUserId, "title", "desc", 10.0, 5.0, 5, true, false,
-                Collections.emptyList(), null);
+        final Pack pack = packWithCommerceUser(packId, commerceUserId, "commerce@example.org", "title");
         when(userService.findById(1L)).thenReturn(Optional.of(clientUser));
         when(clientService.findByUserId(1L)).thenReturn(Optional.of(new Client(1L, "Test", "User", true)));
         when(packService.decrementStock(packId, 1)).thenReturn(true);
         when(reservationDao.findByPickupCode(anyString())).thenReturn(Optional.empty());
-        final Reservation createdReservation = new Reservation(1L, clientRef(1L), pack, null, 5.0,
-                Reservation.Status.RESERVED, "CODE1", null, 1, "pw");
+        final Reservation createdReservation = new Reservation(1L, clientWithUser(1L, "user@example.org", "Test", "User"),
+                pack, null, 5.0, Reservation.Status.RESERVED, "CODE1", null, 1, "pw");
         when(reservationDao.createReservation(eq(1L), eq(packId), any(LocalDateTime.class), eq(5.0),
                 eq(Reservation.Status.RESERVED), anyString(), isNull(), eq(1), eq("pw")))
                 .thenReturn(createdReservation);
         when(reservationDao.findByIdWithDetails(1L)).thenReturn(Optional.of(createdReservation));
-        when(packService.findById(packId)).thenReturn(Optional.of(pack));
-        when(userService.findById(commerceUserId)).thenReturn(Optional.of(commerceUser));
         when(reservationTokenDao.create(anyString(), anyLong(), any(ReservationToken.Action.class),
                 any(LocalDateTime.class), any(LocalDateTime.class))).thenAnswer(inv -> {
             final ReservationToken token = new ReservationToken(inv.getArgument(0), reservationRef(inv.getArgument(1)),
@@ -150,21 +166,18 @@ class ReservationServiceImplTest {
         final long packId = 15L;
         final long commerceUserId = 150L;
         final User clientUser = new User(7L, "winner@example.org", "pwd", "Winning User", null, User.Role.CLIENT, false);
-        final User commerceUser = new User(commerceUserId, "commerce150@example.org", "pwd", "C150", null, User.Role.COMMERCE, false);
-        final Pack pack = newPack(packId, commerceUserId, "auction-pack", "desc", 10.0, 5.0, 5, true,
-                Collections.emptyList());
+        final Pack pack = packWithCommerceUser(packId, commerceUserId, "commerce150@example.org", "auction-pack");
         when(userService.findById(7L)).thenReturn(Optional.of(clientUser));
         when(clientService.findByUserId(7L)).thenReturn(Optional.of(new Client(7L, "Winning", "User", true)));
         when(packService.decrementStock(packId, 1)).thenReturn(true);
         when(reservationDao.findByPickupCode(anyString())).thenReturn(Optional.empty());
-        final Reservation auctionReservation = new Reservation(1L, clientRef(7L), pack, null, 7.5,
-                Reservation.Status.RESERVED, "CODE2", null, 1, null);
+        final Reservation auctionReservation = new Reservation(1L, clientWithUser(7L, "winner@example.org", "Winning", "User"),
+                pack, null, 7.5, Reservation.Status.RESERVED, "CODE2", null, 1, null);
         when(reservationDao.createReservation(eq(7L), eq(packId), any(LocalDateTime.class), eq(7.5),
                 eq(Reservation.Status.RESERVED), anyString(), isNull(), eq(1), isNull()))
                 .thenReturn(auctionReservation);
         when(reservationDao.findByIdWithDetails(1L)).thenReturn(Optional.of(auctionReservation));
-        when(packService.findById(packId)).thenReturn(Optional.of(pack));
-        when(userService.findById(commerceUserId)).thenReturn(Optional.of(commerceUser));
+
         // 2. Ejercicio
         final Reservation result = reservationService.createReservation(packId, 7L, 1, 7.5, null, true);
 
@@ -208,17 +221,12 @@ class ReservationServiceImplTest {
         final long packId = 500L;
         final long reservationId = 42L;
         final LocalDateTime resDate = LocalDateTime.now();
-        final Pack pack = newPack(packId, 100L, "t", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
-        final Reservation reserved = new Reservation(reservationId, clientRef(101L), pack, resDate, 25.0,
+        final Pack pack = packWithCommerceUser(packId, 100L, "commerce@example.org", "t");
+        final Client client = clientWithUser(101L, "client@example.org", "Client", "Name");
+        final Reservation reserved = new Reservation(reservationId, client, pack, resDate, 25.0,
                 Reservation.Status.RESERVED, "HHHHH", null, 3, null);
-        final Reservation canceled = new Reservation(reservationId, clientRef(101L), pack, resDate, 25.0,
-                Reservation.Status.CANCELED, "HHHHH", null, 3, null);
-        when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reserved));
+        when(reservationDao.findByIdWithDetails(reservationId)).thenReturn(Optional.of(reserved));
         when(packService.incrementStock(packId, 3)).thenReturn(true);
-        when(reservationDao.updateStatus(reservationId, Reservation.Status.CANCELED)).thenReturn(canceled);
-        when(reservationDao.findByIdWithDetails(reservationId)).thenReturn(Optional.of(canceled));
-        final User clientUser = new User(101L, "client@example.org", "pwd", "Client", null, User.Role.CLIENT, false);
-        when(userService.findById(101L)).thenReturn(Optional.of(clientUser));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationRejectionError> result =
@@ -230,13 +238,29 @@ class ReservationServiceImplTest {
     }
 
     @Test
+    void testConfirmPickupWhenReservedSetsPaidStatusAndPickupDate() {
+        // 1. Setup
+        final long reservationId = 55L;
+        final Reservation reserved = new Reservation(reservationId, clientRef(1L), packRef(1L), LocalDateTime.now(),
+                25.0, Reservation.Status.RESERVED, "CODE", null, 1, null);
+        when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reserved));
+
+        // 2. Ejercicio
+        final Reservation confirmed = reservationService.confirmPickup(reservationId);
+
+        // 3. Asserts
+        assertEquals(Reservation.Status.PAID, confirmed.getStatus());
+        assertNotNull(confirmed.getPickupConfirmationDate());
+    }
+
+    @Test
     void testTryRejectReservationWhenCanceledReturnsError() {
         // 1. Setup
         final long packId = 710L;
         final long reservationId = 44L;
         final Reservation reservation = new Reservation(reservationId, clientRef(104L), packRef(packId), LocalDateTime.now(), 25.0,
                 Reservation.Status.CANCELED, "KKKKK", null, 1, null);
-        when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
+        when(reservationDao.findByIdWithDetails(reservationId)).thenReturn(Optional.of(reservation));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationRejectionError> result =
@@ -253,7 +277,7 @@ class ReservationServiceImplTest {
         final long reservationId = 45L;
         final Reservation reservation = new Reservation(reservationId, clientRef(102L), packRef(packId), LocalDateTime.now(), 25.0,
                 Reservation.Status.PAID, "IIIII", null, 1, null);
-        when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reservation));
+        when(reservationDao.findByIdWithDetails(reservationId)).thenReturn(Optional.of(reservation));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationRejectionError> result =
@@ -270,13 +294,10 @@ class ReservationServiceImplTest {
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final Reservation reserved = new Reservation(201L, clientRef(201L), packRef(packId), now, 25.0,
                 Reservation.Status.RESERVED, "A1B2C", null, 1, null);
-        final Reservation paid = new Reservation(201L, clientRef(201L), packRef(packId), now, 25.0,
-                Reservation.Status.PAID, "A1B2C", now, 1, null);
         final ReservationToken unused = new ReservationToken("accept-token", reserved, ReservationToken.Action.ACCEPT,
                 false, now, now.plusHours(1));
         when(reservationTokenDao.findByToken("accept-token")).thenReturn(Optional.of(unused));
         when(reservationDao.findById(201L)).thenReturn(Optional.of(reserved));
-        when(reservationDao.confirmPickup(eq(201L), any(LocalDateTime.class))).thenReturn(paid);
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =
@@ -285,6 +306,7 @@ class ReservationServiceImplTest {
         // 3. Asserts
         assertTrue(result.isSuccess());
         assertEquals(Reservation.Status.PAID, result.reservation().orElseThrow().getStatus());
+        assertNotNull(result.reservation().orElseThrow().getPickupConfirmationDate());
     }
 
     @Test
@@ -324,19 +346,14 @@ class ReservationServiceImplTest {
         // 1. Setup
         final long packId = 900L;
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-        final Reservation reserved = new Reservation(301L, clientRef(301L), packRef(packId), now, 25.0,
+        final Reservation reserved = new Reservation(301L, clientWithUser(301L, "client301@example.org", "Client", "Name"),
+                packWithCommerceUser(packId, 100L, "commerce@example.org", "t"), now, 25.0,
                 Reservation.Status.RESERVED, "R1R2R", null, 1, null);
-        final Reservation canceled = new Reservation(301L, clientRef(301L), packRef(packId), now, 25.0,
-                Reservation.Status.CANCELED, "R1R2R", null, 1, null);
         final ReservationToken unused = new ReservationToken("reject-token", reserved, ReservationToken.Action.REJECT,
                 false, now, now.plusHours(1));
         when(reservationTokenDao.findByToken("reject-token")).thenReturn(Optional.of(unused));
-        when(reservationDao.findById(301L)).thenReturn(Optional.of(reserved));
+        when(reservationDao.findByIdWithDetails(301L)).thenReturn(Optional.of(reserved));
         when(packService.incrementStock(packId, 1)).thenReturn(true);
-        when(reservationDao.updateStatus(301L, Reservation.Status.CANCELED)).thenReturn(canceled);
-        when(reservationDao.findByIdWithDetails(301L)).thenReturn(Optional.of(canceled));
-        final User clientUser = new User(301L, "client301@example.org", "pwd", "Client", null, User.Role.CLIENT, false);
-        when(userService.findById(301L)).thenReturn(Optional.of(clientUser));
 
         // 2. Ejercicio
         final ReservationServiceResult<ReservationTokenActionError> result =

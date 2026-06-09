@@ -108,14 +108,6 @@ public class ReservationServiceImpl implements ReservationService {
         final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         final double lineTotal = unitPrice * quantity;
 
-        final Pack pack = packService.findById(packId)
-                .orElseThrow(() -> new IllegalStateException("Pack not found after stock update: " + packId));
-        final Long commerceId = pack.getCommerceId();
-        final User commerceUser = userService.findById(commerceId)
-                .orElseThrow(() -> new IllegalStateException("Commerce user not found for id: " + commerceId));
-        final String commerceEmail = commerceUser.getEmail();
-        final java.util.Locale commerceLocale = commerceUser.getLocale();
-
         final Reservation persisted = reservationDao.createReservation(
                 user.getId(),
                 packId,
@@ -129,6 +121,9 @@ public class ReservationServiceImpl implements ReservationService {
 
         final Reservation reservation = reservationDao.findByIdWithDetails(persisted.getId())
                 .orElseThrow(() -> new IllegalStateException("Reservation not found: " + persisted.getId()));
+        final User commerceUser = reservation.getPack().getCommerce().getUser();
+        final String commerceEmail = commerceUser.getEmail();
+        final java.util.Locale commerceLocale = commerceUser.getLocale();
         final String pickupDateStr = computePickupDateStr(reservation);
 
         if (isAuction) {
@@ -253,9 +248,11 @@ public class ReservationServiceImpl implements ReservationService {
         if (reservation.getStatus() != Reservation.Status.RESERVED) {
             throw new ReservationCreationException(ReservationCreationException.Reason.INVALID_STATUS, reservation.getStatus().name());
         }
-        final Reservation confirmed = reservationDao.confirmPickup(id, LocalDateTime.now(ZoneOffset.UTC));
+        final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        reservation.setStatus(Reservation.Status.PAID);
+        reservation.setPickupConfirmationDate(now);
         LOGGER.info("Pickup confirmed for reservationId={}", id);
-        return confirmed;
+        return reservation;
     }
 
     @Transactional
@@ -272,12 +269,12 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     private ReservationServiceResult<ReservationRejectionError> rejectReservationInternal(final Long reservationId) {
-        final Reservation reservation = reservationDao.findById(reservationId)
-                .orElse(null);
-        if (reservation == null) {
+        final Optional<Reservation> reservationOpt = reservationDao.findByIdWithDetails(reservationId);
+        if (reservationOpt.isEmpty()) {
             LOGGER.warn("Failed to reject reservation: reservationId={}, error={}", reservationId, ReservationRejectionError.RESERVATION_NOT_FOUND);
             return ReservationServiceResult.failure(ReservationRejectionError.RESERVATION_NOT_FOUND);
         }
+        final Reservation reservation = reservationOpt.get();
 
         final Reservation.Status status = reservation.getStatus();
         if (status == Reservation.Status.CANCELED) {
@@ -304,18 +301,14 @@ public class ReservationServiceImpl implements ReservationService {
             return ReservationServiceResult.failure(ReservationRejectionError.STOCK_RESTORE_FAILED);
         }
 
-        reservationDao.updateStatus(reservation.getId(), Reservation.Status.CANCELED);
-        final Reservation canceledReservation = reservationDao.findByIdWithDetails(reservation.getId())
-                .orElseThrow(() -> new IllegalStateException("Reservation not found after cancel: " + reservationId));
-        final User clientUser = userService.findById(canceledReservation.getCustomer().getUserId())
-                .orElseThrow(() -> new IllegalStateException("Customer user not found for reservation id: "
-                        + canceledReservation.getId()));
+        reservation.setStatus(Reservation.Status.CANCELED);
+        final User clientUser = reservation.getCustomer().getUser();
         final String clientEmail = clientUser.getEmail();
 
-        notificationService.notifyReservationRejected(canceledReservation, clientEmail,
+        notificationService.notifyReservationRejected(reservation, clientEmail,
             clientUser.getLocale());
         LOGGER.info("Reservation canceled: reservationId={}", reservationId);
-        return ReservationServiceResult.success(canceledReservation);
+        return ReservationServiceResult.success(reservation);
     }
 
     private ReservationCreationException toRejectionException(final ReservationServiceResult<ReservationRejectionError> result) {
