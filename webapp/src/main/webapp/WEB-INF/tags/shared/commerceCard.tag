@@ -1,5 +1,6 @@
 <%@ tag body-content="empty" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 
 <%@ attribute name="commerceId" required="true" %>
@@ -35,7 +36,7 @@
                 <c:when test="${not empty rating && rating > 0}">
                     <div class="flex items-center justify-center gap-1 text-secondary font-bold">
                         <span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">star</span>
-                        <c:out value="${rating}"/>
+                        <fmt:formatNumber value="${rating}" maxFractionDigits="1" minFractionDigits="1"/>
                     </div>
                 </c:when>
                 <c:otherwise>
