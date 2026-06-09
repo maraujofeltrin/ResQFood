@@ -133,6 +133,26 @@ public class ReservationJpaDaoTest {
     }
 
     @Test
+    public void testFindByIdWithPackAndCommerceEagerlyLoadsPackAndCommerce() {
+        // 1. Setup
+        final Reservation created = reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.RESERVED, "CODE", null, 1, null);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final Optional<Reservation> found = reservationDao.findByIdWithPackAndCommerce(created.getId());
+
+        // 3. Asserts
+        assertTrue(found.isPresent());
+        assertNotNull(found.get().getPack());
+        assertTrue(Hibernate.isInitialized(found.get().getPack()));
+        assertNotNull(found.get().getPack().getCommerce());
+        assertTrue(Hibernate.isInitialized(found.get().getPack().getCommerce()));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
     public void testUpdateStatusWhenReservationExists() {
         // 1. Setup
         final Reservation created = reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,

@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.security;
 
 import ar.edu.itba.paw.models.auction.Auction;
+import ar.edu.itba.paw.models.notification.Notification;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
@@ -76,7 +77,7 @@ public class OwnershipServiceImpl implements OwnershipService {
         if (tokenOpt.isEmpty()) {
             throw new OwnershipResourceNotFoundException("Token not found");
         }
-        final Reservation reservation = findReservationOrThrow(tokenOpt.get().getReservation().getId());
+        final Reservation reservation = tokenOpt.get().getReservation();
         final Pack pack = reservation.getPack();
         if (pack == null) {
             throw new OwnershipResourceNotFoundException("Pack not found");
@@ -87,10 +88,12 @@ public class OwnershipServiceImpl implements OwnershipService {
     @Transactional(readOnly = true)
     @Override
     public boolean canWriteNotification(final long notificationId, final long currentUserId) {
-        if (notificationDao.findById(notificationId).isEmpty()) {
-            throw new OwnershipResourceNotFoundException("Notification not found");
+        final Notification notif = notificationDao.findById(notificationId)
+                .orElseThrow(() -> new OwnershipResourceNotFoundException("Notification not found"));
+        if (notif.getDeletedAt() != null) {
+            return false;
         }
-        return notificationDao.belongsToRecipient(notificationId, currentUserId);
+        return notif.getRecipient().getId().equals(currentUserId);
     }
 
     private Pack findPackOrThrow(final long packId) {
@@ -102,7 +105,7 @@ public class OwnershipServiceImpl implements OwnershipService {
     }
 
     private Reservation findReservationOrThrow(final long reservationId) {
-        final Optional<Reservation> reservationOpt = reservationDao.findById(reservationId);
+        final Optional<Reservation> reservationOpt = reservationDao.findByIdWithPackAndCommerce(reservationId);
         if (reservationOpt.isEmpty()) {
             throw new OwnershipResourceNotFoundException("Reservation not found");
         }

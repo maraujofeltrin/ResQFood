@@ -27,6 +27,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -150,7 +153,7 @@ class OwnershipServiceImplTest {
         final Client client = new Client(OTHER_USER_ID, "Client", "Last", true);
         final Reservation reservation = new Reservation(20L, client, ownedPack, LocalDateTime.now(), 50.0,
                 Reservation.Status.RESERVED, "ABC123", null, 1, null);
-        when(reservationDao.findById(20L)).thenReturn(Optional.of(reservation));
+        when(reservationDao.findByIdWithPackAndCommerce(20L)).thenReturn(Optional.of(reservation));
 
         // 2. Ejercicio
         final boolean result = ownershipService.canWriteReservation(20L, COMMERCE_USER_ID);
@@ -162,7 +165,7 @@ class OwnershipServiceImplTest {
     @Test
     void testCanWriteReservationWhenMissingThrowsNotFound() {
         // 1. Setup
-        when(reservationDao.findById(20L)).thenReturn(Optional.empty());
+        when(reservationDao.findByIdWithPackAndCommerce(20L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
         final OwnershipResourceNotFoundException thrown = assertThrows(OwnershipResourceNotFoundException.class,
@@ -179,7 +182,7 @@ class OwnershipServiceImplTest {
         final Client client = new Client(OTHER_USER_ID, "Client", "Last", true);
         final Reservation reservation = new Reservation(20L, client, ownedPack, LocalDateTime.now(), 50.0,
                 Reservation.Status.RESERVED, "ABC123", null, 1, null);
-        when(reservationDao.findById(20L)).thenReturn(Optional.of(reservation));
+        when(reservationDao.findByIdWithPackAndCommerce(20L)).thenReturn(Optional.of(reservation));
 
         // 2. Ejercicio
         final boolean result = ownershipService.canWriteReservation(20L, OTHER_USER_ID);
@@ -198,13 +201,13 @@ class OwnershipServiceImplTest {
         final ReservationToken token = new ReservationToken("tok", reservation, ReservationToken.Action.ACCEPT, false,
                 LocalDateTime.now(), LocalDateTime.now().plusDays(1));
         when(reservationTokenDao.findByToken("tok")).thenReturn(Optional.of(token));
-        when(reservationDao.findById(30L)).thenReturn(Optional.of(reservation));
 
         // 2. Ejercicio
         final boolean result = ownershipService.canWriteToken("tok", COMMERCE_USER_ID);
 
         // 3. Asserts
         assertTrue(result);
+        verifyNoInteractions(reservationDao);
     }
 
     @Test
@@ -230,13 +233,13 @@ class OwnershipServiceImplTest {
         final ReservationToken token = new ReservationToken("tok", reservation, ReservationToken.Action.ACCEPT, false,
                 LocalDateTime.now(), LocalDateTime.now().plusDays(1));
         when(reservationTokenDao.findByToken("tok")).thenReturn(Optional.of(token));
-        when(reservationDao.findById(30L)).thenReturn(Optional.of(reservation));
 
         // 2. Ejercicio
         final boolean result = ownershipService.canWriteToken("tok", OTHER_USER_ID);
 
         // 3. Asserts
         assertFalse(result);
+        verifyNoInteractions(reservationDao);
     }
 
     @Test
@@ -250,13 +253,13 @@ class OwnershipServiceImplTest {
                         ar.edu.itba.paw.models.notification.NotificationType.RESERVATION_CODE_CLIENT,
                         null, null, null, null, null, null, null, null,
                         java.time.LocalDateTime.now(), null, null)));
-        when(notificationDao.belongsToRecipient(5L, 10L)).thenReturn(true);
 
         // 2. Ejercicio
         final boolean result = ownershipService.canWriteNotification(5L, 10L);
 
         // 3. Asserts
         assertTrue(result);
+        verify(notificationDao, never()).belongsToRecipient(5L, 10L);
     }
 
     @Test
@@ -270,13 +273,33 @@ class OwnershipServiceImplTest {
                         ar.edu.itba.paw.models.notification.NotificationType.RESERVATION_CODE_CLIENT,
                         null, null, null, null, null, null, null, null,
                         java.time.LocalDateTime.now(), null, null)));
-        when(notificationDao.belongsToRecipient(5L, 10L)).thenReturn(false);
+
+        // 2. Ejercicio
+        final boolean result = ownershipService.canWriteNotification(5L, 99L);
+
+        // 3. Asserts
+        assertFalse(result);
+        verify(notificationDao, never()).belongsToRecipient(5L, 99L);
+    }
+
+    @Test
+    void testCanWriteNotificationWhenSoftDeletedReturnsFalse() {
+        // 1. Setup
+        when(notificationDao.findById(5L)).thenReturn(Optional.of(
+                new ar.edu.itba.paw.models.notification.Notification(
+                        5L,
+                        new ar.edu.itba.paw.models.user.User(10L, "u@test.com", "p", "U", null,
+                                ar.edu.itba.paw.models.user.User.Role.CLIENT, false),
+                        ar.edu.itba.paw.models.notification.NotificationType.RESERVATION_CODE_CLIENT,
+                        null, null, null, null, null, null, null, null,
+                        java.time.LocalDateTime.now(), null, java.time.LocalDateTime.now())));
 
         // 2. Ejercicio
         final boolean result = ownershipService.canWriteNotification(5L, 10L);
 
         // 3. Asserts
         assertFalse(result);
+        verify(notificationDao, never()).belongsToRecipient(5L, 10L);
     }
 
     @Test

@@ -31,7 +31,7 @@ public class ReservationTokenJpaDao implements ReservationTokenDao {
         return em.createQuery(
                 "SELECT rt FROM ReservationToken rt "
                         + "JOIN FETCH rt.reservation r "
-                        + "LEFT JOIN FETCH r.pack "
+                        + "JOIN FETCH r.pack p JOIN FETCH p.commerce "
                         + "WHERE rt.token = :token",
                 ReservationToken.class)
                 .setParameter("token", token)

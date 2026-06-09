@@ -148,6 +148,8 @@ public class ReservationTokenJpaDaoTest {
         assertTrue(Hibernate.isInitialized(found.get().getReservation()));
         assertNotNull(found.get().getReservation().getPack());
         assertTrue(Hibernate.isInitialized(found.get().getReservation().getPack()));
+        assertNotNull(found.get().getReservation().getPack().getCommerce());
+        assertTrue(Hibernate.isInitialized(found.get().getReservation().getPack().getCommerce()));
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservation_tokens"));
     }
 

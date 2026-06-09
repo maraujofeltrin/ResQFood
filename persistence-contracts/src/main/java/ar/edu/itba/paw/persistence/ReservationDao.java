@@ -15,6 +15,8 @@ public interface ReservationDao {
 
     Optional<Reservation> findByIdWithDetails(final Long id);
 
+    Optional<Reservation> findByIdWithPackAndCommerce(final Long id);
+
     List<Reservation> findByPackId(final Long packId, int page, int pageSize);
     int countByPackId(Long packId);
 

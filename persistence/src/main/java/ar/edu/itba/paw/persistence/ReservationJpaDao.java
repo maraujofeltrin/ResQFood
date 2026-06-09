@@ -60,6 +60,19 @@ public class ReservationJpaDao implements ReservationDao {
     }
 
     @Override
+    public Optional<Reservation> findByIdWithPackAndCommerce(final Long id) {
+        return em.createQuery(
+                "SELECT r FROM Reservation r "
+                        + "JOIN FETCH r.pack p JOIN FETCH p.commerce "
+                        + "WHERE r.id = :id",
+                Reservation.class)
+                .setParameter("id", id)
+                .getResultList()
+                .stream()
+                .findFirst();
+    }
+
+    @Override
     public List<Reservation> findByPackId(final Long packId, final int page, final int pageSize) {
         return em.createQuery(
                 "FROM Reservation r JOIN FETCH r.customer WHERE r.pack.id = :packId ORDER BY r.reservationDate DESC",
