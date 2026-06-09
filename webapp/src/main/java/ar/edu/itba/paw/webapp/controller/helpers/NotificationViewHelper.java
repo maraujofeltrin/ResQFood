@@ -1,7 +1,7 @@
 package ar.edu.itba.paw.webapp.controller.helpers;
 
+import ar.edu.itba.paw.models.notification.Notification;
 import ar.edu.itba.paw.models.notification.NotificationType;
-import ar.edu.itba.paw.services.notification.NotificationItemView;
 import org.springframework.context.MessageSource;
 
 import java.time.Duration;
@@ -20,41 +20,58 @@ public final class NotificationViewHelper {
 
     private NotificationViewHelper() {}
 
-    public static List<NotificationDisplayRow> buildRows(final List<NotificationItemView> items,
+    /**
+     * Builds rows from notifications whose {@code reservation.customer} is already hydrated
+     * by the persistence layer ({@code JOIN FETCH r.customer} in {@code NotificationDao}).
+     */
+    public static List<NotificationDisplayRow> buildRows(final List<Notification> notifications,
             final MessageSource messageSource, final Locale locale) {
-        return items.stream()
-                .map(item -> toRow(item, messageSource, locale))
+        return notifications.stream()
+                .map(notification -> toRow(notification, messageSource, locale))
                 .collect(Collectors.toList());
     }
 
-    private static NotificationDisplayRow toRow(final NotificationItemView item,
+    private static NotificationDisplayRow toRow(final Notification notification,
             final MessageSource messageSource, final Locale locale) {
         final String title = messageSource.getMessage(
-                "notification.type." + item.getType().name() + ".title", null, item.getType().name(), locale);
-        final String body = resolveBody(item, messageSource, locale);
-        final String time = relativeTime(item.getCreatedAt(), messageSource, locale);
-        return new NotificationDisplayRow(item.getId(), item.getType(), title, body, time, item.isRead());
+                "notification.type." + notification.getType().name() + ".title",
+                null, notification.getType().name(), locale);
+        final String body = resolveBody(notification, messageSource, locale);
+        final String time = relativeTime(notification.getCreatedAt(), messageSource, locale);
+        return new NotificationDisplayRow(notification.getId(), notification.getType(), title, body, time,
+                isRead(notification));
     }
 
-    private static String resolveBody(final NotificationItemView item,
+    private static String resolveBody(final Notification notification,
             final MessageSource messageSource, final Locale locale) {
-        final String code = "notification.type." + item.getType().name() + ".body";
-        final Object[] args = bodyArgs(item);
+        final String code = "notification.type." + notification.getType().name() + ".body";
+        final Object[] args = bodyArgs(notification);
         return messageSource.getMessage(code, args, "", locale);
     }
 
-    private static Object[] bodyArgs(final NotificationItemView item) {
-        return switch (item.getType()) {
-            case RESERVATION_REQUESTED_COMMERCE -> new Object[]{safe(item.getCustomerName()), safe(item.getPackTitle())};
-            case RESERVATION_CODE_CLIENT -> new Object[]{safe(item.getCommerceName()), safe(item.getPickupCode())};
-            case AUCTION_WINNER_CLIENT -> new Object[]{safe(item.getPackTitle()), safe(item.getCommerceName()), formatAmount(item.getAmount())};
-            case AUCTION_WINNER_COMMERCE -> new Object[]{safe(item.getPackTitle())};
-            case RESERVATION_REJECTED_CLIENT -> new Object[]{safe(item.getCommerceName()), safe(item.getPackTitle())};
-            case AUCTION_OUTBID_CLIENT -> new Object[]{formatAmount(item.getAmount()), safe(item.getPackTitle()), safe(item.getCommerceName())};
-            case FAVORITE_PACK_RESTOCKED -> new Object[]{safe(item.getCommerceName()), safe(item.getPackTitle())};
-            case FAVORITE_COMMERCE_NEW_PACK -> new Object[]{safe(item.getCommerceName()), safe(item.getPackTitle())};
-            case AUCTION_LOST_CLIENT -> new Object[]{safe(item.getPackTitle()), safe(item.getCommerceName())};
+    private static Object[] bodyArgs(final Notification notification) {
+        return switch (notification.getType()) {
+            case RESERVATION_REQUESTED_COMMERCE -> new Object[]{safe(customerName(notification)), safe(notification.getPackTitle())};
+            case RESERVATION_CODE_CLIENT -> new Object[]{safe(notification.getCommerceName()), safe(notification.getPickupCode())};
+            case AUCTION_WINNER_CLIENT -> new Object[]{safe(notification.getPackTitle()), safe(notification.getCommerceName()), formatAmount(notification.getAmount())};
+            case AUCTION_WINNER_COMMERCE -> new Object[]{safe(notification.getPackTitle())};
+            case RESERVATION_REJECTED_CLIENT -> new Object[]{safe(notification.getCommerceName()), safe(notification.getPackTitle())};
+            case AUCTION_OUTBID_CLIENT -> new Object[]{formatAmount(notification.getAmount()), safe(notification.getPackTitle()), safe(notification.getCommerceName())};
+            case FAVORITE_PACK_RESTOCKED -> new Object[]{safe(notification.getCommerceName()), safe(notification.getPackTitle())};
+            case FAVORITE_COMMERCE_NEW_PACK -> new Object[]{safe(notification.getCommerceName()), safe(notification.getPackTitle())};
+            case AUCTION_LOST_CLIENT -> new Object[]{safe(notification.getPackTitle()), safe(notification.getCommerceName())};
         };
+    }
+
+    private static boolean isRead(final Notification notification) {
+        return notification.getReadAt() != null;
+    }
+
+    private static String customerName(final Notification notification) {
+        if (notification.getReservation() == null || notification.getReservation().getCustomer() == null) {
+            return null;
+        }
+        return notification.getReservation().getCustomer().getFullName();
     }
 
     private static String relativeTime(final LocalDateTime createdAt,

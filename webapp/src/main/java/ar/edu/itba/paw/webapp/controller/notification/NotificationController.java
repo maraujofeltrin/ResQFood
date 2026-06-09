@@ -1,6 +1,6 @@
 package ar.edu.itba.paw.webapp.controller.notification;
 
-import ar.edu.itba.paw.services.notification.NotificationItemView;
+import ar.edu.itba.paw.models.notification.Notification;
 import ar.edu.itba.paw.services.notification.NotificationService;
 import ar.edu.itba.paw.webapp.auth.AuthUser;
 import ar.edu.itba.paw.webapp.controller.helpers.NotificationViewHelper;
@@ -49,7 +49,7 @@ public class NotificationController {
         final int total = notificationService.countForUser(userId);
         final int totalPages = Math.max(1, (int) Math.ceil((double) total / PAGE_SIZE));
         final int safePage = Math.max(1, Math.min(page, totalPages));
-        final List<NotificationItemView> items =
+        final List<Notification> items =
                 notificationService.findPageForUser(userId, safePage, PAGE_SIZE);
         final Locale locale = LocaleContextHolder.getLocale();
         final List<NotificationDisplayRow> rows =

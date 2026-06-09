@@ -225,18 +225,14 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<NotificationItemView> findRecentForUser(final long userId, final int limit) {
-        return notificationDao.findRecentByRecipient(userId, limit).stream()
-                .map(this::toView)
-                .collect(Collectors.toList());
+    public List<Notification> findRecentForUser(final long userId, final int limit) {
+        return notificationDao.findRecentByRecipient(userId, limit);
     }
 
     @Transactional(readOnly = true)
     @Override
-    public List<NotificationItemView> findPageForUser(final long userId, final int page, final int pageSize) {
-        return notificationDao.findByRecipientPaginated(userId, page, pageSize).stream()
-                .map(this::toView)
-                .collect(Collectors.toList());
+    public List<Notification> findPageForUser(final long userId, final int page, final int pageSize) {
+        return notificationDao.findByRecipientPaginated(userId, page, pageSize);
     }
 
     @Transactional(readOnly = true)
@@ -253,14 +249,14 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Transactional
     @Override
-    public Optional<NotificationItemView> markRead(final long notificationId) {
-        return notificationDao.markRead(notificationId, currentTimestamp()).map(this::toView);
+    public void markRead(final long notificationId) {
+        notificationDao.markRead(notificationId, currentTimestamp());
     }
 
     @Transactional
     @Override
-    public Optional<NotificationItemView> markUnread(final long notificationId) {
-        return notificationDao.markUnread(notificationId).map(this::toView);
+    public void markUnread(final long notificationId) {
+        notificationDao.markUnread(notificationId);
     }
 
     @Transactional
@@ -271,8 +267,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Transactional
     @Override
-    public Optional<NotificationItemView> softDelete(final long notificationId) {
-        return notificationDao.softDelete(notificationId, currentTimestamp()).map(this::toView);
+    public void softDelete(final long notificationId) {
+        notificationDao.softDelete(notificationId, currentTimestamp());
     }
 
     @Transactional(readOnly = true)
@@ -337,29 +333,6 @@ public class NotificationServiceImpl implements NotificationService {
         } catch (final RuntimeException ex) {
             LOGGER.warn("Mail dispatch failed context={}", context, ex);
         }
-    }
-
-    private NotificationItemView toView(final Notification notification) {
-        final Long reservationId = notification.getReservation() != null ? notification.getReservation().getId() : null;
-        final Long auctionId = notification.getAuction() != null ? notification.getAuction().getId() : null;
-        final Long packId = notification.getPack() != null ? notification.getPack().getId() : null;
-        final String customerName = (notification.getReservation() != null && notification.getReservation().getCustomer() != null)
-                ? notification.getReservation().getCustomer().getFullName()
-                : null;
-        return new NotificationItemView(
-                notification.getId(),
-                notification.getType(),
-                notification.getPackTitle(),
-                notification.getCommerceName(),
-                notification.getAmount(),
-                notification.getPickupCode(),
-                notification.getPickupDate(),
-                notification.getCreatedAt(),
-                notification.getReadAt() != null,
-                reservationId,
-                auctionId,
-                packId,
-                customerName);
     }
 
     @Override

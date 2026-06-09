@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -67,68 +68,6 @@ class NotificationServiceImplTest {
     }
 
     @Test
-    void testMarkReadWhenNotificationExistsReturnsReadItem() {
-        // 1. Setup
-        final Notification read = new Notification(1L,
-                new User(1L, "u@test.com", "p", "U", null, User.Role.CLIENT, false),
-                NotificationType.RESERVATION_CODE_CLIENT, null, null, null, "Pack", "Shop", 50.0, null, null,
-                LocalDateTime.now(ZoneOffset.UTC), LocalDateTime.now(ZoneOffset.UTC), null);
-        when(notificationDao.markRead(eq(1L), any())).thenReturn(Optional.of(read));
-
-        // 2. Ejercicio
-        final Optional<NotificationItemView> result = notificationService.markRead(1L);
-
-        // 3. Asserts
-        assertTrue(result.isPresent());
-        assertTrue(result.get().isRead());
-    }
-
-    @Test
-    void testSoftDeleteWhenNotificationExistsReturnsDeletedState() {
-        // 1. Setup
-        final Notification deleted = new Notification(1L,
-                new User(1L, "u@test.com", "p", "U", null, User.Role.CLIENT, false),
-                NotificationType.RESERVATION_CODE_CLIENT, null, null, null, "Pack", "Shop", 50.0, null, null,
-                LocalDateTime.now(ZoneOffset.UTC), null, LocalDateTime.now(ZoneOffset.UTC));
-        when(notificationDao.softDelete(eq(1L), any())).thenReturn(Optional.of(deleted));
-
-        // 2. Ejercicio
-        final Optional<NotificationItemView> result = notificationService.softDelete(1L);
-
-        // 3. Asserts
-        assertTrue(result.isPresent());
-    }
-
-    @Test
-    void testMarkReadWhenNotificationMissingReturnsEmpty() {
-        // 1. Setup
-        when(notificationDao.markRead(eq(99L), any())).thenReturn(Optional.empty());
-
-        // 2. Ejercicio
-        final Optional<NotificationItemView> result = notificationService.markRead(99L);
-
-        // 3. Asserts
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void testMarkUnreadWhenNotificationExistsReturnsUnreadItem() {
-        // 1. Setup
-        final Notification unread = new Notification(2L,
-                new User(1L, "u@test.com", "p", "U", null, User.Role.CLIENT, false),
-                NotificationType.AUCTION_OUTBID_CLIENT, null, null, null, "Pack", "Shop", 80.0, null, null,
-                LocalDateTime.now(ZoneOffset.UTC), null, null);
-        when(notificationDao.markUnread(eq(2L))).thenReturn(Optional.of(unread));
-
-        // 2. Ejercicio
-        final Optional<NotificationItemView> result = notificationService.markUnread(2L);
-
-        // 3. Asserts
-        assertTrue(result.isPresent());
-        assertFalse(result.get().isRead());
-    }
-
-    @Test
     void testCountUnreadWhenDaoReturnsCountReturnsValue() {
         // 1. Setup
         when(notificationDao.countUnread(5L)).thenReturn(3);
@@ -153,7 +92,7 @@ class NotificationServiceImplTest {
     }
 
     @Test
-    void testFindRecentForUserWhenNotificationsExistReturnsMappedViews() {
+    void testFindRecentForUserWhenNotificationsExistReturnsEntities() {
         // 1. Setup
         final Notification notification = new Notification(10L,
                 new User(5L, "u@test.com", "p", "U", null, User.Role.CLIENT, false),
@@ -162,14 +101,14 @@ class NotificationServiceImplTest {
         when(notificationDao.findRecentByRecipient(5L, 10)).thenReturn(List.of(notification));
 
         // 2. Ejercicio
-        final List<NotificationItemView> result = notificationService.findRecentForUser(5L, 10);
+        final List<Notification> result = notificationService.findRecentForUser(5L, 10);
 
         // 3. Asserts
         assertEquals(1, result.size());
         assertEquals(10L, result.get(0).getId());
         assertEquals(NotificationType.FAVORITE_PACK_RESTOCKED, result.get(0).getType());
         assertEquals("Surplus Box", result.get(0).getPackTitle());
-        assertFalse(result.get(0).isRead());
+        assertNull(result.get(0).getReadAt());
     }
 
     @Test
