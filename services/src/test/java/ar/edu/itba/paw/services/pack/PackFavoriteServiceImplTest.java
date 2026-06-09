@@ -1,10 +1,10 @@
 package ar.edu.itba.paw.services.pack;
 
+import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.pack.FavoriteToggleException;
-import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.persistence.PackFavoriteDao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +12,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -31,9 +33,6 @@ class PackFavoriteServiceImplTest {
 
     @Mock
     private PackService packService;
-
-    @Mock
-    private AuctionService auctionService;
 
     @InjectMocks
     private PackFavoriteServiceImpl packFavoriteService;
@@ -84,7 +83,6 @@ class PackFavoriteServiceImplTest {
         when(packFavoriteDao.exists(5L, 10L)).thenReturn(false);
         final Pack pack = newPack(10L, 1L, "t", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
         when(packService.findById(10L)).thenReturn(Optional.of(pack));
-        when(auctionService.findByPackId(10L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
         final boolean completed = assertDoesNotThrow(() -> {
@@ -94,6 +92,24 @@ class PackFavoriteServiceImplTest {
 
         // 3. Asserts
         assertTrue(completed);
+    }
+
+    @Test
+    void testToggleFavoriteWhenPackIsAuctionThrowsFavoriteToggleException() {
+        // 1. Setup
+        when(packFavoriteDao.exists(5L, 10L)).thenReturn(false);
+        final Pack pack = newPack(10L, 1L, "t", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
+        final Auction auction = new Auction(100L, pack, 10.0, 1.0, null, null,
+                LocalDateTime.now(ZoneOffset.UTC).plusDays(1), Auction.Status.ACTIVE, LocalDateTime.now());
+        pack.setAuction(auction);
+        when(packService.findById(10L)).thenReturn(Optional.of(pack));
+
+        // 2. Ejercicio
+        final FavoriteToggleException thrown = assertThrows(FavoriteToggleException.class,
+                () -> packFavoriteService.toggleFavorite(5L, 10L));
+
+        // 3. Asserts
+        assertEquals(FavoriteToggleException.Reason.PACK_UNAVAILABLE, thrown.getReason());
     }
 
     @Test

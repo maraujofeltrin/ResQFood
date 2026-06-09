@@ -34,7 +34,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -91,7 +90,6 @@ class AuctionServiceImplTest {
         // 1. Setup
         final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
         when(packService.findById(PACK_ID)).thenReturn(Optional.of(pack));
-        when(auctionDao.findByPackId(PACK_ID)).thenReturn(Optional.empty());
         final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
         final double minInc = 50.0;
         final Auction createdAuction = new Auction(AUCTION_ID, pack, 100.0, minInc, null, null, endTime,
@@ -120,6 +118,24 @@ class AuctionServiceImplTest {
 
         // 3. Asserts
         assertEquals(AuctionCreationException.Reason.PACK_INACTIVE, exception.getReason());
+    }
+
+    @Test
+    void testCreateAuctionWhenPackAlreadyHasAuctionThrowsAuctionCreationException() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Auction existingAuction = new Auction(AUCTION_ID, pack, 100.0, 10.0, null, null,
+                LocalDateTime.now(ZoneOffset.UTC).plusDays(1), Auction.Status.ACTIVE, LocalDateTime.now());
+        pack.setAuction(existingAuction);
+        when(packService.findById(PACK_ID)).thenReturn(Optional.of(pack));
+
+        // 2. Ejercicio
+        final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(2);
+        final AuctionCreationException exception = assertThrows(AuctionCreationException.class,
+                () -> auctionService.createAuction(PACK_ID, 100.0, 10.0, endTime));
+
+        // 3. Asserts
+        assertEquals(AuctionCreationException.Reason.ALREADY_HAS_AUCTION, exception.getReason());
     }
 
     @Test
@@ -362,6 +378,8 @@ class AuctionServiceImplTest {
 
         // 3. Asserts
         assertEquals(CancelAuctionResult.Outcome.SUCCESS, result.getOutcome());
+        assertEquals(Auction.Status.CANCELLED, auction.getStatus());
+        assertFalse(pack.getActive());
     }
 
     @Test

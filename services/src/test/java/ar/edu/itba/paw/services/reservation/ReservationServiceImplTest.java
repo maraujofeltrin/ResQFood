@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.services.reservation;
 
+import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
@@ -13,8 +14,8 @@ import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.ReservationDao;
 import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import ar.edu.itba.paw.services.notification.NotificationService;
+import ar.edu.itba.paw.services.pack.DirectReservationCheck;
 import ar.edu.itba.paw.services.pack.PackService;
-import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.services.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +40,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -60,8 +60,6 @@ class ReservationServiceImplTest {
     private PackService packService;
     @Mock
     private NotificationService notificationService;
-    @Mock
-    private AuctionService auctionService;
 
     private ReservationServiceImpl reservationService;
 
@@ -107,7 +105,6 @@ class ReservationServiceImplTest {
                 reservationTokenDao,
                 packService,
                 notificationService,
-                auctionService,
                 TEST_ZONE);
     }
 
@@ -124,7 +121,6 @@ class ReservationServiceImplTest {
         when(clientService.findByUserId(1L)).thenReturn(Optional.of(new Client(1L, "Test", "User", true)));
         when(packService.decrementStock(packId, 1)).thenReturn(true);
         when(reservationDao.findByPickupCode(anyString())).thenReturn(Optional.empty());
-        lenient().when(auctionService.findByPackId(anyLong())).thenReturn(Optional.empty());
         final Reservation createdReservation = new Reservation(1L, clientRef(1L), pack, null, 5.0,
                 Reservation.Status.RESERVED, "CODE1", null, 1, "pw");
         when(reservationDao.createReservation(eq(1L), eq(packId), any(LocalDateTime.class), eq(5.0),
@@ -161,7 +157,6 @@ class ReservationServiceImplTest {
         when(clientService.findByUserId(7L)).thenReturn(Optional.of(new Client(7L, "Winning", "User", true)));
         when(packService.decrementStock(packId, 1)).thenReturn(true);
         when(reservationDao.findByPickupCode(anyString())).thenReturn(Optional.empty());
-        lenient().when(auctionService.findByPackId(anyLong())).thenReturn(Optional.empty());
         final Reservation auctionReservation = new Reservation(1L, clientRef(7L), pack, null, 7.5,
                 Reservation.Status.RESERVED, "CODE2", null, 1, null);
         when(reservationDao.createReservation(eq(7L), eq(packId), any(LocalDateTime.class), eq(7.5),
@@ -483,5 +478,51 @@ class ReservationServiceImplTest {
         // 3. Asserts
         assertTrue(idOpt.isPresent());
         assertEquals(7L, idOpt.get());
+    }
+
+    @Test
+    void testCheckDirectPackReservationWhenNoAuctionReturnsOk() {
+        // 1. Setup
+        final Pack pack = newPack(20L, 1L, "direct", "d", 10.0, 5.0, 3, true, Collections.emptyList());
+        when(packService.findById(20L)).thenReturn(Optional.of(pack));
+
+        // 2. Ejercicio
+        final DirectReservationCheck result = reservationService.checkDirectPackReservation(20L, 1);
+
+        // 3. Asserts
+        assertEquals(DirectReservationCheck.Outcome.OK, result.getOutcome());
+        assertEquals(5.0, result.getUnitPrice());
+    }
+
+    @Test
+    void testCheckDirectPackReservationWhenActiveAuctionReturnsBlocked() {
+        // 1. Setup
+        final Pack pack = newPack(21L, 1L, "auction", "d", 10.0, 5.0, 3, true, Collections.emptyList());
+        final Auction auction = new Auction(100L, pack, 10.0, 1.0, null, null,
+                LocalDateTime.now(ZoneOffset.UTC).plusDays(1), Auction.Status.ACTIVE, LocalDateTime.now());
+        pack.setAuction(auction);
+        when(packService.findById(21L)).thenReturn(Optional.of(pack));
+
+        // 2. Ejercicio
+        final DirectReservationCheck result = reservationService.checkDirectPackReservation(21L, 1);
+
+        // 3. Asserts
+        assertEquals(DirectReservationCheck.Outcome.AUCTION_ACTIVE, result.getOutcome());
+    }
+
+    @Test
+    void testCheckDirectPackReservationWhenFinishedAuctionReturnsBlocked() {
+        // 1. Setup
+        final Pack pack = newPack(22L, 1L, "ended", "d", 10.0, 5.0, 3, true, Collections.emptyList());
+        final Auction auction = new Auction(101L, pack, 10.0, 1.0, null, null,
+                LocalDateTime.now(ZoneOffset.UTC).minusHours(1), Auction.Status.FINISHED, LocalDateTime.now());
+        pack.setAuction(auction);
+        when(packService.findById(22L)).thenReturn(Optional.of(pack));
+
+        // 2. Ejercicio
+        final DirectReservationCheck result = reservationService.checkDirectPackReservation(22L, 1);
+
+        // 3. Asserts
+        assertEquals(DirectReservationCheck.Outcome.AUCTION_ENDED_NO_DIRECT, result.getOutcome());
     }
 }

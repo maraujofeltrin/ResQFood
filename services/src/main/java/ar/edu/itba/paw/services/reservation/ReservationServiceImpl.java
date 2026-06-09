@@ -15,7 +15,6 @@ import ar.edu.itba.paw.persistence.ReservationTokenDao;
 import ar.edu.itba.paw.services.notification.NotificationService;
 import ar.edu.itba.paw.services.pack.DirectReservationCheck;
 import ar.edu.itba.paw.services.pack.PackService;
-import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.user.ClientService;
 import ar.edu.itba.paw.services.user.UserService;
 import org.slf4j.Logger;
@@ -63,7 +62,6 @@ public class ReservationServiceImpl implements ReservationService {
     private final ReservationTokenDao reservationTokenDao;
     private final PackService packService;
     private final NotificationService notificationService;
-    private final AuctionService auctionService;
     private final ZoneId displayZone;
 
     @Autowired
@@ -73,7 +71,6 @@ public class ReservationServiceImpl implements ReservationService {
             final ReservationTokenDao reservationTokenDao,
             @Lazy final PackService packService,
             final NotificationService notificationService,
-            @Lazy final AuctionService auctionService,
             final ZoneId displayZone) {
         this.userService = userService;
         this.clientService = clientService;
@@ -81,7 +78,6 @@ public class ReservationServiceImpl implements ReservationService {
         this.reservationTokenDao = reservationTokenDao;
         this.packService = packService;
         this.notificationService = notificationService;
-        this.auctionService = auctionService;
         this.displayZone = displayZone;
     }
 
@@ -352,13 +348,12 @@ public class ReservationServiceImpl implements ReservationService {
             return DirectReservationCheck.blocked(DirectReservationCheck.Outcome.PACK_UNAVAILABLE, null);
         }
         final Pack pack = packOpt.get();
-        final Optional<Auction> auctionForReserve = auctionService.findByPackId(packId);
-        if (auctionForReserve.isPresent()) {
-            final Auction a = auctionForReserve.get();
-            if (a.getStatus() == Auction.Status.ACTIVE) {
+        final Auction auction = pack.getAuction();
+        if (auction != null) {
+            if (auction.getStatus() == Auction.Status.ACTIVE) {
                 return DirectReservationCheck.blocked(DirectReservationCheck.Outcome.AUCTION_ACTIVE, pack);
             }
-            if (a.getStatus() == Auction.Status.FINISHED) {
+            if (auction.getStatus() == Auction.Status.FINISHED) {
                 return DirectReservationCheck.blocked(DirectReservationCheck.Outcome.AUCTION_ENDED_NO_DIRECT, pack);
             }
         }

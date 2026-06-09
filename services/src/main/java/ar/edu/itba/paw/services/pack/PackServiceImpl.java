@@ -1,5 +1,6 @@
 package ar.edu.itba.paw.services.pack;
 
+import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackDirectEditException;
 import ar.edu.itba.paw.models.pack.PackSortOption;
@@ -100,16 +101,18 @@ public class PackServiceImpl implements PackService {
         }
         if (viewerUserId != null && (viewerUserId.equals(pack.getCommerceId())
                 || reservationService.hasActiveReservation(packId, viewerUserId)
-                || hasParticipatedInPackAuction(packId, viewerUserId))) {
+                || hasParticipatedInPackAuction(pack, viewerUserId))) {
             return Optional.of(pack);
         }
         return Optional.empty();
     }
 
-    private boolean hasParticipatedInPackAuction(final Long packId, final Long viewerUserId) {
-        return auctionService.findByPackId(packId)
-                .map(auction -> auctionService.hasClientBidOnAuction(auction.getId(), viewerUserId))
-                .orElse(false);
+    private boolean hasParticipatedInPackAuction(final Pack pack, final Long viewerUserId) {
+        final Auction auction = pack.getAuction();
+        if (auction == null) {
+            return false;
+        }
+        return auctionService.hasClientBidOnAuction(auction.getId(), viewerUserId);
     }
 
     @Transactional
@@ -174,12 +177,13 @@ public class PackServiceImpl implements PackService {
             throw new PackDirectEditException(PackDirectEditException.Reason.NOT_FOUND,
                     "Pack not found or deleted: " + packId);
         }
-        if (auctionService.findByPackId(packId).isPresent()) {
+        final Pack pack = packOpt.get();
+        if (pack.getAuction() != null) {
             LOGGER.warn("Pack tied to auction cannot be edited directly: packId={}", packId);
             throw new PackDirectEditException(PackDirectEditException.Reason.FORBIDDEN_AUCTION, forbiddenAction,
                     "Pack is tied to an auction: " + packId);
         }
-        return packOpt.get();
+        return pack;
     }
 
     @Transactional(readOnly = true)

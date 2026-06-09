@@ -171,7 +171,6 @@ class PackServiceImplTest {
         final Pack pack = newPack(9L, 12L, "inactive", "d", 2.0, 1.0, 2, false, false, Collections.emptyList(), null);
         when(packDao.findById(9L)).thenReturn(Optional.of(pack));
         when(reservationService.hasActiveReservation(9L, 99L)).thenReturn(false);
-        when(auctionService.findByPackId(9L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
         final Optional<Pack> result = packService.findVisibleForDetail(9L, 99L);
@@ -186,9 +185,9 @@ class PackServiceImplTest {
         final Pack pack = newPack(11L, 12L, "auction", "d", 2.0, 1.0, 0, false, false, Collections.emptyList(), null);
         final Auction auction = new Auction(20L, pack, 1.0, 1.0, 5.0, 99L,
                 LocalDateTime.now(ZoneOffset.UTC).minusHours(1), Auction.Status.FINISHED, LocalDateTime.now(ZoneOffset.UTC).minusDays(1));
+        pack.setAuction(auction);
         when(packDao.findById(11L)).thenReturn(Optional.of(pack));
         when(reservationService.hasActiveReservation(11L, 99L)).thenReturn(false);
-        when(auctionService.findByPackId(11L)).thenReturn(Optional.of(auction));
         when(auctionService.hasClientBidOnAuction(20L, 99L)).thenReturn(true);
 
         // 2. Ejercicio
@@ -434,11 +433,11 @@ class PackServiceImplTest {
     void testResolvePackForDirectEditWhenAuctionExistsThrowsForbiddenAuction() {
         // 1. Setup
         final Pack pack = newPack(8L, 200L, "a", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
-        when(packDao.findById(8L)).thenReturn(Optional.of(pack));
         final Auction auction =
                 new Auction(1L, pack, 1.0, 0.5, 1.0, null, LocalDateTime.now(ZoneOffset.UTC).plusDays(1),
                         Auction.Status.ACTIVE, LocalDateTime.now(ZoneOffset.UTC));
-        when(auctionService.findByPackId(8L)).thenReturn(Optional.of(auction));
+        pack.setAuction(auction);
+        when(packDao.findById(8L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
         final PackDirectEditException exception = assertThrows(PackDirectEditException.class,
@@ -454,7 +453,6 @@ class PackServiceImplTest {
         // 1. Setup
         final Pack pack = newPack(11L, 300L, "ok", "d", 2.0, 1.0, 3, true, false, Collections.emptyList(), null);
         when(packDao.findById(11L)).thenReturn(Optional.of(pack));
-        when(auctionService.findByPackId(11L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
         final Pack result = packService.resolvePackForDirectEdit(11L);

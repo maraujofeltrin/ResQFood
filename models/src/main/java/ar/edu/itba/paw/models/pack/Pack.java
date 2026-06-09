@@ -177,6 +177,10 @@ public class Pack {
         return auction;
     }
 
+    public void setAuction(final Auction auction) {
+        this.auction = auction;
+    }
+
     @Override
     public String toString() {
         return "Pack [id=" + id + ", commerceId=" + getCommerceId() + ", title=" + title + ", description="

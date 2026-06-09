@@ -3,7 +3,6 @@ package ar.edu.itba.paw.services.pack;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.FavoriteToggleException;
 import ar.edu.itba.paw.persistence.PackFavoriteDao;
-import ar.edu.itba.paw.services.auction.AuctionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,15 +19,12 @@ public class PackFavoriteServiceImpl implements PackFavoriteService {
 
     private final PackFavoriteDao packFavoriteDao;
     private final PackService packService;
-    private final AuctionService auctionService;
 
     @Autowired
     public PackFavoriteServiceImpl(final PackFavoriteDao packFavoriteDao,
-            @Lazy final PackService packService,
-            @Lazy final AuctionService auctionService) {
+            @Lazy final PackService packService) {
         this.packFavoriteDao = packFavoriteDao;
         this.packService = packService;
-        this.auctionService = auctionService;
     }
 
     @Transactional(readOnly = true)
@@ -74,7 +70,7 @@ public class PackFavoriteServiceImpl implements PackFavoriteService {
             throw new FavoriteToggleException(FavoriteToggleException.Reason.PACK_UNAVAILABLE, "Pack is not available for favorites: " + packId);
         }
         // Do not allow favoriting packs that are part of an auction
-        if (auctionService.findByPackId(packId).isPresent()) {
+        if (pack.getAuction() != null) {
             LOGGER.warn("Favorite toggle rejected: pack is an auction packId={} clientUserId={}", packId, clientUserId);
             throw new FavoriteToggleException(FavoriteToggleException.Reason.PACK_UNAVAILABLE, "Pack is an auction: " + packId);
         }

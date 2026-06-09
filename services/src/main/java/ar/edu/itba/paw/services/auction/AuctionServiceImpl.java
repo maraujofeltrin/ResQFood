@@ -62,7 +62,7 @@ public class AuctionServiceImpl implements AuctionService {
             throw new AuctionCreationException(AuctionCreationException.Reason.PACK_INACTIVE, String.valueOf(packId));
         }
 
-        if (auctionDao.findByPackId(packId).isPresent()) {
+        if (pack.getAuction() != null) {
             throw new AuctionCreationException(AuctionCreationException.Reason.ALREADY_HAS_AUCTION, String.valueOf(packId));
         }
 
@@ -224,9 +224,8 @@ public class AuctionServiceImpl implements AuctionService {
             return CancelAuctionResult.hasBids();
         }
 
-        auctionDao.updateStatus(auctionId, Auction.Status.CANCELLED);
+        auction.setStatus(Auction.Status.CANCELLED);
         pack.setActive(false);
-        packService.update(pack);
 
         LOGGER.info("Auction cancelled: auctionId={}", auctionId);
         return CancelAuctionResult.success();
