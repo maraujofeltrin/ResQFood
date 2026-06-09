@@ -86,7 +86,7 @@ public class ReservationTokenController {
                 final Long reservationId = reservationService
                         .findReservationIdByToken(token)
                         .orElseThrow(() -> new IllegalStateException("Reservation id missing for token: " + token));
-                final Optional<Reservation> reservation = reservationService.findById(reservationId);
+                final Optional<Reservation> reservation = reservationService.findByIdWithDetails(reservationId);
                 if (reservation.isEmpty()) {
                     model.addAttribute("tokenStatus", "invalid");
                     return "reservations/token-status";

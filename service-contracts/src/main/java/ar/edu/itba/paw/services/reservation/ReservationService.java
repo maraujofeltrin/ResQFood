@@ -20,6 +20,8 @@ public interface ReservationService {
 
     Optional<Reservation> findById(final Long id);
 
+    Optional<Reservation> findByIdWithDetails(final Long id);
+
     List<Reservation> findByPackId(final Long packId, int page, int pageSize);
     int countByPackId(Long packId);
 

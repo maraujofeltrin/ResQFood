@@ -180,6 +180,15 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Transactional(readOnly = true)
     @Override
+    public Optional<Reservation> findByIdWithDetails(final Long id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return reservationDao.findByIdWithDetails(id);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
     public List<Reservation> findByPackId(final Long packId, final int page, final int pageSize) {
         if (packId == null) {
             return Collections.emptyList();
