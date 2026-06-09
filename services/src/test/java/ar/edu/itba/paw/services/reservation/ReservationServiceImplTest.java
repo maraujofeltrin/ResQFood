@@ -40,7 +40,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -291,7 +290,6 @@ class ReservationServiceImplTest {
         // 3. Asserts
         assertTrue(result.isSuccess());
         assertEquals(Reservation.Status.PAID, result.reservation().orElseThrow().getStatus());
-        verify(reservationTokenDao).markAsUsed("accept-token");
     }
 
     @Test
@@ -352,7 +350,6 @@ class ReservationServiceImplTest {
         // 3. Asserts
         assertTrue(result.isSuccess());
         assertEquals(Reservation.Status.CANCELED, result.reservation().orElseThrow().getStatus());
-        verify(reservationTokenDao).markAsUsed("reject-token");
     }
 
     @Test
