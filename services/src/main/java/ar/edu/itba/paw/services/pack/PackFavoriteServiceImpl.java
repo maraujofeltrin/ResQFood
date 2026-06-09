@@ -81,10 +81,4 @@ public class PackFavoriteServiceImpl implements PackFavoriteService {
         packFavoriteDao.insert(clientUserId, packId);
         LOGGER.info("User {} added pack {} to favorites", clientUserId, packId);
     }
-
-    @Transactional(readOnly = true)
-    @Override
-    public List<Long> findClientIdsByPack(final long packId) {
-        return packFavoriteDao.findClientIdsByPack(packId);
-    }
 }

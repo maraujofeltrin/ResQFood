@@ -146,16 +146,17 @@ public class CommerceFavoriteJpaDaoTest {
     }
 
     @Test
-    public void testFindClientIdsByCommerceWhenFavoritesExist() {
+    public void testFindFavoritingClientsByCommerceWhenFavoritesExist() {
         // 1. Setup
         commerceFavoriteDao.insert(clientUserId, commerceUserId1);
 
         // 2. Ejercicio
-        final List<Long> ids = commerceFavoriteDao.findClientIdsByCommerce(commerceUserId1);
+        final List<ar.edu.itba.paw.models.user.User> clients =
+                commerceFavoriteDao.findFavoritingClientsByCommerce(commerceUserId1);
 
         // 3. Asserts
-        assertEquals(1, ids.size());
-        assertTrue(ids.contains(clientUserId));
+        assertEquals(1, clients.size());
+        assertEquals(clientUserId, clients.get(0).getId());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "client_commerce_favorites"));
     }
 

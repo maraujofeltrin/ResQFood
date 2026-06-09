@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.commerce;
 
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.User;
 
 import java.util.List;
 
@@ -17,5 +18,5 @@ public interface CommerceFavoriteService {
      */
     void toggleFavorite(long clientUserId, long commerceId);
 
-    List<Long> findClientIdsByCommerce(long commerceId);
+    List<User> findFavoritingClients(long commerceId);
 }

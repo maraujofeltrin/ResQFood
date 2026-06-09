@@ -4,7 +4,6 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.services.mail.MailSenderSupport;
-import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.services.user.ClientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +28,6 @@ public class ReservationMailServiceImpl extends MailSenderSupport implements Res
 
     private static final DateTimeFormatter MAIL_DATE_FORMATTER = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
 
-    private final PackService packService;
     private final ClientService clientService;
     private final ZoneId displayZone;
 
@@ -37,14 +35,12 @@ public class ReservationMailServiceImpl extends MailSenderSupport implements Res
 
     @Autowired
     public ReservationMailServiceImpl(final JavaMailSender mailSender,
-            final PackService packService,
             final ClientService clientService,
             @Value("${mail.username}") final String mailFrom,
             @Value("${mail.from-name:ResQFood}") final String mailFromName,
             final ZoneId displayZone,
             @Value("${app.base-url}") final String baseUrl) {
         super(mailSender, mailFrom, mailFromName);
-        this.packService = packService;
         this.clientService = clientService;
         this.displayZone = displayZone;
         this.baseUrl = baseUrl;
@@ -190,12 +186,13 @@ public class ReservationMailServiceImpl extends MailSenderSupport implements Res
     }
 
     private PackMailInfo getPackMailInfo(final Reservation reservation, final Locale locale) {
-        final Pack pack = packService.findById(reservation.getPack().getId()).orElse(null);
+        final Pack pack = reservation.getPack();
+        final Long packId = pack != null ? pack.getId() : null;
         final String fallbackName = resolveSubject("mail.label.packFallback",
-                new Object[]{reservation.getPack().getId()}, locale);
-        final String localName = pack != null ? pack.getTitle() : fallbackName;
-        final String packLabel = pack != null
-                ? (pack.getTitle() + " (#" + pack.getId() + ")")
+                new Object[]{packId != null ? packId : "-"}, locale);
+        final String localName = pack != null && pack.getTitle() != null ? pack.getTitle() : fallbackName;
+        final String packLabel = pack != null && packId != null && pack.getTitle() != null
+                ? (pack.getTitle() + " (#" + packId + ")")
                 : fallbackName;
         return new PackMailInfo(localName, packLabel);
     }

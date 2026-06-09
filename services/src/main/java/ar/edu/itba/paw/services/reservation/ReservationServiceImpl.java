@@ -72,7 +72,7 @@ public class ReservationServiceImpl implements ReservationService {
             final ReservationDao reservationDao,
             final ReservationTokenDao reservationTokenDao,
             @Lazy final PackService packService,
-            @Lazy final NotificationService notificationService,
+            final NotificationService notificationService,
             @Lazy final AuctionService auctionService,
             final ZoneId displayZone) {
         this.userService = userService;

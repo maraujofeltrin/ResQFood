@@ -22,6 +22,4 @@ public interface PackFavoriteService {
      * @throws FavoriteToggleException if the pack is not found or unavailable
      */
     void toggleFavorite(long clientUserId, long packId) throws FavoriteToggleException;
-
-    List<Long> findClientIdsByPack(long packId);
 }

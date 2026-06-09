@@ -3,6 +3,7 @@ package ar.edu.itba.paw.persistence;
 import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.auction.Bid;
 import ar.edu.itba.paw.models.user.Client;
+import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.util.Pagination;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
@@ -112,12 +113,24 @@ public class BidJpaDao implements BidDao {
     }
 
     @Override
-    public Set<Long> findDistinctBidderIdsByAuctionId(final long auctionId) {
-        final List<Long> ids = em.createQuery(
-                        "SELECT DISTINCT b.client.userId FROM Bid b WHERE b.auction.id = :auctionId",
-                        Long.class)
+    public List<User> findBidders(final long auctionId) {
+        return em.createQuery(
+                        "SELECT DISTINCT b.client.user FROM Bid b WHERE b.auction.id = :auctionId",
+                        User.class)
                 .setParameter("auctionId", auctionId)
                 .getResultList();
-        return new HashSet<>(ids);
+    }
+
+    @Override
+    public Optional<User> findBidder(final long auctionId, final long bidderUserId) {
+        return em.createQuery(
+                        "SELECT b.client.user FROM Bid b WHERE b.auction.id = :auctionId AND b.client.userId = :bidderId",
+                        User.class)
+                .setParameter("auctionId", auctionId)
+                .setParameter("bidderId", bidderUserId)
+                .setMaxResults(1)
+                .getResultList()
+                .stream()
+                .findFirst();
     }
 }

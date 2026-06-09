@@ -10,16 +10,11 @@ import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.ClientNotificationPreferenceDao;
 import ar.edu.itba.paw.persistence.NotificationDao;
 import ar.edu.itba.paw.services.auction.AuctionMailService;
-import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.pack.FavoriteMailService;
-import ar.edu.itba.paw.services.pack.PackFavoriteService;
-import ar.edu.itba.paw.services.commerce.CommerceFavoriteService;
 import ar.edu.itba.paw.services.reservation.ReservationMailService;
-import ar.edu.itba.paw.services.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,10 +49,6 @@ public class NotificationServiceImpl implements NotificationService {
     private final ReservationMailService reservationMailService;
     private final AuctionMailService auctionMailService;
     private final FavoriteMailService favoriteMailService;
-    private final AuctionService auctionService;
-    private final UserService userService;
-    private final PackFavoriteService packFavoriteService;
-    private final CommerceFavoriteService commerceFavoriteService;
     private final ZoneId businessZone;
 
     @Autowired
@@ -66,20 +57,12 @@ public class NotificationServiceImpl implements NotificationService {
             final ReservationMailService reservationMailService,
             final AuctionMailService auctionMailService,
             final FavoriteMailService favoriteMailService,
-            @Lazy final AuctionService auctionService,
-            @Lazy final UserService userService,
-            @Lazy final PackFavoriteService packFavoriteService,
-            @Lazy final CommerceFavoriteService commerceFavoriteService,
             final ZoneId businessZone) {
         this.notificationDao = notificationDao;
         this.clientNotificationPreferenceDao = clientNotificationPreferenceDao;
         this.reservationMailService = reservationMailService;
         this.auctionMailService = auctionMailService;
         this.favoriteMailService = favoriteMailService;
-        this.auctionService = auctionService;
-        this.userService = userService;
-        this.packFavoriteService = packFavoriteService;
-        this.commerceFavoriteService = commerceFavoriteService;
         this.businessZone = businessZone;
     }
 
@@ -149,101 +132,93 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Transactional
     @Override
-    public void notifyAuctionOutbid(final long previousBidderId, final long auctionId, final double newAmount) {
-        final Auction auction = auctionService.findById(auctionId)
-                .orElseThrow(() -> new IllegalStateException("Auction not found: " + auctionId));
+    public void notifyAuctionOutbid(final User previousBidder, final Auction auction, final double newAmount) {
+        if (previousBidder == null || auction == null) {
+            return;
+        }
         final Pack pack = auction.getPack();
         final Long packId = pack != null ? pack.getId() : null;
         final String packTitle = pack != null ? pack.getTitle() : null;
         final String commerceName = commerceCommercialName(pack);
+        final Long previousBidderId = previousBidder.getId();
         final LocalDateTime now = currentTimestamp();
 
-        notificationDao.create(previousBidderId, NotificationType.AUCTION_OUTBID_CLIENT, null, auctionId, packId,
+        notificationDao.create(previousBidderId, NotificationType.AUCTION_OUTBID_CLIENT, null, auction.getId(), packId,
                 packTitle, commerceName, newAmount, null, null, now);
 
         if (shouldSendClientMail(previousBidderId, NotificationType.AUCTION_OUTBID_CLIENT)) {
-            final User clientUser = userService.findById(previousBidderId)
-                    .orElse(null);
-            if (clientUser != null) {
-                final Locale locale = clientUser.getLocale() != null ? clientUser.getLocale() : Locale.forLanguageTag("es");
-                sendMailSafely(() -> auctionMailService.sendAuctionOutbidToClient(clientUser.getEmail(),
-                        packTitle, commerceName, newAmount, locale), "notifyAuctionOutbid");
-            }
+            final Locale locale = previousBidder.getLocale() != null ? previousBidder.getLocale() : Locale.forLanguageTag("es");
+            sendMailSafely(() -> auctionMailService.sendAuctionOutbidToClient(previousBidder.getEmail(),
+                    packTitle, commerceName, newAmount, locale), "notifyAuctionOutbid");
         }
     }
 
     @Transactional
     @Override
-    public void notifyPackRestocked(final Pack pack) {
-        if (pack == null) return;
-        final List<Long> clientIds = packFavoriteService.findClientIdsByPack(pack.getId());
+    public void notifyPackRestocked(final Pack pack, final List<User> favoritingClients) {
+        if (pack == null || favoritingClients == null || favoritingClients.isEmpty()) {
+            return;
+        }
         final String packTitle = pack.getTitle();
         final String commerceName = commerceCommercialName(pack);
         final LocalDateTime now = currentTimestamp();
-        for (final Long clientId : clientIds) {
+        for (final User clientUser : favoritingClients) {
+            final Long clientId = clientUser.getId();
             notificationDao.create(clientId, NotificationType.FAVORITE_PACK_RESTOCKED, null, null, pack.getId(),
                     packTitle, commerceName, null, null, null, now);
             if (shouldSendClientMail(clientId, NotificationType.FAVORITE_PACK_RESTOCKED)) {
-                final User clientUser = userService.findById(clientId).orElse(null);
-                if (clientUser != null) {
-                    final Locale locale = clientUser.getLocale() != null ? clientUser.getLocale() : Locale.forLanguageTag("es");
-                    sendMailSafely(() -> favoriteMailService.sendFavoritePackRestockedToClient(clientUser.getEmail(),
-                            packTitle, commerceName, locale), "notifyPackRestocked");
-                }
+                final Locale locale = clientUser.getLocale() != null ? clientUser.getLocale() : Locale.forLanguageTag("es");
+                sendMailSafely(() -> favoriteMailService.sendFavoritePackRestockedToClient(clientUser.getEmail(),
+                        packTitle, commerceName, locale), "notifyPackRestocked");
             }
         }
     }
 
     @Transactional
     @Override
-    public void notifyPackPublished(final Pack pack) {
-        if (pack == null) return;
-        final List<Long> clientIds = commerceFavoriteService.findClientIdsByCommerce(pack.getCommerceId());
+    public void notifyPackPublished(final Pack pack, final List<User> favoritingClients) {
+        if (pack == null || favoritingClients == null || favoritingClients.isEmpty()) {
+            return;
+        }
         final String packTitle = pack.getTitle();
         final String commerceName = commerceCommercialName(pack);
         final LocalDateTime now = currentTimestamp();
-        for (final Long clientId : clientIds) {
+        for (final User clientUser : favoritingClients) {
+            final Long clientId = clientUser.getId();
             notificationDao.create(clientId, NotificationType.FAVORITE_COMMERCE_NEW_PACK, null, null, pack.getId(),
                     packTitle, commerceName, null, null, null, now);
             if (shouldSendClientMail(clientId, NotificationType.FAVORITE_COMMERCE_NEW_PACK)) {
-                final User clientUser = userService.findById(clientId).orElse(null);
-                if (clientUser != null) {
-                    final Locale locale = clientUser.getLocale() != null ? clientUser.getLocale() : Locale.forLanguageTag("es");
-                    sendMailSafely(() -> favoriteMailService.sendFavoriteCommerceNewPackToClient(clientUser.getEmail(),
-                            packTitle, commerceName, locale), "notifyPackPublished");
-                }
+                final Locale locale = clientUser.getLocale() != null ? clientUser.getLocale() : Locale.forLanguageTag("es");
+                sendMailSafely(() -> favoriteMailService.sendFavoriteCommerceNewPackToClient(clientUser.getEmail(),
+                        packTitle, commerceName, locale), "notifyPackPublished");
             }
         }
     }
 
     @Transactional
     @Override
-    public void notifyAuctionFinished(final long auctionId) {
-        final Auction auction = auctionService.findById(auctionId).orElse(null);
-        if (auction == null) return;
+    public void notifyAuctionFinished(final Auction auction, final List<User> bidders) {
+        if (auction == null || bidders == null || bidders.isEmpty()) {
+            return;
+        }
         final Pack pack = auction.getPack();
         final Long packId = pack != null ? pack.getId() : null;
         final String packTitle = pack != null ? pack.getTitle() : null;
         final String commerceName = commerceCommercialName(pack);
         final Long winnerId = auction.getCurrentBidderId();
         final Double winningAmount = auction.getCurrentBid();
-        final Set<Long> bidderIds = auctionService.findDistinctBidderIdsByAuctionId(auctionId);
-        
         final LocalDateTime now = currentTimestamp();
-        for (final Long bidderId : bidderIds) {
+        for (final User bidder : bidders) {
+            final Long bidderId = bidder.getId();
             if (winnerId != null && winnerId.equals(bidderId)) {
-                // Winner already notified by createReservation
                 continue;
             }
-            notificationDao.create(bidderId, NotificationType.AUCTION_LOST_CLIENT, null, auctionId, packId,
+            notificationDao.create(bidderId, NotificationType.AUCTION_LOST_CLIENT, null, auction.getId(), packId,
                     packTitle, commerceName, winningAmount, null, null, now);
             if (shouldSendClientMail(bidderId, NotificationType.AUCTION_LOST_CLIENT)) {
-                final User clientUser = userService.findById(bidderId).orElse(null);
-                if (clientUser != null) {
-                    final Locale locale = clientUser.getLocale() != null ? clientUser.getLocale() : Locale.forLanguageTag("es");
-                    sendMailSafely(() -> auctionMailService.sendAuctionFinishedLostToClient(clientUser.getEmail(),
-                            packTitle, commerceName, locale), "notifyAuctionFinished");
-                }
+                final Locale locale = bidder.getLocale() != null ? bidder.getLocale() : Locale.forLanguageTag("es");
+                sendMailSafely(() -> auctionMailService.sendAuctionFinishedLostToClient(bidder.getEmail(),
+                        packTitle, commerceName, locale), "notifyAuctionFinished");
             }
         }
     }

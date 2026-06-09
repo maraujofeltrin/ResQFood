@@ -28,7 +28,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 @Service
 public class AuctionServiceImpl implements AuctionService {
@@ -45,7 +44,7 @@ public class AuctionServiceImpl implements AuctionService {
     public AuctionServiceImpl(final AuctionDao auctionDao, final BidDao bidDao,
             @Lazy final PackService packService,
             @Lazy final ReservationService reservationService,
-            @Lazy final NotificationService notificationService) {
+            final NotificationService notificationService) {
         this.auctionDao = auctionDao;
         this.bidDao = bidDao;
         this.packService = packService;
@@ -158,7 +157,8 @@ public class AuctionServiceImpl implements AuctionService {
         }
 
         if (previousBidderId != null && !previousBidderId.equals(clientId)) {
-            notificationService.notifyAuctionOutbid(previousBidderId, auctionId, amount);
+            bidDao.findBidder(auctionId, previousBidderId)
+                    .ifPresent(prev -> notificationService.notifyAuctionOutbid(prev, auction, amount));
         }
 
         LOGGER.info("Bid placed: auctionId={}, clientId={}, amount={}", auctionId, clientId, amount);
@@ -195,7 +195,7 @@ public class AuctionServiceImpl implements AuctionService {
                 }
             }
 
-            notificationService.notifyAuctionFinished(auction.getId());
+            notificationService.notifyAuctionFinished(auction, bidDao.findBidders(auction.getId()));
         }
 
         return closed;
@@ -292,9 +292,4 @@ public class AuctionServiceImpl implements AuctionService {
         return bidDao.existsByAuctionIdAndClientUserId(auctionId, clientUserId);
     }
 
-    @Transactional(readOnly = true)
-    @Override
-    public Set<Long> findDistinctBidderIdsByAuctionId(final long auctionId) {
-        return bidDao.findDistinctBidderIdsByAuctionId(auctionId);
-    }
 }

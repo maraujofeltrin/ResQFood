@@ -1,6 +1,8 @@
 package ar.edu.itba.paw.services.commerce;
 
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.CommerceFavoriteDao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +27,7 @@ class CommerceFavoriteServiceImplTest {
     private CommerceFavoriteDao commerceFavoriteDao;
 
     @Mock
-    private CommerceService commerceService;
+    private CommerceDao commerceDao;
 
     @InjectMocks
     private CommerceFavoriteServiceImpl commerceFavoriteService;
@@ -62,7 +64,7 @@ class CommerceFavoriteServiceImplTest {
         // 1. Setup
         when(commerceFavoriteDao.exists(5L, 10L)).thenReturn(false);
         final Commerce commerce = new Commerce(10L, "c", Commerce.Category.BAKERY, "st", 1, null, "p", "1000", "09", "18");
-        when(commerceService.findByUserId(10L)).thenReturn(Optional.of(commerce));
+        when(commerceDao.findByUserId(10L)).thenReturn(Optional.of(commerce));
 
         // 2. Ejercicio
         final boolean completed = assertDoesNotThrow(() -> {
@@ -78,7 +80,7 @@ class CommerceFavoriteServiceImplTest {
     void testToggleFavoriteWhenCommerceDoesNotExistThrowsIllegalArgumentException() {
         // 1. Setup
         when(commerceFavoriteDao.exists(5L, 10L)).thenReturn(false);
-        when(commerceService.findByUserId(10L)).thenReturn(Optional.empty());
+        when(commerceDao.findByUserId(10L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
         final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
@@ -98,5 +100,19 @@ class CommerceFavoriteServiceImplTest {
 
         // 3. Asserts
         assertEquals(5, count);
+    }
+
+    @Test
+    void testFindFavoritingClientsDelegatesToDao() {
+        // 1. Setup
+        final User client = new User(5L, "c@test.com", "p", "C", null, User.Role.CLIENT, true);
+        when(commerceFavoriteDao.findFavoritingClientsByCommerce(10L)).thenReturn(List.of(client));
+
+        // 2. Ejercicio
+        final List<User> result = commerceFavoriteService.findFavoritingClients(10L);
+
+        // 3. Asserts
+        assertEquals(1, result.size());
+        assertEquals(5L, result.get(0).getId());
     }
 }

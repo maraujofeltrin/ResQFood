@@ -1,11 +1,12 @@
 package ar.edu.itba.paw.services.commerce;
 
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.CommerceFavoriteDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,13 +18,13 @@ public class CommerceFavoriteServiceImpl implements CommerceFavoriteService {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommerceFavoriteServiceImpl.class);
 
     private final CommerceFavoriteDao commerceFavoriteDao;
-    private final CommerceService commerceService;
+    private final CommerceDao commerceDao;
 
     @Autowired
     public CommerceFavoriteServiceImpl(final CommerceFavoriteDao commerceFavoriteDao,
-                                       @Lazy final CommerceService commerceService) {
+            final CommerceDao commerceDao) {
         this.commerceFavoriteDao = commerceFavoriteDao;
-        this.commerceService = commerceService;
+        this.commerceDao = commerceDao;
     }
 
     @Transactional(readOnly = true)
@@ -53,7 +54,7 @@ public class CommerceFavoriteServiceImpl implements CommerceFavoriteService {
             LOGGER.info("User {} removed commerce {} from favorites", clientUserId, commerceId);
             return;
         }
-        commerceService.findByUserId(commerceId).orElseThrow(() -> {
+        commerceDao.findByUserId(commerceId).orElseThrow(() -> {
             LOGGER.warn("Commerce favorite toggle rejected: commerce not found commerceId={} clientUserId={}", commerceId, clientUserId);
             return new IllegalArgumentException("Commerce not found: " + commerceId);
         });
@@ -63,7 +64,7 @@ public class CommerceFavoriteServiceImpl implements CommerceFavoriteService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<Long> findClientIdsByCommerce(final long commerceId) {
-        return commerceFavoriteDao.findClientIdsByCommerce(commerceId);
+    public List<User> findFavoritingClients(final long commerceId) {
+        return commerceFavoriteDao.findFavoritingClientsByCommerce(commerceId);
     }
 }

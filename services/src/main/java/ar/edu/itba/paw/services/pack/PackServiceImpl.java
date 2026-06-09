@@ -5,7 +5,9 @@ import ar.edu.itba.paw.models.pack.PackDirectEditException;
 import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.persistence.PackDao;
+import ar.edu.itba.paw.persistence.PackFavoriteDao;
 import ar.edu.itba.paw.services.auction.AuctionService;
+import ar.edu.itba.paw.services.commerce.CommerceFavoriteService;
 import ar.edu.itba.paw.services.image.ImageService;
 import ar.edu.itba.paw.services.notification.NotificationService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
@@ -26,21 +28,27 @@ public class PackServiceImpl implements PackService {
     private static final Logger LOGGER = LoggerFactory.getLogger(PackServiceImpl.class);
 
     private final PackDao packDao;
+    private final PackFavoriteDao packFavoriteDao;
     private final ImageService imageService;
     private final AuctionService auctionService;
     private final ReservationService reservationService;
     private final NotificationService notificationService;
+    private final CommerceFavoriteService commerceFavoriteService;
 
     @Autowired
-    public PackServiceImpl(final PackDao packDao, final ImageService imageService,
+    public PackServiceImpl(final PackDao packDao, final PackFavoriteDao packFavoriteDao,
+            final ImageService imageService,
             @Lazy final AuctionService auctionService,
             @Lazy final ReservationService reservationService,
-            @Lazy final NotificationService notificationService) {
+            final NotificationService notificationService,
+            final CommerceFavoriteService commerceFavoriteService) {
         this.packDao = packDao;
+        this.packFavoriteDao = packFavoriteDao;
         this.imageService = imageService;
         this.auctionService = auctionService;
         this.reservationService = reservationService;
         this.notificationService = notificationService;
+        this.commerceFavoriteService = commerceFavoriteService;
     }
 
     @Transactional
@@ -50,7 +58,8 @@ public class PackServiceImpl implements PackService {
                            Long imageId) {
         final Pack createdPack = packDao.createPack(commerceId, title, description, originalPrice, finalPrice, stock, tags, imageId);
         LOGGER.info("Pack created: packId={}, commerceId={}", createdPack.getId(), commerceId);
-        notificationService.notifyPackPublished(createdPack);
+        notificationService.notifyPackPublished(createdPack,
+                commerceFavoriteService.findFavoritingClients(createdPack.getCommerceId()));
         return createdPack;
     }
 
@@ -126,7 +135,8 @@ public class PackServiceImpl implements PackService {
         final Pack updatedPack = packDao.update(packToUpdate);
         LOGGER.info("Pack updated: packId={}", packId);
         if (oldStock == 0 && updatedPack.getStock() > 0) {
-            notificationService.notifyPackRestocked(updatedPack);
+            notificationService.notifyPackRestocked(updatedPack,
+                    packFavoriteDao.findFavoritingClientsByPack(updatedPack.getId()));
         }
         return updatedPack;
     }

@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.user.User;
 
 import java.util.List;
 
@@ -19,5 +20,5 @@ public interface PackFavoriteDao {
 
     void delete(long clientId, long packId);
 
-    List<Long> findClientIdsByPack(long packId);
+    List<User> findFavoritingClientsByPack(long packId);
 }

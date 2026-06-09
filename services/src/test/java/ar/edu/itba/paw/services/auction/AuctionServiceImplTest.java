@@ -9,6 +9,7 @@ import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.Client;
+import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.AuctionDao;
 import ar.edu.itba.paw.persistence.BidDao;
 import ar.edu.itba.paw.services.pack.PackService;
@@ -68,6 +69,10 @@ class AuctionServiceImplTest {
 
     private static Client clientRef(final long id) {
         return new Client(id, "N", "L", true);
+    }
+
+    private static User userRef(final long id) {
+        return new User(id, "u" + id + "@test.com", "p", "User", null, User.Role.CLIENT, true);
     }
 
     private static Commerce commerceRef(final long userId) {
@@ -150,6 +155,7 @@ class AuctionServiceImplTest {
         when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
         final Bid createdBid = new Bid(1L, auctionRef(AUCTION_ID), clientRef(newBidderId), amount, LocalDateTime.now());
         when(bidDao.createBid(AUCTION_ID, newBidderId, amount)).thenReturn(createdBid);
+        when(bidDao.findBidder(AUCTION_ID, previousBidderId)).thenReturn(Optional.of(userRef(previousBidderId)));
 
         // 2. Ejercicio
         final Bid bid = auctionService.placeBid(AUCTION_ID, newBidderId, amount);
@@ -365,6 +371,7 @@ class AuctionServiceImplTest {
         final Auction expiredAuction = new Auction(AUCTION_ID, pack, 1000.0, 10.0, null, null,
                 LocalDateTime.now(ZoneOffset.UTC).minusHours(1), Auction.Status.ACTIVE, LocalDateTime.now());
         when(auctionDao.findExpiredActive()).thenReturn(List.of(expiredAuction));
+        when(bidDao.findBidders(AUCTION_ID)).thenReturn(Collections.emptyList());
 
         // 2. Ejercicio
         final int closed = auctionService.closeExpiredAuctions();

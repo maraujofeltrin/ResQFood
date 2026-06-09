@@ -1,15 +1,12 @@
 package ar.edu.itba.paw.services.commerce;
 
 import ar.edu.itba.paw.models.pack.Municipality;
-import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.CommerceProfileException;
 import ar.edu.itba.paw.persistence.CommerceDao;
-import ar.edu.itba.paw.services.pack.PackService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,17 +21,8 @@ public class CommerceServiceImpl implements CommerceService {
     private final CommerceDao commerceDao;
 
     @Autowired
-    @Lazy
-    private PackService packService;
-
-    @Autowired
     public CommerceServiceImpl(final CommerceDao commerceDao) {
         this.commerceDao = commerceDao;
-    }
-
-    public CommerceServiceImpl(final CommerceDao commerceDao, final PackService packService) {
-        this.commerceDao = commerceDao;
-        this.packService = packService;
     }
 
     @Transactional(readOnly = true)
@@ -96,18 +84,6 @@ public class CommerceServiceImpl implements CommerceService {
     @Override
     public int countFilteredCommerces(String query, String cityFilter, Commerce.Category categoryFilter) {
         return commerceDao.countFilteredCommerces(query, cityFilter, categoryFilter);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public List<Pack> getPublicOffers(final long commerceUserId, final int page, final int pageSize) {
-        return packService.getPublicOffersByCommerce(Long.valueOf(commerceUserId), page, pageSize);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public int countPublicOffers(final long commerceUserId) {
-        return packService.countPublicOffersByCommerce(Long.valueOf(commerceUserId));
     }
 
     @Transactional

@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.auction.Bid;
+import ar.edu.itba.paw.models.user.User;
 
 import java.util.Collection;
 import java.util.List;
@@ -24,5 +25,7 @@ public interface BidDao {
 
     boolean existsByAuctionIdAndClientUserId(long auctionId, long clientUserId);
 
-    Set<Long> findDistinctBidderIdsByAuctionId(long auctionId);
+    List<User> findBidders(long auctionId);
+
+    Optional<User> findBidder(long auctionId, long bidderUserId);
 }

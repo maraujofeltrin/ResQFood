@@ -233,4 +233,38 @@ public class BidJpaDaoTest {
         // 3. Asserts
         assertFalse(exists);
     }
+
+    @Test
+    public void testFindBiddersWhenSeveralBiddersExistReturnsDistinctUsers() {
+        // 1. Setup
+        final Long secondClientId = userDao.createUser("client2@example.com", "pass", "Client2", "123", User.Role.CLIENT).getId();
+        clientDao.createClient(secondClientId, "Client2", "Last", true);
+        bidDao.createBid(auctionId, clientId, 600.0);
+        bidDao.createBid(auctionId, secondClientId, 700.0);
+        bidDao.createBid(auctionId, clientId, 800.0);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<User> bidders = bidDao.findBidders(auctionId);
+
+        // 3. Asserts
+        assertEquals(2, bidders.size());
+        assertTrue(bidders.stream().anyMatch(u -> clientId.equals(u.getId())));
+        assertTrue(bidders.stream().anyMatch(u -> secondClientId.equals(u.getId())));
+    }
+
+    @Test
+    public void testFindBidderWhenBidExistsReturnsUser() {
+        // 1. Setup
+        bidDao.createBid(auctionId, clientId, 600.0);
+        em.flush();
+
+        // 2. Ejercicio
+        final Optional<User> bidder = bidDao.findBidder(auctionId, clientId);
+
+        // 3. Asserts
+        assertTrue(bidder.isPresent());
+        assertEquals(clientId, bidder.get().getId());
+        assertEquals("client@example.com", bidder.get().getEmail());
+    }
 }

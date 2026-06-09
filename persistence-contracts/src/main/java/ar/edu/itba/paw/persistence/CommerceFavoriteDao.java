@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.persistence;
 
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.User;
 
 import java.util.List;
 
@@ -19,5 +20,5 @@ public interface CommerceFavoriteDao {
 
     void delete(long clientId, long commerceId);
 
-    List<Long> findClientIdsByCommerce(long commerceId);
+    List<User> findFavoritingClientsByCommerce(long commerceId);
 }

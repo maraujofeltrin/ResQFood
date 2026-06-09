@@ -4,6 +4,7 @@ import ar.edu.itba.paw.models.user.ClientCommerceFavorite;
 import ar.edu.itba.paw.models.user.ClientCommerceFavoriteId;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.util.Pagination;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,10 +95,10 @@ public class CommerceFavoriteJpaDao implements CommerceFavoriteDao {
     }
 
     @Override
-    public List<Long> findClientIdsByCommerce(final long commerceId) {
+    public List<User> findFavoritingClientsByCommerce(final long commerceId) {
         return em.createQuery(
-                        "SELECT f.client.userId FROM ClientCommerceFavorite f WHERE f.commerce.userId = :comId",
-                        Long.class)
+                        "SELECT f.client.user FROM ClientCommerceFavorite f WHERE f.commerce.userId = :comId",
+                        User.class)
                 .setParameter("comId", commerceId)
                 .getResultList();
     }

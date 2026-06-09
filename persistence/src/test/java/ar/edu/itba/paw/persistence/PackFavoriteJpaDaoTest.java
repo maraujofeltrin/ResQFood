@@ -233,16 +233,17 @@ public class PackFavoriteJpaDaoTest {
     }
 
     @Test
-    public void testFindClientIdsByPackWhenFavoritesExist() {
+    public void testFindFavoritingClientsByPackWhenFavoritesExist() {
         // 1. Setup
         packFavoriteDao.insert(clientUserId, packActive.getId());
 
         // 2. Ejercicio
-        final List<Long> ids = packFavoriteDao.findClientIdsByPack(packActive.getId());
+        final List<ar.edu.itba.paw.models.user.User> clients =
+                packFavoriteDao.findFavoritingClientsByPack(packActive.getId());
 
         // 3. Asserts
-        assertEquals(1, ids.size());
-        assertTrue(ids.contains(clientUserId));
+        assertEquals(1, clients.size());
+        assertEquals(clientUserId, clients.get(0).getId());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "client_pack_favorites"));
     }
 }

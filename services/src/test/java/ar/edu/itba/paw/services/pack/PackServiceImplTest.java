@@ -9,7 +9,10 @@ import ar.edu.itba.paw.models.pack.PackSortOption;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.PackDao;
+import ar.edu.itba.paw.persistence.PackFavoriteDao;
+import ar.edu.itba.paw.services.commerce.CommerceFavoriteService;
 import ar.edu.itba.paw.services.image.ImageService;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
@@ -42,6 +45,12 @@ class PackServiceImplTest {
 
     @Mock
     private PackDao packDao;
+
+    @Mock
+    private PackFavoriteDao packFavoriteDao;
+
+    @Mock
+    private CommerceFavoriteService commerceFavoriteService;
 
     @Mock
     private ImageService imageService;
@@ -87,6 +96,7 @@ class PackServiceImplTest {
         final Pack persisted = newPack(1L, 5L, "T", "D", 10.0, 7.0, 3, true, false, Collections.emptyList(), null);
         when(packDao.createPack(eq(5L), eq("T"), eq("D"), eq(10.0), eq(7.0), eq(3), eq(Collections.emptyList()),
                 isNull())).thenReturn(persisted);
+        when(commerceFavoriteService.findFavoritingClients(5L)).thenReturn(Collections.emptyList());
 
         // 2. Ejercicio
         final Pack created = packService.createPack(5L, "T", "D", 10.0, 7.0, 3, Collections.emptyList(), null);
@@ -459,6 +469,8 @@ class PackServiceImplTest {
         final Pack existing = newPack(3L, 5L, "old", "oldD", 1.0, 1.0, 0, true, false, Collections.emptyList(), null);
         when(packDao.findById(3L)).thenReturn(Optional.of(existing));
         when(packDao.update(any(Pack.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(packFavoriteDao.findFavoritingClientsByPack(3L)).thenReturn(List.of(
+                new User(9L, "fav@test.com", "p", "Fav", null, User.Role.CLIENT, true)));
 
         // 2. Ejercicio
         final Pack result = packService.updatePack(3L, "old", "oldD", 1.0, 1.0, 5, Collections.emptyList(), null);

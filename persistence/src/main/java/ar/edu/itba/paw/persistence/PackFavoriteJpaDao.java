@@ -4,6 +4,7 @@ import ar.edu.itba.paw.models.pack.ClientPackFavorite;
 import ar.edu.itba.paw.models.pack.ClientPackFavoriteId;
 import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.Client;
+import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.util.Pagination;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
@@ -100,10 +101,10 @@ public class PackFavoriteJpaDao implements PackFavoriteDao {
     }
 
     @Override
-    public List<Long> findClientIdsByPack(final long packId) {
+    public List<User> findFavoritingClientsByPack(final long packId) {
         return em.createQuery(
-                        "SELECT f.client.userId FROM ClientPackFavorite f WHERE f.pack.id = :pid",
-                        Long.class)
+                        "SELECT f.client.user FROM ClientPackFavorite f WHERE f.pack.id = :pid",
+                        User.class)
                 .setParameter("pid", packId)
                 .getResultList();
     }

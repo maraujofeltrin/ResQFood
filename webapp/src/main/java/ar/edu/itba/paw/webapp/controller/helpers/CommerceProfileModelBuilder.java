@@ -5,6 +5,7 @@ import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.commerce.CommerceFavoriteService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
+import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.webapp.form.CommerceReviewForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -22,6 +23,7 @@ public class CommerceProfileModelBuilder {
     private static final int PAGE_SIZE = 12;
 
     private final CommerceService commerceService;
+    private final PackService packService;
     private final CommerceReviewPageAttributes commerceReviewPageAttributes;
     private final MessageSource messageSource;
     private final CommerceDetailAttributesHelper commerceDetailAttributesHelper;
@@ -30,12 +32,14 @@ public class CommerceProfileModelBuilder {
 
     @Autowired
     public CommerceProfileModelBuilder(final CommerceService commerceService,
+            final PackService packService,
             final CommerceReviewPageAttributes commerceReviewPageAttributes,
             final MessageSource messageSource,
             final CommerceDetailAttributesHelper commerceDetailAttributesHelper,
             final CommerceFavoriteService commerceFavoriteService,
             final AuthenticatedUserResolver authResolver) {
         this.commerceService = commerceService;
+        this.packService = packService;
         this.commerceReviewPageAttributes = commerceReviewPageAttributes;
         this.messageSource = messageSource;
         this.commerceDetailAttributesHelper = commerceDetailAttributesHelper;
@@ -69,11 +73,11 @@ public class CommerceProfileModelBuilder {
         final String pageTitle = messageSource.getMessage("commerce.profile.pageTitle",
                 new Object[] { commercialName, brand }, locale);
 
-        final int totalOffers = commerceService.countPublicOffers(commerceUserId);
+        final int totalOffers = packService.countPublicOffersByCommerce(commerceUserId);
         final int totalPages = Math.max(1,
                 (int) Math.ceil((double) totalOffers / (double) PAGE_SIZE));
         final int safePage = Math.max(1, Math.min(page, totalPages));
-        final List<Pack> offers = commerceService.getPublicOffers(commerceUserId, safePage, PAGE_SIZE);
+        final List<Pack> offers = packService.getPublicOffersByCommerce(commerceUserId, safePage, PAGE_SIZE);
 
         final ModelAndView mav = new ModelAndView("commerce/commerceProfileView");
         mav.addObject("pageTitle", pageTitle);

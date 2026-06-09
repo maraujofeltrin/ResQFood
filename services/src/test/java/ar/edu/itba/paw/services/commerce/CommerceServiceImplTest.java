@@ -1,11 +1,9 @@
 package ar.edu.itba.paw.services.commerce;
 
-import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.CommerceProfileException;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.persistence.CommerceDao;
-import ar.edu.itba.paw.services.pack.PackService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,9 +25,6 @@ class CommerceServiceImplTest {
 
     @Mock
     private CommerceDao commerceDao;
-
-    @Mock
-    private PackService packService;
 
     @InjectMocks
     private CommerceServiceImpl commerceService;
@@ -97,37 +92,6 @@ class CommerceServiceImplTest {
     private static Commerce commerceForUserId(final long commerceUserId) {
         return new Commerce(commerceUserId, "Comm", Commerce.Category.BAKERY, "St", 1,
                 Municipality.AVELLANEDA, "P", "1000", "08:00", "20:00");
-    }
-
-    private static Pack packForCommerce(final Long id, final Commerce commerce, final String title) {
-        return new Pack(id, commerce, title, "d", 10.0, 8.0, 1, true, false, Collections.emptyList(), null);
-    }
-
-    @Test
-    void testGetPublicOffersDelegatesToPackService() {
-        // 1. Setup
-        final long commerceUserId = 7L;
-        final Pack pack = packForCommerce(10L, commerceForUserId(commerceUserId), "P");
-        when(packService.getPublicOffersByCommerce(commerceUserId, 1, 12)).thenReturn(List.of(pack));
-
-        // 2. Ejercicio
-        final List<Pack> offers = commerceService.getPublicOffers(commerceUserId, 1, 12);
-
-        // 3. Asserts
-        assertEquals(1, offers.size());
-        assertEquals(Long.valueOf(10L), offers.get(0).getId());
-    }
-
-    @Test
-    void testCountPublicOffersDelegatesToPackService() {
-        // 1. Setup
-        when(packService.countPublicOffersByCommerce(7L)).thenReturn(5);
-
-        // 2. Ejercicio
-        final int count = commerceService.countPublicOffers(7L);
-
-        // 3. Asserts
-        assertEquals(5, count);
     }
 
     @Test

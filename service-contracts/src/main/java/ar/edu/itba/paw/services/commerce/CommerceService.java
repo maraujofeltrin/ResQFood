@@ -1,7 +1,6 @@
 package ar.edu.itba.paw.services.commerce;
 
 import ar.edu.itba.paw.models.pack.Municipality;
-import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.user.Commerce;
 
 import java.util.List;
@@ -19,15 +18,6 @@ public interface CommerceService {
     java.util.List<Commerce> filterCommerces(String query, String cityFilter, Commerce.Category categoryFilter, int page, int pageSize);
 
     int countFilteredCommerces(String query, String cityFilter, Commerce.Category categoryFilter);
-
-    /**
-     * Active catalog offers (direct-sale packs with stock or packs with an ACTIVE auction) for the public
-     * commerce profile, ordered by {@code pack.id DESC}. Each returned {@link Pack} has its {@code auction}
-     * relation hydrated (null when the pack is direct-sale only).
-     */
-    List<Pack> getPublicOffers(long commerceUserId, int page, int pageSize);
-
-    int countPublicOffers(long commerceUserId);
 
     Commerce createCommerce(final Long userId, final String commercialName, final Commerce.Category category,
             final String street, final Integer streetNumber, final Municipality city, final String province,
