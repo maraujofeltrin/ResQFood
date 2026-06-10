@@ -95,21 +95,6 @@ public class AuthenticatedUserResolver {
     }
 
     /**
-     * Resolves the authenticated user's {@link Commerce} profile.
-     *
-     * @throws ResponseStatusException 401 if not authenticated, 404 if no commerce profile
-     */
-    public Commerce resolveCommerce(final Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        }
-        return AuthUserLocaleSupport.authUserFrom(authentication)
-                .map(this::resolveCommerce)
-                .orElseGet(() -> commerceService.findByUserId(resolveUser(authentication).getId())
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
-    }
-
-    /**
      * Resolves the authenticated user's {@link Commerce} profile from an AuthUser principal.
      *
      * @throws ResponseStatusException 401 if not authenticated, 404 if no commerce profile

@@ -142,6 +142,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ModelAndView handleException(final Exception e, final HttpServletRequest request) {
         LOGGER.error("Unhandled exception handling {} {}", request.getMethod(), request.getRequestURI(), e);
-        return new ModelAndView("errors/500");
+        request.setAttribute("javax.servlet.error.status_code", Integer.valueOf(500));
+        return new ModelAndView("errors/error");
     }
 }

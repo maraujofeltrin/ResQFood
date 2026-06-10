@@ -23,7 +23,6 @@
     <tag-file><name>segmentedTripleTabs</name><path>/WEB-INF/tags/shared/segmentedTripleTabs.tag</path></tag-file>
     <tag-file><name>pickupConfirm</name><path>/WEB-INF/tags/shared/pickupConfirm.tag</path></tag-file>
     <tag-file><name>reservationLayout</name><path>/WEB-INF/tags/shared/reservationLayout.tag</path></tag-file>
-    <tag-file><name>button</name><path>/WEB-INF/tags/shared/button.tag</path></tag-file>
     <tag-file><name>imageUpload</name><path>/WEB-INF/tags/shared/imageUpload.tag</path></tag-file>
     <tag-file><name>backLink</name><path>/WEB-INF/tags/shared/backLink.tag</path></tag-file>
 
@@ -42,8 +41,6 @@
     <tag-file><name>commerceSidebar</name><path>/WEB-INF/tags/commerce/sidebar.tag</path></tag-file>
     <tag-file><name>offerImageUpload</name><path>/WEB-INF/tags/commerce/offerImageUpload.tag</path></tag-file>
     <tag-file><name>offerModeToggle</name><path>/WEB-INF/tags/commerce/offerModeToggle.tag</path></tag-file>
-    <tag-file><name>commerceDataFields</name><path>/WEB-INF/tags/commerce/commerceDataFields.tag</path></tag-file>
-    <tag-file><name>userIdentityFields</name><path>/WEB-INF/tags/commerce/userIdentityFields.tag</path></tag-file>
     <tag-file><name>deletePackModal</name><path>/WEB-INF/tags/commerce/deletePackModal.tag</path></tag-file>
     <tag-file><name>cancelAuctionModal</name><path>/WEB-INF/tags/commerce/cancelAuctionModal.tag</path></tag-file>
     <tag-file><name>commerceInfoCardBody</name><path>/WEB-INF/tags/commerce/commerceInfoCardBody.tag</path></tag-file>

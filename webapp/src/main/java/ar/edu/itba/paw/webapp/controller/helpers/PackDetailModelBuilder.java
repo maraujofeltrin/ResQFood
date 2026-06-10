@@ -22,7 +22,6 @@ import ar.edu.itba.paw.webapp.form.BidForm;
 import ar.edu.itba.paw.webapp.form.CommerceReviewForm;
 import ar.edu.itba.paw.webapp.form.ReservationForm;
 
-import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -48,7 +47,6 @@ public class PackDetailModelBuilder {
     private final CommerceDetailAttributesHelper commerceDetailAttributesHelper;
     private final CommerceFavoriteService commerceFavoriteService;
     private final OwnershipService ownershipService;
-    private static final Locale LOCALE_AR = new Locale("es", "AR");
     private static final int BID_PAGE_SIZE = 10;
     private static final int RESERVATION_PAGE_SIZE = 10;
 
@@ -71,11 +69,6 @@ public class PackDetailModelBuilder {
         this.commerceDetailAttributesHelper = commerceDetailAttributesHelper;
         this.commerceFavoriteService = commerceFavoriteService;
         this.ownershipService = ownershipService;
-    }
-
-    private static String formatPrice(final Double amount) {
-        if (amount == null) return "—";
-        return NumberFormat.getCurrencyInstance(LOCALE_AR).format(amount);
     }
 
     private String formatAuctionEndForDisplay(final LocalDateTime endUtc, final Locale locale) {
@@ -145,10 +138,11 @@ public class PackDetailModelBuilder {
             final double increment = auction.getMinBidIncrement() != null ? auction.getMinBidIncrement() : 0d;
             final double minimumBidAmount = effective + increment;
             mav.addObject("auctionEffectiveAmount", effective);
-            mav.addObject("auctionEffectivePriceDisplay", formatPrice(effective));
+            mav.addObject("auctionEffectivePriceDisplay", ViewFormatUtils.formatMoney(effective));
             mav.addObject("auctionEndDisplay", formatAuctionEndForDisplay(auction.getEndTime(), locale));
             mav.addObject("auctionMinBidHint", messageSource.getMessage("pack.detail.bid.minHint",
-                    new Object[] { formatPrice(effective), formatPrice(minimumBidAmount), formatPrice(increment) }, locale));
+                    new Object[] { ViewFormatUtils.formatMoney(effective), ViewFormatUtils.formatMoney(minimumBidAmount),
+                            ViewFormatUtils.formatMoney(increment) }, locale));
             if (auctionActive) {
                 mav.addObject("bidAmountMin", String.format(Locale.US, "%.2f", minimumBidAmount));
                 auctionClientIsLeading = viewer
@@ -223,8 +217,8 @@ public class PackDetailModelBuilder {
                 .orElse(false);
         mav.addObject("commerceFavoriteSelected", commerceFavoriteSelected);
 
-        mav.addObject("originalPrice", formatPrice(pack.getOriginalPrice()));
-        mav.addObject("finalPrice", formatPrice(pack.getFinalPrice()));
+        mav.addObject("originalPrice", ViewFormatUtils.formatMoney(pack.getOriginalPrice()));
+        mav.addObject("finalPrice", ViewFormatUtils.formatMoney(pack.getFinalPrice()));
         final Integer stock = pack.getStock();
         final int quantityMax;
         if (stock != null && stock >= 1) {

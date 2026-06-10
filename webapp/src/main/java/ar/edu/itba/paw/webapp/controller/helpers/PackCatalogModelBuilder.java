@@ -11,7 +11,6 @@ import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.commerce.CommerceReviewService;
-import ar.edu.itba.paw.services.pack.PackFavoriteService;
 import ar.edu.itba.paw.services.pack.PackService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +41,6 @@ public class PackCatalogModelBuilder {
     private static final int PAGE_SIZE = 6;
     private static final int COMMERCES_PAGE_SIZE = 8;
     private static final int AUCTION_CAROUSEL_SIZE = 6;
-    private static final int FAVORITES_CAROUSEL_SIZE = 6;
     private static final int COMMERCES_CAROUSEL_SIZE = 6;
     private static final String TYPE_PACKS = "packs";
     private static final String TYPE_AUCTIONS = "auctions";
