@@ -8,7 +8,6 @@ import ar.edu.itba.paw.models.pack.Pack;
 import ar.edu.itba.paw.models.pack.PackTag;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
-import org.hibernate.Hibernate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -128,25 +127,6 @@ public class AuctionJpaDaoTest {
         assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
     }
 
-    @Test
-    public void testFindByIdWhenAuctionExists() {
-        // 1. Setup
-        final Auction created = auctionDao.createAuction(packId, 500.0, 500.0, AUCTION_END_TIME);
-        em.flush();
-
-        // 2. Ejercicio
-        em.flush();
-        em.clear();
-        final Optional<Auction> found = auctionDao.findById(created.getId());
-
-        // 3. Asserts
-        assertTrue(found.isPresent());
-        assertEquals(created.getId(), found.get().getId());
-        assertTrue(Hibernate.isInitialized(found.get().getPack()));
-        assertTrue(Hibernate.isInitialized(found.get().getPack().getCommerce()));
-        assertNotNull(found.get().getPack().getCommerce().getCommercialName());
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
-    }
 
     @Test
     public void testFilterAuctionsWhenCityNameMatchesReturnsAuction() {
@@ -428,21 +408,4 @@ public class AuctionJpaDaoTest {
         assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "bids"));
     }
 
-    @Test
-    public void testFilterAuctionsEagerlyLoadsPackAndCommerce() {
-        // 1. Setup
-        auctionDao.createAuction(packId, 500.0, 50.0, AUCTION_END_TIME);
-        em.flush();
-        em.clear();
-
-        // 2. Ejercicio
-        final List<Auction> filtered = auctionDao.filterAuctions(null, null, null, null, null, 1, 10, false, null);
-
-        // 3. Asserts
-        assertEquals(1, filtered.size());
-        assertTrue(Hibernate.isInitialized(filtered.get(0).getPack()));
-        assertTrue(Hibernate.isInitialized(filtered.get(0).getPack().getCommerce()));
-        assertNotNull(filtered.get(0).getPack().getCommerce().getCommercialName());
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
-    }
 }

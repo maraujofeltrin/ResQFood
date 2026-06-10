@@ -15,13 +15,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,35 +54,40 @@ class PackFavoriteServiceImplTest {
     }
 
     @Test
-    void testToggleFavoriteWhenFavoriteExistsCallsDeleteOnly() {
+    void testToggleFavoriteWhenFavoriteExistsRemovesFavorite() {
         // 1. Setup
-        when(packFavoriteDao.exists(5L, 10L)).thenReturn(true);
+        final Set<Long> favorites = new HashSet<>();
+        favorites.add(10L);
+        when(packFavoriteDao.exists(eq(5L), eq(10L))).thenAnswer(invocation -> favorites.contains(10L));
+        doAnswer(invocation -> {
+            favorites.remove(10L);
+            return null;
+        }).when(packFavoriteDao).delete(eq(5L), eq(10L));
 
         // 2. Ejercicio
-        final boolean completed = assertDoesNotThrow(() -> {
-            packFavoriteService.toggleFavorite(5L, 10L);
-            return true;
-        });
+        packFavoriteService.toggleFavorite(5L, 10L);
 
         // 3. Asserts
-        assertTrue(completed);
+        assertFalse(packFavoriteService.isFavorite(5L, 10L));
     }
 
     @Test
-    void testToggleFavoriteWhenNotFavoriteAndPackActiveCompletes() {
+    void testToggleFavoriteWhenNotFavoriteAndPackActiveAddsFavorite() {
         // 1. Setup
-        when(packFavoriteDao.exists(5L, 10L)).thenReturn(false);
+        final Set<Long> favorites = new HashSet<>();
+        when(packFavoriteDao.exists(eq(5L), eq(10L))).thenAnswer(invocation -> favorites.contains(10L));
+        doAnswer(invocation -> {
+            favorites.add(10L);
+            return null;
+        }).when(packFavoriteDao).insert(eq(5L), eq(10L));
         final Pack pack = newPack(10L, 1L, "t", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
         when(packService.findById(10L)).thenReturn(Optional.of(pack));
 
         // 2. Ejercicio
-        final boolean completed = assertDoesNotThrow(() -> {
-            packFavoriteService.toggleFavorite(5L, 10L);
-            return true;
-        });
+        packFavoriteService.toggleFavorite(5L, 10L);
 
         // 3. Asserts
-        assertTrue(completed);
+        assertTrue(packFavoriteService.isFavorite(5L, 10L));
     }
 
     @Test

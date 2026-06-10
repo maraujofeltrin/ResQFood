@@ -12,13 +12,17 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,35 +50,40 @@ class CommerceFavoriteServiceImplTest {
     }
 
     @Test
-    void testToggleFavoriteWhenFavoriteExistsCallsDeleteOnly() {
+    void testToggleFavoriteWhenFavoriteExistsRemovesFavorite() {
         // 1. Setup
-        when(commerceFavoriteDao.exists(5L, 10L)).thenReturn(true);
+        final Set<Long> favorites = new HashSet<>();
+        favorites.add(10L);
+        when(commerceFavoriteDao.exists(eq(5L), eq(10L))).thenAnswer(invocation -> favorites.contains(10L));
+        doAnswer(invocation -> {
+            favorites.remove(10L);
+            return null;
+        }).when(commerceFavoriteDao).delete(eq(5L), eq(10L));
 
         // 2. Ejercicio
-        final boolean completed = assertDoesNotThrow(() -> {
-            commerceFavoriteService.toggleFavorite(5L, 10L);
-            return true;
-        });
+        commerceFavoriteService.toggleFavorite(5L, 10L);
 
         // 3. Asserts
-        assertEquals(true, completed);
+        assertFalse(commerceFavoriteService.isFavorite(5L, 10L));
     }
 
     @Test
-    void testToggleFavoriteWhenNotFavoriteAndCommerceExistsInsertsFavorite() {
+    void testToggleFavoriteWhenNotFavoriteAndCommerceExistsAddsFavorite() {
         // 1. Setup
-        when(commerceFavoriteDao.exists(5L, 10L)).thenReturn(false);
+        final Set<Long> favorites = new HashSet<>();
+        when(commerceFavoriteDao.exists(eq(5L), eq(10L))).thenAnswer(invocation -> favorites.contains(10L));
+        doAnswer(invocation -> {
+            favorites.add(10L);
+            return null;
+        }).when(commerceFavoriteDao).insert(eq(5L), eq(10L));
         final Commerce commerce = new Commerce(10L, "c", Commerce.Category.BAKERY, "st", 1, null, "p", "1000", "09", "18");
         when(commerceDao.findByUserId(10L)).thenReturn(Optional.of(commerce));
 
         // 2. Ejercicio
-        final boolean completed = assertDoesNotThrow(() -> {
-            commerceFavoriteService.toggleFavorite(5L, 10L);
-            return true;
-        });
+        commerceFavoriteService.toggleFavorite(5L, 10L);
 
         // 3. Asserts
-        assertEquals(true, completed);
+        assertTrue(commerceFavoriteService.isFavorite(5L, 10L));
     }
 
     @Test

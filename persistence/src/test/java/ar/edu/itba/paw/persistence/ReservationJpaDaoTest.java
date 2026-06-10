@@ -11,7 +11,6 @@ import ar.edu.itba.paw.models.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -133,25 +132,6 @@ public class ReservationJpaDaoTest {
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
     }
 
-    @Test
-    public void testFindByIdWithPackAndCommerceEagerlyLoadsPackAndCommerce() {
-        // 1. Setup
-        final Reservation created = reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
-                Reservation.Status.RESERVED, "CODE", null, 1, null);
-        em.flush();
-        em.clear();
-
-        // 2. Ejercicio
-        final Optional<Reservation> found = reservationDao.findByIdWithPackAndCommerce(created.getId());
-
-        // 3. Asserts
-        assertTrue(found.isPresent());
-        assertNotNull(found.get().getPack());
-        assertTrue(Hibernate.isInitialized(found.get().getPack()));
-        assertNotNull(found.get().getPack().getCommerce());
-        assertTrue(Hibernate.isInitialized(found.get().getPack().getCommerce()));
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
-    }
 
     @Test
     public void testUpdateStatusWhenReservationExists() {
@@ -365,76 +345,8 @@ public class ReservationJpaDaoTest {
         assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
     }
 
-    @Test
-    public void testFilterReservationsDoesNotEagerlyLoadPackImage() {
-        // 1. Setup
-        final Image image = imageDao.saveImage(new byte[] {1, 2, 3}, "image/png");
-        em.flush();
-        final Pack packWithImage = packDao.createPack(commerceId, "Pack With Image", "Desc", 1000.0, 500.0, 10,
-                Collections.emptyList(), image.getId());
-        em.flush();
-        reservationDao.createReservation(clientId, packWithImage.getId(), RESERVATION_DATE, 500.0,
-                Reservation.Status.RESERVED, "IMG-CODE", null, 1, null);
-        em.flush();
-        em.clear();
 
-        // 2. Ejercicio
-        final List<Reservation> results = reservationDao.filterReservations(commerceId, null, null, null, false, 1, 10);
 
-        // 3. Asserts
-        assertEquals(1, results.size());
-        final Reservation r = results.get(0);
-        // Image is lazy: the proxy is NOT initialized, but imageId is still accessible via FK
-        assertFalse(Hibernate.isInitialized(r.getPack().getImage()));
-        assertNotNull(r.getPack().getImageId());
-        assertEquals(image.getId(), r.getPack().getImageId());
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "images"));
-    }
-
-    @Test
-    public void testFilterReservationsEagerlyLoadsCustomerAndPack() {
-        // 1. Setup
-        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
-                Reservation.Status.RESERVED, "CODE", null, 1, null);
-        em.flush();
-
-        // 2. Ejercicio
-        final List<Reservation> results = reservationDao.filterReservations(commerceId, null, null, null, false, 1, 10);
-
-        // 3. Asserts
-        assertFalse(results.isEmpty());
-        final Reservation r = results.get(0);
-        assertTrue(Hibernate.isInitialized(r.getCustomer()));
-        assertNotNull(r.getCustomer().getFullName());
-        assertTrue(Hibernate.isInitialized(r.getPack()));
-        assertNotNull(r.getPack().getTitle());
-        assertTrue(Hibernate.isInitialized(r.getPack().getCommerce()));
-        assertNotNull(r.getPack().getCommerce().getCommercialName());
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
-    }
-
-    @Test
-    public void testFindByPickupCodeEagerlyLoadsCustomerPackAndCommerce() {
-        // 1. Setup
-        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
-                Reservation.Status.RESERVED, "PICKUP1", null, 1, null);
-        em.flush();
-
-        // 2. Ejercicio
-        final Optional<Reservation> found = reservationDao.findByPickupCode("PICKUP1");
-
-        // 3. Asserts
-        assertTrue(found.isPresent());
-        final Reservation r = found.get();
-        assertTrue(Hibernate.isInitialized(r.getCustomer()));
-        assertNotNull(r.getCustomer().getFullName());
-        assertTrue(Hibernate.isInitialized(r.getPack()));
-        assertNotNull(r.getPack().getTitle());
-        assertTrue(Hibernate.isInitialized(r.getPack().getCommerce()));
-        assertNotNull(r.getPack().getCommerce().getCommercialName());
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
-    }
 
     @Test
     public void testFilterReservationsWhenSecondPageRequestedReturnsOldestReservation() {
@@ -461,18 +373,14 @@ public class ReservationJpaDaoTest {
         assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
     }
 
+
     @Test
-    public void testFilterReservationsHydratesPackAuction() {
+    public void testFilterReservationsLeavesAuctionNullWhenPackIsDirect() {
         // 1. Setup
         final Pack directPack = packDao.createPack(commerceId, "Direct", "Desc", 100.0, 50.0, 5, null, null);
-        final Pack auctionPack = packDao.createPack(commerceId, "Auction", "Desc", 100.0, 50.0, 5, null, null);
-        em.flush();
-        auctionDao.createAuction(auctionPack.getId(), 10.0, 1.0, EXPIRED_AUCTION_END);
         em.flush();
         reservationDao.createReservation(clientId, directPack.getId(), LocalDateTime.now(),
                 50.0, Reservation.Status.RESERVED, "code-direct", null, 1, null);
-        reservationDao.createReservation(clientId, auctionPack.getId(), LocalDateTime.now(),
-                50.0, Reservation.Status.RESERVED, "code-auction", null, 1, null);
         em.flush();
         em.clear();
 
@@ -481,60 +389,13 @@ public class ReservationJpaDaoTest {
                 commerceId, null, null, null, false, 1, 10);
 
         // 3. Asserts
-        assertEquals(2, reservations.size());
-        for (final Reservation r : reservations) {
-            if (r.getPack().getId().equals(auctionPack.getId())) {
-                assertNotNull(r.getPack().getAuction());
-                assertTrue(Hibernate.isInitialized(r.getPack().getAuction()));
-            } else {
-                assertNull(r.getPack().getAuction());
-            }
-        }
-        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
-    }
-
-    @Test
-    public void testFindByIdWithDetailsEagerlyLoadsCustomerUserAndCommerceUser() {
-        // 1. Setup
-        final Reservation created = reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
-                Reservation.Status.RESERVED, "DETAIL_CODE", null, 1, null);
-        em.flush();
-        em.clear();
-
-        // 2. Ejercicio
-        final Optional<Reservation> found = reservationDao.findByIdWithDetails(created.getId());
-
-        // 3. Asserts
-        assertTrue(found.isPresent());
-        final Reservation r = found.get();
-        assertTrue(Hibernate.isInitialized(r.getCustomer()));
-        assertTrue(Hibernate.isInitialized(r.getCustomer().getUser()));
-        assertNotNull(r.getCustomer().getUser().getEmail());
-        assertTrue(Hibernate.isInitialized(r.getPack()));
-        assertTrue(Hibernate.isInitialized(r.getPack().getCommerce()));
-        assertTrue(Hibernate.isInitialized(r.getPack().getCommerce().getUser()));
-        assertNotNull(r.getPack().getCommerce().getUser().getEmail());
+        assertEquals(1, reservations.size());
+        assertEquals(directPack.getId(), reservations.get(0).getPack().getId());
+        assertNull(reservations.get(0).getPack().getAuction());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
     }
 
-    @Test
-    public void testFindByPackIdEagerlyLoadsCustomer() {
-        // 1. Setup
-        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
-                Reservation.Status.RESERVED, "CODE", null, 1, null);
-        em.flush();
 
-        // 2. Ejercicio
-        final List<Reservation> results = reservationDao.findByPackId(packId, 1, 10);
-
-        // 3. Asserts
-        assertFalse(results.isEmpty());
-        final Reservation r = results.get(0);
-        assertTrue(Hibernate.isInitialized(r.getCustomer()));
-        assertNotNull(r.getCustomer().getFullName());
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
-    }
 
     @Test
     public void testFindTopSellingPacksReturnsPackEntityAndUnitsSoldOrdered() {

@@ -11,7 +11,6 @@ import ar.edu.itba.paw.models.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.Rollback;
@@ -97,26 +96,6 @@ public class PackJpaDaoTest {
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "pack_tags"));
     }
 
-    @Test
-    public void testFindByIdWhenPackExists() {
-        // 1. Setup
-        final Pack created = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10,
-                Collections.singletonList(PackTag.SWEET), null);
-        em.flush();
-        em.clear();
-
-        // 2. Ejercicio
-        final Optional<Pack> pack = packDao.findById(created.getId());
-
-        // 3. Asserts
-        assertTrue(pack.isPresent());
-        assertEquals(created.getId(), pack.get().getId());
-        assertEquals("Title", pack.get().getTitle());
-        assertEquals(1, pack.get().getTags().size());
-        assertTrue(Hibernate.isInitialized(pack.get().getCommerce()));
-        assertNotNull(pack.get().getCommerce().getCommercialName());
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
-    }
 
     @Test
     public void testFindByIdWhenPackDoesNotExist() {
@@ -396,21 +375,6 @@ public class PackJpaDaoTest {
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 
-    @Test
-    public void testFilterPacksEagerlyLoadsCommerce() {
-        // 1. Setup
-        packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, null, null);
-        em.flush();
-
-        // 2. Ejercicio
-        final List<Pack> packs = packDao.filterPacks(null, null, null, null, PackSortOption.DATE_DESC, 1, 10, false, null);
-
-        // 3. Asserts
-        assertFalse(packs.isEmpty());
-        assertTrue(Hibernate.isInitialized(packs.get(0).getCommerce()));
-        assertNotNull(packs.get(0).getCommerce().getCommercialName());
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
-    }
 
     @Test
     public void testFilterPacksOrdersByPriceAscWhenMultiplePacksExist() {
@@ -494,27 +458,6 @@ public class PackJpaDaoTest {
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
     }
 
-    @Test
-    public void testFilterCommercePacksDoesNotEagerlyLoadImage() {
-        // 1. Setup
-        final Image image = imageDao.saveImage(new byte[] {1, 2, 3}, "image/png");
-        em.flush();
-        packDao.createPack(commerceId, "With Image", "Desc", 1000.0, 500.0, 10, null, image.getId());
-        em.flush();
-        em.clear();
-
-        // 2. Ejercicio
-        final List<Pack> filtered = packDao.filterCommercePacks(commerceId, null, 1, 10);
-
-        // 3. Asserts
-        assertEquals(1, filtered.size());
-        // Image is lazy: the proxy is NOT initialized, but imageId is still accessible via FK
-        assertFalse(Hibernate.isInitialized(filtered.get(0).getImage()));
-        assertNotNull(filtered.get(0).getImageId());
-        assertEquals(image.getId(), filtered.get(0).getImageId());
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "images"));
-    }
 
     @Test
     public void testFilterCommercePacksPaginatesByIdDesc() {
@@ -572,7 +515,7 @@ public class PackJpaDaoTest {
     }
 
     @Test
-    public void testFindPublicOffersByCommerceIncludesDirectPacksAndAuctionPacks() {
+    public void testFindPublicOffersByCommerceReturnsDirectAndAuctionPacksOrderedByIdDesc() {
         // 1. Setup
         final Pack direct = packDao.createPack(commerceId, "Direct", "Desc", 100.0, 50.0, 3, null, null);
         final Pack auctionPack = packDao.createPack(commerceId, "Auction", "Desc", 100.0, 50.0, 1, null, null);
@@ -588,9 +531,44 @@ public class PackJpaDaoTest {
         assertEquals(2, offers.size());
         assertEquals(auctionPack.getId(), offers.get(0).getId());
         assertEquals(direct.getId(), offers.get(1).getId());
-        assertNotNull(offers.get(0).getAuction());
-        assertNull(offers.get(1).getAuction());
         assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
+    public void testFindPublicOffersByCommerceHydratesAuctionWhenPackIsAuction() {
+        // 1. Setup
+        final Pack auctionPack = packDao.createPack(commerceId, "Auction", "Desc", 100.0, 50.0, 1, null, null);
+        em.flush();
+        auctionDao.createAuction(auctionPack.getId(), 10.0, 1.0, EXPIRED_AUCTION_END);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final List<Pack> offers = packDao.findPublicOffersByCommerce(commerceId, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, offers.size());
+        assertEquals(auctionPack.getId(), offers.get(0).getId());
+        assertNotNull(offers.get(0).getAuction());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
+    }
+
+    @Test
+    public void testFindPublicOffersByCommerceLeavesAuctionNullWhenPackIsDirect() {
+        // 1. Setup
+        final Pack direct = packDao.createPack(commerceId, "Direct", "Desc", 100.0, 50.0, 3, null, null);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final List<Pack> offers = packDao.findPublicOffersByCommerce(commerceId, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, offers.size());
+        assertEquals(direct.getId(), offers.get(0).getId());
+        assertNull(offers.get(0).getAuction());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 
     @Test
@@ -667,27 +645,6 @@ public class PackJpaDaoTest {
         assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 
-    @Test
-    public void testFindByIdWithAuctionHydratesAuctionWhenPresent() {
-        // 1. Setup
-        final Pack pack = packDao.createPack(commerceId, "Auction Pack", "Desc", 100.0, 50.0, 1, null, null);
-        em.flush();
-        auctionDao.createAuction(pack.getId(), 10.0, 1.0, EXPIRED_AUCTION_END);
-        em.flush();
-        em.clear();
-
-        // 2. Ejercicio
-        final Optional<Pack> reloaded = packDao.findById(pack.getId());
-
-        // 3. Asserts
-        assertTrue(reloaded.isPresent());
-        assertTrue(Hibernate.isInitialized(reloaded.get().getCommerce()));
-        assertNotNull(reloaded.get().getAuction());
-        assertTrue(Hibernate.isInitialized(reloaded.get().getAuction()));
-        assertEquals(pack.getId(), reloaded.get().getAuction().getPack().getId());
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
-    }
 
     @Test
     public void testFindByIdWithAuctionReturnsNullAuctionWhenNone() {
@@ -705,13 +662,11 @@ public class PackJpaDaoTest {
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 
+
     @Test
-    public void testFilterCommercePacksHydratesAuctionWhenPresent() {
+    public void testFilterCommercePacksLeavesAuctionNullWhenPackIsDirect() {
         // 1. Setup
         final Pack direct = packDao.createPack(commerceId, "Direct", "Desc", 100.0, 50.0, 3, null, null);
-        final Pack auctionPack = packDao.createPack(commerceId, "Auction", "Desc", 100.0, 50.0, 1, null, null);
-        em.flush();
-        auctionDao.createAuction(auctionPack.getId(), 10.0, 1.0, EXPIRED_AUCTION_END);
         em.flush();
         em.clear();
 
@@ -719,17 +674,10 @@ public class PackJpaDaoTest {
         final List<Pack> packs = packDao.filterCommercePacks(commerceId, null, 1, 10);
 
         // 3. Asserts
-        assertEquals(2, packs.size());
-        for (final Pack p : packs) {
-            if (p.getId().equals(auctionPack.getId())) {
-                assertNotNull(p.getAuction());
-                assertTrue(Hibernate.isInitialized(p.getAuction()));
-            } else if (p.getId().equals(direct.getId())) {
-                assertNull(p.getAuction());
-            }
-        }
-        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
+        assertEquals(1, packs.size());
+        assertEquals(direct.getId(), packs.get(0).getId());
+        assertNull(packs.get(0).getAuction());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 
     @Test

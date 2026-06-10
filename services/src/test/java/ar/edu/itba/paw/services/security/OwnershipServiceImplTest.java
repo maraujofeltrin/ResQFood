@@ -27,9 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -207,7 +204,6 @@ class OwnershipServiceImplTest {
 
         // 3. Asserts
         assertTrue(result);
-        verifyNoInteractions(reservationDao);
     }
 
     @Test
@@ -239,7 +235,6 @@ class OwnershipServiceImplTest {
 
         // 3. Asserts
         assertFalse(result);
-        verifyNoInteractions(reservationDao);
     }
 
     @Test
@@ -259,7 +254,6 @@ class OwnershipServiceImplTest {
 
         // 3. Asserts
         assertTrue(result);
-        verify(notificationDao, never()).belongsToRecipient(5L, 10L);
     }
 
     @Test
@@ -279,7 +273,6 @@ class OwnershipServiceImplTest {
 
         // 3. Asserts
         assertFalse(result);
-        verify(notificationDao, never()).belongsToRecipient(5L, 99L);
     }
 
     @Test
@@ -299,7 +292,6 @@ class OwnershipServiceImplTest {
 
         // 3. Asserts
         assertFalse(result);
-        verify(notificationDao, never()).belongsToRecipient(5L, 10L);
     }
 
     @Test

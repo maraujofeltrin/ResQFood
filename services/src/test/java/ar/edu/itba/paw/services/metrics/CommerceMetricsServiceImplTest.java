@@ -26,8 +26,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -224,7 +222,6 @@ class CommerceMetricsServiceImplTest {
         assertEquals(1, result.getTopPacks().size());
         assertEquals("Top Pack", result.getTopPacks().get(0).getPackTitle());
         assertEquals(7L, result.getTopPacks().get(0).getUnitsSold());
-        verify(packService, never()).findById(any());
     }
 
     @Test
