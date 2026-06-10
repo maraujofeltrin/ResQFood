@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import ar.edu.itba.paw.models.auction.Auction;
 
 @Controller
 @RequestMapping("/commerce")
@@ -196,23 +197,27 @@ public class CommerceDashboardController {
         final Commerce commerce = commerceService.findByUserId(userId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (bindingResult.hasErrors()) {
+            final CommerceMetricsFilterHelper.MetricsFilterResolution resolution = metricsFilterHelper
+                .resolve(null, null, 7);
+            final CommerceMetrics metrics = commerceMetricsService.getCommerceMetrics(
+                commerce.getUserId(), resolution.getFrom(), resolution.getTo());
             final ModelAndView mav = new ModelAndView("commerce/metrics");
             mav.addObject("commerce", commerce);
             mav.addObject("metricsFilterForm", filter);
-            mav.addObject("days", days);
-            mav.addObject("from", filter.getFromDate());
-            mav.addObject("to", filter.getToDate());
-            mav.addObject("salesChartJson", "[]");
-            mav.addObject("totalRevenue", 0);
-            mav.addObject("totalReservations", 0);
-            mav.addObject("bestSellingPackTitle", null);
-            mav.addObject("acceptanceRatePercent", 0);
-            mav.addObject("canceledReservations", 0);
-            mav.addObject("averageTicket", 0);
-            mav.addObject("uniqueClients", 0);
-            mav.addObject("topPacks", new ArrayList<>());
-            mav.addObject("topClients", new ArrayList<>());
-            mav.addObject("clientRetention", null);
+            mav.addObject("days", resolution.getDaysValue());
+            mav.addObject("from", resolution.getFromValue());
+            mav.addObject("to", resolution.getToValue());
+            mav.addObject("salesChartJson", buildSalesChartJson(metrics.getDailySales()));
+            mav.addObject("totalRevenue", metrics.getTotalRevenue());
+            mav.addObject("totalReservations", metrics.getTotalReservations());
+            mav.addObject("bestSellingPackTitle", metrics.getBestSellingPackTitle());
+            mav.addObject("acceptanceRatePercent", metrics.getAcceptanceRatePercent());
+            mav.addObject("canceledReservations", metrics.getCanceledReservations());
+            mav.addObject("averageTicket", metrics.getAverageTicket());
+            mav.addObject("uniqueClients", metrics.getUniqueClients());
+            mav.addObject("topPacks", metrics.getTopPacks());
+            mav.addObject("topClients", metrics.getTopClients());
+            mav.addObject("clientRetention", metrics.getClientRetention());
             return mav;
         }
         final CommerceMetricsFilterHelper.MetricsFilterResolution resolution = metricsFilterHelper
