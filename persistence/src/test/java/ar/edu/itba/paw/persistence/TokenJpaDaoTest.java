@@ -93,6 +93,21 @@ public class TokenJpaDaoTest {
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "tokens"));
     }
 
+    @Test
+    public void testFindByTokenAndTypeAfterClearReturnsTokenWithAccessibleUser() {
+        // 1. Setup
+        tokenDao.create("token123", userId, TokenType.EMAIL_VERIFICATION, TOKEN_CREATED, TOKEN_EXPIRES);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final Optional<Token> found = tokenDao.findByTokenAndType("token123", TokenType.EMAIL_VERIFICATION);
+
+        // 3. Asserts
+        assertTrue(found.isPresent());
+        assertEquals("user@example.com", found.get().getUser().getEmail());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "tokens"));
+    }
 
     @Test
     public void testMarkAsUsedWhenTokenExists() {

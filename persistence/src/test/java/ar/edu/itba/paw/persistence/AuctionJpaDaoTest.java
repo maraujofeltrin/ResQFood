@@ -129,6 +129,24 @@ public class AuctionJpaDaoTest {
 
 
     @Test
+    public void testFindByIdWhenAuctionExistsReturnsPackAndCommerceData() {
+        // 1. Setup
+        final Auction created = auctionDao.createAuction(packId, 500.0, 500.0, AUCTION_END_TIME);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final Optional<Auction> found = auctionDao.findById(created.getId());
+
+        // 3. Asserts
+        assertTrue(found.isPresent());
+        assertEquals(created.getId(), found.get().getId());
+        assertEquals("Pack", found.get().getPack().getTitle());
+        assertEquals("Comm", found.get().getPack().getCommerce().getCommercialName());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
+    }
+
+    @Test
     public void testFilterAuctionsWhenCityNameMatchesReturnsAuction() {
         // 1. Setup
         auctionDao.createAuction(packId, 500.0, 500.0, AUCTION_END_TIME);
@@ -406,6 +424,23 @@ public class AuctionJpaDaoTest {
         assertEquals(middle.getId(), pageTwo.get(0).getId());
         assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
         assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "bids"));
+    }
+
+    @Test
+    public void testFilterAuctionsReturnsAuctionsWithPackAndCommerceData() {
+        // 1. Setup
+        auctionDao.createAuction(packId, 500.0, 50.0, AUCTION_END_TIME);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final List<Auction> filtered = auctionDao.filterAuctions(null, null, null, null, null, 1, 10, false, null);
+
+        // 3. Asserts
+        assertEquals(1, filtered.size());
+        assertEquals("Pack", filtered.get(0).getPack().getTitle());
+        assertEquals("Comm", filtered.get(0).getPack().getCommerce().getCommercialName());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
     }
 
 }

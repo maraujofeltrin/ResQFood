@@ -134,6 +134,24 @@ public class ReservationJpaDaoTest {
 
 
     @Test
+    public void testFindByIdWithPackAndCommerceReturnsPackAndCommerceData() {
+        // 1. Setup
+        final Reservation created = reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.RESERVED, "CODE", null, 1, null);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final Optional<Reservation> found = reservationDao.findByIdWithPackAndCommerce(created.getId());
+
+        // 3. Asserts
+        assertTrue(found.isPresent());
+        assertEquals("Pack", found.get().getPack().getTitle());
+        assertEquals("Comm", found.get().getPack().getCommerce().getCommercialName());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
     public void testUpdateStatusWhenReservationExists() {
         // 1. Setup
         final Reservation created = reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
@@ -180,6 +198,24 @@ public class ReservationJpaDaoTest {
         // 3. Asserts
         assertTrue(found.isPresent());
         assertEquals(created.getId(), found.get().getId());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
+    public void testFindByPickupCodeReturnsReservationWithCustomerPackAndCommerce() {
+        // 1. Setup
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.RESERVED, "PICKUP1", null, 1, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final Optional<Reservation> found = reservationDao.findByPickupCode("PICKUP1");
+
+        // 3. Asserts
+        assertTrue(found.isPresent());
+        assertEquals("Client Last", found.get().getCustomer().getFullName());
+        assertEquals("Pack", found.get().getPack().getTitle());
+        assertEquals("Comm", found.get().getPack().getCommerce().getCommercialName());
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
     }
 
@@ -349,6 +385,24 @@ public class ReservationJpaDaoTest {
 
 
     @Test
+    public void testFilterReservationsReturnsCustomerPackAndCommerceData() {
+        // 1. Setup
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.RESERVED, "CODE", null, 1, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Reservation> results = reservationDao.filterReservations(commerceId, null, null, null, false, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, results.size());
+        assertEquals("Client Last", results.get(0).getCustomer().getFullName());
+        assertEquals("Pack", results.get(0).getPack().getTitle());
+        assertEquals("Comm", results.get(0).getPack().getCommerce().getCommercialName());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
     public void testFilterReservationsWhenSecondPageRequestedReturnsOldestReservation() {
         // 1. Setup
         final LocalDateTime oldest = LocalDateTime.of(2030, 1, 1, 10, 0);
@@ -375,6 +429,31 @@ public class ReservationJpaDaoTest {
 
 
     @Test
+    public void testFilterReservationsReturnsAuctionWhenPackIsAuction() {
+        // 1. Setup
+        final Pack auctionPack = packDao.createPack(commerceId, "Auction", "Desc", 100.0, 50.0, 5, null, null);
+        em.flush();
+        auctionDao.createAuction(auctionPack.getId(), 10.0, 1.0, EXPIRED_AUCTION_END);
+        em.flush();
+        reservationDao.createReservation(clientId, auctionPack.getId(), LocalDateTime.now(),
+                50.0, Reservation.Status.RESERVED, "code-auction", null, 1, null);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final List<Reservation> reservations = reservationDao.filterReservations(
+                commerceId, null, null, null, false, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, reservations.size());
+        assertEquals(auctionPack.getId(), reservations.get(0).getPack().getId());
+        assertNotNull(reservations.get(0).getPack().getAuction());
+        assertEquals(Auction.Status.ACTIVE, reservations.get(0).getPack().getAuction().getStatus());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
+    }
+
+    @Test
     public void testFilterReservationsLeavesAuctionNullWhenPackIsDirect() {
         // 1. Setup
         final Pack directPack = packDao.createPack(commerceId, "Direct", "Desc", 100.0, 50.0, 5, null, null);
@@ -396,6 +475,40 @@ public class ReservationJpaDaoTest {
     }
 
 
+
+    @Test
+    public void testFindByIdWithDetailsReturnsCustomerUserAndCommerceUser() {
+        // 1. Setup
+        final Reservation created = reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.RESERVED, "DETAIL_CODE", null, 1, null);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final Optional<Reservation> found = reservationDao.findByIdWithDetails(created.getId());
+
+        // 3. Asserts
+        assertTrue(found.isPresent());
+        assertEquals("client@example.com", found.get().getCustomer().getUser().getEmail());
+        assertEquals("commerce@example.com", found.get().getPack().getCommerce().getUser().getEmail());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
+
+    @Test
+    public void testFindByPackIdReturnsReservationsWithCustomerData() {
+        // 1. Setup
+        reservationDao.createReservation(clientId, packId, RESERVATION_DATE, 500.0,
+                Reservation.Status.RESERVED, "CODE", null, 1, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Reservation> results = reservationDao.findByPackId(packId, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, results.size());
+        assertEquals("Client Last", results.get(0).getCustomer().getFullName());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservations"));
+    }
 
     @Test
     public void testFindTopSellingPacksReturnsPackEntityAndUnitsSoldOrdered() {

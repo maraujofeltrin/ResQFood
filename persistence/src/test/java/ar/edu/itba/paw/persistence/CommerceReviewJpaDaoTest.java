@@ -170,6 +170,21 @@ public class CommerceReviewJpaDaoTest {
     }
 
     @Test
+    public void testFindByCommerceIdReturnsReviewsWithClientData() {
+        // 1. Setup
+        commerceReviewDao.createReview(commerceId, clientId, RATING, BODY);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<CommerceReview> reviews = commerceReviewDao.findByCommerceId(commerceId, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, reviews.size());
+        assertEquals("Client Last", reviews.get(0).getClient().getFullName());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerce_reviews"));
+    }
+
+    @Test
     public void testCountByCommerceIdWhenOneReviewExists() {
         // 1. Setup
         commerceReviewDao.createReview(commerceId, clientId, RATING, BODY);

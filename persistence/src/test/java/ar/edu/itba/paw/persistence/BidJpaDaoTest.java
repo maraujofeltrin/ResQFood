@@ -125,6 +125,21 @@ public class BidJpaDaoTest {
 
 
     @Test
+    public void testFindByAuctionIdReturnsBidsWithClientData() {
+        // 1. Setup
+        bidDao.createBid(auctionId, clientId, 600.0);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Bid> bids = bidDao.findByAuctionId(auctionId, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, bids.size());
+        assertEquals("Client Last", bids.get(0).getClient().getFullName());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "bids"));
+    }
+
+    @Test
     public void testFindMaxBidsByClientForAuctions() {
         // 1. Setup
         bidDao.createBid(auctionId, clientId, 50.0);

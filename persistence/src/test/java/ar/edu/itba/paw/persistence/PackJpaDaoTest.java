@@ -98,6 +98,26 @@ public class PackJpaDaoTest {
 
 
     @Test
+    public void testFindByIdWhenPackExistsReturnsPackWithTagsAndCommerce() {
+        // 1. Setup
+        final Pack created = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10,
+                Collections.singletonList(PackTag.SWEET), null);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final Optional<Pack> pack = packDao.findById(created.getId());
+
+        // 3. Asserts
+        assertTrue(pack.isPresent());
+        assertEquals(created.getId(), pack.get().getId());
+        assertEquals("Title", pack.get().getTitle());
+        assertEquals(1, pack.get().getTags().size());
+        assertEquals("Comm", pack.get().getCommerce().getCommercialName());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
+
+    @Test
     public void testFindByIdWhenPackDoesNotExist() {
         // 1. Setup
         // No pack row for this id.
@@ -375,6 +395,21 @@ public class PackJpaDaoTest {
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 
+
+    @Test
+    public void testFilterPacksReturnsPacksWithCommerceData() {
+        // 1. Setup
+        packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, null, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Pack> packs = packDao.filterPacks(null, null, null, null, PackSortOption.DATE_DESC, 1, 10, false, null);
+
+        // 3. Asserts
+        assertFalse(packs.isEmpty());
+        assertEquals("Comm", packs.get(0).getCommerce().getCommercialName());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+    }
 
     @Test
     public void testFilterPacksOrdersByPriceAscWhenMultiplePacksExist() {
@@ -662,6 +697,27 @@ public class PackJpaDaoTest {
         assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
     }
 
+
+    @Test
+    public void testFilterCommercePacksReturnsAuctionPackWithAuctionData() {
+        // 1. Setup
+        final Pack auctionPack = packDao.createPack(commerceId, "Auction", "Desc", 100.0, 50.0, 1, null, null);
+        em.flush();
+        auctionDao.createAuction(auctionPack.getId(), 10.0, 1.0, EXPIRED_AUCTION_END);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final List<Pack> packs = packDao.filterCommercePacks(commerceId, null, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, packs.size());
+        assertEquals(auctionPack.getId(), packs.get(0).getId());
+        assertNotNull(packs.get(0).getAuction());
+        assertEquals(Auction.Status.ACTIVE, packs.get(0).getAuction().getStatus());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "auctions"));
+    }
 
     @Test
     public void testFilterCommercePacksLeavesAuctionNullWhenPackIsDirect() {

@@ -113,6 +113,22 @@ public class CommerceJpaDaoTest {
 
 
     @Test
+    public void testFindByUserIdReturnsCommerceWithAccessibleUser() {
+        // 1. Setup
+        commerceDao.createCommerce(userId, COMMERCIAL_NAME, CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final Optional<Commerce> commerce = commerceDao.findByUserId(userId);
+
+        // 3. Asserts
+        assertTrue(commerce.isPresent());
+        assertEquals(EMAIL, commerce.get().getUser().getEmail());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerces"));
+    }
+
+    @Test
     public void testFindByUserIdWhenCommerceDoesNotExist() {
         // 1. Setup
         // No commerce row for the user created in setUp().
@@ -244,6 +260,21 @@ public class CommerceJpaDaoTest {
         assertEquals("Restaurant Place", restaurants.get(0).getCommercialName());
     }
 
+
+    @Test
+    public void testFilterCommercesReturnsCommercesWithAccessibleUser() {
+        // 1. Setup
+        commerceDao.createCommerce(userId, COMMERCIAL_NAME, CATEGORY, STREET, STREET_NUMBER, CITY, PROVINCE, POSTAL_CODE, OPENING_TIME, CLOSING_TIME);
+        em.flush();
+
+        // 2. Ejercicio
+        final java.util.List<Commerce> commerces = commerceDao.filterCommerces(null, null, null, 1, 10);
+
+        // 3. Asserts
+        assertEquals(1, commerces.size());
+        assertEquals(EMAIL, commerces.get(0).getUser().getEmail());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "commerces"));
+    }
 
     @Test
     public void testFilterCommercesWhenSecondPageRequestedReturnsRemainingCommerce() {

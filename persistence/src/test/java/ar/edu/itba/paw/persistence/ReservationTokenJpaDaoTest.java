@@ -133,6 +133,24 @@ public class ReservationTokenJpaDaoTest {
 
 
     @Test
+    public void testFindByTokenReturnsReservationWithPackAndCommerce() {
+        // 1. Setup
+        reservationTokenDao.create("token123", reservationId, ReservationToken.Action.ACCEPT, TOKEN_CREATED,
+                TOKEN_EXPIRES);
+        em.flush();
+        em.clear();
+
+        // 2. Ejercicio
+        final Optional<ReservationToken> found = reservationTokenDao.findByToken("token123");
+
+        // 3. Asserts
+        assertTrue(found.isPresent());
+        assertEquals("Pack", found.get().getReservation().getPack().getTitle());
+        assertEquals("Comm", found.get().getReservation().getPack().getCommerce().getCommercialName());
+        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "reservation_tokens"));
+    }
+
+    @Test
     public void testMarkAsUsedWhenTokenExists() {
         // 1. Setup
         reservationTokenDao.create("token123", reservationId, ReservationToken.Action.REJECT, TOKEN_CREATED,
