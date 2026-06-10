@@ -200,15 +200,17 @@ uri="http://java.sun.com/jsp/jstl/functions" %>
             <h3 class="text-lg font-headline font-bold mb-4">
               <spring:message code="commerce.metrics.topPacks" />
             </h3>
-            <div class="space-y-4">
+            <div class="space-y-2">
               <c:forEach var="p" items="${topPacks}" varStatus="st">
-                <div class="flex items-center justify-between">
+                <a href="${pageContext.request.contextPath}/packs/${p.packId}"
+                   class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-high transition-all duration-200 group no-underline text-inherit"
+                   title="<spring:message code='commerce.metrics.viewPack' />">
                   <div class="flex items-center gap-3">
-                    <div class="w-8 text-secondary font-medium">
+                    <div class="w-8 text-secondary font-medium group-hover:text-primary transition-colors">
                       <c:out value="${st.index + 1}" />
                     </div>
                     <div>
-                      <div class="font-medium text-on-surface">
+                      <div class="font-medium text-on-surface group-hover:text-primary transition-colors">
                         <c:out value="${p.packTitle}" />
                       </div>
                       <div class="text-sm text-secondary">
@@ -217,12 +219,8 @@ uri="http://java.sun.com/jsp/jstl/functions" %>
                       </div>
                     </div>
                   </div>
-                  <a href="${pageContext.request.contextPath}/commerce/edit-pack/${p.packId}"
-                     class="text-secondary hover:text-primary p-2 flex items-center justify-center rounded-full hover:bg-surface-container-highest transition-colors"
-                     title="<spring:message code='commerce.metrics.editPack' />">
-                    <span class="material-symbols-outlined text-[1.25rem]">edit</span>
-                  </a>
-                </div>
+                  <span class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors text-[1.25rem]">arrow_forward</span>
+                </a>
               </c:forEach>
             </div>
             <c:if test="${not empty topPacks}">
