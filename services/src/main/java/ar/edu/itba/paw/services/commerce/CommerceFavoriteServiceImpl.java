@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.commerce;
 
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.CommerceFavoriteToggleException;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.CommerceFavoriteDao;
@@ -48,7 +49,7 @@ public class CommerceFavoriteServiceImpl implements CommerceFavoriteService {
 
     @Transactional
     @Override
-    public void toggleFavorite(final long clientUserId, final long commerceId) {
+    public void toggleFavorite(final long clientUserId, final long commerceId) throws CommerceFavoriteToggleException {
         if (commerceFavoriteDao.exists(clientUserId, commerceId)) {
             commerceFavoriteDao.delete(clientUserId, commerceId);
             LOGGER.info("User {} removed commerce {} from favorites", clientUserId, commerceId);
@@ -56,7 +57,9 @@ public class CommerceFavoriteServiceImpl implements CommerceFavoriteService {
         }
         commerceDao.findByUserId(commerceId).orElseThrow(() -> {
             LOGGER.warn("Commerce favorite toggle rejected: commerce not found commerceId={} clientUserId={}", commerceId, clientUserId);
-            return new IllegalArgumentException("Commerce not found: " + commerceId);
+            return new CommerceFavoriteToggleException(
+                    CommerceFavoriteToggleException.Reason.COMMERCE_NOT_FOUND,
+                    "Commerce not found: " + commerceId);
         });
         commerceFavoriteDao.insert(clientUserId, commerceId);
         LOGGER.info("User {} added commerce {} to favorites", clientUserId, commerceId);

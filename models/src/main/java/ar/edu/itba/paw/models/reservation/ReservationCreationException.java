@@ -9,6 +9,8 @@ public class ReservationCreationException extends RuntimeException {
         INVALID_QUANTITY,
         PICKUP_WINDOW_TOO_LONG,
         NOT_A_CLIENT,
+        USER_NOT_FOUND,
+        CLIENT_PROFILE_NOT_FOUND,
         INSUFFICIENT_STOCK,
         INVALID_STATUS,
         RESERVATION_NOT_FOUND,

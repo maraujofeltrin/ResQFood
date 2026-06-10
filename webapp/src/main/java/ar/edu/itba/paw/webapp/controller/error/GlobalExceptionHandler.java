@@ -6,6 +6,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import ar.edu.itba.paw.models.pack.PackDirectEditException;
+import ar.edu.itba.paw.models.reservation.ReservationCreationException;
+import ar.edu.itba.paw.models.user.CommerceFavoriteToggleException;
 import ar.edu.itba.paw.services.security.OwnershipResourceNotFoundException;
 
 import org.slf4j.Logger;
@@ -83,6 +85,40 @@ public class GlobalExceptionHandler {
         LOGGER.debug("Ownership resource not found for {} {}: {}", request.getMethod(), request.getRequestURI(),
                 e.getMessage());
         response.sendError(HttpServletResponse.SC_NOT_FOUND);
+    }
+
+    @ExceptionHandler(CommerceFavoriteToggleException.class)
+    public void handleCommerceFavoriteToggle(final CommerceFavoriteToggleException e,
+            final HttpServletRequest request,
+            final HttpServletResponse response) throws IOException {
+        if (e.getReason() == CommerceFavoriteToggleException.Reason.COMMERCE_NOT_FOUND) {
+            LOGGER.debug("Commerce favorite toggle rejected for {} {}: {}", request.getMethod(), request.getRequestURI(),
+                    e.getMessage());
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        LOGGER.debug("Commerce favorite toggle failed for {} {}: {}", request.getMethod(), request.getRequestURI(),
+                e.getMessage());
+        response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ReservationCreationException.class)
+    public void handleReservationCreation(final ReservationCreationException e,
+            final HttpServletRequest request,
+            final HttpServletResponse response) throws IOException {
+        if (!isReservationNotFoundReason(e.getReason())) {
+            throw e;
+        }
+        LOGGER.debug("Reservation resource not found for {} {}: {}", request.getMethod(), request.getRequestURI(),
+                e.getMessage());
+        response.sendError(HttpServletResponse.SC_NOT_FOUND);
+    }
+
+    private static boolean isReservationNotFoundReason(final ReservationCreationException.Reason reason) {
+        return reason == ReservationCreationException.Reason.USER_NOT_FOUND
+                || reason == ReservationCreationException.Reason.CLIENT_PROFILE_NOT_FOUND
+                || reason == ReservationCreationException.Reason.RESERVATION_NOT_FOUND
+                || reason == ReservationCreationException.Reason.PACK_NOT_FOUND;
     }
 
     @ExceptionHandler(PackDirectEditException.class)

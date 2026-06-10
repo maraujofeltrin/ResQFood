@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.commerce;
 
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.CommerceFavoriteToggleException;
 import ar.edu.itba.paw.models.user.User;
 
 import java.util.List;
@@ -14,9 +15,9 @@ public interface CommerceFavoriteService {
     boolean isFavorite(long clientUserId, long commerceId);
 
     /**
-     * @throws IllegalArgumentException if the commerce is not found
+     * @throws CommerceFavoriteToggleException if the commerce is not found
      */
-    void toggleFavorite(long clientUserId, long commerceId);
+    void toggleFavorite(long clientUserId, long commerceId) throws CommerceFavoriteToggleException;
 
     List<User> findFavoritingClients(long commerceId);
 }

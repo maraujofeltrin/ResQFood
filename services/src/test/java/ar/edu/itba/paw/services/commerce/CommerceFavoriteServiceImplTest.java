@@ -1,6 +1,7 @@
 package ar.edu.itba.paw.services.commerce;
 
 import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.CommerceFavoriteToggleException;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.CommerceDao;
 import ar.edu.itba.paw.persistence.CommerceFavoriteDao;
@@ -77,16 +78,17 @@ class CommerceFavoriteServiceImplTest {
     }
 
     @Test
-    void testToggleFavoriteWhenCommerceDoesNotExistThrowsIllegalArgumentException() {
+    void testToggleFavoriteWhenCommerceDoesNotExistThrowsCommerceFavoriteToggleException() {
         // 1. Setup
         when(commerceFavoriteDao.exists(5L, 10L)).thenReturn(false);
         when(commerceDao.findByUserId(10L)).thenReturn(Optional.empty());
 
         // 2. Ejercicio
-        final IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+        final CommerceFavoriteToggleException thrown = assertThrows(CommerceFavoriteToggleException.class,
                 () -> commerceFavoriteService.toggleFavorite(5L, 10L));
 
         // 3. Asserts
+        assertEquals(CommerceFavoriteToggleException.Reason.COMMERCE_NOT_FOUND, thrown.getReason());
         assertEquals("Commerce not found: 10", thrown.getMessage());
     }
 

@@ -94,12 +94,14 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         final User user = userService.findById(userId)
-                .orElseThrow(() -> new IllegalStateException("User not found for id: " + userId));
+                .orElseThrow(() -> new ReservationCreationException(
+                        ReservationCreationException.Reason.USER_NOT_FOUND, String.valueOf(userId)));
         if (user.getRole() != User.Role.CLIENT) {
             throw new ReservationCreationException(ReservationCreationException.Reason.NOT_A_CLIENT);
         }
         clientService.findByUserId(userId)
-                .orElseThrow(() -> new IllegalStateException("Client profile not found for user id: " + userId));
+                .orElseThrow(() -> new ReservationCreationException(
+                        ReservationCreationException.Reason.CLIENT_PROFILE_NOT_FOUND, String.valueOf(userId)));
 
         if (!packService.decrementStock(packId, quantity)) {
             throw new ReservationCreationException(ReservationCreationException.Reason.INSUFFICIENT_STOCK, String.valueOf(packId));
@@ -120,7 +122,8 @@ public class ReservationServiceImpl implements ReservationService {
                 pickupWindow);
 
         final Reservation reservation = reservationDao.findByIdWithDetails(persisted.getId())
-                .orElseThrow(() -> new IllegalStateException("Reservation not found: " + persisted.getId()));
+                .orElseThrow(() -> new ReservationCreationException(
+                        ReservationCreationException.Reason.RESERVATION_NOT_FOUND, String.valueOf(persisted.getId())));
         final User commerceUser = reservation.getPack().getCommerce().getUser();
         final String commerceEmail = commerceUser.getEmail();
         final java.util.Locale commerceLocale = commerceUser.getLocale();
@@ -253,7 +256,8 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public Reservation confirmPickup(final Long id) {
         final Reservation reservation = reservationDao.findById(id)
-                .orElseThrow(() -> new IllegalStateException("Reservation not found: " + id));
+                .orElseThrow(() -> new ReservationCreationException(
+                        ReservationCreationException.Reason.RESERVATION_NOT_FOUND, String.valueOf(id)));
         if (reservation.getStatus() != Reservation.Status.RESERVED) {
             throw new ReservationCreationException(ReservationCreationException.Reason.INVALID_STATUS, reservation.getStatus().name());
         }
@@ -408,7 +412,8 @@ public class ReservationServiceImpl implements ReservationService {
 
         confirmPickup(reservation.getId());
         final Reservation confirmed = reservationDao.findByIdWithDetails(reservation.getId())
-                .orElseThrow(() -> new IllegalStateException("Reservation not found after pickup: " + reservation.getId()));
+                .orElseThrow(() -> new ReservationCreationException(
+                        ReservationCreationException.Reason.RESERVATION_NOT_FOUND, String.valueOf(reservation.getId())));
         return ReservationServiceResult.success(confirmed);
     }
 

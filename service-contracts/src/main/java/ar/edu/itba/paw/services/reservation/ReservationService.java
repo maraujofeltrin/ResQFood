@@ -44,7 +44,7 @@ public interface ReservationService {
      *
      * @param reservationId reservation to reject
      * @return the updated Reservation in CANCELED status
-     * @throws IllegalStateException if reservation cannot be rejected in its current state
+     * @throws ar.edu.itba.paw.models.reservation.ReservationCreationException if rejection fails
      */
     Reservation rejectReservation(Long reservationId);
 

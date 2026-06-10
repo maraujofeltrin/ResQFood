@@ -199,6 +199,34 @@ class ReservationServiceImplTest {
     }
 
     @Test
+    void testCreateReservationWhenUserNotFoundThrowsReservationCreationException() {
+        // 1. Setup
+        when(userService.findById(2L)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final ReservationCreationException ex = assertThrows(ReservationCreationException.class,
+                () -> reservationService.createReservation(20L, 2L, 1, 5.0, "pw", false));
+
+        // 3. Asserts
+        assertEquals(ReservationCreationException.Reason.USER_NOT_FOUND, ex.getReason());
+    }
+
+    @Test
+    void testCreateReservationWhenClientProfileNotFoundThrowsReservationCreationException() {
+        // 1. Setup
+        final User clientUser = new User(3L, "user@example.org", "pwd", "Test User", null, User.Role.CLIENT, false);
+        when(userService.findById(3L)).thenReturn(Optional.of(clientUser));
+        when(clientService.findByUserId(3L)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final ReservationCreationException ex = assertThrows(ReservationCreationException.class,
+                () -> reservationService.createReservation(30L, 3L, 1, 5.0, "pw", false));
+
+        // 3. Asserts
+        assertEquals(ReservationCreationException.Reason.CLIENT_PROFILE_NOT_FOUND, ex.getReason());
+    }
+
+    @Test
     void testCreateReservationWhenPickupWindowTooLongDoesNotPersistOrSendMail() {
         // 1. Setup
         final StringBuilder sb = new StringBuilder();
@@ -251,6 +279,20 @@ class ReservationServiceImplTest {
         // 3. Asserts
         assertEquals(Reservation.Status.PAID, confirmed.getStatus());
         assertNotNull(confirmed.getPickupConfirmationDate());
+    }
+
+    @Test
+    void testConfirmPickupWhenReservationNotFoundThrowsReservationCreationException() {
+        // 1. Setup
+        final long reservationId = 99L;
+        when(reservationDao.findById(reservationId)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final ReservationCreationException ex = assertThrows(ReservationCreationException.class,
+                () -> reservationService.confirmPickup(reservationId));
+
+        // 3. Asserts
+        assertEquals(ReservationCreationException.Reason.RESERVATION_NOT_FOUND, ex.getReason());
     }
 
     @Test
