@@ -438,7 +438,7 @@ public class ReservationJpaDao implements ReservationDao {
     @Override
     public long countNewClientsInPeriod(final Long commerceId, final LocalDateTime from,
             final LocalDateTime to) {
-        final Number count = em.createQuery("SELECT COUNT(DISTINCT r.customer.userId) FROM Reservation r JOIN r.pack p WHERE p.commerce.userId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end AND NOT EXISTS (SELECT 1 FROM Reservation r2 WHERE r2.customer.userId = r.customer.userId AND r2.pickupConfirmationDate < :start)", Number.class)
+        final Number count = em.createQuery("SELECT COUNT(DISTINCT r.customer.userId) FROM Reservation r JOIN r.pack p WHERE p.commerce.userId = :commerceId AND r.status = :status AND r.pickupConfirmationDate >= :start AND r.pickupConfirmationDate < :end AND NOT EXISTS (SELECT 1 FROM Reservation r2 JOIN r2.pack p2 WHERE r2.customer.userId = r.customer.userId AND p2.commerce.userId = :commerceId AND r2.status = :status AND r2.pickupConfirmationDate < :start)", Number.class)
                 .setParameter("commerceId", commerceId)
                 .setParameter("status", Reservation.Status.PAID)
                 .setParameter("start", from)
