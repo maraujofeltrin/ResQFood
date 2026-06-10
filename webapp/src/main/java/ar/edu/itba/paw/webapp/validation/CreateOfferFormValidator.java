@@ -95,21 +95,28 @@ public class CreateOfferFormValidator implements Validator {
                     messageSource.getMessage("commerce.createAuction.validation.initialPrice.positive", null, locale));
         }
 
-        if (form.getInitialPrice() != null && form.getOriginalPrice() != null) {
-            final Double initialPrice = form.getInitialPrice();
-            final Double originalPrice = form.getOriginalPrice();
-            if (initialPrice > originalPrice) {
-                errors.rejectValue("initialPrice", "error.initialPrice",
-                        messageSource.getMessage("commerce.createAuction.validation.initialPrice.exceedsOriginal", null, locale));
-            }
-        }
-
         if (form.getMinBidIncrement() == null) {
             errors.rejectValue("minBidIncrement", "error.minBidIncrement",
                     messageSource.getMessage("commerce.createAuction.validation.minBidIncrement.notNull", null, locale));
         } else if (form.getMinBidIncrement() <= 0) {
             errors.rejectValue("minBidIncrement", "error.minBidIncrement",
                     messageSource.getMessage("commerce.createAuction.validation.minBidIncrement.positive", null, locale));
+        }
+
+        if (form.getInitialPrice() != null && form.getOriginalPrice() != null) {
+            final double initialPrice = form.getInitialPrice();
+            final double originalPrice = form.getOriginalPrice();
+            final Double minBidIncrement = form.getMinBidIncrement();
+            if (minBidIncrement != null && minBidIncrement > 0) {
+                final double maxInitialPrice = originalPrice - minBidIncrement;
+                if (initialPrice > maxInitialPrice) {
+                    errors.rejectValue("initialPrice", "error.initialPrice",
+                            messageSource.getMessage("commerce.createAuction.validation.initialPrice.exceedsMaxAllowed", null, locale));
+                }
+            } else if (initialPrice >= originalPrice) {
+                errors.rejectValue("initialPrice", "error.initialPrice",
+                        messageSource.getMessage("commerce.createAuction.validation.initialPrice.exceedsOriginal", null, locale));
+            }
         }
 
         if (form.getEndDate() == null || form.getEndDate().isBlank()) {
