@@ -55,15 +55,15 @@ public class ReservationListController {
     }
 
     @PostMapping("/{id}/reject")
-    @PreAuthorize("@own.canWriteReservation(#reservationId, authentication.principal.id)")
-    public String rejectReservationFromCard(@PathVariable("id") final Long reservationId,
+    @PreAuthorize("@own.canWriteReservation(#id, authentication.principal.id)")
+    public String rejectReservationFromCard(@PathVariable("id") final Long id,
             @RequestParam(value = "page", required = false) final Integer page,
             @RequestParam(value = "q", required = false) final String query,
             @RequestParam(value = "status", required = false) final Reservation.Status status,
             final RedirectAttributes redirectAttributes) {
 
         final ReservationServiceResult<ReservationRejectionError> result =
-                reservationService.tryRejectReservation(reservationId);
+                reservationService.tryRejectReservation(id);
         if (result.isSuccess()) {
             redirectAttributes.addFlashAttribute("reservationActionKind", "success");
             redirectAttributes.addFlashAttribute("reservationActionMessageCode", "commerce.reservations.action.reject.success");
