@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -489,5 +490,98 @@ class PackServiceImplTest {
 
         // 3. Asserts
         assertEquals(5, result.getStock());
+    }
+
+    @Test
+    void testDeletePackWhenPackNotFoundThrowsNotFound() {
+        // 1. Setup
+        when(packDao.findById(404L)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final PackDirectEditException exception = assertThrows(PackDirectEditException.class,
+                () -> packService.deletePack(404L));
+
+        // 3. Asserts
+        assertEquals(PackDirectEditException.Reason.NOT_FOUND, exception.getReason());
+    }
+
+    @Test
+    void testDeletePackWhenPackDeletedThrowsNotFound() {
+        // 1. Setup
+        final Pack pack = newPack(6L, 1L, "t", "d", 1.0, 1.0, 1, true, true, Collections.emptyList(), null);
+        when(packDao.findById(6L)).thenReturn(Optional.of(pack));
+
+        // 2. Ejercicio
+        final PackDirectEditException exception = assertThrows(PackDirectEditException.class,
+                () -> packService.deletePack(6L));
+
+        // 3. Asserts
+        assertEquals(PackDirectEditException.Reason.NOT_FOUND, exception.getReason());
+    }
+
+    @Test
+    void testDeletePackWhenAuctionExistsThrowsForbiddenAuction() {
+        // 1. Setup
+        final Pack pack = newPack(9L, 200L, "a", "d", 1.0, 1.0, 1, true, false, Collections.emptyList(), null);
+        final Auction auction = new Auction(2L, pack, 1.0, 0.5, 1.0, null,
+                LocalDateTime.now(ZoneOffset.UTC).plusDays(1), Auction.Status.ACTIVE, LocalDateTime.now(ZoneOffset.UTC));
+        pack.setAuction(auction);
+        when(packDao.findById(9L)).thenReturn(Optional.of(pack));
+
+        // 2. Ejercicio
+        final PackDirectEditException exception = assertThrows(PackDirectEditException.class,
+                () -> packService.deletePack(9L));
+
+        // 3. Asserts
+        assertEquals(PackDirectEditException.Reason.FORBIDDEN_AUCTION, exception.getReason());
+        assertEquals(PackDirectEditException.ForbiddenAction.DELETE, exception.getForbiddenAction());
+    }
+
+    @Test
+    void testDecrementStockWhenDaoSucceedsReturnsTrue() {
+        // 1. Setup
+        when(packDao.decrementStock(10L, 2)).thenReturn(true);
+
+        // 2. Ejercicio
+        final boolean result = packService.decrementStock(10L, 2);
+
+        // 3. Asserts
+        assertTrue(result);
+    }
+
+    @Test
+    void testDecrementStockWhenDaoFailsReturnsFalse() {
+        // 1. Setup
+        when(packDao.decrementStock(11L, 1)).thenReturn(false);
+
+        // 2. Ejercicio
+        final boolean result = packService.decrementStock(11L, 1);
+
+        // 3. Asserts
+        assertFalse(result);
+    }
+
+    @Test
+    void testIncrementStockWhenDaoSucceedsReturnsTrue() {
+        // 1. Setup
+        when(packDao.incrementStock(12L, 3)).thenReturn(true);
+
+        // 2. Ejercicio
+        final boolean result = packService.incrementStock(12L, 3);
+
+        // 3. Asserts
+        assertTrue(result);
+    }
+
+    @Test
+    void testIncrementStockWhenDaoFailsReturnsFalse() {
+        // 1. Setup
+        when(packDao.incrementStock(13L, 1)).thenReturn(false);
+
+        // 2. Ejercicio
+        final boolean result = packService.incrementStock(13L, 1);
+
+        // 3. Asserts
+        assertFalse(result);
     }
 }

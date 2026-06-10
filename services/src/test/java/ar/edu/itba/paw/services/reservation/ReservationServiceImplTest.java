@@ -3,6 +3,8 @@ package ar.edu.itba.paw.services.reservation;
 import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.pack.Municipality;
 import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.reservation.AlreadyUsedTokenStatus;
+import ar.edu.itba.paw.models.reservation.PickupByCodeError;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.reservation.ReservationCreationException;
 import ar.edu.itba.paw.models.reservation.ReservationRejectionError;
@@ -33,6 +35,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -227,6 +230,23 @@ class ReservationServiceImplTest {
     }
 
     @Test
+    void testCreateReservationWhenInsufficientStockThrowsReservationCreationException() {
+        // 1. Setup
+        final long packId = 40L;
+        final User clientUser = new User(4L, "user@example.org", "pwd", "Test", null, User.Role.CLIENT, false);
+        when(userService.findById(4L)).thenReturn(Optional.of(clientUser));
+        when(clientService.findByUserId(4L)).thenReturn(Optional.of(new Client(4L, "Test", "User", true)));
+        when(packService.decrementStock(packId, 2)).thenReturn(false);
+
+        // 2. Ejercicio
+        final ReservationCreationException ex = assertThrows(ReservationCreationException.class,
+                () -> reservationService.createReservation(packId, 4L, 2, 5.0, "pw", false));
+
+        // 3. Asserts
+        assertEquals(ReservationCreationException.Reason.INSUFFICIENT_STOCK, ex.getReason());
+    }
+
+    @Test
     void testCreateReservationWhenPickupWindowTooLongDoesNotPersistOrSendMail() {
         // 1. Setup
         final StringBuilder sb = new StringBuilder();
@@ -297,6 +317,60 @@ class ReservationServiceImplTest {
 
         // 3. Asserts
         assertEquals(ReservationRejectionError.ALREADY_COMPLETED, result.error().orElseThrow());
+    }
+
+    @Test
+    void testTryRejectReservationWhenNotFoundReturnsError() {
+        // 1. Setup
+        final long reservationId = 99L;
+        when(reservationDao.findByIdWithDetails(reservationId)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final ReservationServiceResult<ReservationRejectionError> result =
+                reservationService.tryRejectReservation(reservationId);
+
+        // 3. Asserts
+        assertFalse(result.isSuccess());
+        assertEquals(ReservationRejectionError.RESERVATION_NOT_FOUND, result.error().orElseThrow());
+    }
+
+    @Test
+    void testTryRejectReservationWhenPackMissingReturnsError() {
+        // 1. Setup
+        final long reservationId = 46L;
+        final Reservation reservation = new Reservation(reservationId, clientRef(103L), null, LocalDateTime.now(), 25.0,
+                Reservation.Status.RESERVED, "JJJJJ", null, 1, null);
+        when(reservationDao.findByIdWithDetails(reservationId)).thenReturn(Optional.of(reservation));
+
+        // 2. Ejercicio
+        final ReservationServiceResult<ReservationRejectionError> result =
+                reservationService.tryRejectReservation(reservationId);
+
+        // 3. Asserts
+        assertFalse(result.isSuccess());
+        assertEquals(ReservationRejectionError.PACK_NOT_FOUND, result.error().orElseThrow());
+    }
+
+    @Test
+    void testTryRejectReservationWhenStockRestoreFailsReturnsError() {
+        // 1. Setup
+        final long packId = 720L;
+        final long reservationId = 47L;
+        final Pack pack = packWithCommerceUser(packId, 100L, "commerce@example.org", "t");
+        final Client client = clientWithUser(105L, "client@example.org", "Client", "Name");
+        final Reservation reserved = new Reservation(reservationId, client, pack, LocalDateTime.now(), 25.0,
+                Reservation.Status.RESERVED, "LLLLL", null, 2, null);
+        when(reservationDao.findByIdWithDetails(reservationId)).thenReturn(Optional.of(reserved));
+        when(packService.incrementStock(packId, 2)).thenReturn(false);
+
+        // 2. Ejercicio
+        final ReservationServiceResult<ReservationRejectionError> result =
+                reservationService.tryRejectReservation(reservationId);
+
+        // 3. Asserts
+        assertFalse(result.isSuccess());
+        assertEquals(ReservationRejectionError.STOCK_RESTORE_FAILED, result.error().orElseThrow());
+        assertEquals(Reservation.Status.RESERVED, reserved.getStatus());
     }
 
     @Test
@@ -553,5 +627,223 @@ class ReservationServiceImplTest {
 
         // 3. Asserts
         assertEquals(DirectReservationCheck.Outcome.AUCTION_ENDED_NO_DIRECT, result.getOutcome());
+    }
+
+    @Test
+    void testCheckDirectPackReservationWhenPackInactiveReturnsBlocked() {
+        // 1. Setup
+        final Pack pack = newPack(30L, 1L, "inactive", "d", 10.0, 5.0, 3, false, Collections.emptyList());
+        when(packService.findById(30L)).thenReturn(Optional.of(pack));
+
+        // 2. Ejercicio
+        final DirectReservationCheck result = reservationService.checkDirectPackReservation(30L, 1);
+
+        // 3. Asserts
+        assertEquals(DirectReservationCheck.Outcome.PACK_UNAVAILABLE, result.getOutcome());
+    }
+
+    @Test
+    void testCheckDirectPackReservationWhenQuantityExceedsStockReturnsBlocked() {
+        // 1. Setup
+        final Pack pack = newPack(31L, 1L, "low-stock", "d", 10.0, 5.0, 2, true, Collections.emptyList());
+        when(packService.findById(31L)).thenReturn(Optional.of(pack));
+
+        // 2. Ejercicio
+        final DirectReservationCheck result = reservationService.checkDirectPackReservation(31L, 5);
+
+        // 3. Asserts
+        assertEquals(DirectReservationCheck.Outcome.QUANTITY_EXCEEDS_STOCK, result.getOutcome());
+        assertEquals(31L, result.getPack().orElseThrow().getId());
+    }
+
+    @Test
+    void testCheckDirectPackReservationWhenMissingFinalPriceReturnsBlocked() {
+        // 1. Setup
+        final Pack pack = newPack(32L, 1L, "no-price", "d", 10.0, 5.0, 3, true, Collections.emptyList());
+        pack.setFinalPrice(null);
+        when(packService.findById(32L)).thenReturn(Optional.of(pack));
+
+        // 2. Ejercicio
+        final DirectReservationCheck result = reservationService.checkDirectPackReservation(32L, 1);
+
+        // 3. Asserts
+        assertEquals(DirectReservationCheck.Outcome.MISSING_FINAL_PRICE, result.getOutcome());
+    }
+
+    @Test
+    void testConfirmPickupByCodeWhenCodeBlankReturnsError() {
+        // 1. Setup
+
+        // 2. Ejercicio
+        final ReservationServiceResult<PickupByCodeError> result =
+                reservationService.confirmPickupByCode("   ", 100L);
+
+        // 3. Asserts
+        assertEquals(PickupByCodeError.EMPTY, result.error().orElseThrow());
+    }
+
+    @Test
+    void testConfirmPickupByCodeWhenCodeNullReturnsError() {
+        // 1. Setup
+
+        // 2. Ejercicio
+        final ReservationServiceResult<PickupByCodeError> result =
+                reservationService.confirmPickupByCode(null, 100L);
+
+        // 3. Asserts
+        assertEquals(PickupByCodeError.EMPTY, result.error().orElseThrow());
+    }
+
+    @Test
+    void testConfirmPickupByCodeWhenCodeNotFoundReturnsError() {
+        // 1. Setup
+        when(reservationDao.findByPickupCode("UNKNOWN")).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final ReservationServiceResult<PickupByCodeError> result =
+                reservationService.confirmPickupByCode("unknown", 100L);
+
+        // 3. Asserts
+        assertFalse(result.isSuccess());
+        assertEquals(PickupByCodeError.NOT_FOUND, result.error().orElseThrow());
+    }
+
+    @Test
+    void testConfirmPickupByCodeWhenAlreadyCompletedReturnsError() {
+        // 1. Setup
+        final Pack pack = packWithCommerceUser(501L, 100L, "commerce@example.org", "pack");
+        final Reservation paid = new Reservation(51L, clientRef(1L), pack, LocalDateTime.now(), 10.0,
+                Reservation.Status.PAID, "PAID1", LocalDateTime.now(), 1, null);
+        when(reservationDao.findByPickupCode("PAID1")).thenReturn(Optional.of(paid));
+
+        // 2. Ejercicio
+        final ReservationServiceResult<PickupByCodeError> result =
+                reservationService.confirmPickupByCode("paid1", 100L);
+
+        // 3. Asserts
+        assertEquals(PickupByCodeError.ALREADY_COMPLETED, result.error().orElseThrow());
+    }
+
+    @Test
+    void testConfirmPickupByCodeWhenAlreadyCanceledReturnsError() {
+        // 1. Setup
+        final Pack pack = packWithCommerceUser(502L, 100L, "commerce@example.org", "pack");
+        final Reservation canceled = new Reservation(52L, clientRef(1L), pack, LocalDateTime.now(), 10.0,
+                Reservation.Status.CANCELED, "CANC1", null, 1, null);
+        when(reservationDao.findByPickupCode("CANC1")).thenReturn(Optional.of(canceled));
+
+        // 2. Ejercicio
+        final ReservationServiceResult<PickupByCodeError> result =
+                reservationService.confirmPickupByCode("canc1", 100L);
+
+        // 3. Asserts
+        assertEquals(PickupByCodeError.ALREADY_CANCELED, result.error().orElseThrow());
+    }
+
+    @Test
+    void testConfirmPickupByCodeWhenWrongCommerceReturnsError() {
+        // 1. Setup
+        final Pack pack = packWithCommerceUser(503L, 100L, "commerce@example.org", "pack");
+        final Reservation reserved = new Reservation(53L, clientRef(1L), pack, LocalDateTime.now(), 10.0,
+                Reservation.Status.RESERVED, "WRONG", null, 1, null);
+        when(reservationDao.findByPickupCode("WRONG")).thenReturn(Optional.of(reserved));
+
+        // 2. Ejercicio
+        final ReservationServiceResult<PickupByCodeError> result =
+                reservationService.confirmPickupByCode("wrong", 999L);
+
+        // 3. Asserts
+        assertEquals(PickupByCodeError.WRONG_COMMERCE, result.error().orElseThrow());
+    }
+
+    @Test
+    void testConfirmPickupByCodeWhenValidConfirmsPickup() {
+        // 1. Setup
+        final long commerceUserId = 100L;
+        final Pack pack = packWithCommerceUser(504L, commerceUserId, "commerce@example.org", "pack");
+        final Reservation reserved = new Reservation(54L, clientRef(1L), pack, LocalDateTime.now(), 10.0,
+                Reservation.Status.RESERVED, "CODE5", null, 1, null);
+        when(reservationDao.findByPickupCode("CODE5")).thenReturn(Optional.of(reserved));
+        when(reservationDao.findById(54L)).thenReturn(Optional.of(reserved));
+        when(reservationDao.findByIdWithDetails(54L)).thenAnswer(invocation -> Optional.of(reserved));
+
+        // 2. Ejercicio
+        final ReservationServiceResult<PickupByCodeError> result =
+                reservationService.confirmPickupByCode(" code5 ", commerceUserId);
+
+        // 3. Asserts
+        assertTrue(result.isSuccess());
+        assertEquals(Reservation.Status.PAID, result.reservation().orElseThrow().getStatus());
+        assertNotNull(result.reservation().orElseThrow().getPickupConfirmationDate());
+    }
+
+    @Test
+    void testGetAlreadyUsedTokenStatusWhenPaidReturnsAccepted() {
+        // 1. Setup
+        final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        final Reservation paid = new Reservation(60L, clientRef(1L), packRef(1L), now, 5.0,
+                Reservation.Status.PAID, "c", now, 1, null);
+        final ReservationToken token = new ReservationToken("tok-paid", paid, ReservationToken.Action.ACCEPT, true,
+                now, now.plusHours(1));
+        when(reservationTokenDao.findByToken("tok-paid")).thenReturn(Optional.of(token));
+        when(reservationDao.findById(60L)).thenReturn(Optional.of(paid));
+
+        // 2. Ejercicio
+        final Optional<AlreadyUsedTokenStatus> status =
+                reservationService.getAlreadyUsedTokenStatus("tok-paid");
+
+        // 3. Asserts
+        assertEquals(AlreadyUsedTokenStatus.ACCEPTED, status.orElseThrow());
+    }
+
+    @Test
+    void testGetAlreadyUsedTokenStatusWhenCanceledReturnsRejected() {
+        // 1. Setup
+        final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        final Reservation canceled = new Reservation(61L, clientRef(1L), packRef(1L), now, 5.0,
+                Reservation.Status.CANCELED, "c", null, 1, null);
+        final ReservationToken token = new ReservationToken("tok-rej", canceled, ReservationToken.Action.REJECT, true,
+                now, now.plusHours(1));
+        when(reservationTokenDao.findByToken("tok-rej")).thenReturn(Optional.of(token));
+        when(reservationDao.findById(61L)).thenReturn(Optional.of(canceled));
+
+        // 2. Ejercicio
+        final Optional<AlreadyUsedTokenStatus> status =
+                reservationService.getAlreadyUsedTokenStatus("tok-rej");
+
+        // 3. Asserts
+        assertEquals(AlreadyUsedTokenStatus.REJECTED, status.orElseThrow());
+    }
+
+    @Test
+    void testGetAlreadyUsedTokenStatusWhenTokenMissingReturnsEmpty() {
+        // 1. Setup
+        when(reservationTokenDao.findByToken("missing")).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final Optional<AlreadyUsedTokenStatus> status =
+                reservationService.getAlreadyUsedTokenStatus("missing");
+
+        // 3. Asserts
+        assertTrue(status.isEmpty());
+    }
+
+    @Test
+    void testGetAlreadyUsedTokenStatusWhenReservationStillReservedReturnsEmpty() {
+        // 1. Setup
+        final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        final Reservation reserved = new Reservation(62L, clientRef(1L), packRef(1L), now, 5.0,
+                Reservation.Status.RESERVED, "c", null, 1, null);
+        final ReservationToken token = new ReservationToken("tok-open", reserved, ReservationToken.Action.ACCEPT, true,
+                now, now.plusHours(1));
+        when(reservationTokenDao.findByToken("tok-open")).thenReturn(Optional.of(token));
+        when(reservationDao.findById(62L)).thenReturn(Optional.of(reserved));
+
+        // 2. Ejercicio
+        final Optional<AlreadyUsedTokenStatus> status =
+                reservationService.getAlreadyUsedTokenStatus("tok-open");
+
+        // 3. Asserts
+        assertTrue(status.isEmpty());
     }
 }
