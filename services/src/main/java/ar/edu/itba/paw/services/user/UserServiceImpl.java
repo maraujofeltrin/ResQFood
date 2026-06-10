@@ -202,6 +202,16 @@ public class UserServiceImpl implements UserService {
 
     @Transactional
     @Override
+    public void removeProfilePhoto(final long userId) {
+        userDao.findById(userId).orElseThrow(() -> {
+            LOGGER.warn("removeProfilePhoto: user not found userId={}", userId);
+            return new NoSuchElementException("User not found: " + userId);
+        });
+        userDao.updateProfileImage(userId, null);
+    }
+
+    @Transactional
+    @Override
     public void updatePreferredLocale(final long userId, final Locale locale) {
         SupportedUserLocales.assertSupported(locale);
         final String lang = locale.getLanguage().toLowerCase(Locale.ROOT);

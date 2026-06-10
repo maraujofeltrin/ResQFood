@@ -163,7 +163,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (removeBtn) {
         removeBtn.addEventListener('click', function() {
             imageInput.value = '';
-            resetToOriginal();
+            previewImg.src = '';
+            previewState.classList.add('hidden');
+            emptyState.classList.remove('hidden');
         });
     }
 });

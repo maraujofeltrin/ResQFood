@@ -109,8 +109,12 @@ public class ProfileController {
                     profileAccountForm.getOpeningTime(),
                     profileAccountForm.getClosingTime(),
                     photo,
-                    contentType);
-            if (photo != null && photo.length > 0) {
+                    contentType,
+                    profileAccountForm.isRemovePhoto());
+            if (profileAccountForm.isRemovePhoto()) {
+                AuthUserLocaleSupport.updateSessionProfileImageId(
+                        SecurityContextHolder.getContext().getAuthentication(), null);
+            } else if (photo != null && photo.length > 0) {
                 userService.findById(user.getId())
                         .map(User::getProfileImageId)
                         .ifPresent(imageId -> AuthUserLocaleSupport.updateSessionProfileImageId(

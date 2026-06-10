@@ -209,6 +209,8 @@
 
                                     <c:set var="profileExistingImageUrl" value="${pageContext.request.contextPath}/images/${not empty profile.profileImageId ? profile.profileImageId : profile.profileImageFileName}" />
 
+                                    <form:hidden path="removePhoto" id="profile-photo-remove-input" />
+
                                     <paw:imageUpload path="photo"
                                         inputId="profile-photo-input"
                                         existingImageUrl="${profileExistingImageUrl}"
@@ -226,6 +228,28 @@
                                         maxSizeErrorCode="profile.photo.maxSize"
                                         invalidTypeErrorCode="profile.photo.invalidType"
                                         errorsClass="mt-3 text-xs text-error font-body max-w-[14rem] text-center sm:text-left block" />
+
+                                    <script>
+                                        document.addEventListener("DOMContentLoaded", function () {
+                                            var removeInput = document.getElementById('profile-photo-remove-input');
+                                            var removeBtn = document.getElementById('profile-photo-input-remove-btn');
+                                            var fileInput = document.getElementById('profile-photo-input');
+
+                                            if (removeBtn && removeInput) {
+                                                removeBtn.addEventListener('click', function () {
+                                                    removeInput.value = 'true';
+                                                });
+                                            }
+
+                                            if (fileInput && removeInput) {
+                                                fileInput.addEventListener('change', function () {
+                                                    if (fileInput.files && fileInput.files.length > 0) {
+                                                        removeInput.value = 'false';
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    </script>
 
                                     <c:if test="${not empty profilePhotoUpdateError}">
                                         <p class="mt-3 text-xs text-error font-body max-w-[14rem] text-center sm:text-left leading-relaxed" role="alert">

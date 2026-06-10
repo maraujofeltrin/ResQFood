@@ -24,6 +24,11 @@ public interface UserService {
      */
     void updateProfilePhoto(long userId, byte[] data, String contentType);
 
+    /**
+     * Elimina la foto de perfil del usuario.
+     */
+    void removeProfilePhoto(long userId);
+
     /** Persiste {@code es} o {@code en} como preferencia de idioma (UI y correos). */
     void updatePreferredLocale(long userId, Locale locale);
 }

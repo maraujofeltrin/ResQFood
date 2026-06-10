@@ -295,4 +295,27 @@ class UserServiceImplTest {
         assertEquals(RegisterResult.Outcome.DUPLICATE_EMAIL, result.getOutcome());
         assertTrue(result.getUser().isEmpty());
     }
+
+    @Test
+    void testRemoveProfilePhotoWhenUserMissingThrowsNoSuchElementException() {
+        // 1. Setup
+        when(userDao.findById(404L)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final NoSuchElementException thrown = assertThrows(NoSuchElementException.class,
+                () -> userService.removeProfilePhoto(404L));
+
+        // 3. Asserts
+        assertTrue(thrown.getMessage().contains("404"));
+    }
+
+    @Test
+    void testRemoveProfilePhotoSuccessDoesNotThrow() {
+        // 1. Setup
+        final User u = new User(1L, "user@test.com", "pw", "Name", null, null, false);
+        when(userDao.findById(1L)).thenReturn(Optional.of(u));
+
+        // 2. Ejercicio & 3. Asserts
+        userService.removeProfilePhoto(1L);
+    }
 }

@@ -14,6 +14,15 @@ public class ProfileAccountForm {
     private String category;
     private String openingTime;
     private String closingTime;
+    private boolean removePhoto;
+
+    public boolean isRemovePhoto() {
+        return removePhoto;
+    }
+
+    public void setRemovePhoto(final boolean removePhoto) {
+        this.removePhoto = removePhoto;
+    }
 
     public MultipartFile getPhoto() {
         return photo;

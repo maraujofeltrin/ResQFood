@@ -53,7 +53,10 @@ public class ProfileAccountFormValidator implements Validator {
                 imageMultipartValidator.validate(form.getPhoto(), errors, "photo", locale, false);
             }
         } else {
-            imageMultipartValidator.validate(form.getPhoto(), errors, "photo", locale, true);
+            final boolean hasPhoto = authenticatedUserResolver.resolveUser().getProfileImageId() != null;
+            final boolean isRemoving = form.isRemovePhoto();
+            final boolean isRequired = !hasPhoto && !isRemoving;
+            imageMultipartValidator.validate(form.getPhoto(), errors, "photo", locale, isRequired);
         }
     }
 

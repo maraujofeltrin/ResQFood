@@ -28,6 +28,7 @@ public interface ProfileService {
             String openingTime,
             String closingTime,
             byte[] profilePhoto,
-            String profilePhotoContentType);
+            String profilePhotoContentType,
+            boolean removePhoto);
 
 }

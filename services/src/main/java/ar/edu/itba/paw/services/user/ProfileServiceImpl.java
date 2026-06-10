@@ -84,7 +84,8 @@ public class ProfileServiceImpl implements ProfileService {
             final String openingTime,
             final String closingTime,
             final byte[] profilePhoto,
-            final String profilePhotoContentType) {
+            final String profilePhotoContentType,
+            final boolean removePhoto) {
         if (role == User.Role.COMMERCE) {
             try {
                 final Commerce.Category cat = Commerce.Category.valueOf(category.trim());
@@ -104,7 +105,14 @@ public class ProfileServiceImpl implements ProfileService {
                 throw new ProfileAccountUpdateException(ProfileAccountUpdateException.Kind.COMMERCE, e);
             }
         }
-        if (profilePhoto != null && profilePhoto.length > 0) {
+        if (removePhoto) {
+            try {
+                userService.removeProfilePhoto(userId);
+            } catch (final NoSuchElementException e) {
+                LOGGER.debug("Profile photo removal failed: user not found userId={}", userId, e);
+                throw new ProfileAccountUpdateException(ProfileAccountUpdateException.Kind.PHOTO, e);
+            }
+        } else if (profilePhoto != null && profilePhoto.length > 0) {
             try {
                 userService.updateProfilePhoto(userId, profilePhoto, profilePhotoContentType);
             } catch (final IllegalArgumentException | ProfileImageException | NoSuchElementException e) {

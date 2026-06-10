@@ -147,7 +147,7 @@ class ProfileServiceImplTest {
         // 2. Ejercicio
         final ProfileAccountUpdateException ex = assertThrows(ProfileAccountUpdateException.class,
                 () -> profileService.updateProfileAccount(7L, User.Role.COMMERCE, "BAKERY", "Calle", "1", Municipality.AVELLANEDA, "P",
-                        "pc", "09:00", "18:00", null, null));
+                        "pc", "09:00", "18:00", null, null, false));
 
         // 3. Asserts
         assertEquals(ProfileAccountUpdateException.Kind.COMMERCE, ex.getKind());
@@ -176,7 +176,7 @@ class ProfileServiceImplTest {
         // 2. Ejercicio
         final ProfileAccountUpdateException ex = assertThrows(ProfileAccountUpdateException.class,
                 () -> profileService.updateProfileAccount(7L, User.Role.COMMERCE, "NOT_A_CATEGORY", "Calle", "1",
-                        Municipality.AVELLANEDA, "P", "pc", "09:00", "18:00", null, null));
+                        Municipality.AVELLANEDA, "P", "pc", "09:00", "18:00", null, null, false));
 
         // 3. Asserts
         assertEquals(ProfileAccountUpdateException.Kind.COMMERCE, ex.getKind());
@@ -189,7 +189,7 @@ class ProfileServiceImplTest {
         // 2. Ejercicio
         final ProfileAccountUpdateException ex = assertThrows(ProfileAccountUpdateException.class,
                 () -> profileService.updateProfileAccount(7L, User.Role.COMMERCE, "BAKERY", "Calle", "abc",
-                        Municipality.AVELLANEDA, "P", "pc", "09:00", "18:00", null, null));
+                        Municipality.AVELLANEDA, "P", "pc", "09:00", "18:00", null, null, false));
 
         // 3. Asserts
         assertEquals(ProfileAccountUpdateException.Kind.COMMERCE, ex.getKind());
@@ -205,9 +205,34 @@ class ProfileServiceImplTest {
         // 2. Ejercicio
         final ProfileAccountUpdateException ex = assertThrows(ProfileAccountUpdateException.class,
                 () -> profileService.updateProfileAccount(7L, User.Role.CLIENT, null, null, null, null, null,
-                        null, null, null, photo, "image/png"));
+                        null, null, null, photo, "image/png", false));
 
         // 3. Asserts
         assertEquals(ProfileAccountUpdateException.Kind.PHOTO, ex.getKind());
+    }
+
+    @Test
+    void testUpdateProfileAccountWhenRemovePhotoFailsThrowsProfileAccountUpdateExceptionWithPhotoKind() {
+        // 1. Setup
+        doThrow(new NoSuchElementException("User not found: 7")).when(userService)
+                .removeProfilePhoto(7L);
+
+        // 2. Ejercicio
+        final ProfileAccountUpdateException ex = assertThrows(ProfileAccountUpdateException.class,
+                () -> profileService.updateProfileAccount(7L, User.Role.CLIENT, null, null, null, null, null,
+                        null, null, null, null, null, true));
+
+        // 3. Asserts
+        assertEquals(ProfileAccountUpdateException.Kind.PHOTO, ex.getKind());
+    }
+
+    @Test
+    void testUpdateProfileAccountWhenRemovePhotoSuccessDoesNotThrow() {
+        // 1. Setup
+        // userService.removeProfilePhoto does nothing (void method, default mock behavior is no-op)
+
+        // 2. Ejercicio & 3. Asserts
+        profileService.updateProfileAccount(7L, User.Role.CLIENT, null, null, null, null, null,
+                null, null, null, null, null, true);
     }
 }
