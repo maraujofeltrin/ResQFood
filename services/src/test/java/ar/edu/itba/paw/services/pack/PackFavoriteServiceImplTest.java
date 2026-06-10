@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,18 +47,6 @@ class PackFavoriteServiceImplTest {
         return new Pack(id, commerceRef(commerceId), title, description, originalPrice, finalPrice, stock, active,
                 deleted, tags, imageId != null ? new ar.edu.itba.paw.models.image.Image(imageId, new byte[0], "image/png")
                         : null);
-    }
-
-    @Test
-    void testListActiveFavoritePacksWhenLimitExceedsMaxUsesClampedPageSize() {
-        // 1. Setup
-        when(packFavoriteDao.findActiveFavoritePacksForClient(eq(1L), eq(1), eq(48))).thenReturn(Collections.emptyList());
-
-        // 2. Ejercicio
-        final List<Pack> result = packFavoriteService.listActiveFavoritePacks(1L, 999);
-
-        // 3. Asserts
-        assertEquals(Collections.emptyList(), result);
     }
 
     @Test

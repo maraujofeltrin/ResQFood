@@ -11,7 +11,5 @@ public interface VerificationTokenService {
 
     Optional<User> verifyEmailAndGetUser(final String token);
 
-    boolean verifyEmail(final String token);
-
     void resendVerificationMail(final String email);
 }

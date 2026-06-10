@@ -6,9 +6,7 @@ import ar.edu.itba.paw.models.auction.Bid;
 import ar.edu.itba.paw.models.pack.PackTag;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public interface AuctionService {
@@ -89,8 +87,6 @@ public interface AuctionService {
                                               int page, int pageSize);
 
     int countParticipatedAuctions(long clientId, Auction.Status status, String query);
-
-    Map<Long, Double> getMaxBidsByClientForAuctions(long clientUserId, Collection<Long> auctionIds);
 
     boolean hasClientBidOnAuction(long auctionId, long clientUserId);
 }

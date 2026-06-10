@@ -64,12 +64,6 @@ public class VerificationTokenServiceImpl implements VerificationTokenService {
 
     @Transactional
     @Override
-    public boolean verifyEmail(final String token) {
-        return verifyEmailAndGetUser(token).isPresent();
-    }
-
-    @Transactional
-    @Override
     public void resendVerificationMail(final String email) {
         final Optional<User> maybeUser = userService.findByEmail(email);
         if (maybeUser.isPresent() && !maybeUser.get().isVerified()) {

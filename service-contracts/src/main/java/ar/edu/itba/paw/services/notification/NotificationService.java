@@ -36,8 +36,6 @@ public interface NotificationService {
 
     void notifyAuctionFinished(Auction auction, List<User> bidders);
 
-    List<Notification> findRecentForUser(long userId, int limit);
-
     List<Notification> findPageForUser(long userId, int page, int pageSize);
 
     int countForUser(long userId);

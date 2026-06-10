@@ -93,26 +93,6 @@ class NotificationServiceImplTest {
     }
 
     @Test
-    void testFindRecentForUserWhenNotificationsExistReturnsEntities() {
-        // 1. Setup
-        final Notification notification = new Notification(10L,
-                new User(5L, "u@test.com", "p", "U", null, User.Role.CLIENT, false),
-                NotificationType.FAVORITE_PACK_RESTOCKED, null, null, null, "Surplus Box", "Panadería", 120.0,
-                "CODE1", LocalDateTime.now(ZoneOffset.UTC), LocalDateTime.now(ZoneOffset.UTC), null, null);
-        when(notificationDao.findRecentByRecipient(5L, 10)).thenReturn(List.of(notification));
-
-        // 2. Ejercicio
-        final List<Notification> result = notificationService.findRecentForUser(5L, 10);
-
-        // 3. Asserts
-        assertEquals(1, result.size());
-        assertEquals(10L, result.get(0).getId());
-        assertEquals(NotificationType.FAVORITE_PACK_RESTOCKED, result.get(0).getType());
-        assertEquals("Surplus Box", result.get(0).getPackTitle());
-        assertNull(result.get(0).getReadAt());
-    }
-
-    @Test
     void testGetClientMailPreferencesWhenNoStoredDefaultsMailEnabled() {
         // 1. Setup
         when(clientNotificationPreferenceDao.findByClient(3L)).thenReturn(Collections.emptyList());

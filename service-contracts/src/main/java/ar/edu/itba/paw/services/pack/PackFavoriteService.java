@@ -7,11 +7,6 @@ import java.util.List;
 
 public interface PackFavoriteService {
 
-    /**
-     * First page of active favorites (e.g. carousel), ordered by most recent save first.
-     */
-    List<Pack> listActiveFavoritePacks(long clientUserId, int limit);
-
     List<Pack> listActiveFavoritePacks(long clientUserId, int page, int pageSize);
 
     int countActiveFavoritePacks(long clientUserId);

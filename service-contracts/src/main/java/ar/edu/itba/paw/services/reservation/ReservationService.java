@@ -25,28 +25,15 @@ public interface ReservationService {
     List<Reservation> findByPackId(final Long packId, int page, int pageSize);
     int countByPackId(Long packId);
 
-    String computePickupDateStr(Reservation reservation);
-
     /**
      * Validates a direct (non-auction) reservation for an active pack.
      */
     DirectReservationCheck checkDirectPackReservation(long packId, int quantity);
 
-    Reservation confirmPickup(final Long id);
-
     /**
      * Rejects a RESERVED reservation without using exceptions for expected failures.
      */
     ReservationServiceResult<ReservationRejectionError> tryRejectReservation(Long reservationId);
-
-    /**
-     * Core rejection: validates state, restores stock, marks CANCELED, notifies client.
-     *
-     * @param reservationId reservation to reject
-     * @return the updated Reservation in CANCELED status
-     * @throws ar.edu.itba.paw.models.reservation.ReservationCreationException if rejection fails
-     */
-    Reservation rejectReservation(Long reservationId);
 
     /**
      * Validates a pickup code belongs to a RESERVED reservation owned by the given commerce,

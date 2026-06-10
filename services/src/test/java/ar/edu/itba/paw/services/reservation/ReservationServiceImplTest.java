@@ -266,36 +266,6 @@ class ReservationServiceImplTest {
     }
 
     @Test
-    void testConfirmPickupWhenReservedSetsPaidStatusAndPickupDate() {
-        // 1. Setup
-        final long reservationId = 55L;
-        final Reservation reserved = new Reservation(reservationId, clientRef(1L), packRef(1L), LocalDateTime.now(),
-                25.0, Reservation.Status.RESERVED, "CODE", null, 1, null);
-        when(reservationDao.findById(reservationId)).thenReturn(Optional.of(reserved));
-
-        // 2. Ejercicio
-        final Reservation confirmed = reservationService.confirmPickup(reservationId);
-
-        // 3. Asserts
-        assertEquals(Reservation.Status.PAID, confirmed.getStatus());
-        assertNotNull(confirmed.getPickupConfirmationDate());
-    }
-
-    @Test
-    void testConfirmPickupWhenReservationNotFoundThrowsReservationCreationException() {
-        // 1. Setup
-        final long reservationId = 99L;
-        when(reservationDao.findById(reservationId)).thenReturn(Optional.empty());
-
-        // 2. Ejercicio
-        final ReservationCreationException ex = assertThrows(ReservationCreationException.class,
-                () -> reservationService.confirmPickup(reservationId));
-
-        // 3. Asserts
-        assertEquals(ReservationCreationException.Reason.RESERVATION_NOT_FOUND, ex.getReason());
-    }
-
-    @Test
     void testTryRejectReservationWhenCanceledReturnsError() {
         // 1. Setup
         final long packId = 710L;

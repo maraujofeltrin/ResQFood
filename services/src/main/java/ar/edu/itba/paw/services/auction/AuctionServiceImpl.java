@@ -281,12 +281,6 @@ public class AuctionServiceImpl implements AuctionService {
 
     @Transactional(readOnly = true)
     @Override
-    public Map<Long, Double> getMaxBidsByClientForAuctions(final long clientUserId, final Collection<Long> auctionIds) {
-        return bidDao.findMaxBidsByClientForAuctions(clientUserId, auctionIds);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
     public boolean hasClientBidOnAuction(final long auctionId, final long clientUserId) {
         return bidDao.existsByAuctionIdAndClientUserId(auctionId, clientUserId);
     }

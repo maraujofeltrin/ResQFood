@@ -208,9 +208,7 @@ public class ReservationServiceImpl implements ReservationService {
 
 
 
-    @Transactional(readOnly = true)
-    @Override
-    public String computePickupDateStr(final Reservation reservation) {
+    private String computePickupDateStr(final Reservation reservation) {
         if (reservation == null || reservation.getReservationDate() == null) {
             return "-";
         }
@@ -252,9 +250,7 @@ public class ReservationServiceImpl implements ReservationService {
         return pickupDate.format(DATE_ONLY_FORMATTER);
     }
 
-    @Transactional
-    @Override
-    public Reservation confirmPickup(final Long id) {
+    private Reservation confirmPickup(final Long id) {
         final Reservation reservation = reservationDao.findById(id)
                 .orElseThrow(() -> new ReservationCreationException(
                         ReservationCreationException.Reason.RESERVATION_NOT_FOUND, String.valueOf(id)));
@@ -274,9 +270,7 @@ public class ReservationServiceImpl implements ReservationService {
         return rejectReservationInternal(reservationId);
     }
 
-    @Transactional
-    @Override
-    public Reservation rejectReservation(final Long reservationId) {
+    private Reservation rejectReservation(final Long reservationId) {
         final ReservationServiceResult<ReservationRejectionError> result = rejectReservationInternal(reservationId);
         return result.reservation().orElseThrow(() -> toRejectionException(result));
     }

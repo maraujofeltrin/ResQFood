@@ -226,12 +226,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<Notification> findRecentForUser(final long userId, final int limit) {
-        return notificationDao.findRecentByRecipient(userId, limit);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
     public List<Notification> findPageForUser(final long userId, final int page, final int pageSize) {
         return notificationDao.findByRecipientPaginated(userId, page, pageSize);
     }
