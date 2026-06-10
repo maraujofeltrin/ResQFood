@@ -207,7 +207,7 @@ public class CommerceDashboardController {
             mav.addObject("days", resolution.getDaysValue());
             mav.addObject("from", resolution.getFromValue());
             mav.addObject("to", resolution.getToValue());
-            mav.addObject("salesChartJson", buildSalesChartJson(metrics.getDailySales()));
+            mav.addObject("salesChartJson", ViewFormatUtils.formatSalesChartJson(metrics.getDailySales()));
             mav.addObject("totalRevenue", metrics.getTotalRevenue());
             mav.addObject("totalReservations", metrics.getTotalReservations());
             mav.addObject("bestSellingPackTitle", metrics.getBestSellingPackTitle());
