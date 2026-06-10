@@ -14,7 +14,12 @@ public interface ProfileService {
 
     /**
      * Actualiza datos editables de la cuenta: campos de comercio (solo rol {@link User.Role#COMMERCE})
-     * y/o foto de perfil si {@code profilePhoto} es no nulo y no vacío.
+     * y, opcionalmente, la foto de perfil.
+     * <p>
+     * Si {@code profilePhoto} tiene contenido, reemplaza la foto existente.
+     * Si {@code removePhoto} es {@code true} y no hay foto nueva, elimina la referencia
+     * a la imagen de perfil (el usuario queda con el placeholder).
+     * Si ambos vienen informados, prevalece la foto nueva.
      */
     void updateProfileAccount(
             long userId,

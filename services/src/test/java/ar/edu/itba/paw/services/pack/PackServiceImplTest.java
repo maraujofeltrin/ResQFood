@@ -34,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -389,18 +390,17 @@ class PackServiceImplTest {
     }
 
     @Test
-    void testUpdatePackWhenImageIdNullDoesNotSetImageId() {
+    void testUpdatePackWhenImageIdNullClearsExistingImage() {
         // 1. Setup
-        final Pack existing =
-                newPack(5L, 2L, "x", "y", 1.0, 1.0, 2, true, false, Collections.emptyList(), 99L);
-        when(packDao.findById(5L)).thenReturn(Optional.of(existing));
+        final Pack existing = newPack(3L, 5L, "old", "oldD", 1.0, 1.0, 2, true, false, Collections.emptyList(), 77L);
+        when(packDao.findById(3L)).thenReturn(Optional.of(existing));
         when(packDao.update(any(Pack.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // 2. Ejercicio
-        final Pack result = packService.updatePack(5L, "x2", "y2", 2.0, 2.0, 3, Collections.emptyList(), null);
+        final Pack result = packService.updatePack(3L, "old", "oldD", 1.0, 1.0, 2, Collections.emptyList(), null);
 
         // 3. Asserts
-        assertEquals(99L, result.getImageId());
+        assertNull(result.getImageId());
     }
 
     @Test

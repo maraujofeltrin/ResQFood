@@ -105,18 +105,18 @@ public class ProfileServiceImpl implements ProfileService {
                 throw new ProfileAccountUpdateException(ProfileAccountUpdateException.Kind.COMMERCE, e);
             }
         }
-        if (removePhoto) {
-            try {
-                userService.removeProfilePhoto(userId);
-            } catch (final NoSuchElementException e) {
-                LOGGER.debug("Profile photo removal failed: user not found userId={}", userId, e);
-                throw new ProfileAccountUpdateException(ProfileAccountUpdateException.Kind.PHOTO, e);
-            }
-        } else if (profilePhoto != null && profilePhoto.length > 0) {
+        if (profilePhoto != null && profilePhoto.length > 0) {
             try {
                 userService.updateProfilePhoto(userId, profilePhoto, profilePhotoContentType);
             } catch (final IllegalArgumentException | ProfileImageException | NoSuchElementException e) {
                 LOGGER.debug("Profile photo update rejected userId={}", userId, e);
+                throw new ProfileAccountUpdateException(ProfileAccountUpdateException.Kind.PHOTO, e);
+            }
+        } else if (removePhoto) {
+            try {
+                userService.removeProfilePhoto(userId);
+            } catch (final NoSuchElementException e) {
+                LOGGER.debug("Profile photo removal failed: user not found userId={}", userId, e);
                 throw new ProfileAccountUpdateException(ProfileAccountUpdateException.Kind.PHOTO, e);
             }
         }

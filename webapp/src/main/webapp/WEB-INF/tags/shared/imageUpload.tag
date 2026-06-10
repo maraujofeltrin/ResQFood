@@ -20,6 +20,10 @@
 <%@ attribute name="compactButtons" required="false" type="java.lang.Boolean" rtexprvalue="true" description="Smaller overlay change/remove controls for tight previews (e.g. avatar)" %>
 <%@ attribute name="primaryActionBelow" required="false" type="java.lang.Boolean" rtexprvalue="true" description="Primary choose/select control rendered below the preview instead of inside empty state" %>
 <%@ attribute name="belowHintCode" required="false" type="java.lang.String" rtexprvalue="true" description="Optional hint below the bottom button (formats/size); empty state uses hintCode when primaryActionBelow is false" %>
+<%@ attribute name="removeSignalPath" required="false" type="java.lang.String" rtexprvalue="true" description="Optional form path for a hidden field updated when the user removes the image (e.g. removePhoto, existingImageId)" %>
+<%@ attribute name="removeSignalOnRemove" required="false" type="java.lang.String" rtexprvalue="true" description="Value written to removeSignalPath on remove click; defaults to true when removeSignalPath is set" %>
+<%@ attribute name="clearRemoveSignalOnRemove" required="false" type="java.lang.Boolean" rtexprvalue="true" description="When true, clears removeSignalPath on remove click instead of writing removeSignalOnRemove" %>
+<%@ attribute name="clearRemoveSignalOnFileSelect" required="false" type="java.lang.Boolean" rtexprvalue="true" description="When true, sets removeSignalPath to false after a valid file is chosen" %>
 
 <c:set var="resolvedErrorsClass" value="${not empty errorsClass ? errorsClass : 'pack-feedback pack-feedback--error pack-form-errors w-full mt-2'}" />
 <c:set var="isCompact" value="${compactButtons == true}" />
@@ -29,6 +33,19 @@
 <c:set var="emptyStateId" value="${inputId}-empty-state" />
 <c:set var="previewStateId" value="${inputId}-preview-state" />
 <c:set var="removeId" value="${inputId}-remove-btn" />
+<c:set var="removeSignalId" value="${inputId}-remove-signal" />
+<c:choose>
+    <c:when test="${removeSignalOnRemove != null}">
+        <c:set var="resolvedRemoveSignalOnRemove" value="${removeSignalOnRemove}" />
+    </c:when>
+    <c:otherwise>
+        <c:set var="resolvedRemoveSignalOnRemove" value="true" />
+    </c:otherwise>
+</c:choose>
+
+<c:if test="${not empty removeSignalPath}">
+    <form:hidden path="${removeSignalPath}" id="${removeSignalId}" />
+</c:if>
 
 <div data-image-upload-id="${inputId}">
     <div class="relative flex flex-col items-center justify-center overflow-hidden transition-colors ${containerClass}"
@@ -94,6 +111,9 @@ document.addEventListener("DOMContentLoaded", function () {
     var previewImg = document.getElementById('${imgPreviewId}');
     var removeBtn = document.getElementById('${removeId}');
     var componentRoot = document.querySelector('[data-image-upload-id="${inputId}"]');
+    <c:if test="${not empty removeSignalPath}">
+    var removeSignalInput = document.getElementById('${removeSignalId}');
+    </c:if>
 
     if (!imageInput) return;
     var maxFileSize = 5 * 1024 * 1024;
@@ -152,6 +172,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     previewImg.src = e.target.result;
                     emptyState.classList.add('hidden');
                     previewState.classList.remove('hidden');
+                    <c:if test="${clearRemoveSignalOnFileSelect == true}">
+                    if (removeSignalInput) {
+                        removeSignalInput.value = 'false';
+                    }
+                    </c:if>
                 }
                 reader.readAsDataURL(file);
             }
@@ -166,6 +191,18 @@ document.addEventListener("DOMContentLoaded", function () {
             previewImg.src = '';
             previewState.classList.add('hidden');
             emptyState.classList.remove('hidden');
+            <c:if test="${not empty removeSignalPath}">
+            if (removeSignalInput) {
+                <c:choose>
+                <c:when test="${clearRemoveSignalOnRemove == true}">
+                removeSignalInput.value = '';
+                </c:when>
+                <c:otherwise>
+                removeSignalInput.value = '${resolvedRemoveSignalOnRemove}';
+                </c:otherwise>
+                </c:choose>
+            }
+            </c:if>
         });
     }
 });

@@ -133,6 +133,8 @@ public class PackServiceImpl implements PackService {
         if (imageId != null) {
             packToUpdate.setImage(imageService.getImage(imageId)
                     .orElseThrow(() -> new NoSuchElementException("Image not found: " + imageId)));
+        } else {
+            packToUpdate.setImage(null);
         }
 
         final Pack updatedPack = packDao.update(packToUpdate);
