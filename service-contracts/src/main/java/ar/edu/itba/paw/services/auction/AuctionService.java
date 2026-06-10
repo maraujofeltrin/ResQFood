@@ -36,18 +36,20 @@ public interface AuctionService {
 
 
     /**
-     * Places a bid on an auction. Validates that:
-     * <ul>
-     *     <li>The auction is active and has not expired.</li>
-     *     <li>The amount is at least the current effective price plus the auction's minimum bid increment.</li>
-     *     <li>The client is not the commerce that owns the pack.</li>
-     *     <li>The client is not already the highest bidder.</li>
-     * </ul>
+     * Places a bid on an auction by auction id.
      *
-     * @throws BidPlacementException   for expected domain failures (see {@link ar.edu.itba.paw.models.auction.BidFailureReason})
-     * @throws IllegalArgumentException for unexpected data (e.g. missing auction) — prefer {@link BidPlacementException} for known cases
+     * @throws BidPlacementException for expected domain failures
      */
     Bid placeBid(long auctionId, long clientId, double amount);
+
+    /**
+     * Resolves the active auction for the given pack and places a bid.
+     * Equivalent to looking up the auction and calling {@link #placeBid}, but keeps
+     * that coupling in the service layer instead of the controller.
+     *
+     * @throws BidPlacementException if no auction exists for the pack or any bid validation fails
+     */
+    Bid placeBidForPack(long packId, long clientId, double amount);
 
     /**
      * Closes all auctions whose end time has passed but are still marked as ACTIVE.

@@ -7,6 +7,7 @@ import ar.edu.itba.paw.models.reservation.ReservationRejectionError;
 import ar.edu.itba.paw.models.reservation.ReservationToken;
 import ar.edu.itba.paw.models.reservation.ReservationTokenActionError;
 import ar.edu.itba.paw.services.pack.DirectReservationCheck;
+import java.util.Optional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -29,6 +30,18 @@ public interface ReservationService {
      * Validates a direct (non-auction) reservation for an active pack.
      */
     DirectReservationCheck checkDirectPackReservation(long packId, int quantity);
+
+    /**
+     * Atomically validates and creates a direct (non-auction) reservation.
+     * On success the result carries the created reservation.
+     * On failure the result carries the {@link DirectReservationCheck} with the blocking reason.
+     */
+    ReservationServiceResult<DirectReservationCheck> createDirectReservation(long packId, long userId, int quantity);
+
+    /**
+     * Finds the reservation linked to a token, loading all associations.
+     */
+    Optional<Reservation> findReservationByToken(String token);
 
     /**
      * Rejects a RESERVED reservation without using exceptions for expected failures.

@@ -141,7 +141,7 @@ public class AuctionServiceImpl implements AuctionService {
         final double inc = auction.getMinBidIncrement() != null ? auction.getMinBidIncrement() : 0d;
         final double minimumRequired = base + inc;
         if (amount < minimumRequired) {
-            throw new BidPlacementException(BidFailureReason.AMOUNT_BELOW_MINIMUM);
+            throw BidPlacementException.belowMinimum(inc);
         }
 
         // Capture previous bidder for notification hook
@@ -163,6 +163,14 @@ public class AuctionServiceImpl implements AuctionService {
 
         LOGGER.info("Bid placed: auctionId={}, clientId={}, amount={}", auctionId, clientId, amount);
         return bid;
+    }
+
+    @Transactional
+    @Override
+    public Bid placeBidForPack(final long packId, final long clientId, final double amount) {
+        final Auction auction = findByPackId(packId)
+                .orElseThrow(() -> new BidPlacementException(BidFailureReason.AUCTION_NOT_FOUND, String.valueOf(packId)));
+        return placeBid(auction.getId(), clientId, amount);
     }
 
     @Transactional

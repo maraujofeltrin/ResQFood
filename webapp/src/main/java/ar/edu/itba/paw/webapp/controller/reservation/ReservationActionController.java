@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import ar.edu.itba.paw.models.auction.Auction;
 import ar.edu.itba.paw.models.auction.BidFailureReason;
 import ar.edu.itba.paw.models.auction.BidPlacementException;
 import ar.edu.itba.paw.models.pack.Pack;
@@ -25,6 +24,7 @@ import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.pack.DirectReservationCheck;
 import ar.edu.itba.paw.services.pack.PackService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
+import ar.edu.itba.paw.services.reservation.ReservationServiceResult;
 import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.controller.helpers.PackDetailModelBuilder;
 import ar.edu.itba.paw.webapp.controller.helpers.ViewFormatUtils;
@@ -83,13 +83,22 @@ public class ReservationActionController {
         }
 
         final int quantity = reservationForm.getQuantity().intValue();
-        final DirectReservationCheck check = reservationService.checkDirectPackReservation(packId, quantity);
+        final User authenticatedUser = authResolver.resolveUser();
 
+        final ReservationServiceResult<DirectReservationCheck> result =
+                reservationService.createDirectReservation(packId, authenticatedUser.getId(), quantity);
+
+        if (result.isSuccess()) {
+            redirectAttributes.addFlashAttribute("reservationAlertKind", "success");
+            redirectAttributes.addFlashAttribute("reservationAlertMessage",
+                    messageSource.getMessage("reservation.alert.success", null, LocaleContextHolder.getLocale()));
+            return redirectView;
+        }
+
+        final DirectReservationCheck check = result.error().orElseThrow(IllegalStateException::new);
         switch (check.getOutcome()) {
-        case OK:
-            break;
         case QUANTITY_EXCEEDS_STOCK: {
-            final Pack p = packService.findById(packId).orElse(null);
+            final Pack p = check.getPack().orElse(null);
             if (p == null) {
                 return redirectView;
             }
@@ -103,50 +112,18 @@ public class ReservationActionController {
                     "reservation.alert.activeAuction", null, LocaleContextHolder.getLocale()));
             return redirectView;
         case AUCTION_ENDED_NO_DIRECT:
-            redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
-            redirectAttributes.addFlashAttribute("reservationAlertMessage",
-                    messageSource.getMessage("reservation.alert.packUnavailable", null,
-                            LocaleContextHolder.getLocale()));
-            return redirectView;
         case PACK_UNAVAILABLE:
             redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
-                    messageSource.getMessage("reservation.alert.packUnavailable", null,
-                            LocaleContextHolder.getLocale()));
+                    messageSource.getMessage("reservation.alert.packUnavailable", null, LocaleContextHolder.getLocale()));
             return redirectView;
         case MISSING_FINAL_PRICE:
         default:
             redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
             redirectAttributes.addFlashAttribute("reservationAlertMessage",
-                    messageSource.getMessage("reservation.alert.genericError", null,
-                            LocaleContextHolder.getLocale()));
+                    messageSource.getMessage("reservation.alert.genericError", null, LocaleContextHolder.getLocale()));
             return redirectView;
         }
-
-        final double finalPrice = check.getUnitPrice();
-        final User authenticatedUser = authResolver.resolveUser();
-
-        try {
-            reservationService.createReservation(
-                    packId,
-                    authenticatedUser.getId(),
-                    quantity,
-                    finalPrice,
-                    null,
-                    false);
-            redirectAttributes.addFlashAttribute("reservationAlertKind", "success");
-            redirectAttributes.addFlashAttribute("reservationAlertMessage",
-                    messageSource.getMessage("reservation.alert.success", null,
-                            LocaleContextHolder.getLocale()));
-        } catch (final ar.edu.itba.paw.models.reservation.ReservationCreationException ex) {
-            LOGGER.debug("Direct reservation declined for packId={} clientId={}", Long.valueOf(packId),
-                    Long.valueOf(authenticatedUser.getId()), ex);
-            redirectAttributes.addFlashAttribute("reservationAlertKind", "error");
-            redirectAttributes.addFlashAttribute("reservationAlertMessage",
-                    messageSource.getMessage("reservation.alert.genericError", null,
-                            LocaleContextHolder.getLocale()));
-        }
-        return redirectView;
     }
 
     @PostMapping("/packs/{packId}/bid")
@@ -166,24 +143,15 @@ public class ReservationActionController {
                     messageSource.getMessage("pack.detail.bid.alert.packUnavailable", null, locale));
             return redirectView;
         }
-        final Pack pack = packOpt.get();
-
-        final Auction auction = pack.getAuction();
-        if (auction == null) {
-            redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
-            redirectAttributes.addFlashAttribute("auctionAlertMessage",
-                    messageSource.getMessage("pack.detail.bid.alert.auctionNotActive", null, locale));
-            return redirectView;
-        }
 
         if (bindingResult.hasErrors()) {
-            return packDetailModelBuilder.buildPackDetailModel(pack, createDefaultReservationForm(), bidForm);
+            return packDetailModelBuilder.buildPackDetailModel(packOpt.get(), createDefaultReservationForm(), bidForm);
         }
 
         final User user = authResolver.resolveUser();
         final double amount = bidForm.getAmount().doubleValue();
         try {
-            auctionService.placeBid(auction.getId(), user.getId(), amount);
+            auctionService.placeBidForPack(packId, user.getId(), amount);
             redirectAttributes.addFlashAttribute("auctionAlertKind", "success");
             redirectAttributes.addFlashAttribute("auctionAlertMessage",
                     messageSource.getMessage("pack.detail.bid.alert.success", null, locale));
@@ -191,7 +159,7 @@ public class ReservationActionController {
             redirectAttributes.addFlashAttribute("auctionAlertKind", "error");
             final String alertMessage;
             if (ex.getReason() == BidFailureReason.AMOUNT_BELOW_MINIMUM) {
-                final double inc = auction.getMinBidIncrement() != null ? auction.getMinBidIncrement() : 0d;
+                final double inc = ex.getBidIncrement().orElse(0d);
                 alertMessage = messageSource.getMessage("pack.detail.bid.alert.belowIncrement",
                         new Object[] { ViewFormatUtils.formatMoney(inc) }, locale);
             } else {

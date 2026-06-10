@@ -83,15 +83,12 @@ public class ReservationTokenController {
 
         switch (result) {
             case SUCCESS: {
-                final Long reservationId = reservationService
-                        .findReservationIdByToken(token)
-                        .orElseThrow(() -> new IllegalStateException("Reservation id missing for token: " + token));
-                final Optional<Reservation> reservation = reservationService.findByIdWithDetails(reservationId);
-                if (reservation.isEmpty()) {
+                final Optional<Reservation> reservationOpt = reservationService.findReservationByToken(token);
+                if (reservationOpt.isEmpty()) {
                     model.addAttribute("tokenStatus", "invalid");
                     return "reservations/token-status";
                 }
-                final Reservation res = reservation.get();
+                final Reservation res = reservationOpt.get();
                 model.addAttribute("reservation", res);
                 model.addAttribute("token", token);
 

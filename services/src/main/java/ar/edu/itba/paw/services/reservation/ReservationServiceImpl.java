@@ -339,6 +339,26 @@ public class ReservationServiceImpl implements ReservationService {
         }
     }
 
+    @Transactional
+    @Override
+    public ReservationServiceResult<DirectReservationCheck> createDirectReservation(
+            final long packId, final long userId, final int quantity) {
+        final DirectReservationCheck check = checkDirectPackReservation(packId, quantity);
+        if (check.getOutcome() != DirectReservationCheck.Outcome.OK) {
+            return ReservationServiceResult.failure(check);
+        }
+        final Reservation reservation = createReservation(packId, userId, quantity, check.getUnitPrice(), null, false);
+        return ReservationServiceResult.success(reservation);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Optional<Reservation> findReservationByToken(final String token) {
+        return reservationTokenDao.findByToken(token)
+                .map(t -> t.getReservation().getId())
+                .flatMap(this::findByIdWithDetails);
+    }
+
     @Transactional(readOnly = true)
     @Override
     public DirectReservationCheck checkDirectPackReservation(final long packId, final int quantity) {

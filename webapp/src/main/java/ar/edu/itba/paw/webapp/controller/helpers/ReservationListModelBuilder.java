@@ -1,16 +1,12 @@
 package ar.edu.itba.paw.webapp.controller.helpers;
 
 import ar.edu.itba.paw.models.auction.Auction;
-import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.reservation.Reservation;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.services.auction.AuctionService;
-import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 import ar.edu.itba.paw.webapp.form.ReservationListFilterForm;
 
@@ -40,17 +36,14 @@ public class ReservationListModelBuilder {
     private static final String VIEW_NAME = "reservations/reservationsView";
 
     private final ReservationService reservationService;
-    private final CommerceService commerceService;
     private final AuctionService auctionService;
     private final ZoneId displayZone;
 
     @Autowired
     public ReservationListModelBuilder(final ReservationService reservationService,
-            final CommerceService commerceService,
             final AuctionService auctionService,
             final ZoneId businessZone) {
         this.reservationService = reservationService;
-        this.commerceService = commerceService;
         this.auctionService = auctionService;
         this.displayZone = businessZone;
     }
@@ -58,10 +51,7 @@ public class ReservationListModelBuilder {
     // -- Public API -----------------------------------------------------------
 
     public ModelAndView buildCommerceView(final ReservationListFilterForm form, final User currentUser) {
-
-        final Commerce commerce = commerceService.findByUserId(currentUser.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN));
-        final Long commerceId = commerce.getUserId();
+        final Long commerceId = currentUser.getId();
 
         final String normalizedQuery = form.getQ();
         final Reservation.Status statusFilter = form.getStatus();
