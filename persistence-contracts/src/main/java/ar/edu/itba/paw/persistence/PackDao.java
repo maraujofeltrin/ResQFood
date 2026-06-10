@@ -11,7 +11,6 @@ public interface PackDao {
     Pack createPack(Long commerceId, String title, String description, Double originalPrice, Double finalPrice, Integer stock, List<PackTag> tags, Long imageId);
     Optional<Pack> findById(Long id);
     Pack update(Pack pack);
-    void setActive(Long id, boolean active);
     void softDelete(Long id);
 
 

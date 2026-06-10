@@ -87,7 +87,8 @@ public class PackFavoriteJpaDaoTest {
     public void testFindActiveFavoritePacksForClientWhenFavoritePackInactiveReturnsEmpty() {
         // 1. Setup
         packFavoriteDao.insert(clientUserId, packActive.getId());
-        packDao.setActive(packActive.getId(), false);
+        packActive.setActive(false);
+        packDao.update(packActive);
 
         // 2. Ejercicio
         final List<Pack> favorites = packFavoriteDao.findActiveFavoritePacksForClient(clientUserId, 1, 10);

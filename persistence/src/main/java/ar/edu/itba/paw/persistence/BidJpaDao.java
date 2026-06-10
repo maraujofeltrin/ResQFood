@@ -16,11 +16,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 @Primary
 @Repository("bidJpaDao")
@@ -50,16 +48,6 @@ public class BidJpaDao implements BidDao {
     }
 
     @Override
-    public Optional<Bid> findHighestBid(final long auctionId) {
-        return em.createQuery("FROM Bid b WHERE b.auction.id = :auctionId ORDER BY b.amount DESC, b.timestamp ASC", Bid.class)
-            .setParameter("auctionId", auctionId)
-            .setMaxResults(1)
-            .getResultList()
-            .stream()
-            .findFirst();
-    }
-
-    @Override
     public int countByAuctionId(final long auctionId) {
         final Number count = em.createQuery("SELECT COUNT(b) FROM Bid b WHERE b.auction.id = :auctionId", Number.class)
                 .setParameter("auctionId", auctionId)
@@ -85,19 +73,6 @@ public class BidJpaDao implements BidDao {
             result.put((Long) row[0], (Double) row[1]);
         }
         return result;
-    }
-
-    @Override
-    public Set<Long> findAuctionIdsWithBids(final Collection<Long> auctionIds) {
-        if (auctionIds == null || auctionIds.isEmpty()) {
-            return Collections.emptySet();
-        }
-        final List<Long> ids = em.createQuery(
-                        "SELECT DISTINCT b.auction.id FROM Bid b WHERE b.auction.id IN :ids",
-                        Long.class)
-                .setParameter("ids", new ArrayList<>(auctionIds))
-                .getResultList();
-        return new HashSet<>(ids);
     }
 
     @Override

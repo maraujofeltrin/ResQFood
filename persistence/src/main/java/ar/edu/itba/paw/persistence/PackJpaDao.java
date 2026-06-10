@@ -68,16 +68,6 @@ public class PackJpaDao implements PackDao {
     }
 
     @Override
-    public void setActive(final Long id, final boolean active) {
-        final Pack pack = em.find(Pack.class, id);
-        if (pack == null) {
-            LOGGER.warn("setActive: no pack found for id {} (active={})", id, Boolean.valueOf(active));
-            return;
-        }
-        pack.setActive(Boolean.valueOf(active));
-    }
-
-    @Override
     public void softDelete(final Long id) {
         final Pack pack = em.find(Pack.class, id);
         if (pack == null) {

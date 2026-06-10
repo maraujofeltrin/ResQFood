@@ -27,9 +27,6 @@ public interface AuctionDao {
     int countFilteredAuctions(String query, List<PackTag> tags, String city, List<String> timeRanges,
                               boolean requirePositiveStock, Long commerceUserId);
 
-
-    List<Auction> findByStatus(Auction.Status status);
-
     void updateStatus(long auctionId, Auction.Status status);
 
     void updateCurrentBid(long auctionId, double amount, long bidderId);

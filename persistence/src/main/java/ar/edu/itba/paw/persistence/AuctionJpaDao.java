@@ -261,13 +261,6 @@ public class AuctionJpaDao implements AuctionDao {
     }
 
     @Override
-    public List<Auction> findByStatus(final Auction.Status status) {
-        return em.createQuery("SELECT a FROM Auction a JOIN FETCH a.pack p WHERE a.status = :status AND p.deleted = false ORDER BY a.endTime ASC", Auction.class)
-                .setParameter("status", status)
-                .getResultList();
-    }
-
-    @Override
     public void updateStatus(final long auctionId, final Auction.Status status) {
         final Auction auction = em.find(Auction.class, auctionId);
         if (auction != null) {

@@ -243,22 +243,6 @@ public class PackJpaDaoTest {
     }
 
     @Test
-    public void testSetActiveChangesField() {
-        // 1. Setup
-        final Pack created = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, null, null);
-        em.flush();
-
-        // 2. Ejercicio
-        packDao.setActive(created.getId(), false);
-        em.flush();
-        em.clear();
-
-        // 3. Asserts
-        assertFalse(packDao.findById(created.getId()).map(Pack::getActive).orElse(true));
-        assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "packs"));
-    }
-
-    @Test
     public void testDecrementStockWhenStockSufficient() {
         // 1. Setup
         final Pack created = packDao.createPack(commerceId, "Title", "Desc", 1000.0, 500.0, 10, null, null);
@@ -632,7 +616,8 @@ public class PackJpaDaoTest {
         final Pack inactive = packDao.createPack(commerceId, "Inactive", "Desc", 100.0, 50.0, 1, null, null);
         final Pack deleted = packDao.createPack(commerceId, "Deleted", "Desc", 100.0, 50.0, 1, null, null);
         em.flush();
-        packDao.setActive(inactive.getId(), false);
+        inactive.setActive(false);
+        packDao.update(inactive);
         packDao.softDelete(deleted.getId());
         em.flush();
 

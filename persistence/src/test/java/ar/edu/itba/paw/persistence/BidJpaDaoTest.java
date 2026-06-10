@@ -108,42 +108,6 @@ public class BidJpaDaoTest {
     }
 
     @Test
-    public void testFindHighestBidWhenSeveralBidsExist() {
-        // 1. Setup
-        bidDao.createBid(auctionId, clientId, 600.0);
-        bidDao.createBid(auctionId, clientId, 700.0);
-        bidDao.createBid(auctionId, clientId, 650.0);
-        em.flush();
-
-        // 2. Ejercicio
-        final Optional<Bid> highestBid = bidDao.findHighestBid(auctionId);
-
-        // 3. Asserts
-        assertTrue(highestBid.isPresent());
-        assertEquals(700.0, highestBid.get().getAmount());
-        assertEquals(3, JdbcTestUtils.countRowsInTable(jdbcTemplate, "bids"));
-    }
-
-    @Test
-    public void testFindHighestBidWhenSameAmountUsesEarliestTimestamp() {
-        // 1. Setup
-        final LocalDateTime earlier = LocalDateTime.of(2030, 1, 1, 10, 0);
-        final LocalDateTime later = LocalDateTime.of(2030, 1, 1, 11, 0);
-        em.persist(new Bid(null, em.getReference(Auction.class, auctionId), em.getReference(ar.edu.itba.paw.models.user.Client.class, clientId), 700.0, earlier));
-        em.persist(new Bid(null, em.getReference(Auction.class, auctionId), em.getReference(ar.edu.itba.paw.models.user.Client.class, clientId), 700.0, later));
-        em.flush();
-        em.clear();
-
-        // 2. Ejercicio
-        final Optional<Bid> highestBid = bidDao.findHighestBid(auctionId);
-
-        // 3. Asserts
-        assertTrue(highestBid.isPresent());
-        assertEquals(earlier, highestBid.get().getTimestamp());
-        assertEquals(2, JdbcTestUtils.countRowsInTable(jdbcTemplate, "bids"));
-    }
-
-    @Test
     public void testFindByAuctionIdWhenSeveralBidsExist() {
         // 1. Setup
         bidDao.createBid(auctionId, clientId, 600.0);
@@ -189,23 +153,6 @@ public class BidJpaDaoTest {
         // 3. Asserts
         assertEquals(1, result.size());
         assertEquals(80.0, result.get(auctionId), 0.001);
-    }
-
-    @Test
-    public void testFindAuctionIdsWithBids() {
-        // 1. Setup
-        bidDao.createBid(auctionId, clientId, 600.0);
-        final Pack pack2 = packDao.createPack(commerceId, "Pack 2", "Desc", 1000.0, 500.0, 1,
-                Collections.emptyList(), null);
-        final Auction auction2 = auctionDao.createAuction(pack2.getId(), 500.0, 500.0, AUCTION_END_TIME);
-        em.flush();
-
-        // 2. Ejercicio
-        final Set<Long> result = bidDao.findAuctionIdsWithBids(Set.of(auctionId, auction2.getId()));
-
-        // 3. Asserts
-        assertTrue(result.contains(auctionId));
-        assertFalse(result.contains(auction2.getId()));
     }
 
     @Test
