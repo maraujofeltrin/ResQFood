@@ -16,6 +16,7 @@ import ar.edu.itba.paw.webapp.auth.AuthUser;
 import ar.edu.itba.paw.webapp.controller.helpers.CommerceMetricsFilterHelper;
 import ar.edu.itba.paw.webapp.controller.helpers.CommerceReviewViewHelper;
 import ar.edu.itba.paw.webapp.controller.helpers.ReservationHistoryViewHelper;
+import ar.edu.itba.paw.webapp.controller.helpers.ViewFormatUtils;
 import ar.edu.itba.paw.webapp.form.MetricsFilterForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -36,12 +37,10 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
-import ar.edu.itba.paw.models.auction.Auction;
-import java.util.ArrayList;
 
 @Controller
 @RequestMapping("/commerce")
@@ -219,14 +218,14 @@ public class CommerceDashboardController {
         final CommerceMetricsFilterHelper.MetricsFilterResolution resolution = metricsFilterHelper
             .resolve(filter.getFromDate(), filter.getToDate(), days);
         final CommerceMetrics metrics = commerceMetricsService.getCommerceMetrics(
-            commerce.getUserId(), resolution.getFrom(), resolution.getTo());
+            userId, resolution.getFrom(), resolution.getTo());
         final ModelAndView mav = new ModelAndView("commerce/metrics");
         mav.addObject("commerce", commerce);
         mav.addObject("metricsFilterForm", filter);
         mav.addObject("days", resolution.getDaysValue());
         mav.addObject("from", resolution.getFromValue());
         mav.addObject("to", resolution.getToValue());
-        final String salesChartJson = buildSalesChartJson(metrics.getDailySales());
+        final String salesChartJson = ViewFormatUtils.formatSalesChartJson(metrics.getDailySales());
         mav.addObject("salesChartJson", salesChartJson);
         mav.addObject("totalRevenue", metrics.getTotalRevenue());
         mav.addObject("totalReservations", metrics.getTotalReservations());
@@ -258,24 +257,6 @@ public class CommerceDashboardController {
             default:
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }
-
-    private static String buildSalesChartJson(final List<CommerceMetrics.DailySalesPoint> points) {
-        final StringBuilder sb = new StringBuilder();
-        sb.append('[');
-        for (int i = 0; i < points.size(); i++) {
-            final CommerceMetrics.DailySalesPoint point = points.get(i);
-            if (i > 0) {
-                sb.append(',');
-            }
-            sb.append("{\"date\":\"")
-                    .append(point.getDate())
-                    .append("\",\"count\":")
-                    .append(point.getCount())
-                    .append('}');
-        }
-        sb.append(']');
-        return sb.toString();
     }
 
 }

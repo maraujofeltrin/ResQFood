@@ -1,12 +1,14 @@
 package ar.edu.itba.paw.webapp.controller.helpers;
 
 import ar.edu.itba.paw.models.user.Client;
+import ar.edu.itba.paw.services.metrics.CommerceMetrics;
 import org.springframework.context.MessageSource;
 
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -60,6 +62,24 @@ public final class ViewFormatUtils {
             return last.length() > 1 ? last.substring(0, 1) + "." : last;
         }
         return first + " " + last.charAt(0) + ".";
+    }
+
+    public static String formatSalesChartJson(final List<CommerceMetrics.DailySalesPoint> points) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        for (int i = 0; i < points.size(); i++) {
+            final CommerceMetrics.DailySalesPoint point = points.get(i);
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append("{\"date\":\"")
+                    .append(point.getDate())
+                    .append("\",\"count\":")
+                    .append(point.getCount())
+                    .append('}');
+        }
+        sb.append(']');
+        return sb.toString();
     }
 
     public static String formatRelativeTime(final LocalDateTime timeUtc, final MessageSource messageSource,
