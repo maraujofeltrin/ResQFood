@@ -427,6 +427,13 @@
   background: rgba(5, 150, 105, 0.45);
 }
 
+.commerce-reviews-card__pagination {
+  margin-top: -0.5rem;
+}
+.commerce-reviews-card__pagination > div {
+  margin-top: 0 !important;
+}
+
 .commerce-reviews-card__empty,
 .commerce-reviews-card__hint {
   margin: 0;

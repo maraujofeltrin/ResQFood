@@ -101,8 +101,10 @@
     </div>
 
     <c:if test="${not empty reviewCurrentPage and not empty reviewTotalPages and reviewTotalPages > 1}">
-        <paw:pagination currentPage="${reviewCurrentPage}" totalPages="${reviewTotalPages}"
-                        baseUrl="${reviewPaginationBaseUrl}" pageParam="reviewPage"/>
+        <div class="commerce-reviews-card__pagination">
+            <paw:pagination currentPage="${reviewCurrentPage}" totalPages="${reviewTotalPages}"
+                            baseUrl="${reviewPaginationBaseUrl}" pageParam="reviewPage"/>
+        </div>
     </c:if>
 
     <c:if test="${showReviewForm}">

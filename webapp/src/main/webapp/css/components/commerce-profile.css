@@ -293,13 +293,7 @@
 
 
 .commerce-profile-offers-scroll {
-  --commerce-offer-row-height: 20rem;
-  --commerce-offer-grid-gap: 2rem;
-  max-height: calc(3 * var(--commerce-offer-row-height) + 2 * var(--commerce-offer-grid-gap));
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+  overflow-y: visible;
 }
 
 .commerce-profile-offers-pagination {
