@@ -8,8 +8,6 @@ import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.reservation.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -36,8 +34,6 @@ import java.util.Objects;
  */
 @Component
 public class ReservationListModelBuilder {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReservationListModelBuilder.class);
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
     private static final int PAGE_SIZE = 6;

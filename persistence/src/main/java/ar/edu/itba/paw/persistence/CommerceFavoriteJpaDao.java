@@ -6,8 +6,6 @@ import ar.edu.itba.paw.models.user.Client;
 import ar.edu.itba.paw.models.user.Commerce;
 import ar.edu.itba.paw.models.user.User;
 import ar.edu.itba.paw.persistence.util.Pagination;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
@@ -26,8 +24,6 @@ import java.util.List;
 @Primary
 @Repository
 public class CommerceFavoriteJpaDao implements CommerceFavoriteDao {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(CommerceFavoriteJpaDao.class);
 
     @PersistenceContext
     private EntityManager em;

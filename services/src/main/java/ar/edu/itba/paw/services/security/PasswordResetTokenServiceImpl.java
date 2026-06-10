@@ -79,6 +79,7 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
         final String encodedPassword = passwordEncoder.encode(rawPassword);
         user.setPassword(encodedPassword);
         resetToken.setUsed(true);
+        LOGGER.info("Password reset successfully for userId={}", user.getId());
     }
 
     @Transactional(readOnly = true)

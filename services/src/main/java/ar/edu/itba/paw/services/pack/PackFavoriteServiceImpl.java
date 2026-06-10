@@ -51,7 +51,7 @@ public class PackFavoriteServiceImpl implements PackFavoriteService {
     public void toggleFavorite(final long clientUserId, final long packId) throws FavoriteToggleException {
         if (packFavoriteDao.exists(clientUserId, packId)) {
             packFavoriteDao.delete(clientUserId, packId);
-            LOGGER.info("User {} removed pack {} from favorites", clientUserId, packId);
+            LOGGER.debug("User {} removed pack {} from favorites", clientUserId, packId);
             return;
         }
         final Pack pack = packService.findById(packId).orElseThrow(() -> {
@@ -68,6 +68,6 @@ public class PackFavoriteServiceImpl implements PackFavoriteService {
             throw new FavoriteToggleException(FavoriteToggleException.Reason.PACK_UNAVAILABLE, "Pack is an auction: " + packId);
         }
         packFavoriteDao.insert(clientUserId, packId);
-        LOGGER.info("User {} added pack {} to favorites", clientUserId, packId);
+        LOGGER.debug("User {} added pack {} to favorites", clientUserId, packId);
     }
 }

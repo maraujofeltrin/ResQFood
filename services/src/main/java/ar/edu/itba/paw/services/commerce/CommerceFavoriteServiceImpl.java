@@ -52,7 +52,7 @@ public class CommerceFavoriteServiceImpl implements CommerceFavoriteService {
     public void toggleFavorite(final long clientUserId, final long commerceId) throws CommerceFavoriteToggleException {
         if (commerceFavoriteDao.exists(clientUserId, commerceId)) {
             commerceFavoriteDao.delete(clientUserId, commerceId);
-            LOGGER.info("User {} removed commerce {} from favorites", clientUserId, commerceId);
+            LOGGER.debug("User {} removed commerce {} from favorites", clientUserId, commerceId);
             return;
         }
         commerceDao.findByUserId(commerceId).orElseThrow(() -> {
@@ -62,7 +62,7 @@ public class CommerceFavoriteServiceImpl implements CommerceFavoriteService {
                     "Commerce not found: " + commerceId);
         });
         commerceFavoriteDao.insert(clientUserId, commerceId);
-        LOGGER.info("User {} added commerce {} to favorites", clientUserId, commerceId);
+        LOGGER.debug("User {} added commerce {} to favorites", clientUserId, commerceId);
     }
 
     @Transactional(readOnly = true)

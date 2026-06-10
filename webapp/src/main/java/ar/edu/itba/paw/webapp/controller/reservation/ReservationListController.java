@@ -8,8 +8,6 @@ import ar.edu.itba.paw.services.reservation.ReservationServiceResult;
 import ar.edu.itba.paw.webapp.controller.helpers.AuthenticatedUserResolver;
 import ar.edu.itba.paw.webapp.controller.helpers.ReservationListModelBuilder;
 import ar.edu.itba.paw.webapp.form.ReservationListFilterForm;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -28,8 +26,6 @@ import java.nio.charset.StandardCharsets;
 @Controller
 @RequestMapping("/reservations")
 public class ReservationListController {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReservationListController.class);
 
     private final AuthenticatedUserResolver authResolver;
     private final ReservationListModelBuilder modelBuilder;

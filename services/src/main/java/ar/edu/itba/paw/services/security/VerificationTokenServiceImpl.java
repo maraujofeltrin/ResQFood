@@ -49,15 +49,25 @@ public class VerificationTokenServiceImpl implements VerificationTokenService {
     @Override
     public Optional<User> verifyEmailAndGetUser(final String token) {
         final Optional<Token> maybeToken = tokenDao.findByTokenAndType(token, TokenType.EMAIL_VERIFICATION);
-        if (maybeToken.isEmpty() || !isValid(maybeToken.get())) {
-            LOGGER.debug("Email verification rejected: missing, used, or expired token");
+        if (maybeToken.isEmpty()) {
+            LOGGER.debug("Email verification rejected: token not found");
             return Optional.empty();
         }
 
         final Token verificationToken = maybeToken.get();
+        if (!isValid(verificationToken)) {
+            final Long userId = verificationToken.getUser() != null ? verificationToken.getUser().getId() : null;
+            LOGGER.debug("Email verification rejected: userId={} used={} expired={}",
+                    userId,
+                    verificationToken.isUsed(),
+                    !verificationToken.getExpiresAt().isAfter(LocalDateTime.now()));
+            return Optional.empty();
+        }
+
         final User user = verificationToken.getUser();
         user.setVerified(true);
         verificationToken.setUsed(true);
+        LOGGER.info("Email verified successfully for userId={}", user.getId());
 
         return Optional.of(user);
     }

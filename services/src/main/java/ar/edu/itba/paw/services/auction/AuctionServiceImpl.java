@@ -177,22 +177,14 @@ public class AuctionServiceImpl implements AuctionService {
             closed++;
 
             if (auction.getCurrentBidderId() != null && auction.getCurrentBid() != null) {
-                try {
-                    reservationService.createReservation(
-                            auction.getPack().getId(),
-                            auction.getCurrentBidderId(),
-                            1,
-                            auction.getCurrentBid(),
-                            null,
-                            true
-                    );
-                } catch (final RuntimeException e) {
-                    final Long packId = auction.getPack() != null ? auction.getPack().getId() : null;
-                    LOGGER.error(
-                            "closeExpiredAuctions: reservation creation failed auctionId={} packId={} bidderUserId={}",
-                            auction.getId(), packId, auction.getCurrentBidderId(), e);
-                    throw e;
-                }
+                reservationService.createReservation(
+                        auction.getPack().getId(),
+                        auction.getCurrentBidderId(),
+                        1,
+                        auction.getCurrentBid(),
+                        null,
+                        true
+                );
             }
 
             notificationService.notifyAuctionFinished(auction, bidDao.findBidders(auction.getId()));

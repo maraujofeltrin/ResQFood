@@ -12,8 +12,6 @@ import ar.edu.itba.paw.services.auction.AuctionService;
 import ar.edu.itba.paw.services.commerce.CommerceService;
 import ar.edu.itba.paw.services.commerce.CommerceReviewService;
 import ar.edu.itba.paw.services.pack.PackService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.ModelAndView;
@@ -35,8 +33,6 @@ import java.util.Set;
  */
 @Component
 public class PackCatalogModelBuilder {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(PackCatalogModelBuilder.class);
 
     private static final int PAGE_SIZE = 6;
     private static final int COMMERCES_PAGE_SIZE = 8;
