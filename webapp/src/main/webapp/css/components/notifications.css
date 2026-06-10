@@ -102,3 +102,19 @@
   outline: 2px solid #059669;
   outline-offset: 1px;
 }
+
+.notification-item__link-block {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.notification-item__link-block:hover {
+  text-decoration: none;
+  color: inherit;
+}
+
+.notification-item__link-block:hover .notification-item__title {
+  color: var(--md-sys-color-primary, #059669);
+  transition: color 0.2s ease;
+}

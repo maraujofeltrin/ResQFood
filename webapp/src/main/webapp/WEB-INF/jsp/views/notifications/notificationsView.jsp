@@ -50,17 +50,36 @@
                             <span class="notification-item__dot w-2 h-2 rounded-full mt-2 shrink-0 ${notif.read ? 'bg-transparent' : 'bg-primary'}"
                                   aria-hidden="true"></span>
                             <div class="flex-1 min-w-0">
-                                <div class="flex justify-between items-start gap-2 mb-1">
-                                    <p class="text-sm m-0 ${notif.read ? 'text-on-surface opacity-70' : 'font-bold text-on-surface'}">
-                                        <c:out value="${notif.title}"/>
-                                    </p>
-                                    <span class="text-[10px] text-on-surface-variant shrink-0">
-                                        <c:out value="${notif.relativeTime}"/>
-                                    </span>
-                                </div>
-                                <p class="text-xs text-on-surface-variant mb-2 m-0">
-                                    <c:out value="${notif.body}"/>
-                                </p>
+                                <c:choose>
+                                    <c:when test="${not empty notif.targetUrl}">
+                                        <a href="${pageContext.request.contextPath}${notif.targetUrl}" class="notification-item__link-block block hover:no-underline">
+                                            <div class="flex justify-between items-start gap-2 mb-1">
+                                                <p class="text-sm m-0 notification-item__title ${notif.read ? 'text-on-surface opacity-70' : 'font-bold text-on-surface'}">
+                                                    <c:out value="${notif.title}"/>
+                                                </p>
+                                                <span class="text-[10px] text-on-surface-variant shrink-0">
+                                                    <c:out value="${notif.relativeTime}"/>
+                                                </span>
+                                            </div>
+                                            <p class="text-xs text-on-surface-variant mb-2 m-0">
+                                                <c:out value="${notif.body}"/>
+                                            </p>
+                                        </a>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <div class="flex justify-between items-start gap-2 mb-1">
+                                            <p class="text-sm m-0 ${notif.read ? 'text-on-surface opacity-70' : 'font-bold text-on-surface'}">
+                                                <c:out value="${notif.title}"/>
+                                            </p>
+                                            <span class="text-[10px] text-on-surface-variant shrink-0">
+                                                <c:out value="${notif.relativeTime}"/>
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-on-surface-variant mb-2 m-0">
+                                            <c:out value="${notif.body}"/>
+                                        </p>
+                                    </c:otherwise>
+                                </c:choose>
                                 <div class="notification-item__actions flex gap-2 opacity-0 group-hover/item:opacity-100 transition-opacity">
                                     <c:choose>
                                         <c:when test="${notif.read}">

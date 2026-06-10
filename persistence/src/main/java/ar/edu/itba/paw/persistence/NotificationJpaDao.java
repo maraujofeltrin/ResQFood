@@ -66,6 +66,7 @@ public class NotificationJpaDao implements NotificationDao {
                         + "LEFT JOIN FETCH r.customer "
                         + "LEFT JOIN FETCH n.auction "
                         + "LEFT JOIN FETCH n.pack p "
+                        + "LEFT JOIN FETCH p.commerce "
                         + "LEFT JOIN FETCH p.auction "
                         + "WHERE n.id IN :ids "
                         + "ORDER BY " + buildNotificationIdPositionOrderByClause(ids),
@@ -94,6 +95,7 @@ public class NotificationJpaDao implements NotificationDao {
                         + "LEFT JOIN FETCH r.customer "
                         + "LEFT JOIN FETCH n.auction "
                         + "LEFT JOIN FETCH n.pack p "
+                        + "LEFT JOIN FETCH p.commerce "
                         + "LEFT JOIN FETCH p.auction "
                         + "WHERE n.id IN :ids "
                         + "ORDER BY " + buildNotificationIdPositionOrderByClause(ids),

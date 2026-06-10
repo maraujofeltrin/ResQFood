@@ -38,8 +38,36 @@ public final class NotificationViewHelper {
                 null, notification.getType().name(), locale);
         final String body = resolveBody(notification, messageSource, locale);
         final String time = relativeTime(notification.getCreatedAt(), messageSource, locale);
+        final String targetUrl = resolveTargetUrl(notification);
         return new NotificationDisplayRow(notification.getId(), notification.getType(), title, body, time,
-                isRead(notification));
+                isRead(notification), targetUrl);
+    }
+
+    private static String resolveTargetUrl(final Notification notification) {
+        if (notification == null || notification.getType() == null) {
+            return null;
+        }
+        return switch (notification.getType()) {
+            case RESERVATION_REQUESTED_COMMERCE,
+                 RESERVATION_CODE_CLIENT,
+                 AUCTION_WINNER_CLIENT,
+                 AUCTION_WINNER_COMMERCE,
+                 RESERVATION_REJECTED_CLIENT -> "/reservations";
+            case AUCTION_OUTBID_CLIENT,
+                 FAVORITE_PACK_RESTOCKED,
+                 AUCTION_LOST_CLIENT -> {
+                if (notification.getPack() != null) {
+                    yield "/packs/" + notification.getPack().getId();
+                }
+                yield null;
+            }
+            case FAVORITE_COMMERCE_NEW_PACK -> {
+                if (notification.getPack() != null && notification.getPack().getCommerce() != null) {
+                    yield "/commerces/" + notification.getPack().getCommerce().getUserId();
+                }
+                yield null;
+            }
+        };
     }
 
     private static String resolveBody(final Notification notification,
@@ -109,15 +137,18 @@ public final class NotificationViewHelper {
         private final String body;
         private final String relativeTime;
         private final boolean read;
+        private final String targetUrl;
 
         private NotificationDisplayRow(final long id, final NotificationType type,
-                final String title, final String body, final String relativeTime, final boolean read) {
+                final String title, final String body, final String relativeTime, final boolean read,
+                final String targetUrl) {
             this.id = id;
             this.type = type;
             this.title = title;
             this.body = body;
             this.relativeTime = relativeTime;
             this.read = read;
+            this.targetUrl = targetUrl;
         }
 
         public long getId() { return id; }
@@ -126,5 +157,6 @@ public final class NotificationViewHelper {
         public String getBody() { return body; }
         public String getRelativeTime() { return relativeTime; }
         public boolean isRead() { return read; }
+        public String getTargetUrl() { return targetUrl; }
     }
 }
