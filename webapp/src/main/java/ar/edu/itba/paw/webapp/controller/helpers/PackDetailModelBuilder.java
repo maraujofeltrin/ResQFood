@@ -155,7 +155,14 @@ public class PackDetailModelBuilder {
             mav.addObject("auctionClientIsLeading", Boolean.FALSE);
         }
 
-        final double unitPriceAmount = pack.getEffectiveSalePrice();
+        final double unitPriceAmount;
+        if (auctionActive && auctionOpt.isPresent()) {
+            final Auction auction = auctionOpt.get();
+            final Double eff = auction.getEffectivePrice();
+            unitPriceAmount = eff != null ? eff : 0d;
+        } else {
+            unitPriceAmount = pack.getFinalPrice() != null ? pack.getFinalPrice() : 0d;
+        }
         mav.addObject("unitPriceAmount", unitPriceAmount);
         mav.addObject("unitPriceNumber", String.format(Locale.US, "%.2f", unitPriceAmount));
         mav.addObject("pageTitle", pageTitle);
@@ -213,7 +220,15 @@ public class PackDetailModelBuilder {
         mav.addObject("originalPrice", ViewFormatUtils.formatMoney(pack.getOriginalPrice()));
         mav.addObject("finalPrice", ViewFormatUtils.formatMoney(pack.getFinalPrice()));
         final Integer stock = pack.getStock();
-        mav.addObject("quantityMax", pack.getMaxReservableQuantity());
+        final int quantityMax;
+        if (stock != null && stock >= 1) {
+            quantityMax = Math.min(stock, 999);
+        } else if (stock != null) {
+            quantityMax = 0;
+        } else {
+            quantityMax = 999;
+        }
+        mav.addObject("quantityMax", quantityMax);
 
         if (stock != null) {
             mav.addObject("packStock", stock);

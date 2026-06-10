@@ -181,33 +181,6 @@ public class Pack {
         this.auction = auction;
     }
 
-    /**
-     * Returns the price a buyer would pay right now.
-     * If there is an active auction, it is the auction's current effective price;
-     * otherwise it is the pack's direct-sale final price. Defaults to 0 when null.
-     */
-    public double getEffectiveSalePrice() {
-        if (auction != null && auction.isActive()) {
-            final Double eff = auction.getEffectivePrice();
-            return eff != null ? eff : 0d;
-        }
-        return finalPrice != null ? finalPrice : 0d;
-    }
-
-    /**
-     * Returns the maximum quantity a client may add to a single reservation.
-     * Unlimited stock (null) is capped at 999 for form purposes.
-     */
-    public int getMaxReservableQuantity() {
-        if (stock == null) {
-            return 999;
-        }
-        if (stock < 1) {
-            return 0;
-        }
-        return Math.min(stock, 999);
-    }
-
     @Override
     public String toString() {
         return "Pack [id=" + id + ", commerceId=" + getCommerceId() + ", title=" + title + ", description="
