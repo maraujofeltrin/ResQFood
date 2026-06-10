@@ -120,12 +120,16 @@ public class PackJpaDao implements PackDao {
             return Collections.emptyList();
         }
         final List<Pack> packs = em.createQuery(
-                        "SELECT DISTINCT p FROM Pack p LEFT JOIN FETCH p.tags JOIN FETCH p.commerce "
-                                + "LEFT JOIN FETCH p.auction "
-                                + "WHERE p.id IN :ids ORDER BY " + toOrderByClause(sort),
+                        "SELECT p FROM Pack p JOIN FETCH p.commerce LEFT JOIN FETCH p.auction "
+                                + "WHERE p.id IN :ids ORDER BY " + buildPackIdPositionOrderByClause(ids),
                         Pack.class)
                 .setParameter("ids", ids)
                 .getResultList();
+
+        em.createQuery("SELECT DISTINCT p FROM Pack p LEFT JOIN FETCH p.tags WHERE p.id IN :ids", Pack.class)
+                .setParameter("ids", ids)
+                .getResultList();
+
         return packs;
     }
 
@@ -170,7 +174,7 @@ public class PackJpaDao implements PackDao {
 
         return em.createQuery(
                         "SELECT p FROM Pack p LEFT JOIN FETCH p.auction "
-                                + "WHERE p.id IN :ids ORDER BY p.id DESC",
+                                + "WHERE p.id IN :ids ORDER BY " + buildPackIdPositionOrderByClause(ids),
                         Pack.class)
                 .setParameter("ids", ids)
                 .getResultList();
@@ -202,11 +206,11 @@ public class PackJpaDao implements PackDao {
         }
 
         return em.createQuery(
-                        "SELECT DISTINCT p FROM Pack p "
+                        "SELECT p FROM Pack p "
                                 + "JOIN FETCH p.commerce "
                                 + "LEFT JOIN FETCH p.auction "
                                 + "WHERE p.id IN :ids "
-                                + "ORDER BY p.id DESC",
+                                + "ORDER BY " + buildPackIdPositionOrderByClause(ids),
                         Pack.class)
                 .setParameter("ids", ids)
                 .getResultList();
@@ -352,9 +356,12 @@ public class PackJpaDao implements PackDao {
         return safeSort.getOrderByClause().replace("packs.", "p.");
     }
 
-    private String toOrderByClause(final PackSortOption sort) {
-        return toNativeOrderByClause(sort)
-                .replace("final_price", "finalPrice")
-                .replace("original_price", "originalPrice");
+    private String buildPackIdPositionOrderByClause(final List<Long> ids) {
+        final StringBuilder orderBy = new StringBuilder("CASE p.id ");
+        for (int index = 0; index < ids.size(); index++) {
+            orderBy.append("WHEN ").append(ids.get(index).longValue()).append(" THEN ").append(index).append(' ');
+        }
+        orderBy.append("ELSE ").append(ids.size()).append(" END");
+        return orderBy.toString();
     }
 }

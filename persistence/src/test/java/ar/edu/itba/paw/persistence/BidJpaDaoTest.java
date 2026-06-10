@@ -140,6 +140,22 @@ public class BidJpaDaoTest {
     }
 
     @Test
+    public void testFindByAuctionIdWhenSecondPageRequestedReturnsNextBid() {
+        // 1. Setup
+        bidDao.createBid(auctionId, clientId, 800.0);
+        bidDao.createBid(auctionId, clientId, 700.0);
+        bidDao.createBid(auctionId, clientId, 600.0);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Bid> pageTwo = bidDao.findByAuctionId(auctionId, 2, 1);
+
+        // 3. Asserts
+        assertEquals(1, pageTwo.size());
+        assertEquals(700.0, pageTwo.get(0).getAmount());
+    }
+
+    @Test
     public void testFindMaxBidsByClientForAuctions() {
         // 1. Setup
         bidDao.createBid(auctionId, clientId, 50.0);

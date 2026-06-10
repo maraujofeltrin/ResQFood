@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -38,12 +39,22 @@ public class BidJpaDao implements BidDao {
 
     @Override
     public List<Bid> findByAuctionId(final long auctionId, final int page, final int pageSize) {
+        final Query idQuery = em.createNativeQuery(
+                "SELECT b.id FROM bids b WHERE b.auction_id = :auctionId ORDER BY b.amount DESC, b.timestamp ASC");
+        idQuery.setParameter("auctionId", auctionId);
+        idQuery.setFirstResult(Pagination.offset(page, pageSize));
+        idQuery.setMaxResults(pageSize);
+
+        final List<Long> ids = parseLongIds(idQuery.getResultList());
+        if (ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         return em.createQuery(
-                "FROM Bid b JOIN FETCH b.client WHERE b.auction.id = :auctionId ORDER BY b.amount DESC, b.timestamp ASC",
-                Bid.class)
-                .setParameter("auctionId", auctionId)
-                .setFirstResult(Pagination.offset(page, pageSize))
-                .setMaxResults(pageSize)
+                        "FROM Bid b JOIN FETCH b.client WHERE b.id IN :ids ORDER BY "
+                                + buildBidIdPositionOrderByClause(ids),
+                        Bid.class)
+                .setParameter("ids", ids)
                 .getResultList();
     }
 
@@ -107,5 +118,22 @@ public class BidJpaDao implements BidDao {
                 .getResultList()
                 .stream()
                 .findFirst();
+    }
+
+    private List<Long> parseLongIds(final List<?> rawIds) {
+        final List<Long> ids = new ArrayList<>(rawIds.size());
+        for (final Object rawId : rawIds) {
+            ids.add(rawId instanceof Number ? ((Number) rawId).longValue() : Long.parseLong(rawId.toString()));
+        }
+        return ids;
+    }
+
+    private String buildBidIdPositionOrderByClause(final List<Long> ids) {
+        final StringBuilder orderBy = new StringBuilder("CASE b.id ");
+        for (int index = 0; index < ids.size(); index++) {
+            orderBy.append("WHEN ").append(ids.get(index).longValue()).append(" THEN ").append(index).append(' ');
+        }
+        orderBy.append("ELSE ").append(ids.size()).append(" END");
+        return orderBy.toString();
     }
 }

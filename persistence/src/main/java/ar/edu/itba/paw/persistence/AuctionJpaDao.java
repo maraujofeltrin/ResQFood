@@ -177,13 +177,6 @@ public class AuctionJpaDao implements AuctionDao {
         return safeSort.getOrderByClause();
     }
 
-    private String toJpqlOrderByClause(final AuctionSortOption sort) {
-        return toNativeOrderByClause(sort)
-                .replace("end_time", "endTime")
-                .replace("current_bid", "currentBid")
-                .replace("initial_price", "initialPrice");
-    }
-
     private List<Long> parseLongIds(final List<?> rawIds) {
         final List<Long> ids = new ArrayList<>(rawIds.size());
         for (final Object rawId : rawIds) {
@@ -236,7 +229,7 @@ public class AuctionJpaDao implements AuctionDao {
 
         return em.createQuery(
                         "SELECT a FROM Auction a JOIN FETCH a.pack p JOIN FETCH p.commerce "
-                                + "WHERE a.id IN :ids ORDER BY " + toJpqlOrderByClause(sort),
+                                + "WHERE a.id IN :ids ORDER BY " + buildIdPositionOrderByClause(ids),
                         Auction.class)
                 .setParameter("ids", ids)
                 .getResultList();

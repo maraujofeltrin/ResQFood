@@ -52,17 +52,14 @@ public class NotificationJpaDao implements NotificationDao {
         final List<?> rawIds = em.createNativeQuery(
                         "SELECT n.id FROM notifications n "
                         + "WHERE n.recipient_id = :uid AND n.deleted_at IS NULL "
-                        + "ORDER BY n.created_at DESC")
+                        + "ORDER BY n.created_at DESC, n.id DESC")
                 .setParameter("uid", userId)
                 .setMaxResults(Math.max(1, limit))
                 .getResultList();
         if (rawIds.isEmpty()) {
             return Collections.emptyList();
         }
-        final List<Long> ids = new ArrayList<>(rawIds.size());
-        for (final Object rawId : rawIds) {
-            ids.add(rawId instanceof Number ? ((Number) rawId).longValue() : Long.parseLong(rawId.toString()));
-        }
+        final List<Long> ids = parseLongIds(rawIds);
         return em.createQuery(
                         "FROM Notification n "
                         + "LEFT JOIN FETCH n.reservation r "
@@ -71,7 +68,7 @@ public class NotificationJpaDao implements NotificationDao {
                         + "LEFT JOIN FETCH n.pack p "
                         + "LEFT JOIN FETCH p.auction "
                         + "WHERE n.id IN :ids "
-                        + "ORDER BY n.createdAt DESC",
+                        + "ORDER BY " + buildNotificationIdPositionOrderByClause(ids),
                         Notification.class)
                 .setParameter("ids", ids)
                 .getResultList();
@@ -82,7 +79,7 @@ public class NotificationJpaDao implements NotificationDao {
         final List<?> rawIds = em.createNativeQuery(
                         "SELECT n.id FROM notifications n "
                         + "WHERE n.recipient_id = :uid AND n.deleted_at IS NULL "
-                        + "ORDER BY n.created_at DESC")
+                        + "ORDER BY n.created_at DESC, n.id DESC")
                 .setParameter("uid", userId)
                 .setFirstResult(Pagination.offset(page, pageSize))
                 .setMaxResults(Math.max(1, pageSize))
@@ -90,10 +87,7 @@ public class NotificationJpaDao implements NotificationDao {
         if (rawIds.isEmpty()) {
             return Collections.emptyList();
         }
-        final List<Long> ids = new ArrayList<>(rawIds.size());
-        for (final Object rawId : rawIds) {
-            ids.add(rawId instanceof Number ? ((Number) rawId).longValue() : Long.parseLong(rawId.toString()));
-        }
+        final List<Long> ids = parseLongIds(rawIds);
         return em.createQuery(
                         "FROM Notification n "
                         + "LEFT JOIN FETCH n.reservation r "
@@ -102,7 +96,7 @@ public class NotificationJpaDao implements NotificationDao {
                         + "LEFT JOIN FETCH n.pack p "
                         + "LEFT JOIN FETCH p.auction "
                         + "WHERE n.id IN :ids "
-                        + "ORDER BY n.createdAt DESC",
+                        + "ORDER BY " + buildNotificationIdPositionOrderByClause(ids),
                         Notification.class)
                 .setParameter("ids", ids)
                 .getResultList();
@@ -176,5 +170,22 @@ public class NotificationJpaDao implements NotificationDao {
                 .setParameter("uid", userId)
                 .getSingleResult();
         return count != null && count.intValue() > 0;
+    }
+
+    private List<Long> parseLongIds(final List<?> rawIds) {
+        final List<Long> ids = new ArrayList<>(rawIds.size());
+        for (final Object rawId : rawIds) {
+            ids.add(rawId instanceof Number ? ((Number) rawId).longValue() : Long.parseLong(rawId.toString()));
+        }
+        return ids;
+    }
+
+    private String buildNotificationIdPositionOrderByClause(final List<Long> ids) {
+        final StringBuilder orderBy = new StringBuilder("CASE n.id ");
+        for (int index = 0; index < ids.size(); index++) {
+            orderBy.append("WHEN ").append(ids.get(index).longValue()).append(" THEN ").append(index).append(' ');
+        }
+        orderBy.append("ELSE ").append(ids.size()).append(" END");
+        return orderBy.toString();
     }
 }

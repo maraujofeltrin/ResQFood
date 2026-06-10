@@ -74,12 +74,16 @@ public class ReservationJpaDao implements ReservationDao {
 
     @Override
     public List<Reservation> findByPackId(final Long packId, final int page, final int pageSize) {
+        final List<Long> ids = queryReservationIdsByPackId(packId, page, pageSize);
+        if (ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         return em.createQuery(
-                "FROM Reservation r JOIN FETCH r.customer WHERE r.pack.id = :packId ORDER BY r.reservationDate DESC",
-                Reservation.class)
-                .setParameter("packId", packId)
-                .setFirstResult(Pagination.offset(page, pageSize))
-                .setMaxResults(pageSize)
+                        "FROM Reservation r JOIN FETCH r.customer WHERE r.id IN :ids ORDER BY "
+                                + buildReservationIdPositionOrderByClause(ids),
+                        Reservation.class)
+                .setParameter("ids", ids)
                 .getResultList();
     }
 
@@ -277,7 +281,7 @@ public class ReservationJpaDao implements ReservationDao {
                         + "JOIN FETCH p.commerce "
                         + "LEFT JOIN FETCH p.auction "
                         + "WHERE r.id IN :ids "
-                        + "ORDER BY r.reservationDate DESC, r.id DESC",
+                        + "ORDER BY " + buildReservationIdPositionOrderByClause(ids),
                 Reservation.class)
                 .setParameter("ids", ids)
                 .getResultList();
@@ -441,5 +445,23 @@ public class ReservationJpaDao implements ReservationDao {
                 .setParameter("end", to)
                 .getSingleResult();
         return count != null ? count.longValue() : 0L;
+    }
+
+    private List<Long> queryReservationIdsByPackId(final Long packId, final int page, final int pageSize) {
+        final javax.persistence.Query idQuery = em.createNativeQuery(
+                "SELECT r.id FROM reservations r WHERE r.pack_id = :packId ORDER BY r.reservation_date DESC, r.id DESC");
+        idQuery.setParameter("packId", packId);
+        idQuery.setFirstResult(Pagination.offset(page, pageSize));
+        idQuery.setMaxResults(pageSize);
+        return parseLongIds(idQuery.getResultList());
+    }
+
+    private String buildReservationIdPositionOrderByClause(final List<Long> ids) {
+        final StringBuilder orderBy = new StringBuilder("CASE r.id ");
+        for (int index = 0; index < ids.size(); index++) {
+            orderBy.append("WHEN ").append(ids.get(index).longValue()).append(" THEN ").append(index).append(' ');
+        }
+        orderBy.append("ELSE ").append(ids.size()).append(" END");
+        return orderBy.toString();
     }
 }

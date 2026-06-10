@@ -65,7 +65,7 @@ public class CommerceReviewJpaDao implements CommerceReviewDao {
         final List<?> rawIds = em.createNativeQuery(
                         "SELECT r.id FROM commerce_reviews r "
                         + "WHERE r.commerce_user_id = :commerce "
-                        + "ORDER BY r.created_at DESC")
+                        + "ORDER BY r.created_at DESC, r.id DESC")
                 .setParameter("commerce", commerceUserId)
                 .setFirstResult(Pagination.offset(page, pageSize))
                 .setMaxResults(pageSize)
@@ -73,14 +73,11 @@ public class CommerceReviewJpaDao implements CommerceReviewDao {
         if (rawIds.isEmpty()) {
             return Collections.emptyList();
         }
-        final List<Long> ids = new ArrayList<>(rawIds.size());
-        for (final Object rawId : rawIds) {
-            ids.add(rawId instanceof Number ? ((Number) rawId).longValue() : Long.parseLong(rawId.toString()));
-        }
+        final List<Long> ids = parseLongIds(rawIds);
         return em.createQuery(
                         "FROM CommerceReview r JOIN FETCH r.client "
                         + "WHERE r.id IN :ids "
-                        + "ORDER BY r.createdAt DESC",
+                        + "ORDER BY " + buildReviewIdPositionOrderByClause(ids),
                         CommerceReview.class)
                 .setParameter("ids", ids)
                 .getResultList();
@@ -118,5 +115,22 @@ public class CommerceReviewJpaDao implements CommerceReviewDao {
             result.put((Long) row[0], (Double) row[1]);
         }
         return result;
+    }
+
+    private List<Long> parseLongIds(final List<?> rawIds) {
+        final List<Long> ids = new ArrayList<>(rawIds.size());
+        for (final Object rawId : rawIds) {
+            ids.add(rawId instanceof Number ? ((Number) rawId).longValue() : Long.parseLong(rawId.toString()));
+        }
+        return ids;
+    }
+
+    private String buildReviewIdPositionOrderByClause(final List<Long> ids) {
+        final StringBuilder orderBy = new StringBuilder("CASE r.id ");
+        for (int index = 0; index < ids.size(); index++) {
+            orderBy.append("WHEN ").append(ids.get(index).longValue()).append(" THEN ").append(index).append(' ');
+        }
+        orderBy.append("ELSE ").append(ids.size()).append(" END");
+        return orderBy.toString();
     }
 }

@@ -511,6 +511,25 @@ public class ReservationJpaDaoTest {
     }
 
     @Test
+    public void testFindByPackIdWhenSecondPageRequestedReturnsNextReservation() {
+        // 1. Setup
+        final LocalDateTime newer = LocalDateTime.of(2030, 6, 10, 12, 0);
+        final LocalDateTime older = LocalDateTime.of(2030, 6, 9, 12, 0);
+        reservationDao.createReservation(clientId, packId, newer, 500.0,
+                Reservation.Status.RESERVED, "CODE1", null, 1, null);
+        reservationDao.createReservation(clientId, packId, older, 500.0,
+                Reservation.Status.RESERVED, "CODE2", null, 1, null);
+        em.flush();
+
+        // 2. Ejercicio
+        final List<Reservation> pageTwo = reservationDao.findByPackId(packId, 2, 1);
+
+        // 3. Asserts
+        assertEquals(1, pageTwo.size());
+        assertEquals(older, pageTwo.get(0).getReservationDate());
+    }
+
+    @Test
     public void testFindTopSellingPacksReturnsPackEntityAndUnitsSoldOrdered() {
         // 1. Setup
         final LocalDateTime periodStart = LocalDateTime.of(2030, 3, 1, 0, 0);
