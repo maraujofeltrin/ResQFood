@@ -1,0 +1,2 @@
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS profile_image_id BIGINT REFERENCES images (id) ON DELETE SET NULL;

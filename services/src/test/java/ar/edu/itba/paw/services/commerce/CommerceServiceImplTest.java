@@ -1,0 +1,108 @@
+package ar.edu.itba.paw.services.commerce;
+
+import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.CommerceProfileException;
+import ar.edu.itba.paw.models.pack.Municipality;
+import ar.edu.itba.paw.persistence.CommerceDao;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class CommerceServiceImplTest {
+
+    @Mock
+    private CommerceDao commerceDao;
+
+    @InjectMocks
+    private CommerceServiceImpl commerceService;
+
+    @Test
+    void testUpdateProfileFieldsWhenCommerceExistsKeepsCommercialNameAndUpdatesRest() {
+        // 1. Setup
+        final Commerce commerce = new Commerce(5L, "Panadería Sur", Commerce.Category.BAKERY, "Old", 1,
+                Municipality.AVELLANEDA, "Buenos Aires", "1824", "08:00", "18:00");
+        when(commerceDao.findByUserId(5L)).thenReturn(Optional.of(commerce));
+
+        // 2. Ejercicio
+        commerceService.updateProfileFields(5L, Commerce.Category.RESTAURANT, "Nueva", 99, Municipality.QUILMES, "Buenos Aires", "1878",
+                "10:00", "22:00");
+
+        // 3. Asserts
+        assertEquals("Panadería Sur", commerce.getCommercialName());
+        assertEquals(Commerce.Category.RESTAURANT, commerce.getCategory());
+        assertEquals("Nueva", commerce.getStreet());
+        assertEquals(Integer.valueOf(99), commerce.getStreetNumber());
+        assertEquals(Municipality.QUILMES, commerce.getCity());
+        assertEquals("10:00", commerce.getOpeningTime());
+        assertEquals("22:00", commerce.getClosingTime());
+    }
+
+    @Test
+    void testUpdateProfileFieldsWhenCommerceMissingThrowsNoSuchElementException() {
+        // 1. Setup
+        when(commerceDao.findByUserId(1L)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final NoSuchElementException thrown = assertThrows(NoSuchElementException.class,
+                () -> commerceService.updateProfileFields(1L, Commerce.Category.OTHER, "S", null, Municipality.AVELLANEDA, "Buenos Aires", null, "09:00",
+                        "17:00"));
+
+        // 3. Asserts
+        assertTrue(thrown.getMessage().contains("1"));
+    }
+
+    @Test
+    void testUpdateProfileFieldsWhenCategoryNullThrowsCommerceProfileException() {
+        // 1. Setup
+
+        // 2. Ejercicio
+        final CommerceProfileException thrown = assertThrows(CommerceProfileException.class,
+                () -> commerceService.updateProfileFields(1L, null, "S", 1, Municipality.AVELLANEDA, "Buenos Aires", null, "09:00", "17:00"));
+
+        // 3. Asserts
+        assertEquals(CommerceProfileException.Reason.MISSING_CATEGORY, thrown.getReason());
+    }
+
+    @Test
+    void testFilterCommercesUsesDefaultPageAndSizeWhenInvalid() {
+        // 1. Setup
+        final List<Commerce> expected = List.of(commerceForUserId(1L));
+        when(commerceDao.filterCommerces("query", "city", Commerce.Category.BAKERY, 1, 12)).thenReturn(expected);
+
+        // 2. Ejercicio
+        final List<Commerce> result = commerceService.filterCommerces("query", "city", Commerce.Category.BAKERY, -5, 0);
+
+        // 3. Asserts
+        assertEquals(expected, result);
+    }
+
+    private static Commerce commerceForUserId(final long commerceUserId) {
+        return new Commerce(commerceUserId, "Comm", Commerce.Category.BAKERY, "St", 1,
+                Municipality.AVELLANEDA, "P", "1000", "08:00", "20:00");
+    }
+
+    @Test
+    void testCountFilteredCommercesReturnsDaoCount() {
+        // 1. Setup
+        when(commerceDao.countFilteredCommerces("query", "city", null)).thenReturn(10);
+
+        // 2. Ejercicio
+        int count = commerceService.countFilteredCommerces("query", "city", null);
+
+        // 3. Asserts
+        assertEquals(10, count);
+    }
+}

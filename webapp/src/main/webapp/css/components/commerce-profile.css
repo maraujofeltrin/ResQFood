@@ -1,0 +1,301 @@
+/* ── Public commerce profile ───────────────────────────── */
+
+.commerce-profile-main {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 6rem 1.5rem 4rem;
+  width: 100%;
+}
+
+.commerce-profile-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 2rem;
+  font-weight: 700;
+  color: #059669;
+  text-decoration: none;
+}
+
+.commerce-profile-back:hover {
+  text-decoration: underline;
+}
+
+/* ── Editorial hero ─────────────────────────────────────── */
+
+.commerce-profile-hero--editorial {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  margin-bottom: 3rem;
+  min-height: 13.75rem;
+  background: linear-gradient(135deg, #059669 0%, #022c22 100%);
+}
+
+.commerce-profile-hero--editorial::before,
+.commerce-profile-hero--editorial::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+}
+
+.commerce-profile-hero--editorial::before {
+  top: -3rem;
+  right: -3rem;
+  width: 12rem;
+  height: 12rem;
+}
+
+.commerce-profile-hero--editorial::after {
+  bottom: -2rem;
+  left: -2rem;
+  width: 8rem;
+  height: 8rem;
+}
+
+.commerce-profile-hero__brand {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding: 2.5rem 2rem;
+}
+
+@media (min-width: 768px) {
+  .commerce-profile-hero--editorial {
+    min-height: 15rem;
+  }
+
+  .commerce-profile-hero__brand {
+    flex-direction: row;
+    align-items: center;
+    gap: 2rem;
+    padding: 3rem;
+  }
+}
+
+/* ── Favorite button (hero) ─────────────────────────────── */
+
+.commerce-profile-favorite-form {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.commerce-profile-favorite-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.commerce-profile-favorite-btn:hover {
+  transform: scale(1.12);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.commerce-profile-favorite-btn:active {
+  transform: scale(0.92);
+}
+
+.commerce-profile-favorite-icon {
+  font-size: 1.4rem;
+  color: rgba(255, 255, 255, 0.85);
+  transition: color 0.2s ease, font-variation-settings 0.25s ease;
+  font-variation-settings: 'FILL' 0;
+}
+
+.commerce-profile-favorite-btn--selected {
+  border-color: rgba(16, 185, 129, 0.6);
+  background: rgba(16, 185, 129, 0.25);
+}
+
+.commerce-profile-favorite-btn--selected .commerce-profile-favorite-icon {
+  color: #34D399;
+  font-variation-settings: 'FILL' 1;
+}
+
+.commerce-profile-favorite-btn--selected:hover {
+  border-color: rgba(16, 185, 129, 0.8);
+  background: rgba(16, 185, 129, 0.35);
+}
+
+.commerce-profile-favorite-btn--selected:hover .commerce-profile-favorite-icon {
+  color: #6EE7B7;
+}
+
+.commerce-profile-favorite-btn:active .commerce-profile-favorite-icon {
+  font-variation-settings: 'FILL' 1;
+}
+
+.commerce-profile-hero__logo {
+  flex-shrink: 0;
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.08),
+    0 10px 20px -4px rgba(0, 0, 0, 0.12);
+}
+
+@media (min-width: 768px) {
+  .commerce-profile-hero__logo {
+    width: 6.5rem;
+    height: 6.5rem;
+  }
+}
+
+.commerce-profile-hero__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.commerce-profile-hero__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.commerce-profile-hero__name {
+  margin: 0;
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+@media (min-width: 768px) {
+  .commerce-profile-hero__name {
+    font-size: 2.25rem;
+  }
+}
+
+.commerce-profile-hero__category {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.commerce-profile-hero--editorial .commerce-review-summary {
+  margin-left: 0;
+  text-align: left;
+}
+
+.commerce-profile-hero--editorial .commerce-review-summary__avg {
+  color: #ffffff;
+}
+
+.commerce-profile-hero--editorial .commerce-review-summary__count {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ── 2+1 layout ─────────────────────────────────────────── */
+
+.commerce-profile-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+}
+
+@media (min-width: 1024px) {
+  .commerce-profile-layout {
+    grid-template-columns: 2fr 1fr;
+    align-items: start;
+  }
+}
+
+.commerce-profile-layout__main {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  min-width: 0;
+}
+
+.commerce-profile-layout__sidebar {
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .commerce-profile-layout__sidebar {
+    position: sticky;
+    top: 6rem;
+  }
+}
+
+.commerce-profile-sidebar-card {
+  background-color: #f3f5f3;
+  border-radius: 0.75rem;
+  padding: 0.25rem;
+}
+
+.commerce-profile-sidebar-card__title {
+  margin: 0 0 1rem;
+  padding: 1.25rem 1.25rem 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #191c1a;
+}
+
+.commerce-profile-sidebar-card .commerce-info-card {
+  background-color: transparent;
+  padding: 0 1.25rem 1.25rem;
+  border-radius: 0;
+}
+
+/* ── Sections ───────────────────────────────────────────── */
+
+.commerce-profile-section {
+  margin-bottom: 0;
+}
+
+.commerce-profile-section__title {
+  margin: 0 0 1.25rem;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #191c1a;
+  letter-spacing: -0.02em;
+}
+
+.commerce-profile-offers-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .commerce-profile-offers-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+.commerce-profile-offers-scroll {
+  overflow-y: visible;
+}
+
+.commerce-profile-offers-pagination {
+  margin-top: 2.5rem;
+}

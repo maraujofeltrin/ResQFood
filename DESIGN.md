@@ -24,6 +24,21 @@ Treat the UI as a series of stacked, semi-translucent sheets.
 ### The "Glass & Gradient" Rule
 To avoid a flat "template" look, use **Glassmorphism** for floating headers or navigation bars. Apply `surface` at 80% opacity with a `backdrop-filter: blur(12px)`. For Primary CTAs, use a subtle linear gradient transitioning from `primary` (#059669) to `primary_container` (#D1FAE5) at a 135-degree angle. This adds "soul" and depth that static hex codes cannot provide.
 
+### Auction Accent Palette
+Auctions are a distinct feature within ResQFood and receive a **warm orange accent** to differentiate them from standard Packs — while the overall page still feels unmistakably "ResQFood" (green surfaces, same typography, same card shapes).
+
+- **`auction`** (#E65100) — Deep orange. Used **only** for: auction CTA buttons, auction section-header icons, and tiny inline badges/chips.
+- **`auction-container`** (#FFF3E0) — Soft peach. Background for auction badges and small highlighted areas (never full sections).
+- **`auction-fixed`** (#FFAB40) — Amber. Hover states and secondary highlights within an auction context.
+- **`on-auction`** (#FFFFFF) — Text on top of `auction` backgrounds.
+- **`on-auction-container`** (#BF360C) — Dark terracotta. Text on `auction-container` backgrounds.
+
+**Usage Rules:**
+- **Do** apply `auction` to submit buttons and small iconography on auction-specific forms.
+- **Do** keep form focus states, breadcrumb links, and navigation in `primary` (emerald).
+- **Don't** replace surface/background colours with orange; the page must remain within the green ResQFood ecosystem.
+- **Don't** use `auction` tokens outside of explicitly auction-related components (e.g. auction creation forms, auction cards, auction status badges).
+
 ---
 
 ## 3. Typography: The Editorial Voice

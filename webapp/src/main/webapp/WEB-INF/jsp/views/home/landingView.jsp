@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
-<%@ taglib prefix="paw" tagdir="/WEB-INF/tags" %>
+<%@ taglib prefix="paw" uri="http://itba.edu.ar/paw/tags" %>
 <!DOCTYPE html>
 <html class="light" lang="${pageContext.response.locale.language}">
 <paw:head titleSuffixCode="landing.pageTitle.suffix">
@@ -14,9 +14,14 @@
     <paw:navbar />
 
     <main class="pt-24 flex-grow">
-        
-        <%-- <paw:landingHero /> --%>
-
+        <c:if test="${passwordResetSuccess}">
+            <div class="max-w-7xl mx-auto px-6 mt-6 mb-4">
+                <div class="bg-primary-container text-on-primary-container rounded-xl p-4 text-center font-medium shadow-sm">
+                    <spring:message code="landing.passwordReset.success" />
+                </div>
+            </div>
+        </c:if>
+        <paw:landingHero previewPacks="${previewPacks}" />
         <!-- Dual Path Section -->
         <section class="max-w-7xl mx-auto px-6 py-12">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">

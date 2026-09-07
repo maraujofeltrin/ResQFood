@@ -1,0 +1,133 @@
+/* ── Buttons ─────────────────────────────────────────────── */
+
+.btn {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  margin-bottom: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+  vertical-align: middle;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 0.65rem;
+  box-shadow: 0 12px 32px rgba(25, 28, 26, 0.06);
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+  user-select: none;
+}
+
+.btn:hover {
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(25, 28, 26, 0.16);
+}
+
+.btn:active {
+  transform: translateY(1px) scale(0.99);
+  box-shadow: 0 3px 8px rgba(25, 28, 26, 0.16);
+}
+
+.btn:focus {
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(5, 150, 105, 0.25);
+}
+
+.btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  border-radius: 0.2rem;
+}
+
+.btn-md {
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  border-radius: 0.25rem;
+}
+
+.btn-lg {
+  padding: 0.5rem 1rem;
+  font-size: 1.25rem;
+  border-radius: 0.3rem;
+}
+
+.btn-primary {
+  color: #fff;
+  background: linear-gradient(135deg, #059669, #D1FAE5);
+  border-color: transparent;
+}
+
+.btn-primary:hover {
+  color: #fff;
+  background: linear-gradient(135deg, #059669, #A7F3D0);
+  border-color: transparent;
+}
+
+.btn-primary:focus {
+  box-shadow: 0 0 0 0.2rem rgba(5, 150, 105, 0.5);
+}
+
+.btn-primary:disabled {
+  background: linear-gradient(135deg, #059669, #D1FAE5);
+  border-color: transparent;
+}
+
+.btn-secondary {
+  color: #fff;
+  background: linear-gradient(135deg, #707973, #576159);
+  border-color: #404943;
+}
+
+.btn-secondary:hover {
+  color: #fff;
+  background: linear-gradient(135deg, #576159, #404943);
+  border-color: #2E312E;
+}
+
+.btn-secondary:focus {
+  box-shadow: 0 0 0 0.2rem rgba(82, 122, 97, 0.5);
+}
+
+.btn-success {
+  color: #fff;
+  background: linear-gradient(135deg, #059669, #D1FAE5);
+  border-color: transparent;
+}
+
+.btn-success:hover {
+  color: #fff;
+  background: linear-gradient(135deg, #059669, #A7F3D0);
+  border-color: transparent;
+}
+
+.btn-success:focus {
+  box-shadow: 0 0 0 0.2rem rgba(5, 150, 105, 0.5);
+}
+
+.btn-danger {
+  color: #fff;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-color: #b91c1c;
+}
+
+.btn-danger:hover {
+  color: #fff;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  border-color: #991b1b;
+}
+
+.btn-danger:focus {
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.5);
+}

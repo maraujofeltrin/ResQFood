@@ -1,0 +1,95 @@
+package ar.edu.itba.paw.services.security;
+
+import ar.edu.itba.paw.models.security.PasswordResetException;
+import ar.edu.itba.paw.models.security.Token;
+import ar.edu.itba.paw.models.security.TokenType;
+import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.persistence.TokenDao;
+import ar.edu.itba.paw.services.user.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.Locale;
+import java.util.Optional;
+import org.springframework.beans.factory.annotation.Value;
+
+@Service
+public class PasswordResetTokenServiceImpl implements PasswordResetTokenService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PasswordResetTokenServiceImpl.class);
+
+    private final TokenDao tokenDao;
+    private final UserService userService;
+    private final PasswordResetMailService passwordResetMailService;
+    private final PasswordEncoder passwordEncoder;
+    private final String baseUrl;
+
+    @Autowired
+    public PasswordResetTokenServiceImpl(final TokenDao tokenDao, @Lazy final UserService userService,
+            final PasswordResetMailService passwordResetMailService, final PasswordEncoder passwordEncoder,
+            @Value("${app.base-url}") final String baseUrl) {
+        this.tokenDao = tokenDao;
+        this.userService = userService;
+        this.passwordResetMailService = passwordResetMailService;
+        this.passwordEncoder = passwordEncoder;
+        this.baseUrl = baseUrl;
+    }
+
+    @Transactional
+    @Override
+    public void requestPasswordReset(final String email) {
+        final Optional<User> user = userService.findByEmail(email);
+        if (user.isPresent()) {
+            final User requestUser = user.get();
+            final Locale locale = requestUser.getLocale() == null
+                    ? Locale.forLanguageTag("es")
+                    : requestUser.getLocale();
+            final Token token = TokenUtils.createToken(tokenDao, requestUser.getId(), TokenType.PASSWORD_RESET, 1L);
+            final String resetUrl = baseUrl + "/password-reset/change?token=" + token.getToken();
+            passwordResetMailService.sendPasswordResetMail(requestUser.getEmail(), resetUrl, locale);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public boolean isPasswordResetTokenValid(final String token) {
+        final Optional<Token> maybeToken = tokenDao.findByTokenAndType(token, TokenType.PASSWORD_RESET);
+        return maybeToken.isPresent() && isValid(maybeToken.get());
+    }
+
+    @Transactional
+    @Override
+    public void resetPassword(final String token, final String rawPassword) {
+        final Token resetToken = tokenDao.findByTokenAndType(token, TokenType.PASSWORD_RESET)
+                .orElseThrow(() -> {
+                    LOGGER.warn("Password reset failed: token not found");
+                    return new PasswordResetException(PasswordResetException.Reason.TOKEN_NOT_FOUND);
+                });
+        if (!isValid(resetToken)) {
+            LOGGER.warn("Password reset failed: invalid or expired token userId={}", resetToken.getUser().getId());
+            throw new PasswordResetException(PasswordResetException.Reason.TOKEN_EXPIRED);
+        }
+        final User user = resetToken.getUser();
+        final String encodedPassword = passwordEncoder.encode(rawPassword);
+        user.setPassword(encodedPassword);
+        resetToken.setUsed(true);
+        LOGGER.info("Password reset successfully for userId={}", user.getId());
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Optional<String> getEmailByToken(final String token) {
+        return tokenDao.findByTokenAndType(token, TokenType.PASSWORD_RESET)
+                .map(t -> t.getUser().getEmail());
+    }
+
+    private static boolean isValid(final Token token) {
+        return !token.isUsed() && token.getExpiresAt().isAfter(LocalDateTime.now());
+    }
+}

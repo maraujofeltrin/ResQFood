@@ -1,0 +1,282 @@
+package ar.edu.itba.paw.models.user;
+
+import ar.edu.itba.paw.models.pack.Municipality;
+import ar.edu.itba.paw.models.pack.MunicipalityConverter;
+
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.MapsId;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+
+@Entity
+@Table(name = "commerces")
+public class Commerce {
+    public enum Category {
+        BAKERY,
+        RESTAURANT,
+        GREENGROCER,
+        OTHER
+    }
+
+    public static final String PROVINCE_BUENOS_AIRES = "Buenos Aires";
+
+    @Id
+    private Long userId;
+
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @MapsId
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @Column(name = "commercial_name", nullable = false)
+    private String commercialName;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Category category;
+    
+    @Column(nullable = false)
+    private String street;
+    
+    @Column(name = "street_number", nullable = false)
+    private Integer streetNumber;
+    
+    @Convert(converter = MunicipalityConverter.class)
+    @Column(nullable = false)
+    private Municipality city;
+    
+    @Column(nullable = false)
+    private String province;
+    
+    @Column(name = "postal_code", nullable = false)
+    private String postalCode;
+    
+    @Column(name = "opening_time", nullable = false)
+    private String openingTime;
+    
+    @Column(name = "closing_time", nullable = false)
+    private String closingTime;
+
+    protected Commerce() {}
+
+    public Commerce(final User user, final String commercialName, final Category category, final String street,
+            final Integer streetNumber, final Municipality city, final String province, final String postalCode,
+            final String openingTime, final String closingTime) {
+        this.user = user;
+        this.userId = user != null ? user.getId() : null;
+        this.commercialName = commercialName;
+        this.category = category;
+        this.street = street;
+        this.streetNumber = streetNumber;
+        this.city = city;
+        this.province = province;
+        this.postalCode = postalCode;
+        this.openingTime = openingTime;
+        this.closingTime = closingTime;
+    }
+
+    public Commerce(final Long userId, final String commercialName, final Category category, final String street,
+            final Integer streetNumber, final Municipality city, final String province, final String postalCode,
+            final String openingTime, final String closingTime) {
+        this(userId != null ? new User(userId, "stub@local", "p", "n", null, User.Role.COMMERCE, false) : null,
+                commercialName, category, street, streetNumber, city, province, postalCode, openingTime, closingTime);
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public Long getUserId() {
+        return user != null ? user.getId() : userId;
+    }
+
+    public String getCommercialName() {
+        return commercialName;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public String getStreet() {
+        return street;
+    }
+
+    public Integer getStreetNumber() {
+        return streetNumber;
+    }
+
+    public Municipality getCity() {
+        return city;
+    }
+
+    public String getProvince() {
+        return province;
+    }
+
+    public String getPostalCode() {
+        return postalCode;
+    }
+
+    public String getOpeningTime() {
+        return openingTime;
+    }
+
+    public String getClosingTime() {
+        return closingTime;
+    }
+
+    public void setCommercialName(final String commercialName) {
+        this.commercialName = commercialName;
+    }
+
+    public void setCategory(final Category category) {
+        this.category = category;
+    }
+
+    public void setStreet(final String street) {
+        this.street = street;
+    }
+
+    public void setStreetNumber(final Integer streetNumber) {
+        this.streetNumber = streetNumber;
+    }
+
+    public void setCity(final Municipality city) {
+        this.city = city;
+    }
+
+    public void setProvince(final String province) {
+        this.province = province;
+    }
+
+    public void setPostalCode(final String postalCode) {
+        this.postalCode = postalCode;
+    }
+
+    public void setOpeningTime(final String openingTime) {
+        this.openingTime = openingTime;
+    }
+
+    public void setClosingTime(final String closingTime) {
+        this.closingTime = closingTime;
+    }
+
+    // ── Domain helpers ──────────────────────────────────────────────────
+
+    /**
+     * Returns a display-friendly street line, e.g. "Av. Corrientes 1234".
+     * Falls back to "—" when both street and number are absent.
+     */
+    public String getFullStreetLine() {
+        final boolean hasStreet = street != null && !street.isBlank();
+        final boolean hasNumber = streetNumber != null;
+        if (!hasStreet && !hasNumber) {
+            return "—";
+        }
+        if (hasStreet && hasNumber) {
+            return street.trim() + " " + streetNumber;
+        }
+        return hasStreet ? street.trim() : String.valueOf(streetNumber);
+    }
+
+    /**
+     * Returns "City, Province, PostalCode" omitting blank parts.
+     * Falls back to "—" when all parts are absent.
+     */
+    public String getCityProvincePostal() {
+        final List<String> parts = new ArrayList<>(3);
+        if (city != null) {
+            parts.add(city.getCityName().trim());
+        }
+        if (province != null && !province.isBlank()) {
+            parts.add(province.trim());
+        }
+        if (postalCode != null && !postalCode.isBlank()) {
+            parts.add(postalCode.trim());
+        }
+        return parts.isEmpty() ? "—" : String.join(", ", parts);
+    }
+
+    /**
+     * Returns {@code true} if the commerce is currently open based on its
+     * opening/closing hours evaluated against the given time zone.
+     */
+    public boolean isOpenNow(final ZoneId zone) {
+        final Optional<LocalTime> open = parseFlexibleTime(openingTime);
+        final Optional<LocalTime> close = parseFlexibleTime(closingTime);
+        if (open.isEmpty() || close.isEmpty()) {
+            return false;
+        }
+        final LocalTime o = open.get();
+        final LocalTime c = close.get();
+        if (o.equals(c)) {
+            return false;
+        }
+        final LocalTime now = LocalTime.now(zone);
+        if (!c.isBefore(o)) {
+            return !now.isBefore(o) && !now.isAfter(c);
+        }
+        return !now.isBefore(o) || !now.isAfter(c);
+    }
+
+    private static Optional<LocalTime> parseFlexibleTime(final String value) {
+        if (value == null || value.isBlank()) {
+            return Optional.empty();
+        }
+        final String v = value.trim();
+        final DateTimeFormatter[] formatters = {
+                DateTimeFormatter.ofPattern("h:mm a", Locale.US),
+                DateTimeFormatter.ofPattern("hh:mm a", Locale.US),
+                DateTimeFormatter.ofPattern("H:mm", Locale.US),
+                DateTimeFormatter.ofPattern("HH:mm", Locale.US),
+                DateTimeFormatter.ofPattern("H:mm:ss", Locale.US),
+                DateTimeFormatter.ofPattern("HH:mm:ss", Locale.US),
+        };
+        for (final DateTimeFormatter formatter : formatters) {
+            try {
+                return Optional.of(LocalTime.parse(v, formatter));
+            } catch (final DateTimeParseException ignored) {
+                // try next pattern
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public String toString() {
+        return "Commerce [userId=" + getUserId() + ", commercialName=" + commercialName + ", category=" + category
+                + ", street=" + street + ", streetNumber=" + streetNumber + ", city=" + city + ", province="
+                + province + ", postalCode=" + postalCode + ", openingTime=" + openingTime + ", closingTime="
+                + closingTime + "]";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Commerce)) return false;
+        Commerce that = (Commerce) o;
+        return userId != null && userId.equals(that.getUserId());
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hashCode(userId);
+    }
+}

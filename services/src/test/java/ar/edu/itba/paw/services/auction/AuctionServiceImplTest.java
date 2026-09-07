@@ -1,0 +1,421 @@
+package ar.edu.itba.paw.services.auction;
+
+import ar.edu.itba.paw.models.auction.Auction;
+import ar.edu.itba.paw.models.auction.Bid;
+import ar.edu.itba.paw.models.auction.BidFailureReason;
+import ar.edu.itba.paw.models.auction.AuctionCreationException;
+import ar.edu.itba.paw.models.auction.BidPlacementException;
+import ar.edu.itba.paw.models.pack.Municipality;
+import ar.edu.itba.paw.models.pack.Pack;
+import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.Client;
+import ar.edu.itba.paw.models.user.User;
+import ar.edu.itba.paw.persistence.AuctionDao;
+import ar.edu.itba.paw.persistence.BidDao;
+import ar.edu.itba.paw.services.pack.PackService;
+import ar.edu.itba.paw.services.notification.NotificationService;
+import ar.edu.itba.paw.services.reservation.ReservationService;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class AuctionServiceImplTest {
+
+    @Mock
+    private AuctionDao auctionDao;
+
+    @Mock
+    private BidDao bidDao;
+
+    @Mock
+    private PackService packService;
+
+    @Mock
+    private ReservationService reservationService;
+
+    @Mock
+    private NotificationService notificationService;
+
+    @InjectMocks
+    private AuctionServiceImpl auctionService;
+
+    private static final long PACK_ID = 1L;
+    private static final long AUCTION_ID = 100L;
+    private static final long CLIENT_ID = 2L;
+    private static final long COMMERCE_ID = 3L;
+
+    private static Auction auctionRef(final long id) {
+        return new Auction(id, null, 1000.0, 500.0, null, null, null, Auction.Status.ACTIVE, null);
+    }
+
+    private static Client clientRef(final long id) {
+        return new Client(id, "N", "L", true);
+    }
+
+    private static User userRef(final long id) {
+        return new User(id, "u" + id + "@test.com", "p", "User", null, User.Role.CLIENT, true);
+    }
+
+    private static Commerce commerceRef(final long userId) {
+        return new Commerce(userId, "Comm", Commerce.Category.BAKERY, "St", 1, Municipality.AVELLANEDA, "P", "1000",
+                "08:00", "20:00");
+    }
+
+    private static Pack newPack(final long id, final long commerceId, final String title, final String desc,
+            final double originalPrice, final double finalPrice, final int stock, final boolean active,
+            final List<ar.edu.itba.paw.models.pack.PackTag> tags) {
+        return new Pack(id, commerceRef(commerceId), title, desc, originalPrice, finalPrice, stock, active, tags);
+    }
+
+    @Test
+    void testCreateAuctionWhenPackValidReturnsCreatedAuction() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        when(packService.findById(PACK_ID)).thenReturn(Optional.of(pack));
+        final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
+        final double minInc = 50.0;
+        final Auction createdAuction = new Auction(AUCTION_ID, pack, 100.0, minInc, null, null, endTime,
+                Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.createAuction(PACK_ID, 100.0, minInc, endTime)).thenReturn(createdAuction);
+
+        // 2. Ejercicio
+        final Auction auction = auctionService.createAuction(PACK_ID, 100.0, minInc, endTime);
+
+        // 3. Asserts
+        assertNotNull(auction);
+        assertEquals(AUCTION_ID, auction.getId());
+        assertEquals(endTime, auction.getEndTime());
+    }
+
+    @Test
+    void testCreateAuctionWhenPackInactiveThrowsAuctionCreationException() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, false, null);
+        when(packService.findById(PACK_ID)).thenReturn(Optional.of(pack));
+
+        // 2. Ejercicio
+        final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(1);
+        final AuctionCreationException exception = assertThrows(AuctionCreationException.class,
+                () -> auctionService.createAuction(PACK_ID, 100.0, 10.0, endTime));
+
+        // 3. Asserts
+        assertEquals(AuctionCreationException.Reason.PACK_INACTIVE, exception.getReason());
+    }
+
+    @Test
+    void testCreateAuctionWhenPackAlreadyHasAuctionThrowsAuctionCreationException() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Auction existingAuction = new Auction(AUCTION_ID, pack, 100.0, 10.0, null, null,
+                LocalDateTime.now(ZoneOffset.UTC).plusDays(1), Auction.Status.ACTIVE, LocalDateTime.now());
+        pack.setAuction(existingAuction);
+        when(packService.findById(PACK_ID)).thenReturn(Optional.of(pack));
+
+        // 2. Ejercicio
+        final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusDays(2);
+        final AuctionCreationException exception = assertThrows(AuctionCreationException.class,
+                () -> auctionService.createAuction(PACK_ID, 100.0, 10.0, endTime));
+
+        // 3. Asserts
+        assertEquals(AuctionCreationException.Reason.ALREADY_HAS_AUCTION, exception.getReason());
+    }
+
+    @Test
+    void testPlaceBidWhenAmountValidReturnsCreatedBid() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
+        final double minInc = 500.0;
+        final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime,
+                Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
+        final Bid createdBid = new Bid(1L, auctionRef(AUCTION_ID), clientRef(CLIENT_ID), 1600.0, LocalDateTime.now());
+        when(bidDao.createBid(AUCTION_ID, CLIENT_ID, 1600.0)).thenReturn(createdBid);
+
+        // 2. Ejercicio
+        final Bid bid = auctionService.placeBid(AUCTION_ID, CLIENT_ID, 1600.0);
+
+        // 3. Asserts
+        assertNotNull(bid);
+        assertEquals(1600.0, bid.getAmount());
+    }
+
+    @Test
+    void testPlaceBidWhenPreviousBidderExistsReturnsBid() {
+        // 1. Setup
+        final long previousBidderId = 50L;
+        final long newBidderId = 60L;
+        final double amount = 75.0;
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
+        final Auction auction = new Auction(AUCTION_ID, pack, 10.0, 5.0, 50.0, previousBidderId, endTime,
+                Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
+        final Bid createdBid = new Bid(1L, auctionRef(AUCTION_ID), clientRef(newBidderId), amount, LocalDateTime.now());
+        when(bidDao.createBid(AUCTION_ID, newBidderId, amount)).thenReturn(createdBid);
+        when(bidDao.findBidder(AUCTION_ID, previousBidderId)).thenReturn(Optional.of(userRef(previousBidderId)));
+
+        // 2. Ejercicio
+        final Bid bid = auctionService.placeBid(AUCTION_ID, newBidderId, amount);
+
+        // 3. Asserts
+        assertNotNull(bid);
+        assertEquals(amount, bid.getAmount());
+        assertEquals(newBidderId, bid.getClient().getUserId().longValue());
+    }
+
+    @Test
+    void testPlaceBidWhenAmountBelowMinimumThrowsBidPlacementException() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
+        final double minInc = 500.0;
+        final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime,
+                Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
+
+        // 2. Ejercicio
+        final BidPlacementException exception = assertThrows(BidPlacementException.class,
+                () -> auctionService.placeBid(AUCTION_ID, CLIENT_ID, 1200.0));
+
+        // 3. Asserts
+        assertEquals(BidFailureReason.AMOUNT_BELOW_MINIMUM, exception.getReason());
+    }
+
+    @Test
+    void testPlaceBidWhenAuctionExpiredThrowsBidPlacementException() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).minusHours(1);
+        final double minInc = 1.0;
+        final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime,
+                Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
+
+        // 2. Ejercicio
+        final BidPlacementException exception = assertThrows(BidPlacementException.class,
+                () -> auctionService.placeBid(AUCTION_ID, CLIENT_ID, 2000.0));
+
+        // 3. Asserts
+        assertEquals(BidFailureReason.EXPIRED, exception.getReason());
+    }
+
+    @Test
+    void testPlaceBidWhenClientIsOwnCommerceThrowsBidPlacementException() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusHours(1);
+        final double minInc = 1.0;
+        final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, minInc, null, null, endTime,
+                Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
+
+        // 2. Ejercicio
+        final BidPlacementException exception = assertThrows(BidPlacementException.class,
+                () -> auctionService.placeBid(AUCTION_ID, COMMERCE_ID, 2000.0));
+
+        // 3. Asserts
+        assertEquals(BidFailureReason.OWN_COMMERCE, exception.getReason());
+    }
+
+    @Test
+    void testFilterParticipatedAuctionsWhenInvokedDelegatesToDao() {
+        // 1. Setup
+        final int page = 1;
+        final int pageSize = 10;
+        final String query = "search";
+        final Auction auction = new Auction(AUCTION_ID, null, 10.0, 1.0, null, null, null, Auction.Status.ACTIVE, null);
+        final List<Auction> expected = List.of(auction);
+        when(auctionDao.filterParticipatedAuctions(CLIENT_ID, Auction.Status.ACTIVE, query, page, pageSize)).thenReturn(expected);
+        when(bidDao.findMaxBidsByClientForAuctions(CLIENT_ID, List.of(AUCTION_ID))).thenReturn(Map.of());
+
+        // 2. Ejercicio
+        final List<Auction> result = auctionService.filterParticipatedAuctions(CLIENT_ID, Auction.Status.ACTIVE, query, page, pageSize);
+
+        // 3. Asserts
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void testFilterParticipatedAuctionsHydratesMyMaxBid() {
+        // 1. Setup
+        final int page = 1;
+        final int pageSize = 10;
+        final Auction auction = new Auction(AUCTION_ID, null, 10.0, 1.0, null, null, null, Auction.Status.ACTIVE, null);
+        when(auctionDao.filterParticipatedAuctions(CLIENT_ID, null, null, page, pageSize))
+                .thenReturn(List.of(auction));
+        when(bidDao.findMaxBidsByClientForAuctions(CLIENT_ID, List.of(AUCTION_ID)))
+                .thenReturn(Map.of(AUCTION_ID, 50.0));
+
+        // 2. Ejercicio
+        final List<Auction> result = auctionService.filterParticipatedAuctions(CLIENT_ID, null, null, page, pageSize);
+
+        // 3. Asserts
+        assertEquals(1, result.size());
+        assertEquals(50.0, result.get(0).getMyMaxBid());
+    }
+
+    @Test
+    void testFilterParticipatedAuctionsWhenEmptyResultSkipsBidQuery() {
+        // 1. Setup
+        final int page = 1;
+        final int pageSize = 10;
+        when(auctionDao.filterParticipatedAuctions(CLIENT_ID, null, null, page, pageSize))
+                .thenReturn(Collections.emptyList());
+
+        // 2. Ejercicio
+        final List<Auction> result = auctionService.filterParticipatedAuctions(CLIENT_ID, null, null, page, pageSize);
+
+        // 3. Asserts
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testFilterParticipatedAuctionsSetsDefaultMyMaxBidWhenNoBidFound() {
+        // 1. Setup
+        final int page = 1;
+        final int pageSize = 10;
+        final Auction auction = new Auction(AUCTION_ID, null, 10.0, 1.0, null, null, null, Auction.Status.ACTIVE, null);
+        when(auctionDao.filterParticipatedAuctions(CLIENT_ID, null, null, page, pageSize))
+                .thenReturn(List.of(auction));
+        when(bidDao.findMaxBidsByClientForAuctions(CLIENT_ID, List.of(AUCTION_ID)))
+                .thenReturn(Collections.emptyMap());
+
+        // 2. Ejercicio
+        final List<Auction> result = auctionService.filterParticipatedAuctions(CLIENT_ID, null, null, page, pageSize);
+
+        // 3. Asserts
+        assertEquals(1, result.size());
+        assertEquals(0d, result.get(0).getMyMaxBid());
+    }
+
+    @Test
+    void testCountParticipatedAuctionsWhenInvokedDelegatesToDao() {
+        // 1. Setup
+        final String query = "search";
+        final int expected = 5;
+        when(auctionDao.countParticipatedAuctions(CLIENT_ID, Auction.Status.ACTIVE, query)).thenReturn(expected);
+
+        // 2. Ejercicio
+        final int result = auctionService.countParticipatedAuctions(CLIENT_ID, Auction.Status.ACTIVE, query);
+
+        // 3. Asserts
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void testCancelAuctionWhenAuctionNotFoundReturnsNotFound() {
+        // 1. Setup
+        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.empty());
+
+        // 2. Ejercicio
+        final CancelAuctionResult result = auctionService.cancelAuction(AUCTION_ID);
+
+        // 3. Asserts
+        assertEquals(CancelAuctionResult.Outcome.NOT_FOUND, result.getOutcome());
+    }
+
+    @Test
+    void testCancelAuctionWhenAuctionNotActiveReturnsNotActive() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, 10.0, null, null, null,
+                Auction.Status.FINISHED, LocalDateTime.now());
+        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
+
+        // 2. Ejercicio
+        final CancelAuctionResult result = auctionService.cancelAuction(AUCTION_ID);
+
+        // 3. Asserts
+        assertEquals(CancelAuctionResult.Outcome.NOT_ACTIVE, result.getOutcome());
+    }
+
+    @Test
+    void testCancelAuctionWhenAuctionHasBidsReturnsHasBids() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, 10.0, null, null, null,
+                Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
+        when(bidDao.countByAuctionId(AUCTION_ID)).thenReturn(1);
+
+        // 2. Ejercicio
+        final CancelAuctionResult result = auctionService.cancelAuction(AUCTION_ID);
+
+        // 3. Asserts
+        assertEquals(CancelAuctionResult.Outcome.HAS_BIDS, result.getOutcome());
+    }
+
+    @Test
+    void testCancelAuctionWhenValidCancelsAuctionAndSetsPackInactive() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Auction auction = new Auction(AUCTION_ID, pack, 1000.0, 10.0, null, null, null,
+                Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.findById(AUCTION_ID)).thenReturn(Optional.of(auction));
+        when(bidDao.countByAuctionId(AUCTION_ID)).thenReturn(0);
+
+        // 2. Ejercicio
+        final CancelAuctionResult result = auctionService.cancelAuction(AUCTION_ID);
+
+        // 3. Asserts
+        assertEquals(CancelAuctionResult.Outcome.SUCCESS, result.getOutcome());
+        assertEquals(Auction.Status.CANCELLED, auction.getStatus());
+        assertFalse(pack.getActive());
+    }
+
+    @Test
+    void testCloseExpiredAuctionsUpdatesEntityStatus() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Auction expiredAuction = new Auction(AUCTION_ID, pack, 1000.0, 10.0, null, null,
+                LocalDateTime.now(ZoneOffset.UTC).minusHours(1), Auction.Status.ACTIVE, LocalDateTime.now());
+        when(auctionDao.findExpiredActive()).thenReturn(List.of(expiredAuction));
+        when(bidDao.findBidders(AUCTION_ID)).thenReturn(Collections.emptyList());
+
+        // 2. Ejercicio
+        final int closed = auctionService.closeExpiredAuctions();
+
+        // 3. Asserts
+        assertEquals(1, closed);
+        assertEquals(Auction.Status.FINISHED, expiredAuction.getStatus());
+        assertFalse(expiredAuction.getPack().getActive());
+    }
+
+    @Test
+    void testCloseExpiredAuctionsWhenWinnerReservationFailsPropagatesException() {
+        // 1. Setup
+        final Pack pack = newPack(PACK_ID, COMMERCE_ID, "Test Pack", "Desc", 100.0, 50.0, 10, true, null);
+        final Auction expiredAuction = new Auction(AUCTION_ID, pack, 1000.0, 10.0, 1500.0, CLIENT_ID,
+                LocalDateTime.now(ZoneOffset.UTC).minusHours(1), Auction.Status.ACTIVE, LocalDateTime.now());
+        final RuntimeException failure = new RuntimeException("reservation failed");
+        when(auctionDao.findExpiredActive()).thenReturn(List.of(expiredAuction));
+        when(reservationService.createReservation(PACK_ID, CLIENT_ID, 1, 1500.0, null, true)).thenThrow(failure);
+
+        // 2. Ejercicio
+        final RuntimeException thrown = assertThrows(RuntimeException.class,
+                () -> auctionService.closeExpiredAuctions());
+
+        // 3. Asserts
+        assertEquals(failure, thrown);
+    }
+
+}

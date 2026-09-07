@@ -1,0 +1,136 @@
+package ar.edu.itba.paw.persistence;
+
+import ar.edu.itba.paw.models.user.Client;
+import ar.edu.itba.paw.models.user.Commerce;
+import ar.edu.itba.paw.models.user.CommerceReview;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Repository;
+
+import ar.edu.itba.paw.persistence.util.Pagination;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@Primary
+@Repository
+public class CommerceReviewJpaDao implements CommerceReviewDao {
+
+    @PersistenceContext
+    private EntityManager em;
+
+    @Override
+    public CommerceReview createReview(Long commerceUserId, Long clientUserId, Integer rating, String body) {
+        final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        final Commerce commerce = em.getReference(Commerce.class, commerceUserId);
+        final Client client = em.getReference(Client.class, clientUserId);
+        final CommerceReview review = new CommerceReview(null, commerce, client, rating, body, now, now);
+        em.persist(review);
+        return review;
+    }
+
+    @Override
+    public CommerceReview updateReview(Long id, Integer rating, String body) {
+        final CommerceReview review = em.find(CommerceReview.class, id);
+        if (review == null) {
+            return null;
+        }
+        review.setRating(rating);
+        review.setBody(body);
+        review.setUpdatedAt(LocalDateTime.now());
+        return review;
+    }
+
+    @Override
+    public Optional<CommerceReview> findByClientAndCommerce(Long clientUserId, Long commerceUserId) {
+        return em.createQuery(
+                "FROM CommerceReview r WHERE r.client.userId = :client AND r.commerce.userId = :commerce",
+                CommerceReview.class)
+                .setParameter("client", clientUserId)
+                .setParameter("commerce", commerceUserId)
+                .getResultList()
+                .stream()
+                .findFirst();
+    }
+
+    @Override
+    public List<CommerceReview> findByCommerceId(Long commerceUserId, int page, int pageSize) {
+        final List<?> rawIds = em.createNativeQuery(
+                        "SELECT r.id FROM commerce_reviews r "
+                        + "WHERE r.commerce_user_id = :commerce "
+                        + "ORDER BY r.created_at DESC, r.id DESC")
+                .setParameter("commerce", commerceUserId)
+                .setFirstResult(Pagination.offset(page, pageSize))
+                .setMaxResults(pageSize)
+                .getResultList();
+        if (rawIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final List<Long> ids = parseLongIds(rawIds);
+        return em.createQuery(
+                        "FROM CommerceReview r JOIN FETCH r.client "
+                        + "WHERE r.id IN :ids "
+                        + "ORDER BY " + buildReviewIdPositionOrderByClause(ids),
+                        CommerceReview.class)
+                .setParameter("ids", ids)
+                .getResultList();
+    }
+
+    @Override
+    public int countByCommerceId(Long commerceUserId) {
+        Number count = em.createQuery(
+                "SELECT COUNT(r) FROM CommerceReview r WHERE r.commerce.userId = :commerce", Number.class)
+                .setParameter("commerce", commerceUserId)
+                .getSingleResult();
+        return count != null ? count.intValue() : 0;
+    }
+
+    @Override
+    public Double averageRatingByCommerceId(Long commerceUserId) {
+        return em.createQuery(
+                "SELECT AVG(r.rating) FROM CommerceReview r WHERE r.commerce.userId = :commerce", Double.class)
+                .setParameter("commerce", commerceUserId)
+                .getSingleResult();
+    }
+
+    @Override
+    public Map<Long, Double> findAverageRatingsForCommerceIds(final List<Long> commerceUserIds) {
+        if (commerceUserIds == null || commerceUserIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        final List<Object[]> rows = em.createQuery(
+                "SELECT r.commerce.userId, AVG(r.rating) FROM CommerceReview r " +
+                "WHERE r.commerce.userId IN :ids GROUP BY r.commerce.userId", Object[].class)
+                .setParameter("ids", commerceUserIds)
+                .getResultList();
+        final Map<Long, Double> result = new HashMap<>();
+        for (final Object[] row : rows) {
+            result.put((Long) row[0], (Double) row[1]);
+        }
+        return result;
+    }
+
+    private List<Long> parseLongIds(final List<?> rawIds) {
+        final List<Long> ids = new ArrayList<>(rawIds.size());
+        for (final Object rawId : rawIds) {
+            ids.add(rawId instanceof Number ? ((Number) rawId).longValue() : Long.parseLong(rawId.toString()));
+        }
+        return ids;
+    }
+
+    private String buildReviewIdPositionOrderByClause(final List<Long> ids) {
+        final StringBuilder orderBy = new StringBuilder("CASE r.id ");
+        for (int index = 0; index < ids.size(); index++) {
+            orderBy.append("WHEN ").append(ids.get(index).longValue()).append(" THEN ").append(index).append(' ');
+        }
+        orderBy.append("ELSE ").append(ids.size()).append(" END");
+        return orderBy.toString();
+    }
+}

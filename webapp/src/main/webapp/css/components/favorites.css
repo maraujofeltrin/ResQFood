@@ -1,0 +1,89 @@
+/* ===================================================================
+   Favorites page — standalone view
+   =================================================================== */
+
+/* ----------  Header  ---------- */
+.fav-header {
+    text-align: center;
+}
+
+.fav-header__icon-ring {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background: var(--primary, #059669);
+    box-shadow: 0 8px 24px rgba(5, 150, 105, 0.18);
+    animation: fav-pulse 2.4s ease-in-out infinite;
+}
+
+.fav-header__icon {
+    font-size: 1.75rem;
+    color: #fff;
+}
+
+@keyframes fav-pulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 8px 24px rgba(5, 150, 105, 0.18); }
+    50%      { transform: scale(1.06); box-shadow: 0 12px 32px rgba(5, 150, 105, 0.28); }
+}
+
+/* ----------  Count badge  ---------- */
+.fav-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    padding: 0 0.45rem;
+    height: 1.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: var(--primary-container, #D1FAE5);
+    color: var(--on-primary-container, #022C22);
+    letter-spacing: 0.02em;
+}
+
+/* ----------  Empty state  ---------- */
+.fav-empty-state {
+    position: relative;
+    text-align: center;
+    padding: 4rem 2rem;
+    border-radius: 1.5rem;
+    background: var(--surface-container-low, #F3F5F3);
+    overflow: hidden;
+}
+
+.fav-empty-state__glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 0%, rgba(5, 150, 105, 0.06) 0%, transparent 70%);
+}
+
+.fav-empty-state__icon {
+    font-size: 4rem;
+    color: var(--outline, #73796E);
+    opacity: 0.35;
+}
+
+.fav-empty-state__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.75rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    background: var(--primary, #059669);
+    color: #fff;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 16px rgba(5, 150, 105, 0.2);
+}
+
+.fav-empty-state__cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(5, 150, 105, 0.3);
+}

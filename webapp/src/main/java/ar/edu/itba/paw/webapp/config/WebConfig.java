@@ -1,12 +1,17 @@
 package ar.edu.itba.paw.webapp.config;
 
 import org.flywaydb.core.Flyway;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.JpaVendorAdapter;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import javax.persistence.EntityManagerFactory;
 import org.springframework.jdbc.datasource.SimpleDriverDataSource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -20,15 +25,13 @@ import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.web.servlet.view.JstlView;
 
 import javax.sql.DataSource;
 import java.util.Properties;
-import org.flywaydb.core.Flyway;
-import org.springframework.jdbc.datasource.SimpleDriverDataSource;
+
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.validation.Validator;
@@ -36,42 +39,51 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.TimeZone;
-import org.springframework.web.servlet.i18n.SessionLocaleResolver;
-import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
+
+import java.time.ZoneId;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import java.util.concurrent.Executor;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @EnableWebMvc
 @EnableTransactionManagement
 @EnableAsync
-@ComponentScan({ "ar.edu.itba.paw.webapp.controller", "ar.edu.itba.paw.services", "ar.edu.itba.paw.persistence" })
+@EnableScheduling
+@ComponentScan({ "ar.edu.itba.paw.webapp.controller", "ar.edu.itba.paw.webapp.validation", "ar.edu.itba.paw.services", "ar.edu.itba.paw.persistence", "ar.edu.itba.paw.webapp.config", "ar.edu.itba.paw.webapp.auth", "ar.edu.itba.paw.webapp.assembler", "ar.edu.itba.paw.webapp.controller.advice" })
 @Configuration
-@PropertySource("classpath:/env.properties")
+@PropertySource(value = "classpath:/env.properties", ignoreResourceNotFound = true)
 public class WebConfig implements WebMvcConfigurer {
+
+    @Autowired
+    private RequestLoggingInterceptor requestLoggingInterceptor;
 
     static {
         // pgjdbc uses JVM default TimeZone in the startup packet; must be a name PostgreSQL accepts.
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
     }
 
+    /**
+     * App display / business wall-clock zone (e.g. auction end date/time, commerce hours).
+     */
     @Bean
-    public LocaleResolver localeResolver() {
-        SessionLocaleResolver localeResolver = new SessionLocaleResolver();
-        localeResolver.setDefaultLocale(Locale.forLanguageTag("es"));
-        return localeResolver;
+    public ZoneId businessZone(@Value("${app.display-zone:}") final String displayZone) {
+        return (displayZone == null || displayZone.trim().isEmpty())
+                ? ZoneId.of("America/Argentina/Buenos_Aires")
+                : ZoneId.of(displayZone.trim());
     }
 
     @Bean
-    public LocaleChangeInterceptor localeChangeInterceptor() {
-        final LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
-        interceptor.setParamName("lang");
-        return interceptor;
+    public LocaleResolver localeResolver(final DatabaseAwareLocaleResolver databaseAwareLocaleResolver) {
+        return databaseAwareLocaleResolver;
     }
 
     @Override
     public void addInterceptors(final InterceptorRegistry registry) {
-        registry.addInterceptor(localeChangeInterceptor());
+        final LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
+        interceptor.setParamName("lang");
+        registry.addInterceptor(interceptor);
+        registry.addInterceptor(requestLoggingInterceptor);
     }
 
     @Override
@@ -80,6 +92,13 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations("/css/");
         registry.addResourceHandler("/images/**")
                 .addResourceLocations("/images/");
+        registry.addResourceHandler("/js/**")
+                .addResourceLocations("/js/");
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
@@ -90,11 +109,16 @@ public class WebConfig implements WebMvcConfigurer {
         return resolver;
     }
 
-    @Override
-    public Validator getValidator() {
-        LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+    @Bean
+    public LocalValidatorFactoryBean localValidatorFactoryBean() {
+        final LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
         validator.setValidationMessageSource(messageSource());
         return validator;
+    }
+
+    @Override
+    public Validator getValidator() {
+        return localValidatorFactoryBean();
     }
 
     @Bean
@@ -111,8 +135,26 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     @Bean
-    public PlatformTransactionManager transactionManager(final DataSource dataSource) {
-        return new DataSourceTransactionManager(dataSource);
+    public PlatformTransactionManager transactionManager(final EntityManagerFactory emf) {
+        return new JpaTransactionManager(emf);
+    }
+
+    @Bean
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(final DataSource dataSource) {
+        final LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
+        factoryBean.setPackagesToScan("ar.edu.itba.paw.models");
+        factoryBean.setDataSource(dataSource);
+
+        final JpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+        factoryBean.setJpaVendorAdapter(vendorAdapter);
+
+        final Properties properties = new Properties();
+        properties.setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQL95Dialect");
+        properties.setProperty("hibernate.show_sql", "false");
+        properties.setProperty("format_sql", "false");
+        factoryBean.setJpaProperties(properties);
+
+        return factoryBean;
     }
 
     @Bean
@@ -158,17 +200,6 @@ public class WebConfig implements WebMvcConfigurer {
         messageSource.setCacheSeconds(5);
         messageSource.setFallbackToSystemLocale(false);
         return messageSource;
-    }
-
-    @Bean(name = "mailTaskExecutor")
-    public Executor taskExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(2);
-        executor.setMaxPoolSize(5);
-        executor.setQueueCapacity(50);
-        executor.setThreadNamePrefix("MailSenderThread-");
-        executor.initialize();
-        return executor;
     }
 
 }

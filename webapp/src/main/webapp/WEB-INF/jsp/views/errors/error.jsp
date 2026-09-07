@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" isErrorPage="true" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
-<%@ taglib prefix="paw" tagdir="/WEB-INF/tags" %>
+<%@ taglib prefix="paw" uri="http://itba.edu.ar/paw/tags" %>
 
 <c:set var="statusCode" value="${requestScope['javax.servlet.error.status_code']}" />
 <c:set var="statusCodeDisplay" value="${statusCode}" />
@@ -18,7 +18,7 @@
         <spring:message code="error.title.403" var="errorTitle"/>
         <spring:message code="error.message.403" var="errorMessage"/>
     </c:when>
-    <c:when test="${statusCode == 404}">
+    <c:when test="${statusCode == 404 || statusCode == 405}">
         <spring:message code="error.title.404" var="errorTitle"/>
         <spring:message code="error.message.404" var="errorMessage"/>
     </c:when>

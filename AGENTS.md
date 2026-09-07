@@ -5,11 +5,11 @@ This project is a web platform designed to reduce food waste in gastronomic esta
 - Commerces publish their surplus food "packs" at reduced prices at the end of the day.
 - Customers explore, reserve, and pick up these packs based on location and preferences.
 - **Main Goal:** Create an ecosystem where commerces reduce economic losses and users access food at lower costs, promoting responsible and sustainable consumption.
-- **Features:** Search and reservation flow, notifications, favorites system, ratings, purchase history, and impact metrics (e.g., amount of rescued food).
+- **Features:** Search and reservation flow, dynamic pricing through auctions (Auction and Bids), notifications, favorites system, ratings, purchase history, and impact metrics (e.g., amount of rescued food).
 
 ### User Roles
-- **Clients:** Search, explore, and purchase/reserve packs.
-- **Commerces:** Publish and manage the availability of their surplus food offers.
+- **Clients:** Search, explore, purchase/reserve packs, and place bids on active auctions.
+- **Commerces:** Publish and manage the availability of their surplus food offers, either as direct sales or auctions.
 
 ## Technical Architecture
 
@@ -17,22 +17,48 @@ This project is a web platform designed to reduce food waste in gastronomic esta
 - **Language:** Java 21
 - **Build Tool:** Maven (Multi-module project)
 - **Architecture:** MVC (Model-View-Controller)
-- **Back-end Frameworks:** Spring Framework 5.3.x (Web MVC, Context, JDBC, TX)
+- **Back-end Frameworks:** Spring Framework 5.3.x (Web MVC, Context, ORM, JDBC, TX), Spring Security (authentication and HTTP authorization in the `webapp` module). **[NOTE: The migration to JPA/Hibernate is now complete; the project uses JPA/Hibernate as the primary data access layer.]**
+
+### JPA/Hibernate Guidelines
+- Use `@Entity` annotated classes for domain models; place them in `ar.edu.itba.paw.models.<domain>` subpackages.
+- Define repository interfaces in `*-contracts` (e.g., `UserDao`) extending `JpaRepository` or custom DAO contracts.
+- Implement DAOs in the `persistence` module using Spring Data JPA or `EntityManager` for custom queries.
+- Apply `@Transactional` at the **service layer**; DAOs should be free of transaction boundaries.
+- Prefer JPQL or Criteria API; avoid native SQL unless performance‑critical and wrapped in a repository.
+- Configure naming strategy (`hibernate.ejb.naming_strategy`) to enforce **snake_case** column names.
+- Manage lazy loading carefully: use `EntityGraph` or fetch joins when necessary, and fetch collections eagerly only when required.
+- Leverage DTOs (or projection interfaces) to transfer data to the presentation layer, keeping entities encapsulated.
+- Use `@Version` on entities for optimistic locking where concurrent updates are possible.
+- Utilize Spring Data pagination (`Pageable`) for large result sets.
+- Use `@EntityListeners` (e.g., a `AuditingEntityListener`) to set creation/modification timestamps based on the `businessZone` bean.
+- Align entity timestamps with the `businessZone` bean for consistent time zones.
+- Write integration tests with `@DataJpaTest` (HSQLDB) to validate mappings and repository behavior.
 - **Database:** PostgreSQL with Flyway for database migrations.
 - **Testing:** JUnit 5
 
 ### Module Structure
 The project is strictly separated into multiple Maven modules to ensure decoupled architecture and separation of concerns:
-- **`models`**: Domain entities (e.g., `User`, `Commerce`, `Pack`) and basic validation.
-- **`*-contracts`** (`service-contracts`, `persistence-contracts`): Interfaces for DAOs and Services to enforce dependency inversion and maintain decoupling.
-- **`persistence`**: Data Access Object (DAO) implementations connecting to the database using Spring JDBC / `JdbcTemplate`. Contains Flyway migration scripts.
-- **`services`**: Implementations of business logic and system operations.
-- **`webapp`**: Spring MVC Controllers, Views (JSP), custom tag components (`.tag`), and static assets (CSS, JS). Wiring of the dependency injection and configurations. Built as a `.war` and runnable via Jetty (`mvn jetty:run`).
+- **`models`**: Domain entities and value types grouped by **domain subpackages** under `ar.edu.itba.paw.models` (e.g. `...models.user` for `User`/`Client`/`Commerce`, `...models.pack` for `Pack` and catalog enums, `...models.auction`, `...models.reservation`, `...models.security` for `Token`/`TokenType`). Prefer placing new types next to their bounded context, not the flat `models` root.
+- **`*-contracts`** (`service-contracts`, `persistence-contracts`): Interfaces for DAOs and Services. **Service** interfaces and DTO-style helper types (e.g. `RegisterResult`, `PickupByCodeResult`) live under `ar.edu.itba.paw.services` in **subpackages** (`user`, `commerce`, `pack`, `auction`, `reservation`, `security`)—mirror the same names in `services` implementations.
+- **`persistence`**: Data Access Object (DAO) implementations connecting to the database using Spring JDBC / `JdbcTemplate`. Contains Flyway migration scripts. Package `ar.edu.itba.paw.persistence` remains a single package for DAOs.
+- **`services`**: Service implementations, one subpackage per area (same names as `service-contracts`). `@ComponentScan("ar.edu.itba.paw.services")` in `webapp` already picks up nested packages—no need to list each subpackage.
+- **`webapp`**: Spring MVC Controllers, Views (JSP), custom tag components (`.tag`), and static assets (CSS, JS). Wiring of the dependency injection and configurations. Built as a `.war` and runnable via Jetty (`mvn jetty:run`). Shared controller helpers (e.g. `AuthenticatedUserResolver`, `PackCatalogModelBuilder`) live under `ar.edu.itba.paw.webapp.controller.helpers`.
+
+**Rationale (short):** Large flat `models` and `services` packages made ownership and navigation harder. Subpackages express domain boundaries without changing the Maven module split.
+
+### Spring Security (webapp)
+- **Placement:** The servlet filter chain is registered in `webapp/src/main/webapp/WEB-INF/web.xml` (`DelegatingFilterProxy` → `springSecurityFilterChain`). HTTP rules, form login, logout, remember-me, and method security are configured in `ar.edu.itba.paw.webapp.config.WebAuthConfig` (`@EnableWebSecurity` + `@EnableMethodSecurity`). User loading and role mapping live under `ar.edu.itba.paw.webapp.auth` (e.g., `AuthUserDetailsService` implementing `UserDetailsService`; roles are exposed as `ROLE_CLIENT` and `ROLE_COMMERCE` from domain `User.Role`).
+- **Views:** Use Spring Security’s JSP tag library where UI must reflect auth state (e.g., `sec:authorize` in `navbar.tag`), in addition to server-side rules on controllers.
+- **Two authorization layers (do not mix concerns):**
+  - **HTTP / role rules** in `WebAuthConfig`: coarse access by URL, HTTP method, and role (`hasRole("CLIENT")`, `hasRole("COMMERCE")`, `authenticated()`, etc.).
+  - **Resource ownership** on controller methods via `@PreAuthorize` and SpEL calling the `@own` bean (`OwnershipService`). Example: `@PreAuthorize("@own.canWritePack(#packId, authentication.principal.id)")`.
+- **OwnershipService:** Interface in `service-contracts` (`ar.edu.itba.paw.services.security.OwnershipService`); implementation in `services` as `@Service("own")` (`OwnershipServiceImpl`). This bean is the **single source of truth** for “does the current user own this resource?” checks. Existing methods: `canWritePack`, `canWriteAuction`, `canWriteReservation`, `canWriteToken`. Missing resources throw `OwnershipResourceNotFoundException`, mapped to HTTP 404 in `GlobalExceptionHandler`.
+- **Service layer vs. authorization:** Services may enforce **business rules** unrelated to identity (e.g. `PackService.resolvePackForDirectEdit` for pack existence / auction-pack edit restrictions). They must **not** take a `currentUserId` solely to reject non-owners—that belongs in `@PreAuthorize` + `OwnershipService`.
 
 ### Frontend Patterns
 - **Views**: Written in standard JSP (`.jsp` files).
-- **Components**: Reusable UI elements are implemented as custom JSP tags (`WEB-INF/tags/`, e.g., `packCard.tag`, `navbar.tag`).
-- **Styling**: Standard CSS with a strong focus on modern aesthetics, dynamic design, gradients, hover effects, and responsive implementations (e.g., `components.css`).
+- **Components**: Reusable UI elements are custom JSP tags under `WEB-INF/tags/` (grouped by area; shared pieces under `tags/shared/`). They are registered in `WEB-INF/paw.tld` (URI `http://itba.edu.ar/paw/tags`); use `<%@ taglib prefix="paw" uri="http://itba.edu.ar/paw/tags" %>`.
+- **Styling**: Standard CSS with a strong focus on modern aesthetics, dynamic design, gradients, hover effects, and responsive implementations (split under `webapp/src/main/webapp/css/components/`, wired from `head.tag`).
 - **Design System**: The central reference for all visual and UI decisions is **[`DESIGN.md`](DESIGN.md)**. This document defines the project's color palette, typography, surface hierarchy, elevation strategy, component patterns, and do's/don'ts. All frontend changes MUST align with the guidelines described there ("ResQFood" philosophy).
 - **Design Rule**: Changes on the frontend should feel premium, maintain visual consistency across components, and NOT rely on generic frameworks like Bootstrap or Tailwind unless explicitly approved or configured.
 
@@ -47,4 +73,26 @@ When generating code or modifying the repository, strictly follow these instruct
 5. **Enums and Mapping:** Consider encoding accents and mapping rules for enums (e.g., Category types like "Panadería") correctly before passing them to the database or view. Make robust transformations.
 6. **Web Layer and Views:** The web layer must be implemented using the MVC and Front Controller patterns, via Spring Web MVC. Views must be composed of JSP files with JSTL (and should not contain Java code).
 7. **Internationalization (i18n):** Whenever you add or change user-visible screens, copy, labels, buttons, error messages, or other UI text, you MUST add the corresponding keys to both [`webapp/src/main/resources/i18n/messages.properties`](webapp/src/main/resources/i18n/messages.properties) (default locale) and [`webapp/src/main/resources/i18n/messages_en.properties`](webapp/src/main/resources/i18n/messages_en.properties) (English), and resolve them in JSP/tags with Spring’s `<spring:message code="..."/>` (or equivalent) instead of hardcoding strings. Keep key naming consistent with existing prefixes (e.g. `pack.*`, `layout.*`, `error.*`).
-8. **JSP Views `<head>` Boilerplate:** When creating a new JSP view, you MUST NOT repeat boilerplate `<head>...</head>` code (CSS layout, JS configs, fonts, favicons). Always use the `<paw:head>` tag (e.g., `<paw:head titleSuffixCode="..." />`, defined in `WEB-INF/tags/head.tag`) or wrap the page within an existing layout component that already encapsulates it (like `paw:reservationLayout`).
+8. **JSP Views `<head>` Boilerplate:** When creating a new JSP view, you MUST NOT repeat boilerplate `<head>...</head>` code (CSS layout, JS configs, fonts, favicons). Always use the `<paw:head>` tag (e.g., `<paw:head titleSuffixCode="..." />`, defined in `WEB-INF/tags/shared/head.tag`) or wrap the page within an existing layout component that already encapsulates it (like `paw:reservationLayout`).
+9. **Security configuration:** When adding or changing URLs, HTTP methods, or role requirements, update `WebAuthConfig` so authorization matches the feature (do not rely on controller logic alone). Reuse existing role names (`CLIENT`, `COMMERCE` in `hasRole(...)`) and keep static assets under the paths already ignored by security. Align navigation and conditional UI with `sec:authorize` (or equivalent) so menus and actions stay consistent with server rules.
+10. **Resource ownership and method security:** When a feature mutates or exposes a resource that belongs to a specific user/commerce (edit pack, cancel auction, reject reservation, token actions, etc.):
+   - Add or reuse a method on `OwnershipService` and implement it in `OwnershipServiceImpl` (DAO-backed reads only—do **not** inject other domain services that depend on `businessZone` or mail/config beans).
+   - Protect the controller handler with `@PreAuthorize` and SpEL: `@own.<method>(#<pathVar>, authentication.principal.id)`. SpEL parameter names must match `@PathVariable` / `@RequestParam` names (e.g. `@PathVariable("id")` → `#id`, not `#reservationId`).
+   - For optional parameters where unauthenticated/invalid input should reach the handler (e.g. empty token → “invalid” view), use short-circuit SpEL: `#token == null or #token.isEmpty() or @own.canWriteToken(#token, authentication.principal.id)`.
+   - Add unit tests for new `OwnershipServiceImpl` methods (Mockito + DAO mocks). Keep HTTP role rules in `WebAuthConfig` and ownership checks in `@PreAuthorize`; both are required where applicable.
+11. **Identity and passwords:** Resolve the current user via `AuthenticatedUserResolver` (preferred) or Spring Security's `Authentication` / `SecurityContextHolder`. Do **not** add private `resolveCurrentUser` / `getAuthenticatedUser` methods in new controllers—inject `AuthenticatedUserResolver` instead. Any new password handling must go through the existing `PasswordEncoder` bean and existing user-creation flows in services; never log or persist plaintext passwords.
+12. **Manual login/session flows:** Prefer standard form login and the security filter chain. Patterns that set `SecurityContextHolder` or session attributes by hand (e.g., after email verification) are exceptional—if a feature needs similar behavior, follow existing controllers and document why the default login flow is insufficient.
+13. **New types and services:** Add new model classes under the correct `ar.edu.itba.paw.models.<domain>` subpackage, and new service interfaces/impls under the matching `ar.edu.itba.paw.services.<domain>` pair. Cross-subpackage use requires explicit `import` lines (no reliance on a single "god" service package).
+14. **Pack queries:** All pack search/filter operations MUST use the unified `PackDao.filterPacks(query, tags, city, timeRanges, sort)` method. Do NOT add new single-purpose query methods (e.g. `findActive`, `searchPacks`, `findActiveByTags`). Pass `null` for criteria you don't need.
+15. **Time zone handling:** Use the `ZoneId` bean (`businessZone`) defined in `WebConfig` for any date/time display logic. Do NOT parse `@Value("${app.display-zone:}")` manually in services—inject the bean directly.
+16. **Reservation rejection:** The single source of truth for rejecting a reservation is `ReservationService.rejectReservation(Long)`. Code that needs to reject (e.g. token-based flows) MUST delegate to this method instead of reimplementing stock restore + status update + email notification.
+17. **Controller helpers:** Shared controller utilities live in `ar.edu.itba.paw.webapp.controller.helpers`. When adding cross-cutting controller concerns (auth resolution, catalog building, etc.), place them here as `@Component` beans rather than duplicating private methods across controllers.
+18. **Testing Requirements:** Whenever adding new service implementations or persistence DAOs, you MUST provide corresponding unit tests. 
+   - **Services Layer:** Tests must be completely isolated from Spring or the database. Use **JUnit 5 + Mockito** (`@ExtendWith(MockitoExtension.class)`, `@InjectMocks`, `@Mock`).
+   - **Persistence Layer:** Tests must run against an in-memory **HSQLDB** database. Use `@ExtendWith(SpringExtension.class)`, `@ContextConfiguration(classes = TestConfig.class)`, and `@Sql("classpath:schema.sql")`. Manage state using `JdbcTestUtils` in a `@BeforeEach` method instead of mock objects.
+   - **Structure:** All tests MUST be visually divided into `// 1. Setup`, `// 2. Ejercicio`, and `// 3. Asserts`.
+19. **Logging Practices:** 
+   - Always instantiate loggers per class using SLF4J: `private static final Logger LOGGER = LoggerFactory.getLogger(MyClass.class);`.
+   - **Always use placeholders `{}`** for parameters (e.g., `LOGGER.debug("User: {}", user);`). **Never** use string concatenation in logs to avoid unnecessary evaluation.
+   - Keep logs concise, meaningful, and contextual. Avoid excessive `INFO` logging that generates noise in production. Use `DEBUG` for development details and `WARN`/`ERROR` for actual problems.
+   - Do not use `try/catch` blocks merely to log exceptions without handling them or adding context. Avoid logging as a substitute for business logic or control flow.
